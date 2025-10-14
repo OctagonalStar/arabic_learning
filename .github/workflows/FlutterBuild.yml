@@ -1,0 +1,121 @@
+name: Flutter Build
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+  workflow_dispatch:  
+
+jobs:
+  build-android:
+    name: Build Android APK
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          flutter-version-file: pubspec.yaml
+
+      - run: flutter pub get
+      - run: flutter build apk --release
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: android-apk
+          path: build/app/outputs/flutter-apk/app-release.apk
+
+  build-windows:
+    name: Build Windows App
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          flutter-version-file: pubspec.yaml
+
+      - run: flutter pub get
+      - run: flutter build windows
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: windows-build
+          path: build/windows/runner/Release
+
+  build-macos:
+    name: Build macOS App
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          flutter-version-file: pubspec.yaml
+
+      - run: flutter pub get
+      - run: flutter build macos
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: macos-build
+          path: build/macos/Build/Products/Release
+
+  build-ios:
+    name: Build iOS App (no sign)
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          flutter-version-file: pubspec.yaml
+
+      - run: flutter pub get
+      - run: flutter build ios --no-codesign
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ios-build
+          path: build/ios/iphoneos
+  release:
+    name: Create GitHub Release
+    runs-on: ubuntu-latest
+    needs: [build-android, build-windows, build-macos, build-ios]
+    if: startsWith(github.ref, 'refs/tags/')
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: android-apk
+          path: .
+      - uses: actions/download-artifact@v4
+        with:
+          name: windows-build
+          path: ./windows
+      - uses: actions/download-artifact@v4
+        with:
+          name: macos-build
+          path: ./macos
+      - uses: actions/download-artifact@v4
+        with:
+          name: ios-build
+          path: ./ios
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            app-release.apk
+            windows/**
+            macos/**
+            ios/**
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
