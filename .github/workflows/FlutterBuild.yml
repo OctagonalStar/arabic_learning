@@ -45,7 +45,7 @@ jobs:
       - uses: actions/upload-artifact@v4
         with:
           name: windows-build
-          path: build/windows/runner/Release
+          path: build/windows/x64/runner/Release
 
   build-macos:
     name: Build macOS App
@@ -65,7 +65,7 @@ jobs:
       - uses: actions/upload-artifact@v4
         with:
           name: macos-build
-          path: build/macos/Build/Products/Release
+          path: build/macos/Build/Products/Release/arabic_learning.app
 
   build-ios:
     name: Build iOS App (no sign)
