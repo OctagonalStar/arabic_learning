@@ -141,25 +141,27 @@ class Global with ChangeNotifier {
   //       }, ...
   //   ],
   //   "Classes": {
-  //        "ClassName": [wordid],
+  //        "SourceJsonFileName": {
+  //          "ClassName": [wordINDEX],
+  //        }
   //    }
   // }
-  Map<String, dynamic> dataFormater(Map<String, dynamic> data, Map<String, dynamic> exData) {
+  Map<String, dynamic> dataFormater(Map<String, dynamic> data, Map<String, dynamic> exData, String sourceName) {
     List<String> wordList = [];
     for(var x in exData["Words"]!) {
       wordList.add(x["arabic"]);
     }
     int counter = wordList.length;
-
+    exData["Classes"][sourceName] = {};
     for(var x in data.keys){
       for(var y in data[x]){
         if(wordList.contains(y["arabic"])){
           continue;
         }
-        if(exData["Classes"]!.containsKey(x)){
-          exData["Classes"][x].add(counter);
+        if(exData["Classes"][sourceName]?.containsKey(x) ?? false){
+          exData["Classes"][sourceName][x].add(counter);
         } else {
-          exData["Classes"][x] = [counter];
+          exData["Classes"][sourceName][x] = [counter];
         }
         exData["Words"]!.add({
           "arabic": y["arabic"],
@@ -175,7 +177,7 @@ class Global with ChangeNotifier {
     return exData;
   }
 
-  void importData(Map<String, dynamic> data) async {
+  void importData(Map<String, dynamic> data, String source) async {
     final directory = await getApplicationDocumentsDirectory();
     final tf = File('${directory.path}/$_dataFilePath');
     if (!await tf.exists()) {
@@ -185,7 +187,7 @@ class Global with ChangeNotifier {
     // Read Existed Data
     final dataFile = File('${directory.path}/$_dataFilePath');
     Map<String, dynamic> exData = jsonDecode(await dataFile.readAsString());
-    Map<String, dynamic> formatedData = dataFormater(data, exData);
+    Map<String, dynamic> formatedData = dataFormater(data, exData, source);
     try {
       final file = await dataFile.create(recursive: true);
       await file.writeAsString(jsonEncode(formatedData));

@@ -241,7 +241,7 @@ class _SettingPage extends State<SettingPage> {
               }
               try{
                 Map<String, dynamic> jsonData = json.decode(jsonString);
-                Provider.of<Global>(context, listen: false).importData(jsonData);
+                Provider.of<Global>(context, listen: false).importData(jsonData, platformFile.name);
                 showDialog(
                 context: context,
                 builder: (BuildContext context) {
