@@ -37,7 +37,16 @@ List<Widget> learningPageBuilder(MediaQueryData mediaQuery, BuildContext context
     list.add(
       Column(
         mainAxisAlignment: MainAxisAlignment.center, 
-        children: arToChConstructer(mediaQuery, context, [data["Words"][test]["arabic"], ...strList], aindex, data["Words"][test]["explanation"])
+        children: arToChConstructer(mediaQuery, 
+                                    context, 
+                                    [
+                                      data["Words"][test]["arabic"], // 0
+                                      ...strList, // 1 2 3 4
+                                      data["Words"][test]["explanation"], // 5
+                                      data["Words"][test]["subClass"] // 6
+                                    ], 
+                                    aindex
+                                    )
       )
     );
   }
@@ -45,7 +54,7 @@ List<Widget> learningPageBuilder(MediaQueryData mediaQuery, BuildContext context
 }
 
 
-List<Widget> arToChConstructer(MediaQueryData mediaQuery, BuildContext context, List<String> data, int index, String exp) {
+List<Widget> arToChConstructer(MediaQueryData mediaQuery, BuildContext context, List<String> data, int index) {
   bool playing = false;
   final player = AudioPlayer();
   return [
@@ -109,7 +118,6 @@ List<Widget> arToChConstructer(MediaQueryData mediaQuery, BuildContext context, 
               }
             } else {
               FlutterTts flutterTts = FlutterTts();
-              print((await flutterTts.getLanguages).toString());
               if(!(await flutterTts.getLanguages).toString().contains("ar")) {
                 showDialog(
                   context: context, 
@@ -154,12 +162,7 @@ class ClickedListener extends ChangeNotifier {
   late List<Color> cl;
 
   ClickedListener.init({required Color color}) {
-    cl = [
-      color,
-      color,
-      color,
-      color,
-    ];
+    cl = [color, color, color, color];
   }
   bool _isClicked = false;
   bool get isClicked => _isClicked;
@@ -198,7 +201,7 @@ Widget choseButtons(MediaQueryData mediaQuery, BuildContext context, List<String
               ),
             ),
             onPressed: () {
-              // view answer
+              viewAnswer(mediaQuery, context, [data[0], data[index + 1], data[5], data[6]]);
             }, 
             child: FittedBox(
               fit: BoxFit.contain,
@@ -256,17 +259,25 @@ Widget choseButtons(MediaQueryData mediaQuery, BuildContext context, List<String
               ),
               child: ElevatedButton(
                 onPressed: () {
-                  Provider.of<ClickedListener>(context, listen: false).clicked();
+                  
                   setLocalState(() {
                     cl[i] = Colors.amberAccent;
                   });
                   Future.delayed(Duration(milliseconds: 500), (){
-                    index == i ? setLocalState(() {
+                    if(index == i) {
+                    setLocalState(() {
+                      Provider.of<ClickedListener>(context, listen: false).clicked();
                       cl[i] = Colors.greenAccent;
-                    }) : setLocalState(() {
+                    });
+                    } else {
+                      setLocalState(() {
                       cl[i] = Colors.redAccent;
+                      });
+                      Future.delayed(Duration(milliseconds: 500), (){
+                        viewAnswer(mediaQuery ,context, [data[0], data[index + 1], data[5], data[6]]);
+                        Provider.of<ClickedListener>(context, listen: false).clicked();
+                      });
                     }
-                    );
                   });
                 },
                 style: ElevatedButton.styleFrom(
@@ -310,18 +321,25 @@ Widget choseButtons(MediaQueryData mediaQuery, BuildContext context, List<String
               ),
               child: ElevatedButton(
                 onPressed: () {
-                  Provider.of<ClickedListener>(context, listen: false).clicked();
                   setLocalState(() {
                     cl[r*2 + i] = Colors.amberAccent;
                   });
                   // 你刷新你的 别突变就行
                   Future.delayed(Duration(milliseconds: 500), (){
-                    index == r*2 + i ? setLocalState(() {
+                    if(index == r*2 + i) {
+                    setLocalState(() {
+                      Provider.of<ClickedListener>(context, listen: false).clicked();
                       cl[r*2 + i] = Colors.greenAccent;
-                    }) : setLocalState(() {
+                    });
+                    } else {
+                      setLocalState(() {
                       cl[r*2 + i] = Colors.redAccent;
+                      });
+                      Future.delayed(Duration(milliseconds: 500), (){
+                        viewAnswer(mediaQuery ,context, [data[0], data[index + 1], data[5], data[6]]);
+                        Provider.of<ClickedListener>(context, listen: false).clicked();
+                      });
                     }
-                    );
                   });
                 },
                 style: ElevatedButton.styleFrom(
@@ -353,4 +371,52 @@ Widget choseButtons(MediaQueryData mediaQuery, BuildContext context, List<String
     );
   }
   return base;
+}
+
+void viewAnswer(MediaQueryData mediaQuery, BuildContext context, List<String> data) async {
+  showBottomSheet(
+    context: context, 
+    // backgroundColor: Theme.of(context).colorScheme.onSecondaryContainer,
+    shape: RoundedSuperellipseBorder(side: BorderSide(width: 1.0, color: Theme.of(context).colorScheme.onSurface), borderRadius: StaticsVar.br),
+    enableDrag: true,
+    builder: (context) {
+      return Container(
+        padding: EdgeInsets.only(top: mediaQuery.size.height * 0.05),
+        decoration: BoxDecoration(
+          color: Theme.of(context).colorScheme.onPrimary,
+          borderRadius: StaticsVar.br,
+        ),
+        child: Column(
+          children: [
+            Row(
+              children: [
+                SizedBox(width: mediaQuery.size.width * 0.05),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: context.read<Global>().isWideScreen ? CrossAxisAlignment.center : CrossAxisAlignment.start,
+                    children: [
+                      Text("阿拉伯语:\t${data[0]}", style: TextStyle(fontSize: 36.0, fontWeight: FontWeight.bold),),
+                      Text("中文:\t${data[1]}", style: TextStyle(fontSize: 20.0, fontWeight: FontWeight.bold),),
+                      Text("例句:\t${data[2]}", style: TextStyle(fontSize: 20.0),),
+                      Text("所属课程:\t${data[3]}", style: TextStyle(fontSize: 20.0),),
+                    ]
+                  ),
+                ),
+                SizedBox(width: mediaQuery.size.width * 0.05),
+              ],
+            ),
+            Expanded(child: SizedBox()),
+            ElevatedButton(
+              onPressed: () {Navigator.pop(context);}, 
+              style: ElevatedButton.styleFrom(
+                fixedSize: Size(mediaQuery.size.width * 0.8, mediaQuery.size.height * 0.1),
+                shape: RoundedRectangleBorder(borderRadius: StaticsVar.br)
+              ),
+              child: Text("我知道了"),
+            )
+          ],
+        ),
+      );
+    },
+  );
 }
