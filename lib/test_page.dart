@@ -130,12 +130,14 @@ class TestPage extends StatelessWidget {
                 onPressed: () {
                   // TODO: to keyboard page
                 }, 
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(Icons.keyboard, size: 24.0, color: Colors.black),
-                    Text('盲打\n测试', style: TextStyle(fontSize: 18.0, fontWeight: FontWeight.bold)),
-                  ],
+                child: FittedBox(
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(Icons.keyboard, size: 24.0, color: Colors.black),
+                      Text('盲打\n测试', style: TextStyle(fontSize: 24.0, fontWeight: FontWeight.bold)),
+                    ],
+                  ),
                 )
               )
             )
