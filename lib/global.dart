@@ -5,8 +5,6 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:path_provider/path_provider.dart';
 
 
-
-
 class Global with ChangeNotifier {
   static const String _settingFilePath = "arabicLearning/setting.json";
   static const String _dataFilePath = "arabicLearning/data.json";

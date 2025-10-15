@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:arabic_learning/global.dart';
 import 'package:arabic_learning/statics_var.dart';
 import 'package:flutter/material.dart';
@@ -37,22 +39,7 @@ class HomePage extends StatelessWidget {
                 style: TextStyle(fontSize: 18.0),
               ),
               SizedBox(height: mediaQuery.size.height * 0.02),
-              Text(
-                'مرحبا ',
-                style: Provider.of<Global>(context, listen: false).settingData["regular"]["font"] == 1 ? GoogleFonts.markaziText(fontSize: 52.0, fontWeight: FontWeight.bold) : TextStyle(fontSize: 52.0, fontWeight: FontWeight.bold),
-              ),
-              SizedBox(height: mediaQuery.size.height * 0.005),
-              Text(
-                'Marhaban',
-                style: TextStyle(fontSize: 18.0),
-                textAlign: TextAlign.center,
-              ),
-              SizedBox(height: mediaQuery.size.height * 0.005),
-              Text(
-                '你好',
-                style: TextStyle(fontSize: 18.0),
-                textAlign: TextAlign.center,
-              ),
+              FittedBox(fit: BoxFit.scaleDown,child: dailyWord(context, mediaQuery, toPage)),
             ],
           ),
         ),
@@ -181,4 +168,33 @@ class HomePage extends StatelessWidget {
       ],
     );
   }
+}
+
+Widget dailyWord(BuildContext context, MediaQueryData mediaQuery, Function toPage) {
+  if(context.read<Global>().wordCount == 0){
+    return ElevatedButton(
+      onPressed: () {
+        toPage(3);
+      },
+      child: Text("当前未导入词库数据\n请点此以跳转设置页面导入"),
+    );
+  }
+  final now = DateTime.now();
+  final seed = now.year * 10000 + now.month * 100 + now.day;
+  Random rnd = Random(seed);
+  Map<String, dynamic> data = context.read<Global>().wordData["Words"][rnd.nextInt(context.read<Global>().wordCount)];
+  return Column(
+    children: [
+      Text(
+        data["arabic"] ?? "读取出错 data:${data.toString()}",
+        style: Provider.of<Global>(context, listen: false).settingData["regular"]["font"] == 1 ? GoogleFonts.markaziText(fontSize: 52.0, fontWeight: FontWeight.bold) : TextStyle(fontSize: 52.0, fontWeight: FontWeight.bold),
+      ),
+      SizedBox(height: mediaQuery.size.height * 0.005),
+      Text(
+        data["chinese"] ?? "读取出错 data:${data.toString()}",
+        style: TextStyle(fontSize: 18.0),
+        textAlign: TextAlign.center,
+      ),
+    ],
+  );
 }
