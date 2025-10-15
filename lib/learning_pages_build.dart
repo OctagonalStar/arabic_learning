@@ -139,7 +139,7 @@ List<Widget> arToChConstructer(MediaQueryData mediaQuery, BuildContext context, 
               }
               await flutterTts.setLanguage("ar");
               await flutterTts.setPitch(1.0);
-              await flutterTts.setSpeechRate(0.5);
+              await flutterTts.setSpeechRate(Provider.of<Global>(context, listen: false).settingData["audio"]["playRate"] / 2);
               await flutterTts.speak(data[0]);
             }
             playing = false;
