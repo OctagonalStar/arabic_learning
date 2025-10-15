@@ -309,8 +309,8 @@ class _SettingPage extends State<SettingPage> {
           Expanded(
             child: FittedBox(
               fit: BoxFit.contain,
+              alignment: AlignmentGeometry.centerLeft,
               child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text("使用备用文本转语音接口"),
@@ -349,9 +349,12 @@ class _SettingPage extends State<SettingPage> {
             divisions: 10,
             label: "${set["audio"]["playRate"]}",
             onChanged: (value) {
-              // set["audio"]["playRate"] = value;
-              print(value);
-              //context.read<Global>().updateSetting(set);
+              setState(() {
+                set["audio"]["playRate"] = value;
+              });
+            },
+            onChangeEnd: (value) {
+              context.read<Global>().updateSetting(set);
             },
           ),
         ]
