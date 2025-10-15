@@ -134,6 +134,7 @@ class _MyHomePageState extends State<MyHomePage> {
         // 主要内容区域
         Expanded(
           child: PageView(
+            scrollDirection: Axis.vertical,
             controller: _pageController,
             onPageChanged: (index) {
               if (onSlip) return;
@@ -157,6 +158,7 @@ class _MyHomePageState extends State<MyHomePage> {
         Expanded(
           child: PageView(
             controller: _pageController,
+            scrollDirection: Axis.horizontal,
             onPageChanged: (index) {
               if (onSlip) return;
               setState(() {
