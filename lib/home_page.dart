@@ -1,4 +1,5 @@
 import 'package:arabic_learning/global.dart';
+import 'package:arabic_learning/statics_var.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
@@ -8,6 +9,7 @@ class HomePage extends StatelessWidget {
   const HomePage({super.key, required this.toPage});
   @override
   Widget build(BuildContext context) {
+    final themeColor = Theme.of(context).colorScheme;
     final mediaQuery = MediaQuery.of(context);
     return Column(
       children: [
@@ -18,8 +20,15 @@ class HomePage extends StatelessWidget {
           margin: EdgeInsets.all(16.0),
           padding: EdgeInsets.all(16.0),
           decoration: BoxDecoration(
-            color: Colors.blueAccent,
-            borderRadius: BorderRadius.circular(25.0),
+            color: themeColor.onPrimary,
+            boxShadow: [
+                  BoxShadow(
+                    color: themeColor.surfaceBright,
+                    offset: Offset(4, 8),
+                    blurRadius: 8.0,
+                  ),
+                ],
+            borderRadius: StaticsVar.br,
           ),
           child: Column(
             children: [
@@ -57,8 +66,15 @@ class HomePage extends StatelessWidget {
               margin: EdgeInsets.all(8.0),
               padding: EdgeInsets.all(16.0),
               decoration: BoxDecoration(
-                color: Colors.green,
-                borderRadius: BorderRadius.circular(25.0),
+                color: themeColor.secondaryContainer,
+                boxShadow: [
+                  BoxShadow(
+                    color: themeColor.surfaceBright,
+                    offset: Offset(2, 4),
+                    blurRadius: 8.0,
+                  ),
+                ],
+                borderRadius: StaticsVar.br,
               ),
               child: Column(
                 children: [
@@ -81,7 +97,14 @@ class HomePage extends StatelessWidget {
               margin: EdgeInsets.all(8.0),
               padding: EdgeInsets.all(16.0),
               decoration: BoxDecoration(
-                color: Colors.orange,
+                color: themeColor.secondaryContainer,
+                boxShadow: [
+                  BoxShadow(
+                    color: themeColor.surfaceBright,
+                    offset: Offset(2, 4),
+                    blurRadius: 8.0,
+                  ),
+                ],
                 borderRadius: BorderRadius.circular(25.0),
               ),
               child: Column(
@@ -107,7 +130,8 @@ class HomePage extends StatelessWidget {
               ),
               child: ElevatedButton(
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.teal,
+                  backgroundColor: themeColor.onPrimary,
+                  shadowColor: themeColor.surfaceBright,
                   padding: EdgeInsets.all(16.0),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(25.0),
@@ -118,9 +142,9 @@ class HomePage extends StatelessWidget {
                 },
                 child: Column(
                 children: [
-                  Text("准备好学习了?", style: TextStyle(fontSize: 12.0, color: Colors.white70)),
+                  Text("准备好学习了?", style: TextStyle(fontSize: 12.0)),
                   SizedBox(height: mediaQuery.size.height * 0.015),
-                  Text('开始学习\n→', style: TextStyle(fontSize: 24.0, fontWeight: FontWeight.bold, color: Colors.white)),
+                  Text('开始学习\n→', style: TextStyle(fontSize: 24.0, fontWeight: FontWeight.bold)),
                   ],
                 ),
               ),
@@ -134,7 +158,7 @@ class HomePage extends StatelessWidget {
               ),
               child: ElevatedButton(
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.red,
+                  // backgroundColor: themeColor.primary,
                   padding: EdgeInsets.all(16.0),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(25.0),
@@ -145,9 +169,9 @@ class HomePage extends StatelessWidget {
                 },
                 child: Column(
                 children: [
-                  Text("感觉不错?", style: TextStyle(fontSize: 12.0, color: Colors.white70)),
+                  Text("感觉不错?", style: TextStyle(fontSize: 12.0)),
                   SizedBox(height: mediaQuery.size.height * 0.015),
-                  Text('开始测试\n→', style: TextStyle(fontSize: 22.0, fontWeight: FontWeight.bold, color: Colors.white)),
+                  Text('开始测试\n→', style: TextStyle(fontSize: 22.0, fontWeight: FontWeight.bold)),
                   ],
                 ),
               ),
