@@ -307,13 +307,16 @@ class _SettingPage extends State<SettingPage> {
           Icon(Icons.api, size: 24.0),
           SizedBox(width: mediaQuery.size.width * 0.01),
           Expanded(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text("使用备用文本转语音接口"),
-                Text("默认使用系统自带的文本转语音接口，但有些厂商可能没有阿拉伯语支持，启用会请求来自\"TextReadTTS.com\"的音频，但是备用的音频源不支持发音符号", style: TextStyle(fontSize: 8.0, color: Colors.grey))
-              ],
+            child: FittedBox(
+              fit: BoxFit.contain,
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text("使用备用文本转语音接口"),
+                  Text("默认使用系统自带的文本转语音接口，但有些厂商可能没有阿拉伯语支持\n启用会请求\"TextReadTTS.com\"的音频，但其发音符号支持不佳", style: TextStyle(fontSize: 8.0, color: Colors.grey)),
+                ],
+              ),
             ),
           ),
           Switch(
