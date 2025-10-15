@@ -214,6 +214,7 @@ class _SettingPage extends State<SettingPage> {
               } else if (platformFile.path != null) {
                 jsonString = await File(platformFile.path!).readAsString();
               } else {
+                if (!context.mounted) return;
                 showDialog(
                 context: context,
                 builder: (BuildContext context) {
@@ -240,6 +241,7 @@ class _SettingPage extends State<SettingPage> {
                 return;
               }
               try{
+                if (!context.mounted) return;
                 Map<String, dynamic> jsonData = json.decode(jsonString);
                 Provider.of<Global>(context, listen: false).importData(jsonData, platformFile.name);
                 showDialog(
@@ -266,6 +268,7 @@ class _SettingPage extends State<SettingPage> {
                 },
                 );
               } catch (e) {
+                if (!context.mounted) return;
                 showDialog(
                   context: context,
                   builder: (BuildContext context) {

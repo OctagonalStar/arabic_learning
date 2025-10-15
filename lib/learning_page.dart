@@ -1,7 +1,12 @@
+import 'dart:convert';
+import 'dart:io';
+
+import 'package:arabic_learning/change_notifier_models.dart';
 import 'package:arabic_learning/global.dart';
 import 'package:arabic_learning/learning_pages_build.dart';
 import 'package:flutter/material.dart';
 import 'package:arabic_learning/statics_var.dart';
+import 'package:path_provider/path_provider.dart';
 import 'package:provider/provider.dart';
 
 class LearningPage extends StatelessWidget {
@@ -9,7 +14,6 @@ class LearningPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final mediaQuery = MediaQuery.of(context);
-    
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.start,
@@ -31,8 +35,46 @@ class LearningPage extends StatelessWidget {
                   borderRadius: StaticsVar.br,
                 ),
               ),
-              onPressed: () {
-                Navigator.push(context, MaterialPageRoute(builder: (context) => MixLearningPage()));
+              onPressed: () async {
+                final directory = await getApplicationDocumentsDirectory();
+                final tempConfig = File('${directory.path}/${StaticsVar.tempConfigPath}');
+                if (!await tempConfig.exists()) {
+                  await tempConfig.create(recursive: true);
+                  await tempConfig.writeAsString(jsonEncode(StaticsVar.tempConfig));
+                }
+                final jsonString = await tempConfig.readAsString();
+                final courseList = (jsonDecode(jsonString)["SelectedClasses"] as List)
+                    .cast<List>()
+                    .map((e) => e.cast<String>().toList())
+                    .toList();
+                if(!context.mounted){
+                  return;
+                }
+                if(courseList.isEmpty){ 
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('请先选择你要学习的课程'),
+                      duration: Duration(seconds: 2), // 显示 2 秒后自动消失
+                    ),
+                  );
+
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => ChangeNotifierProvider(
+                        create: (_) => ClassSelectModel()..init(),
+                        child: ClassSelector(),
+                      ),
+                    ),
+                  );
+                  return ;
+                }
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => MixLearningPage(courseList: courseList),
+                  ),
+                );
               },
               child: Container(
                 width: mediaQuery.size.width * 0.9,
@@ -120,29 +162,45 @@ class LearningPage extends StatelessWidget {
               )
             ]
           ),
+          SizedBox(height: mediaQuery.size.height * 0.05),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Theme.of(context).colorScheme.secondaryContainer,
+              shape: RoundedRectangleBorder(borderRadius: StaticsVar.br),
+              fixedSize: Size(mediaQuery.size.width * 0.9, mediaQuery.size.height * 0.2)
+            ),
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => ChangeNotifierProvider(
+                    create: (_) => ClassSelectModel()..init(),
+                    child: ClassSelector(),
+                  ),
+                ),
+              );
+            },
+            child: FittedBox(
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.list, size: 24.0),
+                  SizedBox(width: 10.0),
+                  Text("选择课程", style: TextStyle(fontSize: 36.0)),
+                ],
+              ),
+            )
+          ),
         ]
       )
     );
   }
 }
 
-class PageCounterModel extends ChangeNotifier {
-  int _currentPage = 0;
-  final PageController _controller = PageController(initialPage: 0);
-  int get currentPage => _currentPage;
-  PageController get controller => _controller;
-  void increment() {
-    _currentPage++;
-    notifyListeners();
-  }
-  void setPage(int page) {
-    _currentPage = page;
-    notifyListeners();
-  }
-}
 
 class MixLearningPage extends StatefulWidget {
-  const MixLearningPage({super.key});
+  final List<List<String>> courseList;
+  const MixLearningPage({super.key, required this.courseList});
   @override
   State<MixLearningPage> createState() => _MixLearningPageState();
 }
@@ -152,7 +210,11 @@ class _MixLearningPageState extends State<MixLearningPage> {
   Widget build(BuildContext context) {
     final mediaQuery = MediaQuery.of(context);
     final globalVar = Provider.of<Global>(context);
-    final List<Widget> pages = learningPageBuilder(mediaQuery, context, (List<int>.from(globalVar.wordData["Classes"]["第二课：你好"]))..shuffle(), globalVar.wordData);
+    List<int> selectedWords = [];
+    for(List<String> c in widget.courseList) {
+      selectedWords.addAll(globalVar.wordData["Classes"][c[0]][c[1]].cast<int>());
+    }
+    final List<Widget> pages = learningPageBuilder(mediaQuery, context, selectedWords, globalVar.wordData);
     return ChangeNotifierProvider<PageCounterModel>(
       create: (_) => PageCounterModel(),
       child: Builder(
@@ -201,7 +263,7 @@ class _MixLearningPageState extends State<MixLearningPage> {
                 scrollDirection: globalVar.isWideScreen ? Axis.vertical : Axis.horizontal,
                 physics: NeverScrollableScrollPhysics(),
                 itemCount: pages.length,
-                controller: counter._controller,
+                controller: counter.controller,
                 onPageChanged: (index) {
                   counter.setPage(index);
                 },
@@ -215,4 +277,92 @@ class _MixLearningPageState extends State<MixLearningPage> {
       )
     );
   }
+}
+
+
+class ClassSelector extends StatelessWidget { 
+  const ClassSelector({super.key});
+  @override
+  Widget build(BuildContext context) {
+    final mediaQuery = MediaQuery.of(context);
+    if(!context.watch<ClassSelectModel>().initialized) {
+      return Scaffold(
+        body: Center(
+          child: CircularProgressIndicator(),
+        ),
+      );
+    }
+
+    return Scaffold(
+      appBar: AppBar(
+        title: Text('选择特定课程单词'),
+      ),
+      body: Column(
+        children: [
+          Expanded(
+            child: ListView(
+              children: classesSelectionList(context, mediaQuery)
+            ),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              fixedSize: Size(mediaQuery.size.width, mediaQuery.size.height * 0.1),
+              shape: ContinuousRectangleBorder(borderRadius: StaticsVar.br),
+            ),
+            child: Text('确认'),
+            onPressed: () {
+              Navigator.pop(context);
+            },
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+List<Widget> classesSelectionList(BuildContext context, MediaQueryData mediaQuery) {
+  Map<String, dynamic> wordData = context.read<Global>().wordData;
+  List<Widget> widgetList = [];
+  for (String sourceName in wordData["Classes"].keys) {
+    widgetList.add(
+      Container(
+        margin: EdgeInsets.all(16.0),
+        padding: EdgeInsets.all(8.0),
+        decoration: BoxDecoration(
+          color: Theme.of(context).colorScheme.onPrimary,
+          borderRadius: StaticsVar.br,
+        ),
+        child: Text(
+          sourceName,
+          style: TextStyle(
+            fontSize: 16.0,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+      ),
+    );
+    bool isEven = true;
+    for(String className in wordData["Classes"][sourceName].keys){
+      widgetList.add(
+        Container(
+          margin: EdgeInsets.all(2),
+          decoration: BoxDecoration(
+            color: isEven ? Theme.of(context).colorScheme.primaryContainer : Theme.of(context).colorScheme.secondaryContainer,
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: CheckboxListTile(
+            title: Text(className),
+            value: context.watch<ClassSelectModel>().selectedClasses.any((e) => e[0] == sourceName && e[1] == className,),
+            onChanged: (value) {
+              value! ? context.read<ClassSelectModel>().addClass([sourceName, className]) 
+                      : context.read<ClassSelectModel>().removeClass([sourceName, className]);
+            },
+          ),
+        ),
+      );
+      isEven = !isEven;
+    }
+  }
+  
+  return widgetList;
 }
