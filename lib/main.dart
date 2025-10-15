@@ -1,3 +1,4 @@
+import 'package:arabic_learning/change_notifier_models.dart';
 import 'package:arabic_learning/global.dart';
 import 'package:arabic_learning/statics_var.dart';
 import 'package:flutter/material.dart';
@@ -88,7 +89,10 @@ class _MyHomePageState extends State<MyHomePage> {
           currentIndex = index;
         });
       }),
-      LearningPage(),
+      ChangeNotifierProvider<ClassSelectModel>(
+        create: (_) => ClassSelectModel()..init(),
+        child: LearningPage()
+      ),
       TestPage(),
       SettingPage(),
     ];
