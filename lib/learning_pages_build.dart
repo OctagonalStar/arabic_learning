@@ -1,7 +1,7 @@
 import 'dart:convert';
 import 'dart:math';
+import 'package:arabic_learning/change_notifier_models.dart';
 import 'package:arabic_learning/global.dart';
-import 'package:arabic_learning/learning_page.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_tts/flutter_tts.dart';
 import 'package:http/http.dart' as http;
@@ -108,17 +108,21 @@ List<Widget> arToChConstructer(MediaQueryData mediaQuery, BuildContext context, 
                   final data = jsonDecode(response.body);
                   if(data["message"] != "OK") Exception("API返回错误: ${data["message"]}");
                   await player.setUrl(data["audio"]);
+                  if (!context.mounted) return;
                   await player.setSpeed(Provider.of<Global>(context, listen: false).settingData["audio"]["playRate"]);
                   await player.play();
                 } else {
+                  if (!context.mounted) return;
                   alart(context, response.statusCode.toString());
                 }
               } catch (e) {
+                if (!context.mounted) return;
                 alart(context, e.toString());
               }
             } else {
               FlutterTts flutterTts = FlutterTts();
               if(!(await flutterTts.getLanguages).toString().contains("ar")) {
+                if (!context.mounted) return;
                 showDialog(
                   context: context, 
                   builder: (BuildContext context) {
@@ -139,6 +143,7 @@ List<Widget> arToChConstructer(MediaQueryData mediaQuery, BuildContext context, 
               }
               await flutterTts.setLanguage("ar");
               await flutterTts.setPitch(1.0);
+              if (!context.mounted) return;
               await flutterTts.setSpeechRate(Provider.of<Global>(context, listen: false).settingData["audio"]["playRate"] / 2);
               await flutterTts.speak(data[0]);
             }
@@ -274,6 +279,7 @@ Widget choseButtons(MediaQueryData mediaQuery, BuildContext context, List<String
                       cl[i] = Colors.redAccent;
                       });
                       Future.delayed(Duration(milliseconds: 500), (){
+                        if (!context.mounted) return;
                         viewAnswer(mediaQuery ,context, [data[0], data[index + 1], data[5], data[6]]);
                         Provider.of<ClickedListener>(context, listen: false).clicked();
                       });
@@ -336,6 +342,7 @@ Widget choseButtons(MediaQueryData mediaQuery, BuildContext context, List<String
                       cl[r*2 + i] = Colors.redAccent;
                       });
                       Future.delayed(Duration(milliseconds: 500), (){
+                        if (!context.mounted) return;
                         viewAnswer(mediaQuery ,context, [data[0], data[index + 1], data[5], data[6]]);
                         Provider.of<ClickedListener>(context, listen: false).clicked();
                       });

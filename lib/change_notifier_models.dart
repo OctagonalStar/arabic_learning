@@ -46,15 +46,15 @@ class ClassSelectModel extends ChangeNotifier {
   }
 
   void addClass(List<String> className){
-    if (!selectedClasses.any((e) => e[0] == className[0] && e[1] == className[1])) {
-      selectedClasses.add(className);
+    if (!_tpf["SelectedClasses"].any((e) => e[0] == className[0] && e[1] == className[1])) {
+      _tpf["SelectedClasses"].add(className);
       save();
       notifyListeners(); 
     }
   }
 
   void removeClass(List<String> className) {
-    selectedClasses.removeWhere((e) => e[0] == className[0] && e[1] == className[1]);
+    _tpf["SelectedClasses"].removeWhere((e) => e[0] == className[0] && e[1] == className[1]);
     save();
     notifyListeners(); 
   }

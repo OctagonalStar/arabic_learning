@@ -75,28 +75,6 @@ class _MyHomePageState extends State<MyHomePage> {
   // 判断是否为桌面端的阈值（可根据需要调整）
   static const double _desktopBreakpoint = 600;
 
-  @override
-  void initState() {
-    super.initState();
-    _pageList = [
-      HomePage(toPage: (index) {
-        _pageController.animateToPage(
-          index,
-          duration: _duration,
-          curve: StaticsVar.curve,
-        );
-        setState(() {
-          currentIndex = index;
-        });
-      }),
-      ChangeNotifierProvider<ClassSelectModel>(
-        create: (_) => ClassSelectModel()..init(),
-        child: LearningPage()
-      ),
-      TestPage(),
-      SettingPage(),
-    ];
-  }
 
   // 构建桌面端布局（侧边导航）
   Widget _buildDesktopLayout(BuildContext context) {
@@ -209,6 +187,22 @@ class _MyHomePageState extends State<MyHomePage> {
 
   @override
   Widget build(BuildContext context) {
+    
+    _pageList = [
+      HomePage(toPage: (index) {
+        _pageController.animateToPage(
+          index,
+          duration: _duration,
+          curve: StaticsVar.curve,
+        );
+        setState(() {
+          currentIndex = index;
+        });
+      }),
+      LearningPage(),
+      TestPage(),
+      SettingPage(),
+    ];
     return Scaffold(
       appBar: AppBar(
         centerTitle: true,
