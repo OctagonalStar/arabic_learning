@@ -54,7 +54,7 @@ class LearningPage extends StatelessWidget {
                   ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(
                       content: Text('请先选择你要学习的课程'),
-                      duration: Duration(seconds: 2), // 显示 2 秒后自动消失
+                      duration: Duration(seconds: 2),
                     ),
                   );
 
@@ -214,7 +214,7 @@ class _MixLearningPageState extends State<MixLearningPage> {
     for(List<String> c in widget.courseList) {
       selectedWords.addAll(globalVar.wordData["Classes"][c[0]][c[1]].cast<int>());
     }
-    final List<Widget> pages = learningPageBuilder(mediaQuery, context, selectedWords, globalVar.wordData);
+    final List<Widget> pages = learningPageBuilder(mediaQuery, context, selectedWords..shuffle(), globalVar.wordData);
     return ChangeNotifierProvider<PageCounterModel>(
       create: (_) => PageCounterModel(),
       child: Builder(
@@ -227,7 +227,30 @@ class _MixLearningPageState extends State<MixLearningPage> {
                 children: [
                   ElevatedButton(
                     onPressed: (){
-                      Navigator.pop(context);
+                      showDialog(
+                        context: context, 
+                        builder: (context) {
+                          return AlertDialog(
+                            title: Text("提示"),
+                            content: Text("确定要结束学习吗？"),
+                            actions: [
+                              TextButton(
+                                onPressed: () {
+                                  Navigator.pop(context);
+                                },
+                                child: Text("取消"),
+                              ),
+                              TextButton(
+                                onPressed: () {
+                                  Navigator.pop(context);
+                                  Navigator.pop(context);
+                                },
+                                child: Text("确定"),
+                              )
+                            ],
+                          );
+                        },
+                      );
                     },
                     child: Icon(
                       Icons.close,
