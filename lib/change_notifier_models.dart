@@ -34,7 +34,12 @@ class ClassSelectModel extends ChangeNotifier {
       await tempConfig.writeAsString(jsonEncode(StaticsVar.tempConfig));
       _tpf = StaticsVar.tempConfig;
     } else {
-      _tpf = jsonDecode(await tempConfig.readAsString());
+      try {
+        _tpf = jsonDecode(await tempConfig.readAsString());
+      } catch (e) {
+        await tempConfig.writeAsString(jsonEncode(StaticsVar.tempConfig));
+        _tpf = StaticsVar.tempConfig;
+      }
     }
     initialized = true;
     notifyListeners();
