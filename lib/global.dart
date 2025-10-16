@@ -196,3 +196,34 @@ class Global with ChangeNotifier {
     notifyListeners();
   }
 }
+
+class InDevelopingPage extends StatelessWidget {
+  const InDevelopingPage({super.key});
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text("开发中"),
+      ),
+      body: Center(
+        child: FittedBox(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                Icons.build,
+                size: 100.0,
+              ),
+              Text(
+                "该页面还在开发中...",
+                style: TextStyle(
+                  fontSize: 40.0,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}

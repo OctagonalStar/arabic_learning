@@ -121,6 +121,12 @@ class LearningPage extends StatelessWidget {
                   ),
                   onPressed: () {
                     // TODO: to arabic learning page
+                    Navigator.push(
+                      context, 
+                      MaterialPageRoute(
+                        builder: (context) => InDevelopingPage()
+                      )
+                    );
                   }, 
                   child: Column(
                     children: [
@@ -150,6 +156,12 @@ class LearningPage extends StatelessWidget {
                   ),
                   onPressed: () {
                     // TODO: to chinese learning page
+                    Navigator.push(
+                      context, 
+                      MaterialPageRoute(
+                        builder: (context) => InDevelopingPage()
+                      )
+                    );
                   },
                   child: Column(
                     children: [
