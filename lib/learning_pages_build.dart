@@ -106,7 +106,10 @@ List<Widget> arToChConstructer(MediaQueryData mediaQuery, BuildContext context, 
                 final response = await http.get(Uri.parse("https://textreadtts.com/tts/convert?accessKey=FREE&language=arabic&speaker=speaker2&text=${data[0]}"));
                 if (response.statusCode == 200) {
                   final data = jsonDecode(response.body);
-                  if(data["message"] != "OK") Exception("API返回错误: ${data["message"]}");
+                  if(data["code"] == 1 && context.mounted) {
+                    alart(context, "文本长度超过API限制");
+                    return;
+                  }
                   await player.setUrl(data["audio"]);
                   if (!context.mounted) return;
                   await player.setSpeed(Provider.of<Global>(context, listen: false).settingData["audio"]["playRate"]);
