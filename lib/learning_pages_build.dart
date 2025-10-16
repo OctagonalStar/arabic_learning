@@ -12,6 +12,12 @@ import 'package:provider/provider.dart';
 List<Widget> learningPageBuilder(MediaQueryData mediaQuery, BuildContext context, List<int> testData, Map<String, dynamic> data) {
   List<Widget> list = [];
   Random rnd = Random();
+  int conrrect = 0;
+  int sta = DateTime.now().millisecondsSinceEpoch;
+  void addCorrect() => conrrect++;
+  int getCorrect () => conrrect;
+
+
   for (int t = 0; t < testData.length; t++) {
     int test = testData[t];
     List<String> strList = [];
@@ -45,7 +51,12 @@ List<Widget> learningPageBuilder(MediaQueryData mediaQuery, BuildContext context
                                       data["Words"][test]["explanation"], // 5
                                       data["Words"][test]["subClass"] // 6
                                     ], 
-                                    aindex
+                                    aindex,
+                                    t == testData.length - 1,
+                                    addCorrect,
+                                    getCorrect,
+                                    sta,
+                                    testData.length
                                     )
       )
     );
@@ -54,7 +65,16 @@ List<Widget> learningPageBuilder(MediaQueryData mediaQuery, BuildContext context
 }
 
 
-List<Widget> arToChConstructer(MediaQueryData mediaQuery, BuildContext context, List<String> data, int index) {
+List<Widget> arToChConstructer(
+    MediaQueryData mediaQuery, 
+    BuildContext context, 
+    List<String> data, 
+    int index, 
+    bool isLast, 
+    Function addCorrect, 
+    Function getCorrect, 
+    int sta,
+    int total) {
   bool playing = false;
   final player = AudioPlayer();
   return [
@@ -160,7 +180,7 @@ List<Widget> arToChConstructer(MediaQueryData mediaQuery, BuildContext context, 
     ChangeNotifierProvider(
       create: (_) => ClickedListener.init(color: Theme.of(context).colorScheme.primaryContainer),
       builder: (context, child) {
-        return choseButtons(mediaQuery, context, data, index);
+        return choseButtons(mediaQuery, context, data, index, isLast, addCorrect, getCorrect, sta, total);
       },
     ),
   ];
@@ -173,6 +193,7 @@ class ClickedListener extends ChangeNotifier {
     cl = [color, color, color, color];
   }
   bool _isClicked = false;
+  bool chosed = false;
   bool get isClicked => _isClicked;
   void clicked() {
     _isClicked = true;
@@ -181,8 +202,16 @@ class ClickedListener extends ChangeNotifier {
 }
 
 
-Widget choseButtons(MediaQueryData mediaQuery, BuildContext context, List<String> data, int index) {
-  
+Widget choseButtons(
+    MediaQueryData mediaQuery, 
+    BuildContext context, 
+    List<String> data, 
+    int index, 
+    bool isLast, 
+    Function addCorrect, 
+    Function getCorrect, 
+    int sta,
+    int total) {
   late Widget base;
   
   List<Widget> widgetList = [];
@@ -233,18 +262,21 @@ Widget choseButtons(MediaQueryData mediaQuery, BuildContext context, List<String
               shape: RoundedRectangleBorder(borderRadius: StaticsVar.br),
             ),
             onPressed: () {
-              var counter = Provider.of<PageCounterModel>(context, listen: false);
-              counter.controller.animateToPage(counter.currentPage + 1, duration: Duration(milliseconds: 500), curve: StaticsVar.curve);
-              // counter.increment();
+              if(isLast) {
+                Navigator.push(context, MaterialPageRoute(builder: (context) => ConcludePage(data: [total, getCorrect(), ((DateTime.now().millisecondsSinceEpoch - sta)/1000.0).toInt()])));
+              } else {
+                var counter = Provider.of<PageCounterModel>(context, listen: false);
+                counter.controller.animateToPage(counter.currentPage + 1, duration: Duration(milliseconds: 500), curve: StaticsVar.curve);
+              }
             },
             child: FittedBox(
               fit: BoxFit.contain,
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(Icons.navigate_next, size: 16.0, semanticLabel: "下一个"),
+                  Icon(isLast ? Icons.done : Icons.navigate_next, size: 16.0, semanticLabel: isLast ? "完成" : "下一个"),
                   SizedBox(width: mediaQuery.size.width * 0.01),
-                  Text("下一个"),
+                  Text(isLast ? "完成" : "下一个"),
                 ],
               ),
             ),
@@ -253,6 +285,7 @@ Widget choseButtons(MediaQueryData mediaQuery, BuildContext context, List<String
       );
     }
   );
+
   var cl = Provider.of<ClickedListener>(context, listen: true).cl;
   if(Provider.of<Global>(context, listen: false).isWideScreen){
     for(int i = 0; i < 4; i++) {
@@ -267,7 +300,10 @@ Widget choseButtons(MediaQueryData mediaQuery, BuildContext context, List<String
               ),
               child: ElevatedButton(
                 onPressed: () {
-                  
+                  if(!context.read<ClickedListener>().chosed) {
+                    context.read<ClickedListener>().chosed = true;
+                    if(index == i) addCorrect();
+                  }
                   setLocalState(() {
                     cl[i] = Colors.amberAccent;
                   });
@@ -330,6 +366,10 @@ Widget choseButtons(MediaQueryData mediaQuery, BuildContext context, List<String
               ),
               child: ElevatedButton(
                 onPressed: () {
+                  if(!context.read<ClickedListener>().chosed) {
+                    context.read<ClickedListener>().chosed = true;
+                    if(index == i) addCorrect();
+                  }
                   setLocalState(() {
                     cl[r*2 + i] = Colors.amberAccent;
                   });
@@ -429,4 +469,189 @@ void viewAnswer(MediaQueryData mediaQuery, BuildContext context, List<String> da
       );
     },
   );
+}
+
+class ConcludePage extends StatefulWidget {
+  final List<int> data; // [wordCount, correctCount, secondsCount]
+  const ConcludePage({super.key, required this.data});
+
+  @override
+  State<ConcludePage> createState() => _ConcludePageState();
+}
+
+class _ConcludePageState extends State<ConcludePage> {
+  bool visible1 = false;
+  bool visible2 = false;
+  bool visible3 = false;
+
+  @override
+  void initState() {
+    super.initState();
+    Future.delayed(Duration(milliseconds: 200), () {
+      if (mounted) {
+        setState(() {
+          visible1 = true;
+        });
+        Future.delayed(Duration(milliseconds: 200), () {
+          setState(() {
+            visible2 = true;
+          });
+          Future.delayed(Duration(milliseconds: 200), () {
+            setState(() {
+              visible3 = true;
+            });
+          });
+        });
+      }
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    MediaQueryData mediaQuery = MediaQuery.of(context);
+    
+    return Scaffold(
+      appBar: AppBar(
+        automaticallyImplyLeading: false,
+        title: Text("学习完成"),
+      ),
+      body: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            AnimatedSlide(
+              offset: visible1 ? Offset(-0.2, 0) : const Offset(-1.5, 0.2),
+              duration: Duration(seconds: 1),
+              curve: StaticsVar.curve,
+              child: Container(
+                width: mediaQuery.size.width * 0.8,
+                height: mediaQuery.size.height * 0.2,
+                padding: EdgeInsets.all(16.0),
+                margin: EdgeInsets.all(8.0),
+                decoration: BoxDecoration(
+                  color: Theme.of(context).colorScheme.onPrimary,
+                  borderRadius: StaticsVar.br,
+                  boxShadow: [
+                    BoxShadow(
+                      color: Theme.of(context).colorScheme.surfaceBright,
+                      spreadRadius: 5,
+                      blurRadius: 7,
+                      offset: Offset(0, 3),
+                    )
+                  ]
+                ),
+                child: TweenAnimationBuilder(
+                  tween: Tween<double>(begin: 0.0, end: visible1 ? 1.0 : 0.0),
+                  duration: Duration(seconds: 1),
+                  curve: StaticsVar.curve,
+                  builder: (context, value, child) {
+                    return Row(
+                        children: [
+                          Expanded(child: SizedBox()),
+                          Text("已完成单词:  ", style: TextStyle(fontSize: 20.0)),
+                          Text((widget.data[0] * value).ceil().toString(), style: TextStyle(fontSize: 32.0, fontWeight: FontWeight.bold)),
+                          SizedBox(width: mediaQuery.size.width * 0.05),
+                          CircularProgressIndicator(value: value)
+                        ],
+                      );
+                  }
+                ),
+              ),
+            ),
+            SizedBox(height: mediaQuery.size.height * 0.05),
+            AnimatedSlide(
+              offset: visible2 ? Offset(0.2, 0) : const Offset(1.5, 0.2),
+              duration: Duration(seconds: 1),
+              curve: StaticsVar.curve,
+              child: Container(
+                width: mediaQuery.size.width * 0.8,
+                height: mediaQuery.size.height * 0.2,
+                padding: EdgeInsets.all(16.0),
+                margin: EdgeInsets.all(8.0),
+                decoration: BoxDecoration(
+                  color: Theme.of(context).colorScheme.onSecondary,
+                  borderRadius: StaticsVar.br,
+                  boxShadow: [
+                    BoxShadow(
+                      color: Theme.of(context).colorScheme.surfaceBright,
+                      spreadRadius: 5,
+                      blurRadius: 7,
+                      offset: Offset(0, 3),
+                    )
+                  ]
+                ),
+                child: TweenAnimationBuilder(
+                  tween: Tween<double>(begin: 0.0, end: visible2 ? 1.0 : 0.0),
+                  duration: Duration(seconds: 1),
+                  curve: StaticsVar.curve,
+                  builder: (context, value, child) {
+                    return Row(
+                        children: [
+                          CircularProgressIndicator(value: value),
+                          SizedBox(width: mediaQuery.size.width * 0.05),
+                          Text("回答正确数:  ", style: TextStyle(fontSize: 20.0)),
+                          Text((widget.data[1] * value).ceil().toString(), style: TextStyle(fontSize: 32.0, fontWeight: FontWeight.bold)),
+                          Expanded(child: SizedBox()),
+                        ],
+                      );
+                  }
+                ),
+              ),
+            ),
+            SizedBox(height: mediaQuery.size.height * 0.05),
+            AnimatedSlide(
+              offset: visible3 ? Offset(-0.2, 0) : const Offset(-1.5, 0.2),
+              duration: Duration(seconds: 1),
+              curve: StaticsVar.curve,
+              child: Container(
+                width: mediaQuery.size.width * 0.8,
+                height: mediaQuery.size.height * 0.2,
+                padding: EdgeInsets.all(16.0),
+                margin: EdgeInsets.all(8.0),
+                decoration: BoxDecoration(
+                  color: Theme.of(context).colorScheme.onPrimary,
+                  borderRadius: StaticsVar.br,
+                  boxShadow: [
+                    BoxShadow(
+                      color: Theme.of(context).colorScheme.surfaceBright,
+                      spreadRadius: 5,
+                      blurRadius: 7,
+                      offset: Offset(0, 3),
+                    )
+                  ]
+                ),
+                child: TweenAnimationBuilder(
+                  tween: Tween<double>(begin: 0.0, end: visible3 ? 1.0 : 0.0),
+                  duration: Duration(seconds: 1),
+                  curve: StaticsVar.curve,
+                  builder: (context, value, child) {
+                    return Row(
+                        children: [
+                          Expanded(child: SizedBox()),
+                          Text("总耗时:  ", style: TextStyle(fontSize: 20.0)),
+                          Text((widget.data[2] * value).ceil().toString(), style: TextStyle(fontSize: 32.0, fontWeight: FontWeight.bold)),
+                          SizedBox(width: mediaQuery.size.width * 0.05),
+                          CircularProgressIndicator(value: value)
+                        ],
+                      );
+                  }
+                ),
+              ),
+            ),
+            Expanded(child: SizedBox()),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                fixedSize: Size(mediaQuery.size.width, mediaQuery.size.height * 0.1),
+                shape: RoundedRectangleBorder(borderRadius: StaticsVar.br)
+              ),
+              onPressed: (){
+                Navigator.of(context).popUntil((route) => route.isFirst);
+              },
+              child: Text("返回主页")
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 }
