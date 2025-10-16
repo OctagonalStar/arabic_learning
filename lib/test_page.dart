@@ -1,3 +1,4 @@
+import 'package:arabic_learning/global.dart';
 import 'package:arabic_learning/statics_var.dart';
 import 'package:flutter/material.dart';
 
@@ -29,6 +30,12 @@ class TestPage extends StatelessWidget {
                 ),
                 onPressed: () {
                   // TODO: to write test page
+                  Navigator.push(
+                    context, 
+                    MaterialPageRoute(
+                      builder: (context) => InDevelopingPage()
+                    )
+                  );
                 },
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
@@ -62,6 +69,12 @@ class TestPage extends StatelessWidget {
                 ),
                 onPressed: () {
                   // TODO: to listen test page
+                  Navigator.push(
+                    context, 
+                    MaterialPageRoute(
+                      builder: (context) => InDevelopingPage()
+                    )
+                  );
                 },
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
@@ -101,6 +114,12 @@ class TestPage extends StatelessWidget {
                 ),
                 onPressed: () {
                   // TODO: to history page
+                  Navigator.push(
+                    context, 
+                    MaterialPageRoute(
+                      builder: (context) => InDevelopingPage()
+                    )
+                  );
                 },
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
@@ -129,6 +148,12 @@ class TestPage extends StatelessWidget {
                 ),
                 onPressed: () {
                   // TODO: to keyboard page
+                  Navigator.push(
+                    context, 
+                    MaterialPageRoute(
+                      builder: (context) => InDevelopingPage()
+                    )
+                  );
                 }, 
                 child: FittedBox(
                   child: Row(

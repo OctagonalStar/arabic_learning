@@ -1,4 +1,3 @@
-import 'package:arabic_learning/change_notifier_models.dart';
 import 'package:arabic_learning/global.dart';
 import 'package:arabic_learning/statics_var.dart';
 import 'package:flutter/material.dart';
@@ -220,27 +219,6 @@ class _MyHomePageState extends State<MyHomePage> {
             return _buildMobileLayout(context);
           }
         },
-      ),
-    );
-  }
-}
-
-class IconPage extends StatelessWidget {
-  final IconData icon;
-  final Color color;
-  const IconPage({super.key, required this.icon, required this.color});
-  @override
-  Widget build(BuildContext context) {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(
-            icon,
-            size: 100.0,
-            color: color,
-          ),
-        ],
       ),
     );
   }
