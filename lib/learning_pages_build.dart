@@ -4,6 +4,7 @@ import 'package:arabic_learning/change_notifier_models.dart';
 import 'package:arabic_learning/global.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_tts/flutter_tts.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:http/http.dart' as http;
 import 'package:arabic_learning/statics_var.dart';
 import 'package:just_audio/just_audio.dart';
@@ -172,7 +173,7 @@ List<Widget> arToChConstructer(
             }
             playing = false;
           },
-          label: Text(data[0], style: TextStyle(fontSize: 64.0, fontWeight: FontWeight.bold))
+          label: FittedBox(child: Text(data[0], style: context.read<Global>().settingData['regular']['font'] == 1 ? GoogleFonts.markaziText(fontSize: 64.0, fontWeight: FontWeight.bold) : TextStyle(fontSize: 64.0, fontWeight: FontWeight.bold)))
         )
       ),
     ),
@@ -513,7 +514,7 @@ class _ConcludePageState extends State<ConcludePage> {
     return Scaffold(
       appBar: AppBar(
         automaticallyImplyLeading: false,
-        title: Text("学习完成"),
+        title: Center(child: Text("学习完成")),
       ),
       body: Center(
         child: Column(
@@ -542,7 +543,7 @@ class _ConcludePageState extends State<ConcludePage> {
                 ),
                 child: TweenAnimationBuilder(
                   tween: Tween<double>(begin: 0.0, end: visible1 ? 1.0 : 0.0),
-                  duration: Duration(seconds: 1),
+                  duration: Duration(seconds: 4),
                   curve: StaticsVar.curve,
                   builder: (context, value, child) {
                     return Row(
@@ -582,12 +583,12 @@ class _ConcludePageState extends State<ConcludePage> {
                 ),
                 child: TweenAnimationBuilder(
                   tween: Tween<double>(begin: 0.0, end: visible2 ? 1.0 : 0.0),
-                  duration: Duration(seconds: 1),
+                  duration: Duration(seconds: 4),
                   curve: StaticsVar.curve,
                   builder: (context, value, child) {
                     return Row(
                         children: [
-                          CircularProgressIndicator(value: value),
+                          CircularProgressIndicator(value: value * (widget.data[1]/widget.data[0])),
                           SizedBox(width: mediaQuery.size.width * 0.05),
                           Text("回答正确数:  ", style: TextStyle(fontSize: 20.0)),
                           Text((widget.data[1] * value).ceil().toString(), style: TextStyle(fontSize: 32.0, fontWeight: FontWeight.bold)),
@@ -622,14 +623,14 @@ class _ConcludePageState extends State<ConcludePage> {
                 ),
                 child: TweenAnimationBuilder(
                   tween: Tween<double>(begin: 0.0, end: visible3 ? 1.0 : 0.0),
-                  duration: Duration(seconds: 1),
+                  duration: Duration(seconds: 4),
                   curve: StaticsVar.curve,
                   builder: (context, value, child) {
                     return Row(
                         children: [
                           Expanded(child: SizedBox()),
                           Text("总耗时:  ", style: TextStyle(fontSize: 20.0)),
-                          Text((widget.data[2] * value).ceil().toString(), style: TextStyle(fontSize: 32.0, fontWeight: FontWeight.bold)),
+                          Text("${(widget.data[2] * value).ceil().toString()} 秒", style: TextStyle(fontSize: 32.0, fontWeight: FontWeight.bold)),
                           SizedBox(width: mediaQuery.size.width * 0.05),
                           CircularProgressIndicator(value: value)
                         ],
