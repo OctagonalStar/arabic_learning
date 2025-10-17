@@ -264,7 +264,7 @@ Widget choseButtons(
             ),
             onPressed: () {
               if(isLast) {
-                Navigator.push(context, MaterialPageRoute(builder: (context) => ConcludePage(data: [total, getCorrect(), ((DateTime.now().millisecondsSinceEpoch - sta)/1000.0).toInt()])));
+                Navigator.push(context, MaterialPageRoute(builder: (context) => ConcludePage(data: [total, getCorrect, ((DateTime.now().millisecondsSinceEpoch - sta)/1000.0).toInt()])));
               } else {
                 var counter = Provider.of<PageCounterModel>(context, listen: false);
                 counter.controller.animateToPage(counter.currentPage + 1, duration: Duration(milliseconds: 500), curve: StaticsVar.curve);
@@ -473,7 +473,7 @@ void viewAnswer(MediaQueryData mediaQuery, BuildContext context, List<String> da
 }
 
 class ConcludePage extends StatefulWidget {
-  final List<int> data; // [wordCount, correctCount, secondsCount]
+  final List<dynamic> data; // [wordCount, correctCount, secondsCount]
   const ConcludePage({super.key, required this.data});
 
   @override
@@ -591,7 +591,7 @@ class _ConcludePageState extends State<ConcludePage> {
                           CircularProgressIndicator(value: value * (widget.data[1]/widget.data[0])),
                           SizedBox(width: mediaQuery.size.width * 0.05),
                           Text("回答正确数:  ", style: TextStyle(fontSize: 20.0)),
-                          Text((widget.data[1] * value).ceil().toString(), style: TextStyle(fontSize: 32.0, fontWeight: FontWeight.bold)),
+                          Text((widget.data[1]() * value).ceil().toString(), style: TextStyle(fontSize: 32.0, fontWeight: FontWeight.bold)),
                           Expanded(child: SizedBox()),
                         ],
                       );

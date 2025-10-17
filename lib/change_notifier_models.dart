@@ -32,7 +32,11 @@ class ClassSelectModel extends ChangeNotifier {
     if (!await tempConfig.exists()) {
       await tempConfig.create(recursive: true);
       await tempConfig.writeAsString(jsonEncode(StaticsVar.tempConfig));
-      _tpf = StaticsVar.tempConfig;
+      
+      _tpf = jsonDecode(jsonEncode(StaticsVar.tempConfig));
+      // 虽然看起来很没用...但能避免初始化后写入常量时触发的奇妙的：
+      // UnsupportedError (Unsupported operation: Cannot add to an unmodifiable list)
+      // 别问怎么知道的(doge)
     } else {
       try {
         _tpf = jsonDecode(await tempConfig.readAsString());
