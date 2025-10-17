@@ -20,11 +20,12 @@ class _SettingPage extends State<SettingPage> {
     return Consumer<Global>(
       builder: (context, value, child) {
         var setting = value.settingData;
-        return Column(
+        return ListView(
           children: [
             settingItem(mediaQuery, regularSetting(mediaQuery, context, setting), "常规设置"),
             settingItem(mediaQuery, dataSetting(mediaQuery, context, setting), "数据设置"),
             settingItem(mediaQuery, audioSetting(mediaQuery, context, setting), "音频设置"),
+            settingItem(mediaQuery, aboutSetting(mediaQuery, context, setting), "关于"),
           ],
         );
       },
@@ -37,7 +38,7 @@ class _SettingPage extends State<SettingPage> {
         width: mediaQuery.size.width * 0.90,
         height: mediaQuery.size.height * 0.08,
         // margin: container.margin,
-        padding: EdgeInsets.all(8.0),
+        // padding: EdgeInsets.all(8.0),
         decoration: BoxDecoration(
           color: Theme.of(context).colorScheme.onPrimary,
           borderRadius: BorderRadius.all(Radius.circular(5.0)),
@@ -364,5 +365,151 @@ class _SettingPage extends State<SettingPage> {
       )
     ];
   }
+
+  List<Widget> aboutSetting(MediaQueryData mediaQuery, BuildContext context, Map<String, dynamic> setting) {
+    var set = context.read<Global>().settingData;
+    return [
+      ElevatedButton(
+        style: ElevatedButton.styleFrom(
+          backgroundColor: Theme.of(context).colorScheme.onPrimary,
+          shape: RoundedRectangleBorder(borderRadius: StaticsVar.br),
+        ),
+        onPressed: () {
+          Navigator.of(context).push(MaterialPageRoute(builder: (context) => AboutPage()));
+        },
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.start,
+          children: [
+            Icon(Icons.adb, size: 24.0),
+            SizedBox(width: mediaQuery.size.width * 0.01),
+            Expanded(
+              child: Text("关于该软件"),
+            )
+          ],
+        ),
+      ),
+    ];
+  }
 }
 
+class AboutPage extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Center(child: Text("关于")),
+      ),
+      body: ListView(
+        // mainAxisAlignment: MainAxisAlignment.start,
+        // crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            margin: EdgeInsets.all(8.0),
+            padding: EdgeInsets.all(8.0),
+            decoration: BoxDecoration(
+              color: Theme.of(context).colorScheme.onPrimary,
+              borderRadius: StaticsVar.br,
+            ),
+            child: Text(
+              "关于",
+              style: TextStyle(
+                fontSize: 16.0,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ),
+          Container(
+            margin: EdgeInsets.all(8.0),
+            padding: EdgeInsets.all(8.0),
+            decoration: BoxDecoration(
+              color: Theme.of(context).colorScheme.onSecondary,
+              borderRadius: StaticsVar.br,
+            ),
+            child: Text("该软件仅供学习使用，请勿用于商业用途。\n该软件基于MIT协议开源，协议原文详见页面底部。", style: TextStyle(color: Colors.redAccent, fontWeight: FontWeight.bold)),
+          ),
+          Container(
+            margin: EdgeInsets.all(8.0),
+            padding: EdgeInsets.all(8.0),
+            decoration: BoxDecoration(
+              color: Theme.of(context).colorScheme.onSecondary,
+              borderRadius: StaticsVar.br,
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisAlignment: MainAxisAlignment.start,
+              children: [
+                Text("目前该软件仅由 OctagonalStar(别问为什么写网名) 一人开发（其实主要是为了学flutter框架写的），如果有什么问题或者提议都欢迎提issue（或者线下真实？）。"),
+                Text("该软件 <募集软件命名ing(有想法可以联系我)>，主要是为了帮助大家掌握阿语词汇（毕竟上课词汇都要听晕了）"),
+              ],
+            ),
+          ),
+          Container(
+            margin: EdgeInsets.all(8.0),
+            padding: EdgeInsets.all(8.0),
+            decoration: BoxDecoration(
+              color: Theme.of(context).colorScheme.onPrimary,
+              borderRadius: StaticsVar.br,
+            ),
+            child: Text(
+              "免责声明",
+              style: TextStyle(
+                fontSize: 16.0,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ),
+          Container(
+            margin: EdgeInsets.all(8.0),
+            padding: EdgeInsets.all(8.0),
+            decoration: BoxDecoration(
+              color: Theme.of(context).colorScheme.onSecondary,
+              borderRadius: StaticsVar.br,
+            ),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.start,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text("由于该软件目前还处在开发阶段，有一些bug是不可避免的。所以在正式使用该软件前你应当阅读并理解以下条款："),
+                Text("1. 该软件仅供学习使用，请勿用于商业用途。"),
+                Text("2. 该软件不会对你的阿拉伯语成绩做出任何担保，若你出现阿拉伯语成绩不理想的情况请先考虑自己的问题 :)"),
+                Text("3. 由于软件在不同系统上运行可能存在兼容性问题，软件出错造成的任何损失（包含精神损伤），软件作者和其他贡献者不会担负任何责任"),
+                Text("4. 你知晓并理解如果你错误地使用软件（如使用错误的数据集）造成的任何后果，乃至二次宇宙大爆炸，都需要你自行承担"),
+                Text("5. 其他在MIT开源协议下的条款"),
+              ],
+            ),
+          ),
+          Container(
+            margin: EdgeInsets.all(8.0),
+            padding: EdgeInsets.all(8.0),
+            decoration: BoxDecoration(
+              color: Theme.of(context).colorScheme.onPrimary,
+              borderRadius: StaticsVar.br,
+            ),
+            child: Text(
+              "MIT开源协议 / MIT License",
+              style: TextStyle(
+                fontSize: 16.0,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ),
+          Container(
+            margin: EdgeInsets.all(8.0),
+            padding: EdgeInsets.all(8.0),
+            decoration: BoxDecoration(
+              color: Theme.of(context).colorScheme.onSecondary,
+              borderRadius: StaticsVar.br,
+            ),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.start,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text("MIT License\n\nCopyright (c) 2025 OctagonalStar\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.\n"),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}

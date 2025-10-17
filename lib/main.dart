@@ -1,7 +1,12 @@
+import 'dart:convert';
+import 'dart:io';
+
 import 'package:arabic_learning/global.dart';
 import 'package:arabic_learning/statics_var.dart';
 import 'package:flutter/material.dart';
 import 'package:convex_bottom_bar/convex_bottom_bar.dart';
+import 'package:flutter/services.dart';
+import 'package:path_provider/path_provider.dart';
 import 'package:window_manager/window_manager.dart';
 import 'package:provider/provider.dart';
 
@@ -69,7 +74,7 @@ class _MyHomePageState extends State<MyHomePage> {
   bool onSlip = false;
   final PageController _pageController = PageController();
   static const Duration _duration = Duration(milliseconds: 500);
-
+  bool disPlayedFirst = false;
 
   // 判断是否为桌面端的阈值（可根据需要调整）
   static const double _desktopBreakpoint = 600;
@@ -186,7 +191,75 @@ class _MyHomePageState extends State<MyHomePage> {
 
   @override
   Widget build(BuildContext context) {
-    
+    if(!disPlayedFirst) {
+      Future.delayed(Duration(milliseconds: 500), (){
+        if(!context.mounted) return;
+        disPlayedFirst = true;
+        if(context.read<Global>().firstStart) {
+          TextEditingController controller = TextEditingController();
+          showDialog(
+            barrierDismissible: false,
+            context: context,
+            builder: (context) => AlertDialog(
+              title: const Text('欢迎使用'),
+              content: Column(
+                  mainAxisAlignment: MainAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('欢迎使用本软件，请先阅读使用说明。', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.redAccent)),
+                    Text("由于该软件目前还处在开发阶段，有一些bug是不可避免的。所以在正式使用该软件前你应当阅读并理解以下条款："),
+                    Text("1. 该软件仅供学习使用，请勿用于商业用途。"),
+                    Text("2. 该软件不会对你的阿拉伯语成绩做出任何担保，若你出现阿拉伯语成绩不理想的情况请先考虑自己的问题 :)"),
+                    Text("3. 由于软件在不同系统上运行可能存在兼容性问题，软件出错造成的任何损失（包含精神损伤），软件作者和其他贡献者不会担负任何责任"),
+                    Text("4. 你知晓并理解如果你错误地使用软件（如使用错误的数据集）造成的任何后果，乃至二次宇宙大爆炸，都需要你自行承担"),
+                    Text("5. 其他在MIT开源协议下的条款"),
+                    Text("若你已理解并接受上述条款，请在下输入框中填写你的名字，并点击“我没异议”按钮以确认。"),
+                    TextField(
+                      controller: controller,
+                      decoration: InputDecoration(
+                        labelText: "请输入你的名字",
+                        prefixIcon: Icon(Icons.edit),
+                      ),
+                    )
+                  ],
+                ),
+              actions: [
+                TextButton(
+                  onPressed: () async {
+                    await SystemChannels.platform.invokeMethod('SystemNavigator.pop');
+                    await exit(0);
+                  },
+                  child: const Text('我有异议'),
+                ),
+                TextButton(
+                  onPressed: () async {
+                    if(controller.text.isNotEmpty){
+                      final directory = await getApplicationDocumentsDirectory();
+                      final settingFile = File('${directory.path}/arabicLearning/setting.json');
+                      await settingFile.create(recursive: true);
+                      if(!context.mounted) return;
+                      await settingFile.writeAsString(jsonEncode(context.read<Global>().settingData));
+                    } else {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('使用该软件前你应当仔细阅读并理解条款'),
+                          duration: Duration(seconds: 2),
+                        ),
+                      );
+                      return;
+                    }
+                    if(!context.mounted) return;
+                    Navigator.of(context).pop();
+                  },
+                  child: const Text('我没异议'),
+                )
+              ]
+            )
+          );
+        }
+      });
+    }
     _pageList = [
       HomePage(toPage: (index) {
         _pageController.animateToPage(

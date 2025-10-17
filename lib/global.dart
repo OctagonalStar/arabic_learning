@@ -8,8 +8,10 @@ import 'package:path_provider/path_provider.dart';
 class Global with ChangeNotifier {
   static const String _settingFilePath = "arabicLearning/setting.json";
   static const String _dataFilePath = "arabicLearning/data.json";
+  bool firstStart = false;
   late bool isWideScreen;
   Map<String, dynamic> _settingData = {
+    'User': "",
     'regular': {
       "theme": 0,
       "font": 0,
@@ -78,11 +80,10 @@ class Global with ChangeNotifier {
     final directory = await getApplicationDocumentsDirectory();
     final settingFile = File('${directory.path}/$_settingFilePath');
     if (!await settingFile.exists()) {
-      await settingFile.create(recursive: true);
-      await settingFile.writeAsString(jsonEncode(_settingData));
+      firstStart = true;
+    }else {
+      _settingData = deepMerge(_settingData, jsonDecode((await settingFile.readAsString())) as Map<String, dynamic>);
     }
-    _settingData = deepMerge(_settingData, jsonDecode((await settingFile.readAsString())) as Map<String, dynamic>);
-
     final dataFile = File('${directory.path}/$_dataFilePath');
     if (!await dataFile.exists()) {
       await dataFile.create(recursive: true);
