@@ -2,9 +2,9 @@
     <application
         android:enableOnBackInvokedCallback="true"
         android:fitsSystemWindows="true"
-        android:label="arabic_learning"
+        android:label="Ar学"
         android:name="${applicationName}"
-        android:icon="@mipmap/ic_launcher">
+        android:icon="@mipmap/launcher_icon">
         <activity
             android:name=".MainActivity"
             android:exported="true"
