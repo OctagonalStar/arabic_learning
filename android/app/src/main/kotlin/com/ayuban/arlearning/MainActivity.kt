@@ -1,4 +1,4 @@
-package com.example.arabic_learning
+package com.ayuban.arlearning
 
 import io.flutter.embedding.android.FlutterActivity
 
