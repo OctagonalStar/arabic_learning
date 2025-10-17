@@ -367,7 +367,6 @@ class _SettingPage extends State<SettingPage> {
   }
 
   List<Widget> aboutSetting(MediaQueryData mediaQuery, BuildContext context, Map<String, dynamic> setting) {
-    var set = context.read<Global>().settingData;
     return [
       ElevatedButton(
         style: ElevatedButton.styleFrom(
@@ -375,7 +374,7 @@ class _SettingPage extends State<SettingPage> {
           shape: RoundedRectangleBorder(borderRadius: StaticsVar.br),
         ),
         onPressed: () {
-          Navigator.of(context).push(MaterialPageRoute(builder: (context) => AboutPage()));
+          Navigator.of(context).push(MaterialPageRoute(builder: (context) => AboutPage(setting: setting,)));
         },
         child: Row(
           mainAxisAlignment: MainAxisAlignment.start,
@@ -393,6 +392,9 @@ class _SettingPage extends State<SettingPage> {
 }
 
 class AboutPage extends StatelessWidget {
+  final Map<String, dynamic> setting;
+  const AboutPage({super.key, required this.setting});
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -491,6 +493,21 @@ class AboutPage extends StatelessWidget {
                 fontSize: 16.0,
                 fontWeight: FontWeight.bold,
               ),
+            ),
+          ),
+          Container(
+            margin: EdgeInsets.all(8.0),
+            padding: EdgeInsets.all(8.0),
+            decoration: BoxDecoration(
+              color: Theme.of(context).colorScheme.onSecondary,
+              borderRadius: StaticsVar.br,
+            ),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.start,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text("该软件通过MIT协议授权给 \"${setting["User"]}\" 使用，协议内容详见下方："),
+              ],
             ),
           ),
           Container(
