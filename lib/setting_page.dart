@@ -441,7 +441,7 @@ class AboutPage extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.start,
               children: [
                 Text("目前该软件仅由 OctagonalStar(别问为什么写网名) 一人开发（其实主要是为了学flutter框架写的），如果有什么问题或者提议都欢迎提issue（或者线下真实？）。"),
-                Text("该软件 <募集软件命名ing(有想法可以联系我)>，主要是为了帮助大家掌握阿语词汇（毕竟上课词汇都要听晕了）"),
+                Text("该软件 <Ar 学>，主要是为了帮助大家掌握阿语词汇（毕竟上课词汇都要听晕了）"),
               ],
             ),
           ),

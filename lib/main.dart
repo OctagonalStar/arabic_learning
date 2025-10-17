@@ -209,6 +209,8 @@ class _MyHomePageState extends State<MyHomePage> {
                       Text("4. 你知晓并理解如果你错误地使用软件（如使用错误的数据集）造成的任何后果，乃至二次宇宙大爆炸，都需要你自行承担"),
                       Text("5. 其他在MIT开源协议下的条款"),
                       Text("若你已理解并接受上述条款，请向下翻页，并在底部输入框中填写你的名字，并点击“我没异议”按钮以确认。"),
+                      SizedBox(height: MediaQuery.of(context).size.height * 0.1),
+                      Text('招募软件图标ing\n有想法或者有现有设计可以联系我', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.redAccent, fontSize: 24)),
                       SizedBox(height: MediaQuery.of(context).size.height),
                       TextField(
                         controller: controller,
