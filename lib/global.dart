@@ -103,6 +103,16 @@ class Global with ChangeNotifier {
     notifyListeners();
   }
 
+  Future<void> acceptAggrement(String name) async {
+    firstStart = false;
+    settingData["User"] = name;
+    final directory = await getApplicationDocumentsDirectory();
+    final settingFile = File('${directory.path}/arabicLearning/setting.json');
+    await settingFile.create(recursive: true);
+    await settingFile.writeAsString(jsonEncode(settingData));
+    notifyListeners();
+  }
+  
   Future<void> updateSetting(Map<String, dynamic> settingData) async {
     _settingData = settingData;
     final directory = await getApplicationDocumentsDirectory();
