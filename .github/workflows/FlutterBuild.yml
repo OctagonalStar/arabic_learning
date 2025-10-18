@@ -102,7 +102,7 @@ jobs:
         with:
           flutter-version: '3.35.5'
       - run: flutter pub get
-      - run: flutter build web --release
+      - run: flutter build web --release --base-href /arabic_learning/
 
       # 上传 Web 构建结果
       - uses: actions/upload-artifact@v4
@@ -177,4 +177,4 @@ jobs:
       uses: c-hive/gha-remove-artifacts@v1
       with:
         age: '3 days'
-        skip-recent: 4
+        skip-recent: 5
