@@ -111,6 +111,9 @@ jobs:
           path: build/web
 
   deploy-web:
+    permissions:
+      contents: write
+      pages: write
     name: Deploy Flutter Web to GitHub Pages
     runs-on: ubuntu-latest
     needs: build-web
@@ -162,3 +165,16 @@ jobs:
             ios/**
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  cleanup:
+    name: Cleanup old workflow artifacts
+    runs-on: ubuntu-latest
+    needs: [build-android, build-windows, build-macos, build-ios, deploy-web]
+    permissions:
+      actions: write
+    steps:
+      - name: Delete old artifacts
+        uses: actions/delete-artifact@v4
+        with:
+          failOnError: false
+          keepLatest: 5
