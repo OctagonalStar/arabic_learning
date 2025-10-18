@@ -70,11 +70,14 @@ jobs:
 
       - run: flutter pub get
       - run: flutter build macos
+    
+      - name: Post handling
+        run: hdiutil create -volname arabic_learning -srcfolder build/macos/Build/Products/Release/arabic_learning.app -ov -format UDZO arabic_learning.dmg
 
       - uses: actions/upload-artifact@v4
         with:
           name: macos-build
-          path: build/macos/Build/Products/Release/arabic_learning.app
+          path: arabic_learning.dmg
 
   build-ios:
     name: Build iOS App (no sign)
@@ -90,11 +93,16 @@ jobs:
 
       - run: flutter pub get
       - run: flutter build ios --no-codesign
+      
+      - name: Post handling
+        run: |
+          zip -r ios.zip build/ios/iphoneos
+          mv ios.zip ios.ipa
 
       - uses: actions/upload-artifact@v4
         with:
           name: ios-build
-          path: build/ios/iphoneos
+          path: ios.ipa
   build-web:
     name: Build Flutter Web
     runs-on: ubuntu-latest
@@ -164,8 +172,6 @@ jobs:
           zip -r windows.zip windows/
           zip -r macos.zip macos/
           zip -r ios.zip ios/
-          mv ios.zip ios.ipa
-          mv macos.zip macos.app
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
@@ -173,8 +179,8 @@ jobs:
           files: |
             app-release.apk
             windows.zip
-            ios.ipa
-            macos.app
+            ios.zip
+            macos.zip
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
@@ -188,5 +194,5 @@ jobs:
     - name: Remove old artifacts
       uses: c-hive/gha-remove-artifacts@v1
       with:
-        age: '3 days'
+        age: '1 day'
         skip-recent: 5
