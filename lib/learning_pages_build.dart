@@ -287,60 +287,40 @@ Widget choseButtons(
     }
   );
 
-  var cl = Provider.of<ClickedListener>(context, listen: true).cl;
+  var rcl = context.read<ClickedListener>();
+  var cl = context.watch<ClickedListener>().cl;
+  void chose(int i, Function setLocalState) {
+    if(!rcl.chosed) {
+      rcl.chosed = true;
+      if(index == i) addCorrect();
+    }
+    setLocalState(() {
+      cl[i] = Colors.amberAccent;
+    });
+    // 你刷新你的 别突变就行
+    Future.delayed(Duration(milliseconds: 500), (){
+      if(index == i) {
+      setLocalState(() {
+        rcl.clicked();
+        cl[i] = Colors.greenAccent;
+      });
+      } else {
+        setLocalState(() {
+        cl[i] = Colors.redAccent;
+        });
+        Future.delayed(Duration(milliseconds: 500), (){
+          if (!context.mounted) return;
+          viewAnswer(mediaQuery ,context, [data[0], data[index + 1], data[5], data[6]]);
+          rcl.clicked();
+        });
+      }
+    });
+  }
+
   if(Provider.of<Global>(context, listen: false).isWideScreen){
+    // 对于宽屏幕则单行显示4个按钮
     for(int i = 0; i < 4; i++) {
-      widgetList.add(StatefulBuilder(
-          builder: (context, setLocalState) {
-            return AnimatedContainer(
-              duration: Duration(milliseconds: 500),
-              curve: StaticsVar.curve,
-              decoration: BoxDecoration(
-                color: cl[i],
-                borderRadius: StaticsVar.br,
-              ),
-              child: ElevatedButton(
-                onPressed: () {
-                  if(!context.read<ClickedListener>().chosed) {
-                    context.read<ClickedListener>().chosed = true;
-                    if(index == i) addCorrect();
-                  }
-                  setLocalState(() {
-                    cl[i] = Colors.amberAccent;
-                  });
-                  Future.delayed(Duration(milliseconds: 500), (){
-                    if(index == i) {
-                    setLocalState(() {
-                      Provider.of<ClickedListener>(context, listen: false).clicked();
-                      cl[i] = Colors.greenAccent;
-                    });
-                    } else {
-                      setLocalState(() {
-                      cl[i] = Colors.redAccent;
-                      });
-                      Future.delayed(Duration(milliseconds: 500), (){
-                        if (!context.mounted) return;
-                        viewAnswer(mediaQuery ,context, [data[0], data[index + 1], data[5], data[6]]);
-                        Provider.of<ClickedListener>(context, listen: false).clicked();
-                      });
-                    }
-                  });
-                },
-                style: ElevatedButton.styleFrom(
-                  fixedSize: Size(mediaQuery.size.width * 0.21, mediaQuery.size.height * 0.1),
-                  backgroundColor: Colors.transparent,
-                  foregroundColor: Theme.of(context).colorScheme.onSurface,
-                  shadowColor: Colors.transparent,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: StaticsVar.br,
-                  ),
-                ),
-                child: Center(child: Text(data[i+1])),
-              ),
-            );
-          }
-        )
-      );
+      widgetList.add(buttonBox(cl, i, chose, mediaQuery, data, mediaQuery.size.width * 0.21));
     }
     base = Column(
       children: [
@@ -353,64 +333,13 @@ Widget choseButtons(
       ],
     );
   } else {
+    // 否则则两行显示
     List<List<Widget>> rowList = [[], []];
     for(int r = 0; r < 2; r++) {
       for(int i = 0; i < 2; i++) {
-        rowList[r].add(StatefulBuilder(
-          builder: (context, setLocalState) {
-            return AnimatedContainer(
-              duration: Duration(milliseconds: 500),
-              curve: StaticsVar.curve,
-              decoration: BoxDecoration(
-                color: cl[r*2 + i],
-                borderRadius: StaticsVar.br,
-              ),
-              child: ElevatedButton(
-                onPressed: () {
-                  if(!context.read<ClickedListener>().chosed) {
-                    context.read<ClickedListener>().chosed = true;
-                    if(index == r*2 + i) addCorrect();
-                  }
-                  setLocalState(() {
-                    cl[r*2 + i] = Colors.amberAccent;
-                  });
-                  // 你刷新你的 别突变就行
-                  Future.delayed(Duration(milliseconds: 500), (){
-                    if(index == r*2 + i) {
-                    setLocalState(() {
-                      Provider.of<ClickedListener>(context, listen: false).clicked();
-                      cl[r*2 + i] = Colors.greenAccent;
-                    });
-                    } else {
-                      setLocalState(() {
-                      cl[r*2 + i] = Colors.redAccent;
-                      });
-                      Future.delayed(Duration(milliseconds: 500), (){
-                        if (!context.mounted) return;
-                        viewAnswer(mediaQuery ,context, [data[0], data[index + 1], data[5], data[6]]);
-                        Provider.of<ClickedListener>(context, listen: false).clicked();
-                      });
-                    }
-                  });
-                },
-                style: ElevatedButton.styleFrom(
-                  fixedSize: Size(mediaQuery.size.width * 0.45, mediaQuery.size.height * 0.1),
-                  backgroundColor: Colors.transparent,
-                  foregroundColor: Theme.of(context).colorScheme.onSurface,
-                  shadowColor: Colors.transparent,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: StaticsVar.br,
-                  ),
-                ),
-                child: Center(child: Text(data[r*2 + i +1])),
-              ),
-            );
-          }
-        )
-        );
+        rowList[r].add(buttonBox(cl, 2 * r + i, chose, mediaQuery, data, mediaQuery.size.width * 0.45));
       }
     }
-
     base = Column(
       children: [
         Row(mainAxisAlignment: MainAxisAlignment.spaceEvenly,children: rowList[0]),
@@ -422,6 +351,36 @@ Widget choseButtons(
     );
   }
   return base;
+}
+
+StatefulBuilder buttonBox(List<Color> cl, int i, void Function(int i, Function setLocalState) chose, MediaQueryData mediaQuery, List<String> data, double height) {
+  return StatefulBuilder(
+        builder: (context, setLocalState) {
+          return AnimatedContainer(
+            duration: Duration(milliseconds: 500),
+            curve: StaticsVar.curve,
+            decoration: BoxDecoration(
+              color: cl[i],
+              borderRadius: StaticsVar.br,
+            ),
+            child: ElevatedButton(
+              onPressed: () {
+                chose(i, setLocalState);
+              },
+              style: ElevatedButton.styleFrom(
+                fixedSize: Size(height, mediaQuery.size.height * 0.1),
+                backgroundColor: Colors.transparent,
+                foregroundColor: Theme.of(context).colorScheme.onSurface,
+                shadowColor: Colors.transparent,
+                shape: RoundedRectangleBorder(
+                  borderRadius: StaticsVar.br,
+                ),
+              ),
+              child: Center(child: Text(data[i+1])),
+            ),
+          );
+        }
+      );
 }
 
 void viewAnswer(MediaQueryData mediaQuery, BuildContext context, List<String> data) async {
