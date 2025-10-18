@@ -158,15 +158,23 @@ jobs:
         with:
           name: ios-build
           path: ./ios
+      
+      - name: Prepare artifacts
+        run: |
+          zip -r windows.zip windows/
+          zip -r macos.zip macos/
+          zip -r ios.zip ios/
+          mv ios.zip ios.ipa
+          mv macos.zip macos.app
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
           files: |
             app-release.apk
-            windows/**
-            macos/**
-            ios/**
+            windows.zip
+            ios.ipa
+            macos.app
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
