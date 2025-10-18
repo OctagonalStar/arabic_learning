@@ -202,7 +202,7 @@ class _SettingPage extends State<SettingPage> {
                       style: TextStyle(fontSize: 8.0, color: Colors.grey))
             ],
           )),
-          Container(
+          SizedBox(
             width: mediaQuery.size.width * 0.55,
             child: FittedBox(
               fit: BoxFit.scaleDown,
@@ -451,7 +451,7 @@ Future<List<Widget>> downloadList(BuildContext context) async{
     ];
   }
   var json = jsonDecode(githubResponse.body) as List<dynamic>;
-  // if(!context.mounted) return [];
+  if(!context.mounted) return [Text("无法获取词库列表，请检查你的网络链接或稍后重试"),];
   for(var f in json) {
     if(f["type"] == "file") {
       bool downloaded = context.read<Global>().wordData["Classes"].keys.contains(f["name"]);
