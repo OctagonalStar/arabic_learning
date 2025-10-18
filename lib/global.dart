@@ -13,9 +13,9 @@ class Global with ChangeNotifier {
   Map<String, dynamic> _settingData = {
     'User': "",
     'regular': {
-      "theme": 0,
+      "theme": 9,
       "font": 0,
-      "darkMode": true,
+      "darkMode": false,
     },
     'audio': {
       "useBackupSource": false,
@@ -235,6 +235,14 @@ class InDevelopingPage extends StatelessWidget {
                 "该页面还在开发中...",
                 style: TextStyle(
                   fontSize: 40.0,
+                ),
+              ),
+              Text(
+                "日子要一天一天过，单词要一个一个背...\n高数要一课一课学，阿语要一句一句记...\n牙膏要一点一点挤，代码要一行一行敲...",
+                style: TextStyle(
+                  fontSize: 18.0,
+                  fontStyle: FontStyle.italic,
+                  color: Colors.grey,
                 ),
               ),
             ],
