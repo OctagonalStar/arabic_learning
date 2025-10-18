@@ -173,8 +173,8 @@ jobs:
     permissions:
       actions: write
     steps:
-      - name: Delete old artifacts
-        uses: actions/delete-artifact@v4
-        with:
-          failOnError: false
-          keepLatest: 5
+    - name: Remove old artifacts
+      uses: c-hive/gha-remove-artifacts@v1
+      with:
+        age: '3 days'
+        skip-recent: 4
