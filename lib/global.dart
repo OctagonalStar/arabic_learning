@@ -1,15 +1,15 @@
-import 'dart:io';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:path_provider/path_provider.dart';
+// import 'package:path_provider/path_provider.dart';
+// import 'dart:io';
 
 
 class Global with ChangeNotifier {
-  static const String _settingFilePath = "arabicLearning/setting.json";
-  static const String _dataFilePath = "arabicLearning/data.json";
-  bool firstStart = false;
+  late bool firstStart;
   late bool isWideScreen;
+  late final SharedPreferences prefs;
   Map<String, dynamic> _settingData = {
     'User': "",
     'regular': {
@@ -77,19 +77,29 @@ class Global with ChangeNotifier {
   }
 
   Future<void> init() async {
-    final directory = await getApplicationDocumentsDirectory();
-    final settingFile = File('${directory.path}/$_settingFilePath');
-    if (!await settingFile.exists()) {
-      firstStart = true;
-    }else {
-      _settingData = deepMerge(_settingData, jsonDecode((await settingFile.readAsString())) as Map<String, dynamic>);
+    prefs = await SharedPreferences.getInstance();
+    firstStart = prefs.getString("settingData") == null;
+    if(prefs.getString("wordData") == null) {
+      await prefs.setString("wordData", jsonEncode({"Words": [], "Classes": {}}));
+      wordData = jsonDecode(jsonEncode({"Words": [], "Classes": {}})) as Map<String, dynamic>;
+    } else {
+      wordData = jsonDecode(prefs.getString("wordData")!) as Map<String, dynamic>;
     }
-    final dataFile = File('${directory.path}/$_dataFilePath');
-    if (!await dataFile.exists()) {
-      await dataFile.create(recursive: true);
-      await dataFile.writeAsString(jsonEncode({"Words": [], "Classes": {}}));
-    }
-    wordData = jsonDecode(await dataFile.readAsString());
+    if (firstStart) return;
+    _settingData = deepMerge(_settingData, jsonDecode(prefs.getString("settingData")!) as Map<String, dynamic>);
+    // final directory = await getApplicationDocumentsDirectory();
+    // final settingFile = File('${directory.path}/$_settingFilePath');
+    // if (!await settingFile.exists()) {
+    //   firstStart = true;
+    // }else {
+    //   _settingData = deepMerge(_settingData, jsonDecode((await settingFile.readAsString())) as Map<String, dynamic>);
+    // }
+    // final dataFile = File('${directory.path}/$_dataFilePath');
+    // if (!await dataFile.exists()) {
+    //   await dataFile.create(recursive: true);
+    //   await dataFile.writeAsString(jsonEncode({"Words": [], "Classes": {}}));
+    // }
+    // wordData = jsonDecode(await dataFile.readAsString());
   }
   void updateTheme() {
     _themeData = ThemeData(
@@ -105,21 +115,15 @@ class Global with ChangeNotifier {
 
   Future<void> acceptAggrement(String name) async {
     firstStart = false;
-    settingData["User"] = name;
-    final directory = await getApplicationDocumentsDirectory();
-    final settingFile = File('${directory.path}/arabicLearning/setting.json');
-    await settingFile.create(recursive: true);
-    await settingFile.writeAsString(jsonEncode(settingData));
+    _settingData["User"] = name;
+    prefs.setString("settingData", jsonEncode(settingData));
     notifyListeners();
   }
   
   Future<void> updateSetting(Map<String, dynamic> settingData) async {
     _settingData = settingData;
-    final directory = await getApplicationDocumentsDirectory();
-    final settingFile = File('${directory.path}/$_settingFilePath');
     try {
-      final file = await settingFile.create(recursive: true);
-      await file.writeAsString(jsonEncode(settingData));
+      prefs.setString("settingData", jsonEncode(settingData));
     } catch (e) {
       throw Exception("Failed to write setting file: $e"); // 异常时抛出错误
     }
@@ -187,23 +191,25 @@ class Global with ChangeNotifier {
   }
 
   void importData(Map<String, dynamic> data, String source) async {
-    final directory = await getApplicationDocumentsDirectory();
-    final tf = File('${directory.path}/$_dataFilePath');
-    if (!await tf.exists()) {
-      await tf.create(recursive: true);
-      await tf.writeAsString(jsonEncode({"Words": [], "Classes": {}}));
-    }
-    // Read Existed Data
-    final dataFile = File('${directory.path}/$_dataFilePath');
-    Map<String, dynamic> exData = jsonDecode(await dataFile.readAsString());
-    Map<String, dynamic> formatedData = dataFormater(data, exData, source);
-    try {
-      final file = await dataFile.create(recursive: true);
-      await file.writeAsString(jsonEncode(formatedData));
-      wordData = formatedData;
-    } catch (e) {
-      throw Exception("Failed to write data file: $e"); // 异常时抛出错误
-    }
+    wordData = dataFormater(data, wordData, source);
+    prefs.setString("wordData", jsonEncode(wordData));
+    // final directory = await getApplicationDocumentsDirectory();
+    // final tf = File('${directory.path}/$_dataFilePath');
+    // if (!await tf.exists()) {
+    //   await tf.create(recursive: true);
+    //   await tf.writeAsString(jsonEncode({"Words": [], "Classes": {}}));
+    // }
+    // // Read Existed Data
+    // final dataFile = File('${directory.path}/$_dataFilePath');
+    // Map<String, dynamic> exData = jsonDecode(await dataFile.readAsString());
+    // Map<String, dynamic> formatedData = dataFormater(data, exData, source);
+    // try {
+    //   final file = await dataFile.create(recursive: true);
+    //   await file.writeAsString(jsonEncode(formatedData));
+    //   wordData = formatedData;
+    // } catch (e) {
+    //   throw Exception("Failed to write data file: $e"); // 异常时抛出错误
+    // }
     notifyListeners();
   }
 }
