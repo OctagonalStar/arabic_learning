@@ -206,6 +206,7 @@ class _SettingPage extends State<SettingPage> {
             width: mediaQuery.size.width * 0.55,
             child: FittedBox(
               fit: BoxFit.scaleDown,
+              alignment: AlignmentGeometry.centerRight,
               child: Row(
                 children: [
                   ElevatedButton.icon(
