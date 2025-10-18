@@ -1,5 +1,3 @@
-import 'dart:io';
-
 import 'package:arabic_learning/global.dart';
 import 'package:arabic_learning/statics_var.dart';
 import 'package:flutter/material.dart';
@@ -232,7 +230,8 @@ class _MyHomePageState extends State<MyHomePage> {
                     ),
                     onPressed: () async {
                       await SystemChannels.platform.invokeMethod('SystemNavigator.pop');
-                      await exit(0);
+                      SystemNavigator.pop();
+                      return;
                     },
                     child: const Text('我有异议'),
                   ),

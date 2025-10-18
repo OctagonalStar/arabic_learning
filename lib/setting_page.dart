@@ -1,5 +1,6 @@
 import 'dart:convert';
-import 'dart:io';
+import 'package:flutter/foundation.dart' show kIsWeb;
+import 'dart:io' show File;
 
 import 'package:arabic_learning/global.dart';
 import 'package:arabic_learning/statics_var.dart';
@@ -212,7 +213,7 @@ class _SettingPage extends State<SettingPage> {
               PlatformFile platformFile = result.files.first;
               if (platformFile.bytes != null){
                 jsonString = utf8.decode(platformFile.bytes!);
-              } else if (platformFile.path != null) {
+              } else if (platformFile.path != null && !kIsWeb) {
                 jsonString = await File(platformFile.path!).readAsString();
               } else {
                 if (!context.mounted) return;
