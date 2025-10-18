@@ -1,5 +1,6 @@
 import 'package:arabic_learning/global.dart';
 import 'package:arabic_learning/statics_var.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:convex_bottom_bar/convex_bottom_bar.dart';
 import 'package:flutter/services.dart';
@@ -22,6 +23,8 @@ void main() async {
       backgroundColor: Colors.transparent,
       skipTaskbar: false,
       titleBarStyle: TitleBarStyle.normal,
+      title: StaticsVar.appName,
+      minimumSize: Size(400, 700),
     );
     windowManager.waitUntilReadyToShow(windowOptions, () async {
       await windowManager.show();
@@ -199,15 +202,17 @@ class _MyHomePageState extends State<MyHomePage> {
               Expanded(
                 child: ListView(
                     children: [
-                      Text('欢迎使用本软件，请先阅读使用说明。', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.redAccent, fontSize: 36)),
-                      Text("由于该软件目前还处在开发阶段，有一些bug是不可避免的。所以在正式使用该软件前你应当阅读并理解以下条款："),
-                      Text("1. 该软件仅供学习使用，请勿用于商业用途。"),
-                      Text("2. 该软件不会对你的阿拉伯语成绩做出任何担保，若你出现阿拉伯语成绩不理想的情况请先考虑自己的问题 :)"),
-                      Text("3. 由于软件在不同系统上运行可能存在兼容性问题，软件出错造成的任何损失（包含精神损伤），软件作者和其他贡献者不会担负任何责任"),
-                      Text("4. 你知晓并理解如果你错误地使用软件（如使用错误的数据集）造成的任何后果，乃至二次宇宙大爆炸，都需要你自行承担"),
-                      Text("5. 其他在MIT开源协议下的条款"),
-                      Text("若你已理解并接受上述条款，请向下翻页，并在底部输入框中填写你的名字，并点击“我没异议”按钮以确认。"),
+                      SelectableText('欢迎使用本软件，请先阅读使用说明。', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.redAccent, fontSize: 36)),
+                      SelectableText("软件开源地址：https://github.com/OctagonalStar/arabic_learning"),
+                      SelectableText("由于该软件目前还处在开发阶段，有一些bug是不可避免的。所以在正式使用该软件前你应当阅读并理解以下条款："),
+                      SelectableText("1. 该软件仅供学习使用，请勿用于商业用途。"),
+                      SelectableText("2. 该软件不会对你的阿拉伯语成绩做出任何担保，若你出现阿拉伯语成绩不理想的情况请先考虑自己的问题 :)"),
+                      SelectableText("3. 由于软件在不同系统上运行可能存在兼容性问题，软件出错造成的任何损失（包含精神损伤），软件作者和其他贡献者不会担负任何责任"),
+                      SelectableText("4. 你知晓并理解如果你错误地使用软件（如使用错误的数据集）造成的任何后果，乃至二次宇宙大爆炸，都需要你自行承担"),
+                      SelectableText("5. 其他在MIT开源协议下的条款"),
+                      SelectableText("若你已理解并接受上述条款，请向下翻页，并在底部输入框中填写你的名字，并点击“我没异议”按钮以确认。"),
                       SizedBox(height: MediaQuery.of(context).size.height * 0.1),
+                      kIsWeb ? SelectableText('检测到当前是在浏览器中运行，请悉知以下内容：\n1. 由于网页端的一些限制，该软件*不一定*能按照预期工作\n2. 软件使用中所有的数据均保存在浏览器缓存中，清空网站缓存可能导致数据永久丢失\n3. 该网页部署于Github Pages，由Github Action自动构建，可能会不定期进行热更新且版本快于发布版。你可以由此更早地体验到新版功能，但也可能遇到新bug。\n4. 由于Github Pages的限制，我*完全不能*保证你是否能正常链接网站\n5. 网站展示效果不代表实际app发布版效果') : SizedBox(),
                       Text('招募软件图标ing\n有想法或者有现有设计可以联系我', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.redAccent, fontSize: 24)),
                       SizedBox(height: MediaQuery.of(context).size.height),
                       TextField(
@@ -233,7 +238,7 @@ class _MyHomePageState extends State<MyHomePage> {
                       SystemNavigator.pop();
                       return;
                     },
-                    child: const Text('我有异议'),
+                    child: const Text('我有异议', style: TextStyle(color: Colors.redAccent, fontWeight: FontWeight.bold, fontSize: 24)),
                   ),
                   ElevatedButton(
                     style: ElevatedButton.styleFrom(
@@ -253,7 +258,7 @@ class _MyHomePageState extends State<MyHomePage> {
                         return;
                       }
                     },
-                    child: const Text('我没异议'),
+                    child: const Text('我没异议', style: TextStyle(color: Colors.redAccent, fontWeight: FontWeight.bold, fontSize: 24)),
                   )
                 ],
               ),

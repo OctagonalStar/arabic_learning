@@ -6,7 +6,96 @@ import 'package:arabic_learning/global.dart';
 import 'package:arabic_learning/statics_var.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
 import 'package:provider/provider.dart';
+
+Widget settingItem(BuildContext context, MediaQueryData mediaQuery, List<Widget> list, String title, {bool withPadding = true}) {
+  List<Container> decoratedContainers = list.map((widget) {
+    return Container(
+      width: mediaQuery.size.width * 0.90,
+      height: mediaQuery.size.height * 0.08,
+      // margin: container.margin,
+      padding: withPadding ? EdgeInsets.all(8.0) : EdgeInsets.zero,
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.onPrimary,
+        borderRadius: BorderRadius.all(Radius.circular(5.0)),
+      ),
+      child: widget,
+    );
+  }).toList();
+  if(decoratedContainers.length > 1){
+    decoratedContainers[0] = Container(
+      width: mediaQuery.size.width * 0.90,
+      height: mediaQuery.size.height * 0.08,
+      margin: decoratedContainers[0].margin,
+      padding: decoratedContainers[0].padding,
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.onPrimary,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(25.0), bottom: Radius.circular(5.0)),
+      ),
+      child: decoratedContainers[0].child,
+    );
+    decoratedContainers[decoratedContainers.length - 1] = Container(
+      width: mediaQuery.size.width * 0.90,
+      height: mediaQuery.size.height * 0.08,
+      margin: decoratedContainers[decoratedContainers.length - 1].margin,
+      padding: decoratedContainers[decoratedContainers.length - 1].padding,
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.onPrimary,
+        borderRadius: BorderRadius.vertical(bottom: Radius.circular(25.0), top: Radius.circular(5.0)),
+      ),
+      child: decoratedContainers[decoratedContainers.length - 1].child,
+    );
+  } else {
+    decoratedContainers[0] = Container(
+      width: mediaQuery.size.width * 0.90,
+      height: mediaQuery.size.height * 0.08,
+      margin: decoratedContainers[0].margin,
+      padding: decoratedContainers[0].padding,
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.onPrimary,
+        borderRadius: BorderRadius.all(Radius.circular(25.0)),
+      ),
+      child: decoratedContainers[0].child,
+    );
+  }
+  //Add Sizedbox between each item in list
+  List<Widget> newList = [];
+  for (var i = 0; i < decoratedContainers.length; i++) {
+    newList.add(decoratedContainers[i]);
+    if (i != decoratedContainers.length - 1) {
+      newList.add(SizedBox(height: mediaQuery.size.height * 0.005));
+    }
+  }
+  return Column(
+    mainAxisAlignment: MainAxisAlignment.start,
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      Container(
+        margin: EdgeInsets.all(16.0),
+        padding: EdgeInsets.all(8.0),
+        decoration: BoxDecoration(
+          color: Theme.of(context).colorScheme.onPrimary,
+          borderRadius: StaticsVar.br,
+        ),
+        child: Text(
+          title,
+          style: TextStyle(
+            fontSize: 16.0,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+      ),
+      Center(
+        child: Column(
+          children: newList,
+        ),
+      ),
+    ]
+  );
+}
+
+
 
 class SettingPage extends StatefulWidget { 
   const SettingPage({super.key});
@@ -23,102 +112,13 @@ class _SettingPage extends State<SettingPage> {
         var setting = value.settingData;
         return ListView(
           children: [
-            settingItem(mediaQuery, regularSetting(mediaQuery, context, setting), "常规设置"),
-            settingItem(mediaQuery, dataSetting(mediaQuery, context, setting), "数据设置"),
-            settingItem(mediaQuery, audioSetting(mediaQuery, context, setting), "音频设置"),
-            settingItem(mediaQuery, aboutSetting(mediaQuery, context, setting), "关于"),
+            settingItem(context, mediaQuery, regularSetting(mediaQuery, context, setting), "常规设置"),
+            settingItem(context, mediaQuery, dataSetting(mediaQuery, context, setting), "数据设置"),
+            settingItem(context, mediaQuery, audioSetting(mediaQuery, context, setting), "音频设置"),
+            settingItem(context, mediaQuery, aboutSetting(mediaQuery, context, setting), "关于", withPadding: false),
           ],
         );
       },
-    );
-  }
-
-  Widget settingItem(MediaQueryData mediaQuery, List<Widget> list, String title) {
-    List<Container> decoratedContainers = list.map((widget) {
-      return Container(
-        width: mediaQuery.size.width * 0.90,
-        height: mediaQuery.size.height * 0.08,
-        // margin: container.margin,
-        // padding: EdgeInsets.all(8.0),
-        decoration: BoxDecoration(
-          color: Theme.of(context).colorScheme.onPrimary,
-          borderRadius: BorderRadius.all(Radius.circular(5.0)),
-        ),
-        child: widget,
-      );
-    }).toList();
-    if(decoratedContainers.length > 1){
-      decoratedContainers[0] = Container(
-        width: mediaQuery.size.width * 0.90,
-        height: mediaQuery.size.height * 0.08,
-        margin: decoratedContainers[0].margin,
-        padding: decoratedContainers[0].padding,
-        decoration: BoxDecoration(
-          color: Theme.of(context).colorScheme.onPrimary,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(25.0), bottom: Radius.circular(5.0)),
-        ),
-        child: decoratedContainers[0].child,
-      );
-
-      decoratedContainers[decoratedContainers.length - 1] = Container(
-        width: mediaQuery.size.width * 0.90,
-        height: mediaQuery.size.height * 0.08,
-        margin: decoratedContainers[decoratedContainers.length - 1].margin,
-        padding: decoratedContainers[decoratedContainers.length - 1].padding,
-        decoration: BoxDecoration(
-          color: Theme.of(context).colorScheme.onPrimary,
-          borderRadius: BorderRadius.vertical(bottom: Radius.circular(25.0), top: Radius.circular(5.0)),
-        ),
-        child: decoratedContainers[decoratedContainers.length - 1].child,
-      );
-    } else {
-      decoratedContainers[0] = Container(
-        width: mediaQuery.size.width * 0.90,
-        height: mediaQuery.size.height * 0.08,
-        margin: decoratedContainers[0].margin,
-        padding: decoratedContainers[0].padding,
-        decoration: BoxDecoration(
-          color: Theme.of(context).colorScheme.onPrimary,
-          borderRadius: BorderRadius.all(Radius.circular(25.0)),
-        ),
-        child: decoratedContainers[0].child,
-      );
-    }
-
-    //Add Sizedbox between each item in list
-    List<Widget> newList = [];
-    for (var i = 0; i < decoratedContainers.length; i++) {
-      newList.add(decoratedContainers[i]);
-      if (i != decoratedContainers.length - 1) {
-        newList.add(SizedBox(height: mediaQuery.size.height * 0.005));
-      }
-    }
-
-    return Column(
-      mainAxisAlignment: MainAxisAlignment.start,
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Container(
-          margin: EdgeInsets.all(16.0),
-          padding: EdgeInsets.all(8.0),
-          decoration: BoxDecoration(
-            color: Theme.of(context).colorScheme.onPrimary,
-            borderRadius: StaticsVar.br,
-          ),
-          child: Text(
-            title,
-            style: TextStyle(
-              fontSize: 16.0,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-        ),
-        Center(
-          child: Column(
-            children: newList,
-          ),
-        ),
-      ]
     );
   }
 
@@ -195,110 +195,130 @@ class _SettingPage extends State<SettingPage> {
           Expanded(child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.max,
             children: [
               Text("导入词库数据"),
               Text("词库中现有: ${Provider.of<Global>(context, listen: false).wordCount}", 
                       style: TextStyle(fontSize: 8.0, color: Colors.grey))
             ],
           )),
-          ElevatedButton(onPressed: () async {
-            FilePickerResult? result = await FilePicker.platform.pickFiles(
-              allowMultiple: false,
-              type: FileType.custom,
-              allowedExtensions: ['json'],
-            );
-
-            if (result != null) {
-              String jsonString;
-              PlatformFile platformFile = result.files.first;
-              if (platformFile.bytes != null){
-                jsonString = utf8.decode(platformFile.bytes!);
-              } else if (platformFile.path != null && !kIsWeb) {
-                jsonString = await File(platformFile.path!).readAsString();
-              } else {
-                if (!context.mounted) return;
-                showDialog(
-                context: context,
-                builder: (BuildContext context) {
-                  return AlertDialog(
-                    title: Text('错误'),
-                    content: Text("文件 \"${platformFile.name}\" \n无法读取：bytes和path均为null。"),
-                    actions: <Widget>[
-                      TextButton(
-                        child: Text('好吧'),
-                        onPressed: () {
-                          Navigator.of(context).pop();
-                        },
-                      ),
-                      TextButton(
-                        child: Text('行吧'),
-                        onPressed: () {
-                          Navigator.of(context).pop();
-                        },
-                      ),
-                    ],
-                  );
-                },
-                );
-                return;
-              }
-              try{
-                if (!context.mounted) return;
-                Map<String, dynamic> jsonData = json.decode(jsonString);
-                Provider.of<Global>(context, listen: false).importData(jsonData, platformFile.name);
-                showDialog(
-                context: context,
-                builder: (BuildContext context) {
-                  return AlertDialog(
-                    title: Text('完成'),
-                    content: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text("文件 \"${platformFile.name}\" \n已导入。"),
-                        Text("少数情况下无法即时刷新词汇总量，可稍后再到设置页面查看~", style: TextStyle(fontSize: 8.0, color: Colors.grey))
-                      ],
-                    ),
-                    actions: <Widget>[
-                      TextButton(
-                        child: Text('好的'),
-                        onPressed: () {
-                          Navigator.of(context).pop();
-                        },
-                      ),
-                    ],
-                  );
-                },
-                );
-              } catch (e) {
-                if (!context.mounted) return;
-                showDialog(
-                  context: context,
-                  builder: (BuildContext context) {
-                    return AlertDialog(
-                      title: Text('错误'),
-                      content: Text('文件 ${platformFile.name} 无效：\n$e'),
-                      actions: <Widget>[
-                        TextButton(
-                          child: Text('好吧'),
-                          onPressed: () {
-                            Navigator.of(context).pop();
+          Container(
+            width: mediaQuery.size.width * 0.55,
+            child: FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Row(
+                children: [
+                  ElevatedButton.icon(
+                    onPressed: () {
+                      Navigator.of(context).push(MaterialPageRoute(builder: (context) => DownloadPage()));
+                    },
+                    icon: Icon(Icons.cloud_download),
+                    label: Text("从线上下载词库")
+                  ),
+                  SizedBox(width: mediaQuery.size.width * 0.01),
+                  ElevatedButton.icon(
+                    onPressed: () async {
+                      FilePickerResult? result = await FilePicker.platform.pickFiles(
+                        allowMultiple: false,
+                        type: FileType.custom,
+                        allowedExtensions: ['json'],
+                      );
+                  
+                      if (result != null) {
+                        String jsonString;
+                        PlatformFile platformFile = result.files.first;
+                        if (platformFile.bytes != null){
+                          jsonString = utf8.decode(platformFile.bytes!);
+                        } else if (platformFile.path != null && !kIsWeb) {
+                          jsonString = await File(platformFile.path!).readAsString();
+                        } else {
+                          if (!context.mounted) return;
+                          showDialog(
+                          context: context,
+                          builder: (BuildContext context) {
+                            return AlertDialog(
+                              title: Text('错误'),
+                              content: Text("文件 \"${platformFile.name}\" \n无法读取：bytes和path均为null。"),
+                              actions: <Widget>[
+                                TextButton(
+                                  child: Text('好吧'),
+                                  onPressed: () {
+                                    Navigator.of(context).pop();
+                                  },
+                                ),
+                                TextButton(
+                                  child: Text('行吧'),
+                                  onPressed: () {
+                                    Navigator.of(context).pop();
+                                  },
+                                ),
+                              ],
+                            );
                           },
-                        ),
-                        TextButton(
-                          child: Text('行吧'),
-                          onPressed: () {
-                            Navigator.of(context).pop();
+                          );
+                          return;
+                        }
+                        try{
+                          if (!context.mounted) return;
+                          Map<String, dynamic> jsonData = json.decode(jsonString);
+                          Provider.of<Global>(context, listen: false).importData(jsonData, platformFile.name);
+                          showDialog(
+                          context: context,
+                          builder: (BuildContext context) {
+                            return AlertDialog(
+                              title: Text('完成'),
+                              content: Column(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Text("文件 \"${platformFile.name}\" \n已导入。"),
+                                  Text("少数情况下无法即时刷新词汇总量，可稍后再到设置页面查看~", style: TextStyle(fontSize: 8.0, color: Colors.grey))
+                                ],
+                              ),
+                              actions: <Widget>[
+                                TextButton(
+                                  child: Text('好的'),
+                                  onPressed: () {
+                                    Navigator.of(context).pop();
+                                  },
+                                ),
+                              ],
+                            );
                           },
-                        ),
-                      ],
-                    );
-                  }
-                );
-              }
-
-            }
-          },
-          child: Text("选择文件"))
+                          );
+                        } catch (e) {
+                          if (!context.mounted) return;
+                          showDialog(
+                            context: context,
+                            builder: (BuildContext context) {
+                              return AlertDialog(
+                                title: Text('错误'),
+                                content: Text('文件 ${platformFile.name} 无效：\n$e'),
+                                actions: <Widget>[
+                                  TextButton(
+                                    child: Text('好吧'),
+                                    onPressed: () {
+                                      Navigator.of(context).pop();
+                                    },
+                                  ),
+                                  TextButton(
+                                    child: Text('行吧'),
+                                    onPressed: () {
+                                      Navigator.of(context).pop();
+                                    },
+                                  ),
+                                ],
+                              );
+                            }
+                          );
+                        }
+                      }
+                    },
+                  icon: Icon(Icons.file_open),
+                  label: Text("从文件导入"))
+                ],
+              ),
+            ),
+          ),
         ],
       )
     ];
@@ -313,7 +333,7 @@ class _SettingPage extends State<SettingPage> {
           SizedBox(width: mediaQuery.size.width * 0.01),
           Expanded(
             child: FittedBox(
-              fit: BoxFit.contain,
+              fit: BoxFit.scaleDown,
               alignment: AlignmentGeometry.centerLeft,
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -390,6 +410,99 @@ class _SettingPage extends State<SettingPage> {
       ),
     ];
   }
+}
+
+class DownloadPage extends StatelessWidget {
+  const DownloadPage({super.key});
+  @override
+  Widget build(BuildContext context) {
+    final mediaQuery = MediaQuery.of(context);
+    return Scaffold(
+      appBar: AppBar(
+        title: Text("下载在线词库"),
+      ),
+      body: FutureBuilder(
+        future: downloadList(context),
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting || snapshot.data == null) {
+            return Center(
+              child: CircularProgressIndicator(),
+            );
+          }
+          return ListView(
+            children: [
+              settingItem(context, mediaQuery, snapshot.data!, "来自 Github @${StaticsVar.onlineDictOwner} 学长的词库 (在此表示感谢)")
+            ],
+          );
+        }
+      )
+    );
+  }
+}
+
+Future<List<Widget>> downloadList(BuildContext context) async{
+  var list = <Widget>[];
+  var githubResponse = await http.get(Uri.parse("https://api.github.com/repos/${StaticsVar.onlineDictOwner}/${StaticsVar.onlineDictRepo}/contents/${StaticsVar.onlineDictPath}"));
+  if(githubResponse.statusCode != 200) {
+    return [
+      Text("无法获取词库列表，请检查你的网络链接或稍后重试"),
+      Text("回复错误码：${githubResponse.statusCode}"),
+      SelectableText("调试信息：${githubResponse.body}"),
+    ];
+  }
+  var json = jsonDecode(githubResponse.body) as List<dynamic>;
+  // if(!context.mounted) return [];
+  for(var f in json) {
+    if(f["type"] == "file") {
+      bool downloaded = context.read<Global>().wordData["Classes"].keys.contains(f["name"]);
+      bool inDownloading = false;
+      list.add(StatefulBuilder(
+        builder: (context, setLocalState) {
+          return Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              Expanded(child: Text(f["name"])),
+              inDownloading ? CircularProgressIndicator() 
+                            : ElevatedButton.icon(
+                icon: Icon(downloaded ? Icons.done : Icons.download),
+                label: Text(downloaded ? "已下载" : "下载"),
+                onPressed: () async { 
+                  if(downloaded) return;
+                  setLocalState(() {
+                    inDownloading = true;
+                  });
+                  try {
+                    var response = await http.get(Uri.parse(f["download_url"]));
+                    if(!context.mounted) return ;
+                    if(response.statusCode == 200) {
+                      context.read<Global>().importData(jsonDecode(response.body) as Map<String, dynamic>, f["name"]);
+                      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                        content: Text("下载成功: ${f["name"]}"),
+                      ));
+                      setLocalState(() {
+                        inDownloading = false;
+                        downloaded = true;
+                      });
+                    }
+                  } catch (e) {
+                    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                      content: Text("下载失败\n${e.toString()}"),
+                    ));
+                    setLocalState(() {
+                      inDownloading = false;
+                      downloaded = false;
+                    });
+                  }
+                },
+              ),
+            ],
+          );
+        }
+      ));
+    }
+  }
+  return list;
 }
 
 class AboutPage extends StatelessWidget {
