@@ -369,7 +369,7 @@ Widget choseButtons(
                 onPressed: () {
                   if(!context.read<ClickedListener>().chosed) {
                     context.read<ClickedListener>().chosed = true;
-                    if(index == i) addCorrect();
+                    if(index == r*2 + i) addCorrect();
                   }
                   setLocalState(() {
                     cl[r*2 + i] = Colors.amberAccent;
