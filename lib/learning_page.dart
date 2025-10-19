@@ -81,8 +81,8 @@ class LearningPage extends StatelessWidget {
                     ),
                   ),
                 ) as List<String>?;
-                if(valSetter.finished) {
-                  
+                if(valSetter.finished && context.mounted) {
+                  context.read<Global>().saveLearningProgress(valSetter.selectedWords);
                 }
               },
               child: Container(

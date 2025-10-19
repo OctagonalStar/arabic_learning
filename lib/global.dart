@@ -225,6 +225,7 @@ class Global with ChangeNotifier {
       if(_settingData["learning"]["KnownWords"].contains(x)) continue;
       if(wordData["Words"][x]["learningProgress"] >= 3) _settingData["learning"]["KnownWords"].add(x);
     }
+    prefs.setString("wordData", jsonEncode(wordData));
     if (nowDate == _settingData["learning"]["lastDate"]) return;
     if (nowDate - _settingData["learning"]["lastDate"] > 1) {
       _settingData["learning"]["startDate"] = nowDate;
