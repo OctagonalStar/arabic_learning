@@ -7,7 +7,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 class PageCounterModel extends ChangeNotifier {
   List<List<String>> courseList;
   Map<String, dynamic> wordData;
-  PageCounterModel({required this.courseList, required this.wordData});
+  bool isMixStudy;
+  PageCounterModel({required this.courseList, required this.wordData, required this.isMixStudy});
 
 
   int _currentPage = 0;
@@ -37,7 +38,7 @@ class PageCounterModel extends ChangeNotifier {
     for(List<String> c in courseList) {
       selectedWords.addAll(wordData["Classes"][c[0]][c[1]].cast<int>());
     }
-    selectedWords = [...selectedWords, ...selectedWords];
+    if(isMixStudy) selectedWords = [...selectedWords, ...selectedWords];
     selectedWords.shuffle();
   }
   

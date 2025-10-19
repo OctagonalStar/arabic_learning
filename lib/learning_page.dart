@@ -34,48 +34,8 @@ class LearningPage extends StatelessWidget {
                   borderRadius: StaticsVar.br,
                 ),
               ),
-              onPressed: () async {
-                final SharedPreferences prefs = await SharedPreferences.getInstance();
-                final jsonString = prefs.getString("tempConfig") ?? jsonEncode(StaticsVar.tempConfig);
-                final courseList = (jsonDecode(jsonString)["SelectedClasses"] as List)
-                    .cast<List>()
-                    .map((e) => e.cast<String>().toList())
-                    .toList();
-                if(!context.mounted){
-                  return;
-                }
-                if(courseList.isEmpty){ 
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('请先选择你要学习的课程'),
-                      duration: Duration(seconds: 2),
-                    ),
-                  );
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => ChangeNotifierProvider(
-                        create: (_) => ClassSelectModel()..init(),
-                        child: ClassSelector(),
-                      ),
-                    ),
-                  );
-                  return ;
-                }
-                PageCounterModel valSetter = PageCounterModel(courseList: courseList, wordData: context.read<Global>().wordData);
-                valSetter.init();
-                await Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => ChangeNotifierProvider.value(
-                      value: valSetter,
-                      child: MixLearningPage()
-                    ),
-                  ),
-                ) as List<String>?;
-                if(valSetter.finished && context.mounted) {
-                  context.read<Global>().saveLearningProgress(valSetter.selectedWords);
-                }
+              onPressed: () {
+                shiftToStudy(context, 0);
               },
               child: Container(
                 width: mediaQuery.size.width * 0.9,
@@ -114,7 +74,7 @@ class LearningPage extends StatelessWidget {
                   ),
                 ),
                 onPressed: (){
-                  // TODO: to ant-forget page
+                  // TODO: #5 to ant-forget page
                   Navigator.push(
                     context, 
                     MaterialPageRoute(
@@ -136,13 +96,7 @@ class LearningPage extends StatelessWidget {
                       shape: RoundedRectangleBorder(borderRadius: BorderRadiusGeometry.vertical(top: Radius.circular(25.0))),
                     ),
                     onPressed: () {
-                      // TODO: to arabic learning page
-                      Navigator.push(
-                        context, 
-                        MaterialPageRoute(
-                          builder: (context) => InDevelopingPage()
-                        )
-                      );
+                      shiftToStudy(context, 2);
                     }, 
                     icon: Icon(Icons.arrow_back, size: 24.0),
                     label: FittedBox(fit: BoxFit.fitWidth ,child: Text("阿译中学习", style: TextStyle(fontSize: 32.0))),
@@ -157,13 +111,7 @@ class LearningPage extends StatelessWidget {
                       shape: RoundedRectangleBorder(borderRadius: BorderRadiusGeometry.vertical(bottom: Radius.circular(25.0))),
                     ),
                     onPressed: () {
-                      // TODO: to arabic learning page
-                      Navigator.push(
-                        context, 
-                        MaterialPageRoute(
-                          builder: (context) => InDevelopingPage()
-                        )
-                      );
+                      shiftToStudy(context, 1);
                     }, 
                     icon: Icon(Icons.arrow_forward, size: 24.0),
                     label: FittedBox(fit: BoxFit.fitWidth ,child: Text("中译阿学习", style: TextStyle(fontSize: 32.0))),
@@ -208,14 +156,61 @@ class LearningPage extends StatelessWidget {
   }
 }
 
-// 中阿混合学习主入口页面
-class MixLearningPage extends StatefulWidget {
-  const MixLearningPage({super.key});
-  @override
-  State<MixLearningPage> createState() => _MixLearningPageState();
+
+void shiftToStudy(BuildContext context, int studyType) async {
+  final SharedPreferences prefs = await SharedPreferences.getInstance();
+  final jsonString = prefs.getString("tempConfig") ?? jsonEncode(StaticsVar.tempConfig);
+  final courseList = (jsonDecode(jsonString)["SelectedClasses"] as List)
+      .cast<List>()
+      .map((e) => e.cast<String>().toList())
+      .toList();
+  if(!context.mounted){
+    return;
+  }
+  if(courseList.isEmpty){ 
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('请先选择你要学习的课程'),
+        duration: Duration(seconds: 2),
+      ),
+    );
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => ChangeNotifierProvider(
+          create: (_) => ClassSelectModel()..init(),
+          child: ClassSelector(),
+        ),
+      ),
+    );
+    return ;
+  }
+  PageCounterModel valSetter = PageCounterModel(courseList: courseList, wordData: context.read<Global>().wordData, isMixStudy: studyType == 0);
+  valSetter.init();
+  await Navigator.push(
+    context,
+    MaterialPageRoute(
+      builder: (context) => ChangeNotifierProvider.value(
+        value: valSetter,
+        child: InLearningPage(studyType: studyType,)
+      ),
+    ),
+  ) as List<String>?;
+  if(valSetter.finished && context.mounted) {
+    context.read<Global>().saveLearningProgress(valSetter.selectedWords);
+  }
 }
 
-class _MixLearningPageState extends State<MixLearningPage> {
+
+// 学习主入口页面
+class InLearningPage extends StatefulWidget {
+  final int studyType; // 0:Mix 1: 中译阿 2: 阿译中
+  const InLearningPage({super.key, required this.studyType});
+  @override
+  State<InLearningPage> createState() => _InLearningPageState();
+}
+
+class _InLearningPageState extends State<InLearningPage> {
   Random rnd = Random();
   List<int> testedAr = [];
   List<int> testedCh = [];
@@ -314,17 +309,23 @@ class _MixLearningPageState extends State<MixLearningPage> {
             List<int> selectedWords = context.read<PageCounterModel>().selectedWords; // 已选择的单词 [int: 在词库中的索引]
             int t = selectedWords[index]; // 正确答案在词库中的索引
             late bool testType; // true: 中文->阿拉伯, false: 阿拉伯->中文
-            if (testedAr.contains(t)) {
-              testType = true;
-            } else if(testedCh.contains(t)){
-              testType = false;
-            } else {
-              testType = rnd.nextBool();
-              if (testType) {
-                testedCh.add(t);
+            if(widget.studyType == 0) {
+              if (testedAr.contains(t)) {
+                testType = true;
+              } else if(testedCh.contains(t)){
+                testType = false;
               } else {
-                testedAr.add(t);
+                testType = rnd.nextBool();
+                if (testType) {
+                  testedCh.add(t);
+                } else {
+                  testedAr.add(t);
+                }
               }
+            } else if (widget.studyType == 1) {
+              testType = true;
+            } else {
+              testType = false;
             }
             context.read<PageCounterModel>().currentType = testType;
             List<String> strList = [];
@@ -347,7 +348,7 @@ class _MixLearningPageState extends State<MixLearningPage> {
               rndLst.add(r);
               strList.add(wordData["Words"][r][testType ? "arabic" : "chinese"]);
             }
-            Widget widget = Column(
+            Widget learningPageWidget = Column(
               mainAxisAlignment: MainAxisAlignment.center, 
               children: questionConstructer(context, 
                                           aindex,
@@ -359,8 +360,8 @@ class _MixLearningPageState extends State<MixLearningPage> {
                                             t.toString(),
                                           ],
                                           testType));
-            buildedCache.add(widget);
-            return widget;
+            buildedCache.add(learningPageWidget);
+            return learningPageWidget;
           },
         )
       )
