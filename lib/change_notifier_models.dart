@@ -7,10 +7,25 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 
 class PageCounterModel extends ChangeNotifier {
+  List<List<String>> courseList;
+  Map<String, dynamic> wordData;
+  PageCounterModel({required this.courseList, required this.wordData});
+
+
   int _currentPage = 0;
   final PageController _controller = PageController(initialPage: 0);
   int get currentPage => _currentPage;
   PageController get controller => _controller;
+
+  // Other value storage
+  List<int> conrrects = [];
+  int startTime = DateTime.now().millisecondsSinceEpoch;
+  List<int> selectedWords = [];
+  bool finished = false;
+  int get totalPages => selectedWords.length;
+  bool get isLastPage => _currentPage == totalPages - 1;
+
+
   void increment() {
     _currentPage++;
     notifyListeners();
@@ -19,6 +34,14 @@ class PageCounterModel extends ChangeNotifier {
     _currentPage = page;
     notifyListeners();
   }
+  void init() {
+    for(List<String> c in courseList) {
+      selectedWords.addAll(wordData["Classes"][c[0]][c[1]].cast<int>());
+    }
+    selectedWords.shuffle();
+  }
+  
+  
 }
 
 

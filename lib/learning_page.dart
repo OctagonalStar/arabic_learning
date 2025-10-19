@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:math';
 // import 'dart:io';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:arabic_learning/change_notifier_models.dart';
@@ -58,7 +59,6 @@ class LearningPage extends StatelessWidget {
                       duration: Duration(seconds: 2),
                     ),
                   );
-
                   Navigator.push(
                     context,
                     MaterialPageRoute(
@@ -70,12 +70,20 @@ class LearningPage extends StatelessWidget {
                   );
                   return ;
                 }
-                Navigator.push(
+                PageCounterModel valSetter = PageCounterModel(courseList: courseList, wordData: context.read<Global>().wordData);
+                valSetter.init();
+                await Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (context) => MixLearningPage(courseList: courseList),
+                    builder: (context) => ChangeNotifierProvider.value(
+                      value: valSetter,
+                      child: MixLearningPage()
+                    ),
                   ),
-                );
+                ) as List<String>?;
+                if(valSetter.finished) {
+                  
+                }
               },
               child: Container(
                 width: mediaQuery.size.width * 0.9,
@@ -210,106 +218,142 @@ class LearningPage extends StatelessWidget {
   }
 }
 
-
+// 中阿混合学习主入口页面
 class MixLearningPage extends StatefulWidget {
-  final List<List<String>> courseList;
-  const MixLearningPage({super.key, required this.courseList});
+  const MixLearningPage({super.key});
   @override
   State<MixLearningPage> createState() => _MixLearningPageState();
 }
 
 class _MixLearningPageState extends State<MixLearningPage> {
+  Random rnd = Random();
   @override
   Widget build(BuildContext context) {
+    final int total = context.read<PageCounterModel>().totalPages;
     final mediaQuery = MediaQuery.of(context);
-    final globalVar = Provider.of<Global>(context);
-    List<int> selectedWords = [];
-    for(List<String> c in widget.courseList) {
-      selectedWords.addAll(globalVar.wordData["Classes"][c[0]][c[1]].cast<int>());
-    }
-    final List<Widget> pages = learningPageBuilder(mediaQuery, context, selectedWords..shuffle(), globalVar.wordData);
-    return ChangeNotifierProvider<PageCounterModel>(
-      create: (_) => PageCounterModel(),
-      child: Builder(
-        builder: (context) {
-          var counter = context.watch<PageCounterModel>();
-          return Scaffold(
-            appBar: AppBar(
-              automaticallyImplyLeading: false,
-              title: Row(
-                children: [
-                  ElevatedButton(
-                    onPressed: (){
-                      showDialog(
-                        context: context, 
-                        builder: (context) {
-                          return AlertDialog(
-                            title: Text("提示"),
-                            content: Text("确定要结束学习吗？"),
-                            actions: [
-                              TextButton(
-                                onPressed: () {
-                                  Navigator.pop(context);
-                                },
-                                child: Text("取消"),
-                              ),
-                              TextButton(
-                                onPressed: () {
-                                  Navigator.pop(context);
-                                  Navigator.pop(context);
-                                },
-                                child: Text("确定"),
-                              )
-                            ],
-                          );
-                        },
-                      );
-                    },
-                    child: Icon(
-                      Icons.close,
-                      size: 24.0,
-                      semanticLabel: 'Back',
-                    )
-                  ),
-                  SizedBox(width: mediaQuery.size.width * 0.01),
-                  Expanded(
-                    child: TweenAnimationBuilder<double>(
-                      tween: Tween<double>(
-                        begin: 0.0,
-                        end: counter.currentPage / (pages.length - 1),
-                      ),
-                      duration: const Duration(milliseconds: 500),
-                      curve: StaticsVar.curve,
-                      builder: (context, value, child) {
-                        return LinearProgressIndicator(
-                          value: value,
-                          backgroundColor: Theme.of(context).colorScheme.secondaryContainer,
-                          color: Theme.of(context).colorScheme.secondary,
-                          minHeight: mediaQuery.size.height * 0.04,
-                          borderRadius: StaticsVar.br,
-                        );
-                      },
-                    )
-                  ),
-                ],
-              ),
+    return Scaffold(
+      appBar: AppBar(
+        automaticallyImplyLeading: false,
+        title: Row(
+          children: [
+            ElevatedButton(
+              onPressed: (){
+                showDialog(
+                  context: context, 
+                  builder: (context) {
+                    return AlertDialog(
+                      title: Text("提示"),
+                      content: Text("确定要结束学习吗？"),
+                      actions: [
+                        TextButton(
+                          onPressed: () {
+                            Navigator.pop(context);
+                          },
+                          child: Text("取消"),
+                        ),
+                        TextButton(
+                          onPressed: () {
+                            Navigator.pop(context);
+                            Navigator.pop(context);
+                          },
+                          child: Text("确定"),
+                        )
+                      ],
+                    );
+                  },
+                );
+              },
+              child: Icon(
+                Icons.close,
+                size: 24.0,
+                semanticLabel: 'Back',
+              )
             ),
-            body: Center(
-              child: PageView.builder(
-                scrollDirection: globalVar.isWideScreen ? Axis.vertical : Axis.horizontal,
-                physics: NeverScrollableScrollPhysics(),
-                itemCount: pages.length,
-                controller: counter.controller,
-                onPageChanged: (index) {
-                  counter.setPage(index);
-                },
-                itemBuilder: (context, index) {
-                  return pages[index];
+            SizedBox(width: mediaQuery.size.width * 0.01),
+            Expanded(
+              child: TweenAnimationBuilder<double>(
+                tween: Tween<double>(
+                  begin: 0.00,
+                  end: context.read<PageCounterModel>().currentPage / total,
+                ),
+                duration: const Duration(milliseconds: 500),
+                curve: StaticsVar.curve,
+                builder: (context, value, child) {
+                  return LinearProgressIndicator(
+                    value: 0.05 + value * 0.95,
+                    backgroundColor: Theme.of(context).colorScheme.secondaryContainer,
+                    color: Theme.of(context).colorScheme.secondary,
+                    minHeight: mediaQuery.size.height * 0.04,
+                    borderRadius: StaticsVar.br,
+                  );
                 },
               )
+            ),
+            SizedBox(width: mediaQuery.size.width * 0.01),
+            SizedBox(
+              width: mediaQuery.size.width * 0.05,
+              child: FittedBox(
+                fit: BoxFit.scaleDown,
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text("已完成: ${context.watch<PageCounterModel>().currentPage}"),
+                    Text("剩余: ${total - context.watch<PageCounterModel>().currentPage}")
+                  ]
+                ),
+              ),
             )
-          );
-        }
+          ],
+        ),
+      ),
+      body: Center(
+        child: PageView.builder(
+          scrollDirection: Provider.of<Global>(context).isWideScreen ? Axis.vertical : Axis.horizontal,
+          physics: NeverScrollableScrollPhysics(),
+          itemCount: total,
+          controller: context.read<PageCounterModel>().controller,
+          onPageChanged: (index) {
+            context.read<PageCounterModel>().setPage(index);
+          },
+          itemBuilder: (context, index) {
+            Map<String, dynamic> wordData = Provider.of<Global>(context).wordData;
+            List<int> selectedWords = context.read<PageCounterModel>().selectedWords; // 已选择的单词 [int: 在词库中的索引]
+            int t = selectedWords[index]; // 正确答案在词库中的索引
+            List<String> strList = [];
+            int aindex = rnd.nextInt(4); // 正确答案在选项中的索引
+            List<int> rndLst = [t]; // 已抽取的索引
+            for (int i = 0; i < aindex; i++) {
+              int r = selectedWords[rnd.nextInt(total)];
+              while (rndLst.contains(r)){
+                r = selectedWords[rnd.nextInt(total)];
+              }
+              rndLst.add(r);
+              strList.add(wordData["Words"][r]["chinese"]);
+            }
+            strList.add(wordData["Words"][t]["chinese"]);
+            for (int i = aindex + 1; i < 4; i++) {
+              int r = selectedWords[rnd.nextInt(total)];
+              while (rndLst.contains(r)){
+                r = selectedWords[rnd.nextInt(total)];
+              }
+              rndLst.add(r);
+              strList.add(wordData["Words"][r]["chinese"]);
+            }
+            return Column(
+              mainAxisAlignment: MainAxisAlignment.center, 
+              children: arToChConstructer(context, 
+                                          aindex,
+                                          [
+                                            wordData["Words"][t]["arabic"], // 0
+                                            ...strList, // 1 2 3 4
+                                            wordData["Words"][t]["explanation"], // 5
+                                            wordData["Words"][t]["subClass"], // 6
+                                            t.toString(),
+                                          ])
+            );
+          },
+        )
       )
     );
   }

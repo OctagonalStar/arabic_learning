@@ -14,12 +14,17 @@ class Global with ChangeNotifier {
     'User': "",
     'regular': {
       "theme": 9,
-      "font": 0,
+      "font": 0, //0: Noto Sans SC, 1: Google Noto Sans SC
       "darkMode": false,
     },
     'audio': {
       "useBackupSource": false,
       "playRate": 1.0,
+    },
+    'learning': {
+      "startDate": 0, // YYYYMMDD;int
+      "lastDate": 0, // YYYYMMDD;int
+      "KnownWords": [],
     }
   };
   static const List<MaterialColor> _themeList = [
@@ -150,7 +155,7 @@ class Global with ChangeNotifier {
   //        "chinese": {Chinese},
   //        "explanation": {explanation},
   //        "subClass": {ClassName},
-  //        "learningProgress": {times}
+  //        "learningProgress": {times} //int
   //       }, ...
   //   ],
   //   "Classes": {
@@ -211,6 +216,21 @@ class Global with ChangeNotifier {
     //   throw Exception("Failed to write data file: $e"); // 异常时抛出错误
     // }
     notifyListeners();
+  }
+  
+  void saveLearningProgress(List<int> wordIndexs){
+    final int nowDate = int.parse("${DateTime.now().year}${DateTime.now().month}${DateTime.now().day}");
+    for(int x in wordIndexs){
+      wordData["Words"][x]["learningProgress"] += 1;
+      if(_settingData["learning"]["KnownWords"].contains(x)) continue;
+      if(wordData["Words"][x]["learningProgress"] >= 3) _settingData["learning"]["KnownWords"].add(x);
+    }
+    if (nowDate == _settingData["learning"]["lastDate"]) return;
+    if (nowDate - _settingData["learning"]["lastDate"] > 1) {
+      _settingData["learning"]["startDate"] = nowDate;
+    }
+    _settingData["learning"]["lastDate"] = nowDate;
+    prefs.setString("settingData", jsonEncode(settingData));
   }
 }
 
