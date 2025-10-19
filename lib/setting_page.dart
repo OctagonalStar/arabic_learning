@@ -210,14 +210,20 @@ class _SettingPage extends State<SettingPage> {
               child: Row(
                 children: [
                   ElevatedButton.icon(
+                    style: ElevatedButton.styleFrom(
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.horizontal(left: Radius.circular(25.0)))
+                    ),
                     onPressed: () {
                       Navigator.of(context).push(MaterialPageRoute(builder: (context) => DownloadPage()));
                     },
                     icon: Icon(Icons.cloud_download),
-                    label: Text("从线上下载词库")
+                    label: Text("线上下载")
                   ),
-                  SizedBox(width: mediaQuery.size.width * 0.01),
+                  SizedBox(width: mediaQuery.size.width * 0.001,),
                   ElevatedButton.icon(
+                    style: ElevatedButton.styleFrom(
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.horizontal(right: Radius.circular(25.0)))
+                    ),
                     onPressed: () async {
                       FilePickerResult? result = await FilePicker.platform.pickFiles(
                         allowMultiple: false,
@@ -315,7 +321,7 @@ class _SettingPage extends State<SettingPage> {
                       }
                     },
                   icon: Icon(Icons.file_open),
-                  label: Text("从文件导入"))
+                  label: Text("文件导入"))
                 ],
               ),
             ),
