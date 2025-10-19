@@ -2,8 +2,6 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-// import 'package:path_provider/path_provider.dart';
-// import 'dart:io';
 
 
 class Global with ChangeNotifier {
@@ -92,19 +90,6 @@ class Global with ChangeNotifier {
     }
     if (firstStart) return;
     _settingData = deepMerge(_settingData, jsonDecode(prefs.getString("settingData")!) as Map<String, dynamic>);
-    // final directory = await getApplicationDocumentsDirectory();
-    // final settingFile = File('${directory.path}/$_settingFilePath');
-    // if (!await settingFile.exists()) {
-    //   firstStart = true;
-    // }else {
-    //   _settingData = deepMerge(_settingData, jsonDecode((await settingFile.readAsString())) as Map<String, dynamic>);
-    // }
-    // final dataFile = File('${directory.path}/$_dataFilePath');
-    // if (!await dataFile.exists()) {
-    //   await dataFile.create(recursive: true);
-    //   await dataFile.writeAsString(jsonEncode({"Words": [], "Classes": {}}));
-    // }
-    // wordData = jsonDecode(await dataFile.readAsString());
   }
   void updateTheme() {
     _themeData = ThemeData(
@@ -198,23 +183,6 @@ class Global with ChangeNotifier {
   void importData(Map<String, dynamic> data, String source) async {
     wordData = dataFormater(data, wordData, source);
     prefs.setString("wordData", jsonEncode(wordData));
-    // final directory = await getApplicationDocumentsDirectory();
-    // final tf = File('${directory.path}/$_dataFilePath');
-    // if (!await tf.exists()) {
-    //   await tf.create(recursive: true);
-    //   await tf.writeAsString(jsonEncode({"Words": [], "Classes": {}}));
-    // }
-    // // Read Existed Data
-    // final dataFile = File('${directory.path}/$_dataFilePath');
-    // Map<String, dynamic> exData = jsonDecode(await dataFile.readAsString());
-    // Map<String, dynamic> formatedData = dataFormater(data, exData, source);
-    // try {
-    //   final file = await dataFile.create(recursive: true);
-    //   await file.writeAsString(jsonEncode(formatedData));
-    //   wordData = formatedData;
-    // } catch (e) {
-    //   throw Exception("Failed to write data file: $e"); // 异常时抛出错误
-    // }
     notifyListeners();
   }
   

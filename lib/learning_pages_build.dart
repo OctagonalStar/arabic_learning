@@ -343,7 +343,6 @@ StatefulBuilder buttonBox(List<Color> cl, int i, void Function(int i, Function s
 void viewAnswer(MediaQueryData mediaQuery, BuildContext context, List<String> data) async {
   showBottomSheet(
     context: context, 
-    // backgroundColor: Theme.of(context).colorScheme.onSecondaryContainer,
     shape: RoundedSuperellipseBorder(side: BorderSide(width: 1.0, color: Theme.of(context).colorScheme.onSurface), borderRadius: StaticsVar.br),
     enableDrag: true,
     builder: (context) {
