@@ -24,6 +24,7 @@ class PageCounterModel extends ChangeNotifier {
   bool finished = false;
   int get totalPages => selectedWords.length;
   bool get isLastPage => _currentPage == totalPages - 1;
+  bool currentType = false;
 
 
   void increment() {
@@ -38,6 +39,7 @@ class PageCounterModel extends ChangeNotifier {
     for(List<String> c in courseList) {
       selectedWords.addAll(wordData["Classes"][c[0]][c[1]].cast<int>());
     }
+    selectedWords = [...selectedWords, ...selectedWords];
     selectedWords.shuffle();
   }
   

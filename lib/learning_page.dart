@@ -225,6 +225,9 @@ class MixLearningPage extends StatefulWidget {
 
 class _MixLearningPageState extends State<MixLearningPage> {
   Random rnd = Random();
+  List<int> testedAr = [];
+  List<int> testedCh = [];
+  List<Widget> buildedCache = [];
   @override
   Widget build(BuildContext context) {
     final int total = context.read<PageCounterModel>().totalPages;
@@ -287,7 +290,6 @@ class _MixLearningPageState extends State<MixLearningPage> {
                 },
               )
             ),
-            SizedBox(width: mediaQuery.size.width * 0.01),
             SizedBox(
               width: mediaQuery.size.width * 0.05,
               child: FittedBox(
@@ -315,9 +317,24 @@ class _MixLearningPageState extends State<MixLearningPage> {
             context.read<PageCounterModel>().setPage(index);
           },
           itemBuilder: (context, index) {
+            if(index < buildedCache.length) return buildedCache[index];
             Map<String, dynamic> wordData = Provider.of<Global>(context).wordData;
             List<int> selectedWords = context.read<PageCounterModel>().selectedWords; // 已选择的单词 [int: 在词库中的索引]
             int t = selectedWords[index]; // 正确答案在词库中的索引
+            late bool testType; // true: 中文->阿拉伯, false: 阿拉伯->中文
+            if (testedAr.contains(t)) {
+              testType = true;
+            } else if(testedCh.contains(t)){
+              testType = false;
+            } else {
+              testType = rnd.nextBool();
+              if (testType) {
+                testedCh.add(t);
+              } else {
+                testedAr.add(t);
+              }
+            }
+            context.read<PageCounterModel>().currentType = testType;
             List<String> strList = [];
             int aindex = rnd.nextInt(4); // 正确答案在选项中的索引
             List<int> rndLst = [t]; // 已抽取的索引
@@ -327,29 +344,31 @@ class _MixLearningPageState extends State<MixLearningPage> {
                 r = selectedWords[rnd.nextInt(total)];
               }
               rndLst.add(r);
-              strList.add(wordData["Words"][r]["chinese"]);
+              strList.add(wordData["Words"][r][testType ? "arabic" : "chinese"]);
             }
-            strList.add(wordData["Words"][t]["chinese"]);
+            strList.add(wordData["Words"][t][testType ? "arabic" : "chinese"]);
             for (int i = aindex + 1; i < 4; i++) {
               int r = selectedWords[rnd.nextInt(total)];
               while (rndLst.contains(r)){
                 r = selectedWords[rnd.nextInt(total)];
               }
               rndLst.add(r);
-              strList.add(wordData["Words"][r]["chinese"]);
+              strList.add(wordData["Words"][r][testType ? "arabic" : "chinese"]);
             }
-            return Column(
+            Widget widget = Column(
               mainAxisAlignment: MainAxisAlignment.center, 
-              children: arToChConstructer(context, 
+              children: questionConstructer(context, 
                                           aindex,
                                           [
-                                            wordData["Words"][t]["arabic"], // 0
+                                            wordData["Words"][t][testType ? "chinese" : "arabic"], // 0
                                             ...strList, // 1 2 3 4
                                             wordData["Words"][t]["explanation"], // 5
                                             wordData["Words"][t]["subClass"], // 6
                                             t.toString(),
-                                          ])
-            );
+                                          ],
+                                          testType));
+            buildedCache.add(widget);
+            return widget;
           },
         )
       )
