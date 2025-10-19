@@ -203,16 +203,3 @@ jobs:
             macos.zip
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-  cleanup:
-    name: Cleanup old workflow artifacts
-    runs-on: ubuntu-latest
-    needs: [build-android, build-windows, build-macos, build-ios, deploy-web]
-    permissions:
-      actions: write
-    steps:
-    - name: Remove old artifacts
-      uses: c-hive/gha-remove-artifacts@v1
-      with:
-        age: '1 day'
-        skip-recent: 5
