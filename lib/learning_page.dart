@@ -1,13 +1,11 @@
 import 'dart:convert';
 import 'dart:math';
-// import 'dart:io';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:arabic_learning/change_notifier_models.dart';
 import 'package:arabic_learning/global.dart';
 import 'package:arabic_learning/learning_pages_build.dart';
 import 'package:flutter/material.dart';
 import 'package:arabic_learning/statics_var.dart';
-// import 'package:path_provider/path_provider.dart';
 import 'package:provider/provider.dart';
 
 class LearningPage extends StatelessWidget {
@@ -39,12 +37,6 @@ class LearningPage extends StatelessWidget {
               onPressed: () async {
                 final SharedPreferences prefs = await SharedPreferences.getInstance();
                 final jsonString = prefs.getString("tempConfig") ?? jsonEncode(StaticsVar.tempConfig);
-                // final directory = await getApplicationDocumentsDirectory();
-                // final tempConfig = File('${directory.path}/${StaticsVar.tempConfigPath}');
-                // if (!await tempConfig.exists()) {
-                //   await tempConfig.create(recursive: true);
-                //   await tempConfig.writeAsString(jsonEncode(StaticsVar.tempConfig));
-                // }
                 final courseList = (jsonDecode(jsonString)["SelectedClasses"] as List)
                     .cast<List>()
                     .map((e) => e.cast<String>().toList())

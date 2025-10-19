@@ -14,7 +14,6 @@ Widget settingItem(BuildContext context, MediaQueryData mediaQuery, List<Widget>
     return Container(
       width: mediaQuery.size.width * 0.90,
       height: mediaQuery.size.height * 0.08,
-      // margin: container.margin,
       padding: withPadding ? EdgeInsets.all(8.0) : EdgeInsets.zero,
       decoration: BoxDecoration(
         color: Theme.of(context).colorScheme.onPrimary,
@@ -523,8 +522,6 @@ class AboutPage extends StatelessWidget {
         title: Center(child: Text("关于")),
       ),
       body: ListView(
-        // mainAxisAlignment: MainAxisAlignment.start,
-        // crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Container(
             margin: EdgeInsets.all(8.0),
