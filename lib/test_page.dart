@@ -29,7 +29,7 @@ class TestPage extends StatelessWidget {
                   ),
                 ),
                 onPressed: () {
-                  // TODO: to write test page
+                  // TODO: #3 to write test page
                   Navigator.push(
                     context, 
                     MaterialPageRoute(
@@ -68,7 +68,7 @@ class TestPage extends StatelessWidget {
                   ),
                 ),
                 onPressed: () {
-                  // TODO: to listen test page
+                  // TODO: #7 to listen test page
                   Navigator.push(
                     context, 
                     MaterialPageRoute(
@@ -113,7 +113,7 @@ class TestPage extends StatelessWidget {
                   ),
                 ),
                 onPressed: () {
-                  // TODO: to history page
+                  // TODO: #4 to history page
                   Navigator.push(
                     context, 
                     MaterialPageRoute(
@@ -147,7 +147,7 @@ class TestPage extends StatelessWidget {
                   ),
                 ),
                 onPressed: () {
-                  // TODO: to keyboard page
+                  // TODO: #6 to keyboard page
                   Navigator.push(
                     context, 
                     MaterialPageRoute(
