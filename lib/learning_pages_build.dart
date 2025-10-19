@@ -1,5 +1,4 @@
 import 'dart:convert';
-import 'dart:math';
 import 'package:arabic_learning/change_notifier_models.dart';
 import 'package:arabic_learning/global.dart';
 import 'package:flutter/material.dart';
@@ -10,74 +9,11 @@ import 'package:arabic_learning/statics_var.dart';
 import 'package:just_audio/just_audio.dart';
 import 'package:provider/provider.dart';
 
-List<Widget> learningPageBuilder(MediaQueryData mediaQuery, BuildContext context, List<int> testData, Map<String, dynamic> data) {
-  List<Widget> list = [];
-  Random rnd = Random();
-  int conrrect = 0;
-  int sta = DateTime.now().millisecondsSinceEpoch;
-  void addCorrect() => conrrect++;
-  int getCorrect () => conrrect;
 
-
-  for (int t = 0; t < testData.length; t++) {
-    int test = testData[t];
-    List<String> strList = [];
-    int aindex = rnd.nextInt(4);
-    List<int> rndLst = [t];
-    for (int i = 0; i < aindex; i++) {
-      int r = rnd.nextInt(testData.length);
-      while (rndLst.contains(r)){
-        r = rnd.nextInt(testData.length);
-      }
-      rndLst.add(r);
-      strList.add(data["Words"][testData[r]]["chinese"]);
-    }
-    strList.add(data["Words"][test]["chinese"]);
-    for (int i = aindex + 1; i < 4; i++) {
-      int r = rnd.nextInt(testData.length);
-      while (rndLst.contains(r)){
-        r = rnd.nextInt(testData.length);
-      }
-      rndLst.add(r);
-      strList.add(data["Words"][testData[r]]["chinese"]);
-    }
-    list.add(
-      Column(
-        mainAxisAlignment: MainAxisAlignment.center, 
-        children: arToChConstructer(mediaQuery, 
-                                    context, 
-                                    [
-                                      data["Words"][test]["arabic"], // 0
-                                      ...strList, // 1 2 3 4
-                                      data["Words"][test]["explanation"], // 5
-                                      data["Words"][test]["subClass"] // 6
-                                    ], 
-                                    aindex,
-                                    t == testData.length - 1,
-                                    addCorrect,
-                                    getCorrect,
-                                    sta,
-                                    testData.length
-                                    )
-      )
-    );
-  }
-  return list;
-}
-
-
-List<Widget> arToChConstructer(
-    MediaQueryData mediaQuery, 
-    BuildContext context, 
-    List<String> data, 
-    int index, 
-    bool isLast, 
-    Function addCorrect, 
-    Function getCorrect, 
-    int sta,
-    int total) {
-  bool playing = false;
+List<Widget> arToChConstructer(BuildContext context, int index, List<String> data) {
+  final mediaQuery = MediaQuery.of(context);
   final player = AudioPlayer();
+  bool playing = false;
   return [
     Text(
       "通过阿拉伯语选择中文",
@@ -181,7 +117,7 @@ List<Widget> arToChConstructer(
     ChangeNotifierProvider(
       create: (_) => ClickedListener.init(color: Theme.of(context).colorScheme.primaryContainer),
       builder: (context, child) {
-        return choseButtons(mediaQuery, context, data, index, isLast, addCorrect, getCorrect, sta, total);
+        return choseButtons(context, index, data);
       },
     ),
   ];
@@ -193,34 +129,31 @@ class ClickedListener extends ChangeNotifier {
   ClickedListener.init({required Color color}) {
     cl = [color, color, color, color];
   }
-  bool _isClicked = false;
+  bool isClicked = false;
   bool chosed = false;
-  bool get isClicked => _isClicked;
   void clicked() {
-    _isClicked = true;
+    isClicked = true;
     notifyListeners();
   }
 }
 
-
-Widget choseButtons(
-    MediaQueryData mediaQuery, 
-    BuildContext context, 
-    List<String> data, 
-    int index, 
-    bool isLast, 
-    Function addCorrect, 
-    Function getCorrect, 
-    int sta,
-    int total) {
+// 按钮组
+Widget choseButtons(BuildContext context, int index, List<String> data) {
+  // data:
+  // [0] 正确阿拉伯文
+  // [1, 2, 3, 4] 中文选项
+  // [5] 解释/例句
+  // [6] 来源
+  // [7] 单词在词库中的ID
+  // index+1: 1, 2, 3, 4 对应正确答案的索引
+  final MediaQueryData mediaQuery = MediaQuery.of(context);
   late Widget base;
   
   List<Widget> widgetList = [];
   Widget bottomWidget = TweenAnimationBuilder<double>(
     tween: Tween<double>(
       begin: 0.0,
-      end: Provider.of<ClickedListener>(context, listen: true).isClicked ? 1.0 : 0.0,
-      // 别刷新 别刷新 别刷新 别刷新 别刷新 别刷新 别刷新 别刷新
+      end: context.watch<ClickedListener>().isClicked ? 1.0 : 0.0,
     ),
     duration: const Duration(milliseconds: 500),
     curve: StaticsVar.curve,
@@ -263,8 +196,21 @@ Widget choseButtons(
               shape: RoundedRectangleBorder(borderRadius: StaticsVar.br),
             ),
             onPressed: () {
-              if(isLast) {
-                Navigator.push(context, MaterialPageRoute(builder: (context) => ConcludePage(data: [total, getCorrect(), ((DateTime.now().millisecondsSinceEpoch - sta)/1000.0).toInt()])));
+              if(context.read<PageCounterModel>().isLastPage) {
+                Provider.of<PageCounterModel>(context, listen: false).finished = true;
+                List<int> data = [
+                  context.read<PageCounterModel>().totalPages, 
+                  context.read<PageCounterModel>().conrrects.length, 
+                  ((DateTime.now().millisecondsSinceEpoch - context.read<PageCounterModel>().startTime)/1000.0).toInt()
+                ];
+                Navigator.push(
+                  context, 
+                  MaterialPageRoute(
+                    builder: (context) => ConcludePage(
+                      data: data,
+                    )
+                  )
+                );
               } else {
                 var counter = Provider.of<PageCounterModel>(context, listen: false);
                 counter.controller.animateToPage(counter.currentPage + 1, duration: Duration(milliseconds: 500), curve: StaticsVar.curve);
@@ -275,9 +221,9 @@ Widget choseButtons(
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(isLast ? Icons.done : Icons.navigate_next, size: 16.0, semanticLabel: isLast ? "完成" : "下一个"),
+                  Icon(context.read<PageCounterModel>().isLastPage ? Icons.done : Icons.navigate_next, size: 16.0),
                   SizedBox(width: mediaQuery.size.width * 0.01),
-                  Text(isLast ? "完成" : "下一个"),
+                  Text(context.read<PageCounterModel>().isLastPage ? "完成" : "下一个"),
                 ],
               ),
             ),
@@ -292,12 +238,11 @@ Widget choseButtons(
   void chose(int i, Function setLocalState) {
     if(!rcl.chosed) {
       rcl.chosed = true;
-      if(index == i) addCorrect();
+      if(index == i) context.read<PageCounterModel>().conrrects.add(int.parse(data[7]));
     }
     setLocalState(() {
       cl[i] = Colors.amberAccent;
     });
-    // 你刷新你的 别突变就行
     Future.delayed(Duration(milliseconds: 500), (){
       if(index == i) {
       setLocalState(() {
@@ -469,7 +414,6 @@ class _ConcludePageState extends State<ConcludePage> {
   @override
   Widget build(BuildContext context) {
     MediaQueryData mediaQuery = MediaQuery.of(context);
-    
     return Scaffold(
       appBar: AppBar(
         automaticallyImplyLeading: false,
@@ -605,7 +549,7 @@ class _ConcludePageState extends State<ConcludePage> {
                 shape: RoundedRectangleBorder(borderRadius: StaticsVar.br)
               ),
               onPressed: (){
-                Navigator.of(context).popUntil((route) => route.isFirst);
+                Navigator.popUntil(context, (route) => route.isFirst);
               },
               child: Text("返回主页")
             ),
