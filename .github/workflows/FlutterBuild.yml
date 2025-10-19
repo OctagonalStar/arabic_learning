@@ -29,12 +29,22 @@ jobs:
           echo "storeFile=../release.jks" >> android/key.properties
 
       - run: flutter pub get
-      - run: flutter build apk --release
+      - run: flutter build apk --release --obfuscate --split-per-abi --split-debug-info=symbols
 
       - uses: actions/upload-artifact@v4
         with:
-          name: android-apk
-          path: build/app/outputs/flutter-apk/app-release.apk
+          name: android-arm-v7a-apk
+          path: build/app/outputs/flutter-apk/app-armeabi-v7a-release.apk
+      
+      - uses: actions/upload-artifact@v4
+        with:
+          name: android-arm-v8a-apk
+          path: build/app/outputs/flutter-apk/app-arm64-v8a-release.apk
+      
+      - uses: actions/upload-artifact@v4
+        with:
+          name: android-x86_64-apk
+          path: build/app/outputs/flutter-apk/app-x86_64-release.apk
 
   build-windows:
     name: Build Windows App
@@ -152,7 +162,15 @@ jobs:
     steps:
       - uses: actions/download-artifact@v4
         with:
-          name: android-apk
+          name: android-arm-v7a-apk
+          path: .
+      - uses: actions/download-artifact@v4
+        with:
+          name: android-arm-v8a-apk
+          path: .
+      - uses: actions/download-artifact@v4
+        with:
+          name: android-x86_64-apk
           path: .
       - uses: actions/download-artifact@v4
         with:
@@ -177,7 +195,9 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           files: |
-            app-release.apk
+            app-armeabi-v7a-release.apk
+            app-arm64-v8a-release.apk
+            app-x86_64-release.apk
             windows.zip
             ios.zip
             macos.zip
