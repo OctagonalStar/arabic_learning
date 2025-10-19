@@ -99,7 +99,7 @@ class LearningPage extends StatelessWidget {
                     ),
                     SizedBox(height: mediaQuery.size.height * 0.01),
                     Text(
-                      '还有{int}个单词待学习~',
+                      '还有${(context.read<Global>().wordCount - context.read<Global>().settingData["learning"]["KnownWords"].length).toString()}个单词待学习~',
                       style: TextStyle(fontSize: 12.0),
                     ),
                   ],
