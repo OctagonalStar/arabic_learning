@@ -10,13 +10,13 @@ import 'package:just_audio/just_audio.dart';
 import 'package:provider/provider.dart';
 
 
-List<Widget> arToChConstructer(BuildContext context, int index, List<String> data) {
+List<Widget> questionConstructer(BuildContext context, int index, List<String> data, bool isWithOutAudio) {
   final mediaQuery = MediaQuery.of(context);
   final player = AudioPlayer();
   bool playing = false;
   return [
     Text(
-      "通过阿拉伯语选择中文",
+      isWithOutAudio ? "通过中文选择阿拉伯语" : "通过阿拉伯语选择中文",
       style: TextStyle(fontSize: 18.0),
     ),
     Container(
@@ -27,7 +27,19 @@ List<Widget> arToChConstructer(BuildContext context, int index, List<String> dat
         color: Theme.of(context).colorScheme.primaryContainer,
         borderRadius: StaticsVar.br,
       ),
-      child: Center(
+      child: isWithOutAudio 
+        ? Center(
+          child: Container(
+            width: mediaQuery.size.width * 0.8, 
+            height: mediaQuery.size.height * 0.4,
+            decoration: BoxDecoration(
+              color: Theme.of(context).colorScheme.primaryContainer,
+              borderRadius: StaticsVar.br,
+            ),
+            child: FittedBox(fit: BoxFit.scaleDown, child: Text(data[0], style: TextStyle(fontSize: 128.0, fontWeight: FontWeight.bold))),
+          ),
+        )
+        :Center(
         child: TextButton.icon(
           icon: Icon(Icons.volume_up, size: 24.0),
           style: TextButton.styleFrom(
@@ -109,7 +121,7 @@ List<Widget> arToChConstructer(BuildContext context, int index, List<String> dat
             }
             playing = false;
           },
-          label: FittedBox(child: Text(data[0], style: context.read<Global>().settingData['regular']['font'] == 1 ? GoogleFonts.markaziText(fontSize: 64.0, fontWeight: FontWeight.bold) : TextStyle(fontSize: 64.0, fontWeight: FontWeight.bold)))
+          label: FittedBox(fit: BoxFit.contain ,child: Text(data[0], style: context.read<Global>().settingData['regular']['font'] == 1 ? GoogleFonts.markaziText(fontSize: 128.0, fontWeight: FontWeight.bold) : TextStyle(fontSize: 128.0, fontWeight: FontWeight.bold)))
         )
       ),
     ),
@@ -298,7 +310,7 @@ Widget choseButtons(BuildContext context, int index, List<String> data) {
   return base;
 }
 
-StatefulBuilder buttonBox(List<Color> cl, int i, void Function(int i, Function setLocalState) chose, MediaQueryData mediaQuery, List<String> data, double height) {
+StatefulBuilder buttonBox(List<Color> cl, int i, void Function(int i, Function setLocalState) chose, MediaQueryData mediaQuery, List<String> data, double width) {
   return StatefulBuilder(
         builder: (context, setLocalState) {
           return AnimatedContainer(
@@ -313,7 +325,7 @@ StatefulBuilder buttonBox(List<Color> cl, int i, void Function(int i, Function s
                 chose(i, setLocalState);
               },
               style: ElevatedButton.styleFrom(
-                fixedSize: Size(height, mediaQuery.size.height * 0.1),
+                fixedSize: Size(width, mediaQuery.size.height * 0.1),
                 backgroundColor: Colors.transparent,
                 foregroundColor: Theme.of(context).colorScheme.onSurface,
                 shadowColor: Colors.transparent,
@@ -321,7 +333,7 @@ StatefulBuilder buttonBox(List<Color> cl, int i, void Function(int i, Function s
                   borderRadius: StaticsVar.br,
                 ),
               ),
-              child: Center(child: Text(data[i+1])),
+              child: Center(child: FittedBox(fit: BoxFit.scaleDown ,child: Text(data[i+1], style: (context.read<Global>().settingData["regular"]["font"] == 1 && context.read<PageCounterModel>().currentType) ? GoogleFonts.markaziText(fontSize: 44.0) : TextStyle(fontSize: 24.0)))),
             ),
           );
         }
@@ -350,8 +362,8 @@ void viewAnswer(MediaQueryData mediaQuery, BuildContext context, List<String> da
                   child: Column(
                     crossAxisAlignment: context.read<Global>().isWideScreen ? CrossAxisAlignment.center : CrossAxisAlignment.start,
                     children: [
-                      Text("阿拉伯语:\t${data[0]}", style: TextStyle(fontSize: 36.0, fontWeight: FontWeight.bold),),
-                      Text("中文:\t${data[1]}", style: TextStyle(fontSize: 20.0, fontWeight: FontWeight.bold),),
+                      Text(data[0], style: TextStyle(fontSize: 36.0, fontWeight: FontWeight.bold),),
+                      Text(data[1], style: TextStyle(fontSize: 36.0, fontWeight: FontWeight.bold),),
                       Text("例句:\t${data[2]}", style: TextStyle(fontSize: 20.0),),
                       Text("所属课程:\t${data[3]}", style: TextStyle(fontSize: 20.0),),
                     ]
