@@ -109,78 +109,76 @@ class LearningPage extends StatelessWidget {
           ),
           SizedBox(height: mediaQuery.size.height * 0.01),
           Row(
-            mainAxisAlignment: MainAxisAlignment.center,
+            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             children: [
-              Container(
-                width: mediaQuery.size.width * 0.42,
-                height: mediaQuery.size.height * 0.18,
-                margin: EdgeInsets.all(8.0),
-                decoration: BoxDecoration(
-                  color: Theme.of(context).colorScheme.primary,
-                  borderRadius: StaticsVar.br,
-                ),
-                child: ElevatedButton(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Theme.of(context).colorScheme.secondaryContainer,
-                    foregroundColor: Theme.of(context).colorScheme.onSurface,
-                    shadowColor: Colors.transparent,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: StaticsVar.br,
-                    ),
-                  ),
-                  onPressed: () {
-                    // TODO: to arabic learning page
-                    Navigator.push(
-                      context, 
-                      MaterialPageRoute(
-                        builder: (context) => InDevelopingPage()
-                      )
-                    );
-                  }, 
-                  child: Column(
-                    children: [
-                      Icon(Icons.arrow_back, size: 24.0),
-                      Text("阿译中学习", style: TextStyle(fontSize: 32.0)),
-                      SizedBox(height: mediaQuery.size.height * 0.01),
-                    ],
+              ElevatedButton.icon(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Theme.of(context).colorScheme.onPrimary,
+                  foregroundColor: Theme.of(context).colorScheme.onSurface,
+                  shadowColor: Colors.transparent,
+                  fixedSize: Size(mediaQuery.size.width * 0.42, mediaQuery.size.height * 0.18),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: StaticsVar.br,
                   ),
                 ),
+                onPressed: (){
+                  // TODO: to ant-forget page
+                  Navigator.push(
+                    context, 
+                    MaterialPageRoute(
+                      builder: (context) => InDevelopingPage()
+                    )
+                  );
+                },
+                icon: Icon(Icons.history_edu, size: 24.0),
+                label: FittedBox(fit: BoxFit.fitWidth ,child: Text("抗遗忘记背", style: TextStyle(fontSize: 32.0))),
               ),
-              Container(
-                width: mediaQuery.size.width * 0.42,
-                height: mediaQuery.size.height * 0.18,
-                margin: EdgeInsets.all(8.0),
-                decoration: BoxDecoration(
-                  color: Theme.of(context).colorScheme.primary,
-                  borderRadius: StaticsVar.br,
-                ),
-                child: ElevatedButton(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Theme.of(context).colorScheme.secondaryContainer,
-                    foregroundColor: Theme.of(context).colorScheme.onSurface,
-                    shadowColor: Colors.transparent,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: StaticsVar.br,
+              Column(
+                children: [
+                  ElevatedButton.icon(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Theme.of(context).colorScheme.secondaryContainer,
+                      foregroundColor: Theme.of(context).colorScheme.onSurface,
+                      shadowColor: Colors.transparent,
+                      fixedSize: Size(mediaQuery.size.width * 0.42, mediaQuery.size.height * 0.09),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadiusGeometry.vertical(top: Radius.circular(25.0))),
                     ),
+                    onPressed: () {
+                      // TODO: to arabic learning page
+                      Navigator.push(
+                        context, 
+                        MaterialPageRoute(
+                          builder: (context) => InDevelopingPage()
+                        )
+                      );
+                    }, 
+                    icon: Icon(Icons.arrow_back, size: 24.0),
+                    label: FittedBox(fit: BoxFit.fitWidth ,child: Text("阿译中学习", style: TextStyle(fontSize: 32.0))),
                   ),
-                  onPressed: () {
-                    // TODO: to chinese learning page
-                    Navigator.push(
-                      context, 
-                      MaterialPageRoute(
-                        builder: (context) => InDevelopingPage()
-                      )
-                    );
-                  },
-                  child: Column(
-                    children: [
-                      Icon(Icons.arrow_forward, size: 24.0),
-                      Text("中译阿学习", style: TextStyle(fontSize: 32.0)),
-                      SizedBox(height: mediaQuery.size.height * 0.01),
-                    ],
+                  SizedBox(height: mediaQuery.size.height * 0.005),
+                  ElevatedButton.icon(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Theme.of(context).colorScheme.secondaryContainer,
+                      foregroundColor: Theme.of(context).colorScheme.onSurface,
+                      shadowColor: Colors.transparent,
+                      fixedSize: Size(mediaQuery.size.width * 0.42, mediaQuery.size.height * 0.09),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadiusGeometry.vertical(bottom: Radius.circular(25.0))),
+                    ),
+                    onPressed: () {
+                      // TODO: to arabic learning page
+                      Navigator.push(
+                        context, 
+                        MaterialPageRoute(
+                          builder: (context) => InDevelopingPage()
+                        )
+                      );
+                    }, 
+                    icon: Icon(Icons.arrow_forward, size: 24.0),
+                    label: FittedBox(fit: BoxFit.fitWidth ,child: Text("中译阿学习", style: TextStyle(fontSize: 32.0))),
                   ),
-                )
-              )
+                ],
+              ),
+              
             ]
           ),
           SizedBox(height: mediaQuery.size.height * 0.05),
@@ -274,7 +272,7 @@ class _MixLearningPageState extends State<MixLearningPage> {
               child: TweenAnimationBuilder<double>(
                 tween: Tween<double>(
                   begin: 0.00,
-                  end: context.read<PageCounterModel>().currentPage / total,
+                  end: context.read<PageCounterModel>().currentPage / (total - 1),
                 ),
                 duration: const Duration(milliseconds: 500),
                 curve: StaticsVar.curve,
@@ -293,7 +291,7 @@ class _MixLearningPageState extends State<MixLearningPage> {
             SizedBox(
               width: mediaQuery.size.width * 0.05,
               child: FittedBox(
-                fit: BoxFit.scaleDown,
+                fit: BoxFit.fitWidth,
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   crossAxisAlignment: CrossAxisAlignment.start,
