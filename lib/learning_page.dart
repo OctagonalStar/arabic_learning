@@ -280,7 +280,7 @@ class _InLearningPageState extends State<InLearningPage> {
             SizedBox(
               width: mediaQuery.size.width * 0.05,
               child: FittedBox(
-                fit: BoxFit.fitWidth,
+                fit: BoxFit.scaleDown,
                 child: Text("${total - context.watch<PageCounterModel>().currentPage}"),
               ),
             )

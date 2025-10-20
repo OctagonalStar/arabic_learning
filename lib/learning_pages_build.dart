@@ -1,21 +1,16 @@
-import 'dart:convert';
 import 'package:arabic_learning/change_notifier_models.dart';
 import 'package:arabic_learning/global.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_tts/flutter_tts.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:http/http.dart' as http;
 import 'package:arabic_learning/statics_var.dart';
-import 'package:just_audio/just_audio.dart';
 import 'package:provider/provider.dart';
 
 
 List<Widget> questionConstructer(BuildContext context, int index, List<String> data, bool isWithOutAudio) {
   final mediaQuery = MediaQuery.of(context);
-  final player = AudioPlayer();
-  bool playing = false;
   late int showingMode; // 0: 1 Row, 1: 2 Rows, 2: 4 Rows
   late bool overFlowPossible = false;
+  bool playing = false;
 
   for(int i = 1; i < 5; i++) {
     if(data[i].length * 16 > mediaQuery.size.width * (context.read<Global>().isWideScreen ? 0.21 : 0.8)){
@@ -64,88 +59,33 @@ List<Widget> questionConstructer(BuildContext context, int index, List<String> d
           ),
         )
         :Center(
-        child: TextButton.icon(
-          icon: Icon(Icons.volume_up, size: 24.0),
-          style: TextButton.styleFrom(
-            fixedSize: Size(mediaQuery.size.width * 0.8, mediaQuery.size.height * (showingMode == 2 ? 0.2 : 0.4)),
-            shape: RoundedRectangleBorder(borderRadius: StaticsVar.br),
-          ),
-          onPressed: () async {
-            if (playing) {
-              return;
-            }
-            playing = true;
-            void alart(context, String e) {
-              showDialog(
-                context: context, 
-                builder: (BuildContext context) {
-                  return AlertDialog(
-                    title: Text("提示"),
-                    content: Text("备用音频源获取失败\n$e"),
-                    actions: [
-                      TextButton(
-                        child: Text("确定"),
-                        onPressed: () {
-                          Navigator.of(context).pop();
-                        },
-                      )
-                    ],
-                  );
+        child: StatefulBuilder(
+          builder: (context, setLocalState) {
+            return TextButton.icon(
+              icon: Icon(playing ? Icons.multitrack_audio : Icons.volume_up, size: 24.0),
+              style: TextButton.styleFrom(
+                fixedSize: Size(mediaQuery.size.width * 0.8, mediaQuery.size.height * (showingMode == 2 ? 0.2 : 0.4)),
+                shape: RoundedRectangleBorder(borderRadius: StaticsVar.br),
+              ),
+              onPressed: () async {
+                if (playing) {
+                  return;
                 }
-              );
-            }
-            if (Provider.of<Global>(context, listen: false).settingData["audio"]["useBackupSource"]) {
-              try {
-                final response = await http.get(Uri.parse("https://textreadtts.com/tts/convert?accessKey=FREE&language=arabic&speaker=speaker2&text=${data[0]}"));
-                if (response.statusCode == 200) {
-                  final data = jsonDecode(response.body);
-                  if(data["code"] == 1 && context.mounted) {
-                    alart(context, "文本长度超过API限制");
-                    return;
-                  }
-                  await player.setUrl(data["audio"]);
-                  if (!context.mounted) return;
-                  await player.setSpeed(Provider.of<Global>(context, listen: false).settingData["audio"]["playRate"]);
-                  await player.play();
-                } else {
-                  if (!context.mounted) return;
-                  alart(context, response.statusCode.toString());
+                setLocalState(() {
+                  playing = true;
+                });
+                late List<dynamic> temp;
+                temp = await playTextToSpeech(data[0], useBackup: context.read<Global>().settingData['audio']["useBackupSource"], playRate: context.read<Global>().settingData['audio']["playRate"]);
+                if(!temp[0] && context.mounted) {
+                  alart(context, temp[1]);
                 }
-              } catch (e) {
-                if (!context.mounted) return;
-                alart(context, e.toString());
-              }
-            } else {
-              FlutterTts flutterTts = FlutterTts();
-              if(!(await flutterTts.getLanguages).toString().contains("ar")) {
-                if (!context.mounted) return;
-                showDialog(
-                  context: context, 
-                  builder: (BuildContext context) {
-                    return AlertDialog(
-                      title: Text("提示"),
-                      content: Text("你的设备似乎未安装阿拉伯语语言或不支持阿拉伯语文本转语音功能，语音可能无法正常播放。\n你可以尝试在 设置 - 系统语言 - 添加语言 中添加阿拉伯语。\n实在无法使用可在设置页面启用备用音频源(需要网络)"),
-                      actions: [
-                        TextButton(
-                          child: Text("确定"),
-                          onPressed: () {
-                            Navigator.of(context).pop();
-                          },
-                        )
-                      ],
-                    );
-                  }
-                );
-              }
-              await flutterTts.setLanguage("ar");
-              await flutterTts.setPitch(1.0);
-              if (!context.mounted) return;
-              await flutterTts.setSpeechRate(Provider.of<Global>(context, listen: false).settingData["audio"]["playRate"] / 2);
-              await flutterTts.speak(data[0]);
-            }
-            playing = false;
-          },
-          label: FittedBox(fit: BoxFit.contain ,child: Text(data[0], style: context.read<Global>().settingData['regular']['font'] == 1 ? GoogleFonts.markaziText(fontSize: 128.0, fontWeight: FontWeight.bold) : TextStyle(fontSize: 128.0, fontWeight: FontWeight.bold)))
+                setLocalState(() {
+                  playing = false;
+                });
+              },
+              label: FittedBox(fit: BoxFit.contain ,child: Text(data[0], style: context.read<Global>().settingData['regular']['font'] == 1 ? GoogleFonts.markaziText(fontSize: 128.0, fontWeight: FontWeight.bold) : TextStyle(fontSize: 128.0, fontWeight: FontWeight.bold)))
+            );
+          }
         )
       ),
     ),
