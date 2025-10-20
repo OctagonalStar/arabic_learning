@@ -6,7 +6,7 @@ import 'package:convex_bottom_bar/convex_bottom_bar.dart';
 import 'package:flutter/services.dart';
 import 'package:window_manager/window_manager.dart';
 import 'package:provider/provider.dart';
-
+import 'package:url_launcher/url_launcher.dart';
 import 'package:arabic_learning/home_page.dart';
 import 'package:arabic_learning/learning_page.dart';
 import 'package:arabic_learning/setting_page.dart';
@@ -287,6 +287,15 @@ class _MyHomePageState extends State<MyHomePage> {
         centerTitle: true,
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
         title: Text(widget.title),
+        actions: kIsWeb ?  [
+          ElevatedButton.icon(
+            icon: Icon(Icons.add_to_home_screen),
+            label: Text('下载APP版本'),
+            onPressed: () {
+              launchUrl(Uri.parse("https://github.com/OctagonalStar/arabic_learning/releases/latest"));
+            }
+          )
+        ] : [],
       ),
       body: LayoutBuilder(
         builder: (context, constraints) {

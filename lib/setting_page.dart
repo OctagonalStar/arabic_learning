@@ -8,6 +8,7 @@ import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:provider/provider.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 Widget settingItem(BuildContext context, MediaQueryData mediaQuery, List<Widget> list, String title, {bool withPadding = true}) {
   List<Container> decoratedContainers = list.map((widget) {
@@ -398,7 +399,34 @@ class _SettingPage extends State<SettingPage> {
       ElevatedButton(
         style: ElevatedButton.styleFrom(
           backgroundColor: Theme.of(context).colorScheme.onPrimary,
-          shape: RoundedRectangleBorder(borderRadius: StaticsVar.br),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadiusGeometry.vertical(top: Radius.circular(25.0))),
+        ),
+        onPressed: () {
+          launchUrl(Uri.parse("https://github.com/OctagonalStar/arabic_learning/"));
+        }, 
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.start,
+          children: [
+            Icon(Icons.star_rounded, size: 24.0),
+            SizedBox(width: mediaQuery.size.width * 0.01),
+            Expanded(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text("项目地址"),
+                  Text("去github上点个star~", style: TextStyle(fontSize: 8.0, color: Colors.grey))
+                ],
+              ),
+            ),
+            Icon(Icons.open_in_new),
+          ],
+        ),
+      ),
+      ElevatedButton(
+        style: ElevatedButton.styleFrom(
+          backgroundColor: Theme.of(context).colorScheme.onPrimary,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadiusGeometry.vertical(bottom: Radius.circular(25.0))),
         ),
         onPressed: () {
           Navigator.of(context).push(MaterialPageRoute(builder: (context) => AboutPage(setting: setting,)));
