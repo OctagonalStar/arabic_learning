@@ -14,6 +14,29 @@ List<Widget> questionConstructer(BuildContext context, int index, List<String> d
   final mediaQuery = MediaQuery.of(context);
   final player = AudioPlayer();
   bool playing = false;
+  late int showingMode; // 0: 1 Row, 1: 2 Rows, 2: 4 Rows
+  late bool overFlowPossible = false;
+
+  for(int i = 1; i < 5; i++) {
+    if(data[i].length * 16 > mediaQuery.size.width * (context.read<Global>().isWideScreen ? 0.21 : 0.8)){
+      overFlowPossible = true;
+      break;
+    }
+  }
+
+  if (context.read<Global>().isWideScreen) {
+    if(overFlowPossible){
+      showingMode = 1;
+    } else {
+      showingMode = 0;
+    }
+  } else {
+    if(overFlowPossible){
+      showingMode = 2;
+    } else {
+      showingMode = 1;
+    }
+  }
   return [
     Text(
       isWithOutAudio ? "通过中文选择阿拉伯语" : "通过阿拉伯语选择中文",
@@ -22,28 +45,29 @@ List<Widget> questionConstructer(BuildContext context, int index, List<String> d
     Container(
       margin: EdgeInsets.all(16.0),
       width: mediaQuery.size.width * 0.8,
-      height: mediaQuery.size.height * 0.4,
+      height: mediaQuery.size.height * (showingMode == 2 ? 0.2 : 0.4),
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.primaryContainer,
+        color: Theme.of(context).colorScheme.onPrimary,
         borderRadius: StaticsVar.br,
       ),
       child: isWithOutAudio 
         ? Center(
           child: Container(
-            width: mediaQuery.size.width * 0.8, 
-            height: mediaQuery.size.height * 0.4,
-            decoration: BoxDecoration(
-              color: Theme.of(context).colorScheme.primaryContainer,
-              borderRadius: StaticsVar.br,
-            ),
-            child: FittedBox(fit: BoxFit.scaleDown, child: Text(data[0], style: TextStyle(fontSize: 128.0, fontWeight: FontWeight.bold))),
+            padding: EdgeInsets.all(mediaQuery.size.width * 0.05), 
+            child: FittedBox(
+              fit: BoxFit.scaleDown, 
+              child: Text(
+                data[0], 
+                style: TextStyle(fontSize: 128.0, fontWeight: FontWeight.bold)
+              )
+            )
           ),
         )
         :Center(
         child: TextButton.icon(
           icon: Icon(Icons.volume_up, size: 24.0),
           style: TextButton.styleFrom(
-            fixedSize: Size(mediaQuery.size.width * 0.8, mediaQuery.size.height * 0.4),
+            fixedSize: Size(mediaQuery.size.width * 0.8, mediaQuery.size.height * (showingMode == 2 ? 0.2 : 0.4)),
             shape: RoundedRectangleBorder(borderRadius: StaticsVar.br),
           ),
           onPressed: () async {
@@ -129,7 +153,7 @@ List<Widget> questionConstructer(BuildContext context, int index, List<String> d
     ChangeNotifierProvider(
       create: (_) => ClickedListener.init(color: Theme.of(context).colorScheme.primaryContainer),
       builder: (context, child) {
-        return choseButtons(context, index, data);
+        return choseButtons(context, index, data, showingMode);
       },
     ),
   ];
@@ -150,7 +174,7 @@ class ClickedListener extends ChangeNotifier {
 }
 
 // 按钮组
-Widget choseButtons(BuildContext context, int index, List<String> data) {
+Widget choseButtons(BuildContext context, int index, List<String> data, int showingMode) {
   // data:
   // [0] 正确阿拉伯文
   // [1, 2, 3, 4] 中文选项
@@ -160,8 +184,6 @@ Widget choseButtons(BuildContext context, int index, List<String> data) {
   // index+1: 1, 2, 3, 4 对应正确答案的索引
   final MediaQueryData mediaQuery = MediaQuery.of(context);
   late Widget base;
-  
-  List<Widget> widgetList = [];
   Widget bottomWidget = TweenAnimationBuilder<double>(
     tween: Tween<double>(
       begin: 0.0,
@@ -274,8 +296,9 @@ Widget choseButtons(BuildContext context, int index, List<String> data) {
     });
   }
 
-  if(Provider.of<Global>(context, listen: false).isWideScreen){
-    // 对于宽屏幕则单行显示4个按钮
+  if(showingMode == 0){
+    // 对于宽屏幕 且无溢出风险 则单行显示4个按钮
+    List<Widget> widgetList = [];
     for(int i = 0; i < 4; i++) {
       widgetList.add(buttonBox(cl, i, chose, mediaQuery, data, mediaQuery.size.width * 0.21));
     }
@@ -289,8 +312,8 @@ Widget choseButtons(BuildContext context, int index, List<String> data) {
         bottomWidget,
       ],
     );
-  } else {
-    // 否则则两行显示
+  } else if(showingMode == 1){
+    // 窄屏幕 或 有溢出风险则两行显示
     List<List<Widget>> rowList = [[], []];
     for(int r = 0; r < 2; r++) {
       for(int i = 0; i < 2; i++) {
@@ -305,6 +328,22 @@ Widget choseButtons(BuildContext context, int index, List<String> data) {
         SizedBox(height: mediaQuery.size.height * 0.01),
         bottomWidget,
       ]
+    );
+  } else if (showingMode == 2) {
+    // 窄屏幕 且 有溢出风险则四行显示
+    List<Widget> widgetList = [];
+    for(int i = 0; i < 4; i++) {
+      widgetList.add(buttonBox(cl, i, chose, mediaQuery, data, mediaQuery.size.width * 0.9));
+    }
+    base = Expanded(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+        children: [
+          ...widgetList,
+          SizedBox(height: mediaQuery.size.height * 0.01),
+          bottomWidget,
+        ],
+      ),
     );
   }
   return base;
