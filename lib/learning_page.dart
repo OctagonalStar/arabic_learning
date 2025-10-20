@@ -281,14 +281,7 @@ class _InLearningPageState extends State<InLearningPage> {
               width: mediaQuery.size.width * 0.05,
               child: FittedBox(
                 fit: BoxFit.fitWidth,
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text("已完成: ${context.watch<PageCounterModel>().currentPage}"),
-                    Text("剩余: ${total - context.watch<PageCounterModel>().currentPage}")
-                  ]
-                ),
+                child: Text("${total - context.watch<PageCounterModel>().currentPage}"),
               ),
             )
           ],
