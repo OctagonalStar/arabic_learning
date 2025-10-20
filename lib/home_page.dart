@@ -13,26 +13,31 @@ class HomePage extends StatelessWidget {
   Widget build(BuildContext context) {
     final themeColor = Theme.of(context).colorScheme;
     final mediaQuery = MediaQuery.of(context);
+    bool playing = false;
     return Column(
       children: [
-        Container(
-          width: mediaQuery.size.width * 0.9,
-          height: mediaQuery.size.height * 0.3,
-          alignment: Alignment.center,
-          margin: EdgeInsets.all(16.0),
-          padding: EdgeInsets.all(16.0),
-          decoration: BoxDecoration(
-            color: themeColor.onPrimary,
-            boxShadow: [
-                  BoxShadow(
-                    color: themeColor.surfaceBright,
-                    offset: Offset(4, 8),
-                    blurRadius: 8.0,
-                  ),
-                ],
-            borderRadius: StaticsVar.br,
+        ElevatedButton(
+          onPressed: () async {
+            if(playing) return;
+            if(context.read<Global>().dailyWord.isNotEmpty) {
+              playing = true;
+              late List<dynamic> temp;
+              temp = await playTextToSpeech(context.read<Global>().dailyWord, useBackup: context.read<Global>().settingData['audio']["useBackupSource"], playRate: context.read<Global>().settingData['audio']["playRate"]);
+              if(!temp[0] && context.mounted) {
+                alart(context, temp[1]);
+              }
+              playing = false;
+            } else {toPage(3);}
+          },
+          style: ElevatedButton.styleFrom(
+            backgroundColor: themeColor.onPrimary,
+            shadowColor: themeColor.surfaceBright,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.vertical(bottom: Radius.circular(25.0))),
+            fixedSize: Size(mediaQuery.size.width * 0.9, mediaQuery.size.height * 0.3),
           ),
           child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               Text(
                 '每日一词',
@@ -173,17 +178,13 @@ class HomePage extends StatelessWidget {
 
 Widget dailyWord(BuildContext context, MediaQueryData mediaQuery, Function toPage) {
   if(context.read<Global>().wordCount == 0){
-    return ElevatedButton(
-      onPressed: () {
-        toPage(3);
-      },
-      child: Text("当前未导入词库数据\n请点此以跳转设置页面导入"),
-    );
+    return Text("当前未导入词库数据\n请点此以跳转设置页面导入");
   }
   final now = DateTime.now();
   final seed = now.year * 10000 + now.month * 100 + now.day;
   Random rnd = Random(seed);
   Map<String, dynamic> data = context.read<Global>().wordData["Words"][rnd.nextInt(context.read<Global>().wordCount)];
+  context.read<Global>().dailyWord = data["arabic"];
   return Column(
     children: [
       Text(
@@ -196,6 +197,8 @@ Widget dailyWord(BuildContext context, MediaQueryData mediaQuery, Function toPag
         style: TextStyle(fontSize: 18.0),
         textAlign: TextAlign.center,
       ),
+      SizedBox(height: mediaQuery.size.height * 0.03),
+      Icon(Icons.volume_up, size: 18.0),
     ],
   );
 }

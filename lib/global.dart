@@ -1,3 +1,6 @@
+import 'package:arabic_learning/statics_var.dart';
+import 'package:flutter_tts/flutter_tts.dart';
+import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
 import 'package:flutter/material.dart';
@@ -8,6 +11,7 @@ class Global with ChangeNotifier {
   late bool firstStart;
   late bool isWideScreen;
   late final SharedPreferences prefs;
+  late String dailyWord = "";
   Map<String, dynamic> _settingData = {
     'User': "",
     'regular': {
@@ -240,4 +244,54 @@ class InDevelopingPage extends StatelessWidget {
       ),
     );
   }
+}
+
+Future<List<dynamic>> playTextToSpeech(String text, {bool useBackup = false, double playRate = 1.0}) async { 
+  // return [bool isSuccessed?, String errorInfo];
+  if (useBackup) {
+    try {
+      final response = await http.get(Uri.parse("https://textreadtts.com/tts/convert?accessKey=FREE&language=arabic&speaker=speaker2&text=$text")).timeout(Duration(seconds: 8), onTimeout: () => throw Exception("请求超时"));
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        if(data["code"] == 1) {
+          return [false, "备用音源请求失败:\n错误信息:文本长度超过API限制"];
+        }
+        await StaticsVar.player.setUrl(data["audio"]);
+        await StaticsVar.player.setSpeed(playRate);
+        await StaticsVar.player.play();
+      } else {
+        return [false, "备用音源请求失败:\n错误码:${response.statusCode.toString()}"];
+      }
+    } catch (e) {
+      return [false, "备用音源请求失败:\n错误信息:${e.toString()}"];
+    }
+  } else {
+    FlutterTts flutterTts = FlutterTts();
+    if(!(await flutterTts.getLanguages).toString().contains("ar")) return [false, "你的设备似乎未安装阿拉伯语语言或不支持阿拉伯语文本转语音功能，语音可能无法正常播放。\n你可以尝试在 设置 - 系统语言 - 添加语言 中添加阿拉伯语。\n实在无法使用可在设置页面启用备用音频源(需要网络)"];
+    await flutterTts.setLanguage("ar");
+    await flutterTts.setPitch(1.0);
+    await flutterTts.setSpeechRate(playRate / 2);
+    await flutterTts.speak(text);
+  }
+  return [true, ""];
+}
+
+void alart(context, String e) {
+  showDialog(
+    context: context, 
+    builder: (BuildContext context) {
+      return AlertDialog(
+        title: Text("提示"),
+        content: Text(e),
+        actions: [
+          TextButton(
+            child: Text("确定"),
+            onPressed: () {
+              Navigator.of(context).pop();
+            },
+          )
+        ],
+      );
+    }
+  );
 }

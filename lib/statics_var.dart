@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart' show kIsWeb;
 import 'dart:io' show Platform;
 
 import 'package:flutter/material.dart';
+import 'package:just_audio/just_audio.dart';
 
 class StaticsVar {
   static const String appName = 'Ar 学';
@@ -14,4 +15,5 @@ class StaticsVar {
   static final BorderRadius br = BorderRadius.circular(25.0);
   static final isDesktop = kIsWeb ? false : (Platform.isWindows || Platform.isLinux || Platform.isMacOS);
   static const Curve curve = Curves.easeInOutQuad;
+  static final player = AudioPlayer(); // load Player when app start
 }
