@@ -83,7 +83,7 @@ class LearningPage extends StatelessWidget {
                   );
                 },
                 icon: Icon(Icons.history_edu, size: 24.0),
-                label: FittedBox(fit: BoxFit.fitWidth ,child: Text("抗遗忘记背", style: TextStyle(fontSize: 32.0))),
+                label: FittedBox(fit: BoxFit.fitWidth ,child: Text("抗遗忘学习", style: TextStyle(fontSize: 32.0))),
               ),
               Column(
                 children: [
@@ -446,6 +446,10 @@ List<Widget> classesSelectionList(BuildContext context, MediaQueryData mediaQuer
       isEven = !isEven;
     }
   }
-  
+  if(widgetList.isEmpty) {
+    widgetList.add(
+      Center(child: Text('啥啥词库都没导入，你学个啥呢？\n自己去 设置 -> 数据设置 -> 导入词库', style: TextStyle(fontSize: 24.0, color: Colors.redAccent),))
+    );
+  }
   return widgetList;
 }
