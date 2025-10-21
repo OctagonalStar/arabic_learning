@@ -63,6 +63,7 @@ List<Widget> questionConstructer(BuildContext context, int index, List<String> d
           builder: (context, setLocalState) {
             return TextButton.icon(
               icon: Icon(playing ? Icons.multitrack_audio : Icons.volume_up, size: 24.0),
+              label: FittedBox(fit: BoxFit.contain ,child: Text(data[0], style: context.read<Global>().settingData['regular']['font'] == 1 ? GoogleFonts.markaziText(fontSize: 128.0, fontWeight: FontWeight.bold) : TextStyle(fontSize: 128.0, fontWeight: FontWeight.bold))),
               style: TextButton.styleFrom(
                 fixedSize: Size(mediaQuery.size.width * 0.8, mediaQuery.size.height * (showingMode == 2 ? 0.2 : 0.4)),
                 shape: RoundedRectangleBorder(borderRadius: StaticsVar.br),
@@ -83,7 +84,6 @@ List<Widget> questionConstructer(BuildContext context, int index, List<String> d
                   playing = false;
                 });
               },
-              label: FittedBox(fit: BoxFit.contain ,child: Text(data[0], style: context.read<Global>().settingData['regular']['font'] == 1 ? GoogleFonts.markaziText(fontSize: 128.0, fontWeight: FontWeight.bold) : TextStyle(fontSize: 128.0, fontWeight: FontWeight.bold)))
             );
           }
         )

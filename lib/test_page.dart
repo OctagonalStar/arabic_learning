@@ -22,8 +22,7 @@ class TestPage extends StatelessWidget {
               ),
               child: ElevatedButton(
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.deepOrange,
-                  foregroundColor: Theme.of(context).colorScheme.onSurface,
+                  backgroundColor: Theme.of(context).colorScheme.onPrimary,
                   shape: RoundedRectangleBorder(
                     borderRadius: StaticsVar.br,
                   ),
@@ -43,8 +42,8 @@ class TestPage extends StatelessWidget {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Icon(Icons.zoom_in, size: 36.0, color: Colors.black),
-                        Icon(Icons.edit, size: 36.0, color: Colors.black),
+                        Icon(Icons.zoom_in, size: 36.0),
+                        Icon(Icons.edit, size: 36.0),
                       ],
                     ),
                     Text('认写\n测试', style: TextStyle(fontSize: 34.0, fontWeight: FontWeight.bold), textAlign: TextAlign.center),
@@ -52,44 +51,25 @@ class TestPage extends StatelessWidget {
                 ),
               ),
             ),
-            Container(
-              width: mediaQuery.size.width * 0.42,
-              height: mediaQuery.size.height * 0.45,
-              margin: EdgeInsets.all(8.0),
-              decoration: BoxDecoration(
-                borderRadius: StaticsVar.br,
-              ),
-              child: ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.lightBlue,
-                  foregroundColor: Theme.of(context).colorScheme.onSurface,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: StaticsVar.br,
-                  ),
-                ),
-                onPressed: () {
-                  // TODO: #7 to listen test page
-                  Navigator.push(
-                    context, 
-                    MaterialPageRoute(
-                      builder: (context) => InDevelopingPage()
-                    )
-                  );
-                },
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(Icons.earbuds, size: 36.0, color: Colors.black),
-                        Icon(Icons.speaker_phone, size: 36.0, color: Colors.black),
-                      ],
-                    ),
-                    Text('听读\n测试', style: TextStyle(fontSize: 34.0, fontWeight: FontWeight.bold), textAlign: TextAlign.center),
-                  ],
+            ElevatedButton.icon(
+              icon: Icon(Icons.multitrack_audio, size: 36.0),
+              label: Text('自主\n听写', style: TextStyle(fontSize: 34.0)),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Theme.of(context).colorScheme.onPrimary,
+                fixedSize: Size(mediaQuery.size.width * 0.42, mediaQuery.size.height * 0.45,),
+                shape: RoundedRectangleBorder(
+                  borderRadius: StaticsVar.br,
                 ),
               ),
+              onPressed: () {
+                // TODO: #7 to listen test page
+                Navigator.push(
+                  context, 
+                  MaterialPageRoute(
+                    builder: (context) => InDevelopingPage()
+                  )
+                );
+              },
             )
           ],
         ),
@@ -106,8 +86,7 @@ class TestPage extends StatelessWidget {
               ),
               child: ElevatedButton(
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.teal,
-                  foregroundColor: Theme.of(context).colorScheme.onSurface,
+                  backgroundColor: Theme.of(context).colorScheme.onSecondary,
                   shape: RoundedRectangleBorder(
                     borderRadius: StaticsVar.br,
                   ),
@@ -124,7 +103,7 @@ class TestPage extends StatelessWidget {
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Icon(Icons.history, size: 36.0, color: Colors.black),
+                    Icon(Icons.history, size: 36.0),
                     SizedBox(width: 8.0),
                     Text('历史战绩', style: TextStyle(fontSize: 28.0, fontWeight: FontWeight.bold)),
                   ],
@@ -140,8 +119,7 @@ class TestPage extends StatelessWidget {
               ),
               child: ElevatedButton(
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.indigo,
-                  foregroundColor: Theme.of(context).colorScheme.onSurface,
+                  backgroundColor: Theme.of(context).colorScheme.onPrimary,
                   shape: RoundedRectangleBorder(
                     borderRadius: StaticsVar.br,
                   ),
@@ -159,7 +137,7 @@ class TestPage extends StatelessWidget {
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Icon(Icons.keyboard, size: 24.0, color: Colors.black),
+                      Icon(Icons.keyboard, size: 24.0),
                       Text('盲打\n测试', style: TextStyle(fontSize: 24.0, fontWeight: FontWeight.bold)),
                     ],
                   ),

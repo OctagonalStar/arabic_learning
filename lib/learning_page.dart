@@ -17,47 +17,38 @@ class LearningPage extends StatelessWidget {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.start,
         children: [
-          Container(
-            width: mediaQuery.size.width * 0.9,
-            height: mediaQuery.size.height * 0.2,
-            alignment: Alignment.center,
-            margin: EdgeInsets.all(16.0),
-            decoration: BoxDecoration(
-              borderRadius: StaticsVar.br,
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Theme.of(context).colorScheme.onPrimary,
+              shadowColor: Colors.transparent,
+              fixedSize: Size(mediaQuery.size.width * 0.9, mediaQuery.size.height * 0.2),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadiusGeometry.vertical(bottom: Radius.circular(25.0)),
+              ),
             ),
-            child: ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Theme.of(context).colorScheme.onPrimary,
-                foregroundColor: Theme.of(context).colorScheme.onSurface,
-                shadowColor: Colors.transparent,
-                shape: RoundedRectangleBorder(
-                  borderRadius: StaticsVar.br,
-                ),
+            onPressed: () {
+              shiftToStudy(context, 0);
+            },
+            child: Container(
+              width: mediaQuery.size.width * 0.9,
+              height: mediaQuery.size.height * 0.2,
+              alignment: Alignment.center,
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.sync_alt, size: 24.0),
+                  Text(
+                    '中阿混合学习',
+                    style: TextStyle(fontSize: 40.0, fontWeight: FontWeight.bold),
+                  ),
+                  SizedBox(height: mediaQuery.size.height * 0.01),
+                  Text(
+                    '还有${(context.read<Global>().wordCount - context.read<Global>().settingData["learning"]["KnownWords"].length).toString()}个单词待学习~',
+                    style: TextStyle(fontSize: 12.0),
+                  ),
+                ],
               ),
-              onPressed: () {
-                shiftToStudy(context, 0);
-              },
-              child: Container(
-                width: mediaQuery.size.width * 0.9,
-                height: mediaQuery.size.height * 0.2,
-                alignment: Alignment.center,
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(Icons.sync_alt, size: 24.0),
-                    Text(
-                      '中阿混合学习',
-                      style: TextStyle(fontSize: 40.0, fontWeight: FontWeight.bold),
-                    ),
-                    SizedBox(height: mediaQuery.size.height * 0.01),
-                    Text(
-                      '还有${(context.read<Global>().wordCount - context.read<Global>().settingData["learning"]["KnownWords"].length).toString()}个单词待学习~',
-                      style: TextStyle(fontSize: 12.0),
-                    ),
-                  ],
-                ),
-              ),
-            )
+            ),
           ),
           SizedBox(height: mediaQuery.size.height * 0.01),
           Row(
