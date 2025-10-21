@@ -295,3 +295,27 @@ void alart(context, String e) {
     }
   );
 }
+
+
+class TextContainer extends StatelessWidget {
+  final String text;
+  final TextStyle? style;
+  final bool? selectable;
+  const TextContainer({super.key, 
+                      required this.text, 
+                      this.style,
+                      this.selectable = false});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+        margin: EdgeInsets.all(16.0),
+        padding: EdgeInsets.all(8.0),
+        decoration: BoxDecoration(
+          color: Theme.of(context).colorScheme.onPrimary,
+          borderRadius: StaticsVar.br,
+        ),
+        child: (selectable??false) ? SelectableText(text,style: (style == null) ? TextStyle(fontSize: 18.0) : style) : Text(text,style: (style == null) ? TextStyle(fontSize: 18.0) : style),
+    );
+  }
+}
