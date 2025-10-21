@@ -14,6 +14,6 @@ class StaticsVar {
   static const String onlineDictPath = '词库';
   static final BorderRadius br = BorderRadius.circular(25.0);
   static final isDesktop = kIsWeb ? false : (Platform.isWindows || Platform.isLinux || Platform.isMacOS);
-  static const Curve curve = Curves.easeInOutQuad;
+  static const Curve curve = Curves.easeInOut;
   static final player = AudioPlayer(); // load Player when app start
 }
