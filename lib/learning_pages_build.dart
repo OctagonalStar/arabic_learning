@@ -76,7 +76,7 @@ List<Widget> questionConstructer(BuildContext context, int index, List<String> d
                   playing = true;
                 });
                 late List<dynamic> temp;
-                temp = await playTextToSpeech(data[0], useBackup: context.read<Global>().settingData['audio']["useBackupSource"], playRate: context.read<Global>().settingData['audio']["playRate"]);
+                temp = await playTextToSpeech(data[0], context);
                 if(!temp[0] && context.mounted) {
                   alart(context, temp[1]);
                 }

@@ -2,7 +2,7 @@
 # See https://dart.dev/tools/pub/glossary#lockfile
 packages:
   archive:
-    dependency: transitive
+    dependency: "direct main"
     description:
       name: archive
       sha256: "2fde1607386ab523f7a36bb3e7edb43bd58e6edaf2ffb29d8a6d578b297fdbbd"
@@ -129,6 +129,22 @@ packages:
       url: "https://pub.flutter-io.cn"
     source: hosted
     version: "0.7.11"
+  dio:
+    dependency: "direct main"
+    description:
+      name: dio
+      sha256: d90ee57923d1828ac14e492ca49440f65477f4bb1263575900be731a3dac66a9
+      url: "https://pub.flutter-io.cn"
+    source: hosted
+    version: "5.9.0"
+  dio_web_adapter:
+    dependency: transitive
+    description:
+      name: dio_web_adapter
+      sha256: "7586e476d70caecaf1686d21eee7247ea43ef5c345eab9e0cc3583ff13378d78"
+      url: "https://pub.flutter-io.cn"
+    source: hosted
+    version: "2.1.1"
   fake_async:
     dependency: transitive
     description:
@@ -344,6 +360,14 @@ packages:
       url: "https://pub.flutter-io.cn"
     source: hosted
     version: "1.16.0"
+  mime:
+    dependency: transitive
+    description:
+      name: mime
+      sha256: "41a20518f0cb1256669420fdba0cd90d21561e560ac240f26ef8322e45bb7ed6"
+      url: "https://pub.flutter-io.cn"
+    source: hosted
+    version: "2.0.0"
   nested:
     dependency: transitive
     description:
@@ -552,6 +576,54 @@ packages:
       url: "https://pub.flutter-io.cn"
     source: hosted
     version: "2.4.1"
+  sherpa_onnx:
+    dependency: "direct main"
+    description:
+      name: sherpa_onnx
+      sha256: "26e25439303ae0d678689db841eff342eedb1ba14d72a7917fb675658471e6ed"
+      url: "https://pub.flutter-io.cn"
+    source: hosted
+    version: "1.12.14"
+  sherpa_onnx_android:
+    dependency: transitive
+    description:
+      name: sherpa_onnx_android
+      sha256: a55af6d388ffe637d1f4d6647cf86bcab4b33680bba6bc64d0d93de5af5ee9a9
+      url: "https://pub.flutter-io.cn"
+    source: hosted
+    version: "1.12.14"
+  sherpa_onnx_ios:
+    dependency: transitive
+    description:
+      name: sherpa_onnx_ios
+      sha256: "3b5ca0cd1803230882edad5390844e3aab7555131522737eab72073de91da9eb"
+      url: "https://pub.flutter-io.cn"
+    source: hosted
+    version: "1.12.14"
+  sherpa_onnx_linux:
+    dependency: transitive
+    description:
+      name: sherpa_onnx_linux
+      sha256: "6354e49337f5f245e57d08637dbb5d07df4db473049801dd24340ca6e859d0b8"
+      url: "https://pub.flutter-io.cn"
+    source: hosted
+    version: "1.12.14"
+  sherpa_onnx_macos:
+    dependency: transitive
+    description:
+      name: sherpa_onnx_macos
+      sha256: "3a552479984819c325e371904d3dfbdea5a127960530eab32c6685e9e1a4ba6d"
+      url: "https://pub.flutter-io.cn"
+    source: hosted
+    version: "1.12.14"
+  sherpa_onnx_windows:
+    dependency: transitive
+    description:
+      name: sherpa_onnx_windows
+      sha256: "901d3086a37d7bf5def38eecc25db77069b26e89fe4488353c1dca550faf4da1"
+      url: "https://pub.flutter-io.cn"
+    source: hosted
+    version: "1.12.14"
   sky_engine:
     dependency: transitive
     description: flutter

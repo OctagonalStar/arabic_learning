@@ -1,17 +1,25 @@
 import 'package:arabic_learning/statics_var.dart';
+import 'package:archive/archive.dart';
+import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_tts/flutter_tts.dart';
 import 'package:http/http.dart' as http;
+import 'package:just_audio/just_audio.dart' show AudioSource;
+import 'package:path_provider/path_provider.dart' as path_provider;
+import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-
+import 'package_replacement/nonsense_hook_io.dart' if (dart.library.io) 'dart:io' as io;
+import 'package_replacement/nonsense_hook.dart' if (dart.library.io) 'package:sherpa_onnx/sherpa_onnx.dart' as sherpa_onnx;
 
 class Global with ChangeNotifier {
   late bool firstStart;
   late bool isWideScreen;
   late final SharedPreferences prefs;
   late String dailyWord = "";
+  late bool modelTTSDownloaded = false;
   Map<String, dynamic> _settingData = {
     'User': "",
     'regular': {
@@ -20,7 +28,7 @@ class Global with ChangeNotifier {
       "darkMode": false,
     },
     'audio': {
-      "useBackupSource": false,
+      "useBackupSource": 0, // 0: Normal, 1: OnlineBackup, 2: LocalVITS
       "playRate": 1.0,
     },
     'learning': {
@@ -64,9 +72,41 @@ class Global with ChangeNotifier {
   );
 
   late Map<String, dynamic> wordData = {};
+  late sherpa_onnx.OfflineTts vitsTTS;
   ThemeData get themeData => _themeData;
   Map<String, dynamic> get settingData => _settingData;
   int get wordCount => wordData["Words"]!.length;
+
+  // load TTS model if any
+  Future<void> loadTTS() async {
+    if(kIsWeb) return;
+    final basePath = await path_provider.getApplicationDocumentsDirectory();
+    if(io.File("${basePath.path}/${StaticsVar.modelPath}/ar_JO-kareem-medium.onnx").existsSync()){
+      modelTTSDownloaded = true;
+      sherpa_onnx.initBindings();
+      final vits = sherpa_onnx.OfflineTtsVitsModelConfig(
+        model: "${basePath.path}/${StaticsVar.modelPath}/ar_JO-kareem-medium.onnx",
+        // lexicon: '${basePath.path}/${StaticsVar.modelPath}/',
+        dataDir: "${basePath.path}/${StaticsVar.modelPath}/espeak-ng-data",
+        tokens: '${basePath.path}/${StaticsVar.modelPath}/tokens.txt',
+        lengthScale: 1 / _settingData["audio"]["playRate"],
+      );
+      // kokoro = sherpa_onnx.OfflineTtsKokoroModelConfig();
+      final modelConfig = sherpa_onnx.OfflineTtsModelConfig(
+        vits: vits,
+        numThreads: 2,
+        debug: false,
+        provider: 'cpu',
+      );
+
+      final config = sherpa_onnx.OfflineTtsConfig(
+        model: modelConfig,
+        maxNumSenetences: 1,
+      );
+
+      vitsTTS = sherpa_onnx.OfflineTts(config);
+    }
+  }
 
   Map<K, V> deepMerge<K, V>(Map<K, V> base, Map<K, V> overlay) {
   final result = Map<K, V>.from(base);
@@ -83,6 +123,22 @@ class Global with ChangeNotifier {
   return result;
   }
 
+  void conveySetting() {
+    Map<String, dynamic> oldSetting = jsonDecode(prefs.getString("settingData")!) as Map<String, dynamic>;
+
+    // For v0.1.5 upgrade
+    if(oldSetting["audio"]["useBackupSource"].runtimeType == bool) {
+      if(oldSetting["audio"]["useBackupSource"]) {
+        oldSetting["audio"]["useBackupSource"] = 1;
+      } else {
+        oldSetting["audio"]["useBackupSource"] = 0;
+      }
+    }
+
+
+    _settingData = deepMerge(_settingData, oldSetting);
+  }
+
   Future<void> init() async {
     prefs = await SharedPreferences.getInstance();
     firstStart = prefs.getString("settingData") == null;
@@ -92,8 +148,9 @@ class Global with ChangeNotifier {
     } else {
       wordData = jsonDecode(prefs.getString("wordData")!) as Map<String, dynamic>;
     }
+    await loadTTS();
     if (firstStart) return;
-    _settingData = deepMerge(_settingData, jsonDecode(prefs.getString("settingData")!) as Map<String, dynamic>);
+    conveySetting();
   }
   void updateTheme() {
     _themeData = ThemeData(
@@ -107,14 +164,14 @@ class Global with ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> acceptAggrement(String name) async {
+  void acceptAggrement(String name) {
     firstStart = false;
     _settingData["User"] = name;
     prefs.setString("settingData", jsonEncode(settingData));
     notifyListeners();
   }
   
-  Future<void> updateSetting(Map<String, dynamic> settingData) async {
+  void updateSetting(Map<String, dynamic> settingData) {
     _settingData = settingData;
     try {
       prefs.setString("settingData", jsonEncode(settingData));
@@ -184,7 +241,7 @@ class Global with ChangeNotifier {
     return exData;
   }
 
-  void importData(Map<String, dynamic> data, String source) async {
+  void importData(Map<String, dynamic> data, String source) {
     wordData = dataFormater(data, wordData, source);
     prefs.setString("wordData", jsonEncode(wordData));
     notifyListeners();
@@ -246,9 +303,19 @@ class InDevelopingPage extends StatelessWidget {
   }
 }
 
-Future<List<dynamic>> playTextToSpeech(String text, {bool useBackup = false, double playRate = 1.0}) async { 
+Future<List<dynamic>> playTextToSpeech(String text, BuildContext context) async { 
   // return [bool isSuccessed?, String errorInfo];
-  if (useBackup) {
+  // 0: System TTS
+  if (context.read<Global>().settingData["audio"]["useBackupSource"] == 0) {
+    FlutterTts flutterTts = FlutterTts();
+    if(!(await flutterTts.getLanguages).toString().contains("ar")) return [false, "你的设备似乎未安装阿拉伯语语言或不支持阿拉伯语文本转语音功能，语音可能无法正常播放。\n你可以尝试在 设置 - 系统语言 - 添加语言 中添加阿拉伯语。\n实在无法使用可在设置页面启用备用音频源(需要网络)"];
+    await flutterTts.setLanguage("ar");
+    await flutterTts.setPitch(1.0);
+    if(!context.mounted) return [false, "神经网络音频合成失败\n中途退出context"];
+    await flutterTts.setSpeechRate(context.read<Global>().settingData["audio"]["playRate"] / 2);
+    await flutterTts.speak(text);
+  // 1: TextReadTTS
+  } else if (context.read<Global>().settingData["audio"]["useBackupSource"] == 1) {
     try {
       final response = await http.get(Uri.parse("https://textreadtts.com/tts/convert?accessKey=FREE&language=arabic&speaker=speaker2&text=$text")).timeout(Duration(seconds: 8), onTimeout: () => throw Exception("请求超时"));
       if (response.statusCode == 200) {
@@ -257,7 +324,8 @@ Future<List<dynamic>> playTextToSpeech(String text, {bool useBackup = false, dou
           return [false, "备用音源请求失败:\n错误信息:文本长度超过API限制"];
         }
         await StaticsVar.player.setUrl(data["audio"]);
-        await StaticsVar.player.setSpeed(playRate);
+        if(!context.mounted) return [false, "神经网络音频合成失败\n中途退出context"];
+        await StaticsVar.player.setSpeed(context.read<Global>().settingData["audio"]["playRate"]);
         await StaticsVar.player.play();
       } else {
         return [false, "备用音源请求失败:\n错误码:${response.statusCode.toString()}"];
@@ -265,13 +333,32 @@ Future<List<dynamic>> playTextToSpeech(String text, {bool useBackup = false, dou
     } catch (e) {
       return [false, "备用音源请求失败:\n错误信息:${e.toString()}"];
     }
-  } else {
-    FlutterTts flutterTts = FlutterTts();
-    if(!(await flutterTts.getLanguages).toString().contains("ar")) return [false, "你的设备似乎未安装阿拉伯语语言或不支持阿拉伯语文本转语音功能，语音可能无法正常播放。\n你可以尝试在 设置 - 系统语言 - 添加语言 中添加阿拉伯语。\n实在无法使用可在设置页面启用备用音频源(需要网络)"];
-    await flutterTts.setLanguage("ar");
-    await flutterTts.setPitch(1.0);
-    await flutterTts.setSpeechRate(playRate / 2);
-    await flutterTts.speak(text);
+  
+  // 2: sherpa-onnx
+  } else if (context.read<Global>().settingData["audio"]["useBackupSource"] == 2) {
+    try {
+      final basePath = await path_provider.getApplicationCacheDirectory();
+      final cacheFile = io.File("${basePath.path}/temp.wav");
+      if(cacheFile.existsSync()) cacheFile.deleteSync();
+      if(!context.mounted) return [false, "神经网络音频合成失败\n中途退出context"];
+      final audio = context.read<Global>().vitsTTS.generate(text: text, speed: context.read<Global>().settingData["audio"]["playRate"]);
+      final ok = sherpa_onnx.writeWave(
+                          filename: cacheFile.path,
+                          samples: audio.samples,
+                          sampleRate: audio.sampleRate,
+                        );
+      if(ok) {
+        await StaticsVar.player.setAudioSource(AudioSource.uri(Uri.file(cacheFile.path)));
+        // await StaticsVar.player.setSpeed(playRate);
+        await StaticsVar.player.play();
+        await Future.delayed(Duration(milliseconds: 1000));
+        if(cacheFile.existsSync()) cacheFile.deleteSync();
+      }else {
+        return [false, "神经网络音频合成失败\n错误信息:无法将音频写入文件"];
+      }
+    } catch (e) {
+      return [false, "神经网络音频合成失败\n错误信息:${e.toString()}"];
+    }
   }
   return [true, ""];
 }
@@ -318,4 +405,36 @@ class TextContainer extends StatelessWidget {
         child: (selectable??false) ? SelectableText(text,style: (style == null) ? TextStyle(fontSize: 18.0) : style) : Text(text,style: (style == null) ? TextStyle(fontSize: 18.0) : style),
     );
   }
+}
+
+Future<void> extractTarBz2(String inputPath, String outputDir) async {
+  final bytes = await io.File(inputPath).readAsBytes();
+
+  // 解压 bz2
+  final bz2Decoder = BZip2Decoder();
+  final tarBytes = bz2Decoder.decodeBytes(bytes);
+
+  // 解包 tar
+  final tarArchive = TarDecoder().decodeBytes(tarBytes);
+
+  // 解出文件
+  for (final file in tarArchive.files) {
+    final filePath = '$outputDir/${io.Platform.pathSeparator}${file.name}';
+    if (file.isFile) {
+      final outFile = io.File(filePath);
+      await outFile.create(recursive: true);
+      await outFile.writeAsBytes(file.content as List<int>);
+    } else {
+      await io.Directory(filePath).create(recursive: true);
+    }
+  }
+}
+
+Future<void> downloadFile(String url, String savePath, {ProgressCallback? onDownloading}) async {
+  final dio = Dio();
+  await dio.download(
+    url,
+    savePath,
+    onReceiveProgress: onDownloading?? (count, total){},
+  );
 }
