@@ -198,7 +198,7 @@ class _SettingPage extends State<SettingPage> {
             children: [
               ElevatedButton.icon(
                 style: ElevatedButton.styleFrom(
-                  fixedSize: Size.fromWidth(mediaQuery.size.width * 0.4),
+                  fixedSize: Size(mediaQuery.size.width * 0.4, mediaQuery.size.height * 0.06),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.horizontal(left: Radius.circular(25.0)))
                 ),
                 onPressed: () {
@@ -209,7 +209,7 @@ class _SettingPage extends State<SettingPage> {
               ),
               ElevatedButton.icon(
                 style: ElevatedButton.styleFrom(
-                  fixedSize: Size.fromWidth(mediaQuery.size.width * 0.4),
+                  fixedSize: Size(mediaQuery.size.width * 0.4, mediaQuery.size.height * 0.06),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.horizontal(right: Radius.circular(25.0)))
                 ),
                 onPressed: () async {
