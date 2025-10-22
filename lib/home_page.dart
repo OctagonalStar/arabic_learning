@@ -22,7 +22,7 @@ class HomePage extends StatelessWidget {
             if(context.read<Global>().dailyWord.isNotEmpty) {
               playing = true;
               late List<dynamic> temp;
-              temp = await playTextToSpeech(context.read<Global>().dailyWord, useBackup: context.read<Global>().settingData['audio']["useBackupSource"], playRate: context.read<Global>().settingData['audio']["playRate"]);
+              temp = await playTextToSpeech(context.read<Global>().dailyWord, context);
               if(!temp[0] && context.mounted) {
                 alart(context, temp[1]);
               }

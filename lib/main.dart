@@ -247,7 +247,7 @@ class _MyHomePageState extends State<MyHomePage> {
                     ),
                     onPressed: () async {
                       if(controller.text.isNotEmpty){
-                        await context.read<Global>().acceptAggrement(controller.text);
+                        context.read<Global>().acceptAggrement(controller.text);
                       } else {
                         ScaffoldMessenger.of(context).showSnackBar(
                           const SnackBar(

@@ -1,5 +1,5 @@
 import 'package:flutter/foundation.dart' show kIsWeb;
-import 'dart:io' show Platform;
+import 'package_replacement/nonsense_hook_io.dart' if (dart.library.io) 'dart:io' show Platform;
 
 import 'package:flutter/material.dart';
 import 'package:just_audio/just_audio.dart';
@@ -7,7 +7,7 @@ import 'package:just_audio/just_audio.dart';
 class StaticsVar {
   static const String appName = 'Ar 学';
   static const String appVersion = '0.1.0';
-  static const String tempConfigPath = 'arabicLearning/tpc.json';
+  static const String modelPath = 'arabicLearning/tts/model/vits-piper-ar_JO-kareem-medium';
   static const Map<String, dynamic> tempConfig = {"SelectedClasses": []};
   static const String onlineDictOwner = 'JYinherit';
   static const String onlineDictRepo = 'Arabiclearning';
