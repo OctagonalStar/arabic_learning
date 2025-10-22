@@ -1,6 +1,6 @@
 import 'dart:convert';
 import 'package:flutter/foundation.dart' show kIsWeb;
-import 'package_replacement/nonsense_hook_io.dart' if (dart.library.io) 'dart:io';
+import 'package_replacement/fake_dart_io.dart' if (dart.library.io) 'dart:io';
 
 import 'package:arabic_learning/global.dart';
 import 'package:arabic_learning/statics_var.dart';

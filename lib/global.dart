@@ -11,8 +11,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package_replacement/nonsense_hook_io.dart' if (dart.library.io) 'dart:io' as io;
-import 'package_replacement/nonsense_hook.dart' if (dart.library.io) 'package:sherpa_onnx/sherpa_onnx.dart' as sherpa_onnx;
+import 'package_replacement/fake_dart_io.dart' if (dart.library.io) 'dart:io' as io;
+import 'package_replacement/fake_sherpa_onnx.dart' if (dart.library.io) 'package:sherpa_onnx/sherpa_onnx.dart' as sherpa_onnx;
 
 class Global with ChangeNotifier {
   late bool firstStart;
