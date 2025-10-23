@@ -72,7 +72,7 @@ class Global with ChangeNotifier {
   );
 
   late Map<String, dynamic> wordData = {};
-  late sherpa_onnx.OfflineTts vitsTTS;
+  late sherpa_onnx.OfflineTts? vitsTTS;
   ThemeData get themeData => _themeData;
   Map<String, dynamic> get settingData => _settingData;
   int get wordCount => wordData["Words"]!.length;
@@ -148,7 +148,7 @@ class Global with ChangeNotifier {
     } else {
       wordData = jsonDecode(prefs.getString("wordData")!) as Map<String, dynamic>;
     }
-    await loadTTS();
+    if(!kIsWeb) loadTTS();
     if (firstStart) return;
     conveySetting();
   }
@@ -336,12 +336,20 @@ Future<List<dynamic>> playTextToSpeech(String text, BuildContext context) async 
   
   // 2: sherpa-onnx
   } else if (context.read<Global>().settingData["audio"]["useBackupSource"] == 2) {
+    if(context.read<Global>().vitsTTS == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('神经网络音频模型尚未就绪，请等待...'),
+          duration: Duration(seconds: 2),
+        ),
+      );
+    }
     try {
       final basePath = await path_provider.getApplicationCacheDirectory();
       final cacheFile = io.File("${basePath.path}/temp.wav");
       if(cacheFile.existsSync()) cacheFile.deleteSync();
       if(!context.mounted) return [false, "神经网络音频合成失败\n中途退出context"];
-      final audio = context.read<Global>().vitsTTS.generate(text: text, speed: context.read<Global>().settingData["audio"]["playRate"]);
+      final audio = context.read<Global>().vitsTTS!.generate(text: text, speed: context.read<Global>().settingData["audio"]["playRate"]);
       final ok = sherpa_onnx.writeWave(
                           filename: cacheFile.path,
                           samples: audio.samples,
