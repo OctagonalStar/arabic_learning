@@ -1,8 +1,8 @@
-import 'package:arabic_learning/change_notifier_models.dart';
-import 'package:arabic_learning/global.dart';
+import 'package:arabic_learning/vars/change_notifier_models.dart';
+import 'package:arabic_learning/vars/global.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:arabic_learning/statics_var.dart';
+import 'package:arabic_learning/vars/statics_var.dart';
 import 'package:provider/provider.dart';
 
 

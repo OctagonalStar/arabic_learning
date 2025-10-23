@@ -1,5 +1,5 @@
-import 'package:arabic_learning/global.dart';
-import 'package:arabic_learning/statics_var.dart';
+import 'package:arabic_learning/vars/global.dart';
+import 'package:arabic_learning/vars/statics_var.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:convex_bottom_bar/convex_bottom_bar.dart';
@@ -7,10 +7,10 @@ import 'package:flutter/services.dart';
 import 'package:window_manager/window_manager.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
-import 'package:arabic_learning/home_page.dart';
-import 'package:arabic_learning/learning_page.dart';
-import 'package:arabic_learning/setting_page.dart';
-import 'package:arabic_learning/test_page.dart';
+import 'package:arabic_learning/pages/home_page.dart';
+import 'package:arabic_learning/pages/learning_page.dart';
+import 'package:arabic_learning/pages/setting_page.dart';
+import 'package:arabic_learning/pages/test_page.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();

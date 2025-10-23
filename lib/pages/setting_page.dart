@@ -1,9 +1,9 @@
 import 'dart:convert';
 import 'package:flutter/foundation.dart' show kIsWeb;
-import 'package_replacement/fake_dart_io.dart' if (dart.library.io) 'dart:io';
+import '../package_replacement/fake_dart_io.dart' if (dart.library.io) 'dart:io';
 
-import 'package:arabic_learning/global.dart';
-import 'package:arabic_learning/statics_var.dart';
+import 'package:arabic_learning/vars/global.dart';
+import 'package:arabic_learning/vars/statics_var.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
