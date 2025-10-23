@@ -1,5 +1,5 @@
 import 'dart:convert';
-import 'package:arabic_learning/statics_var.dart';
+import 'package:arabic_learning/vars/statics_var.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 

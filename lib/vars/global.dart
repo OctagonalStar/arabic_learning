@@ -1,4 +1,4 @@
-import 'package:arabic_learning/statics_var.dart';
+import 'package:arabic_learning/vars/statics_var.dart';
 import 'package:archive/archive.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
@@ -11,8 +11,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package_replacement/fake_dart_io.dart' if (dart.library.io) 'dart:io' as io;
-import 'package_replacement/fake_sherpa_onnx.dart' if (dart.library.io) 'package:sherpa_onnx/sherpa_onnx.dart' as sherpa_onnx;
+import '../package_replacement/fake_dart_io.dart' if (dart.library.io) 'dart:io' as io;
+import '../package_replacement/fake_sherpa_onnx.dart' if (dart.library.io) 'package:sherpa_onnx/sherpa_onnx.dart' as sherpa_onnx;
 
 class Global with ChangeNotifier {
   late bool firstStart;

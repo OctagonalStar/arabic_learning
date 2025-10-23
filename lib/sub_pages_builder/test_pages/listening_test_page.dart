@@ -1,6 +1,6 @@
-import 'package:arabic_learning/statics_var.dart';
+import 'package:arabic_learning/vars/statics_var.dart';
 import 'package:flutter/material.dart';
-import 'package:arabic_learning/global.dart';
+import 'package:arabic_learning/vars/global.dart';
 
 class ForeListeningSettingPage extends StatelessWidget {
   const ForeListeningSettingPage({super.key});
