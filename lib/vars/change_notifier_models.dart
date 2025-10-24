@@ -35,6 +35,7 @@ class PageCounterModel extends ChangeNotifier {
     notifyListeners();
   }
   void init() {
+    // TODO: Refactoring to use global function
     for(List<String> c in courseList) {
       selectedWords.addAll(wordData["Classes"][c[0]][c[1]].cast<int>());
     }

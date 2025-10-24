@@ -1,5 +1,6 @@
 import 'package:arabic_learning/vars/global.dart';
 import 'package:arabic_learning/vars/statics_var.dart';
+import 'package:arabic_learning/sub_pages_builder/test_pages/listening_test_page.dart';
 import 'package:flutter/material.dart';
 
 class TestPage extends StatelessWidget {
@@ -66,7 +67,7 @@ class TestPage extends StatelessWidget {
                 Navigator.push(
                   context, 
                   MaterialPageRoute(
-                    builder: (context) => InDevelopingPage()
+                    builder: (context) => ForeListeningSettingPage()
                   )
                 );
               },

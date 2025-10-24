@@ -1,6 +1,5 @@
 import 'dart:convert';
 import 'dart:math';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:arabic_learning/vars/change_notifier_models.dart';
 import 'package:arabic_learning/vars/global.dart';
 import 'package:arabic_learning/sub_pages_builder/learning_pages/learning_pages_build.dart';
@@ -148,9 +147,9 @@ class LearningPage extends StatelessWidget {
 }
 
 
-void shiftToStudy(BuildContext context, int studyType) async {
-  final SharedPreferences prefs = await SharedPreferences.getInstance();
-  final jsonString = prefs.getString("tempConfig") ?? jsonEncode(StaticsVar.tempConfig);
+void shiftToStudy(BuildContext context, int studyType) {
+  // TODO: Refactoring to use global function
+  final jsonString = context.read<Global>().prefs.getString("tempConfig") ?? jsonEncode(StaticsVar.tempConfig);
   final courseList = (jsonDecode(jsonString)["SelectedClasses"] as List)
       .cast<List>()
       .map((e) => e.cast<String>().toList())
@@ -178,7 +177,7 @@ void shiftToStudy(BuildContext context, int studyType) async {
   }
   PageCounterModel valSetter = PageCounterModel(courseList: courseList, wordData: context.read<Global>().wordData, isMixStudy: studyType == 0);
   valSetter.init();
-  await Navigator.push(
+  Navigator.push(
     context,
     MaterialPageRoute(
       builder: (context) => ChangeNotifierProvider.value(
@@ -186,7 +185,7 @@ void shiftToStudy(BuildContext context, int studyType) async {
         child: InLearningPage(studyType: studyType,)
       ),
     ),
-  ) as List<String>?;
+  );
   if(valSetter.finished && context.mounted) {
     context.read<Global>().saveLearningProgress(valSetter.selectedWords);
   }
@@ -351,96 +350,4 @@ class _InLearningPageState extends State<InLearningPage> {
       )
     );
   }
-}
-
-
-class ClassSelector extends StatelessWidget { 
-  const ClassSelector({super.key});
-  @override
-  Widget build(BuildContext context) {
-    final mediaQuery = MediaQuery.of(context);
-    if(!context.watch<ClassSelectModel>().initialized) {
-      return Scaffold(
-        body: Center(
-          child: CircularProgressIndicator(),
-        ),
-      );
-    }
-
-    return Scaffold(
-      appBar: AppBar(
-        title: Text('选择特定课程单词'),
-      ),
-      body: Column(
-        children: [
-          Expanded(
-            child: ListView(
-              children: classesSelectionList(context, mediaQuery)
-            ),
-          ),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(
-              fixedSize: Size(mediaQuery.size.width, mediaQuery.size.height * 0.1),
-              shape: ContinuousRectangleBorder(borderRadius: StaticsVar.br),
-            ),
-            child: Text('确认'),
-            onPressed: () {
-              Navigator.pop(context);
-            },
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-List<Widget> classesSelectionList(BuildContext context, MediaQueryData mediaQuery) {
-  Map<String, dynamic> wordData = context.read<Global>().wordData;
-  List<Widget> widgetList = [];
-  for (String sourceName in wordData["Classes"].keys) {
-    widgetList.add(
-      Container(
-        margin: EdgeInsets.all(16.0),
-        padding: EdgeInsets.all(8.0),
-        decoration: BoxDecoration(
-          color: Theme.of(context).colorScheme.onPrimary,
-          borderRadius: StaticsVar.br,
-        ),
-        child: Text(
-          sourceName,
-          style: TextStyle(
-            fontSize: 16.0,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-      ),
-    );
-    bool isEven = true;
-    for(String className in wordData["Classes"][sourceName].keys){
-      widgetList.add(
-        Container(
-          margin: EdgeInsets.all(2),
-          decoration: BoxDecoration(
-            color: isEven ? Theme.of(context).colorScheme.primaryContainer : Theme.of(context).colorScheme.secondaryContainer,
-            borderRadius: BorderRadius.circular(8),
-          ),
-          child: CheckboxListTile(
-            title: Text(className),
-            value: context.watch<ClassSelectModel>().selectedClasses.any((e) => e[0] == sourceName && e[1] == className,),
-            onChanged: (value) {
-              value! ? context.read<ClassSelectModel>().addClass([sourceName, className]) 
-                      : context.read<ClassSelectModel>().removeClass([sourceName, className]);
-            },
-          ),
-        ),
-      );
-      isEven = !isEven;
-    }
-  }
-  if(widgetList.isEmpty) {
-    widgetList.add(
-      Center(child: Text('啥啥词库都没导入，你学个啥呢？\n自己去 设置 -> 数据设置 -> 导入词库', style: TextStyle(fontSize: 24.0, color: Colors.redAccent),))
-    );
-  }
-  return widgetList;
 }
