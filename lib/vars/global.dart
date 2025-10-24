@@ -1,3 +1,4 @@
+import 'package:arabic_learning/vars/change_notifier_models.dart';
 import 'package:arabic_learning/vars/statics_var.dart';
 import 'package:archive/archive.dart';
 import 'package:dio/dio.dart';
@@ -125,7 +126,7 @@ class Global with ChangeNotifier {
 
   void conveySetting() {
     Map<String, dynamic> oldSetting = jsonDecode(prefs.getString("settingData")!) as Map<String, dynamic>;
-
+    
     // For v0.1.5 upgrade
     if(oldSetting["audio"]["useBackupSource"].runtimeType == bool) {
       if(oldSetting["audio"]["useBackupSource"]) {
@@ -173,11 +174,7 @@ class Global with ChangeNotifier {
   
   void updateSetting(Map<String, dynamic> settingData) {
     _settingData = settingData;
-    try {
-      prefs.setString("settingData", jsonEncode(settingData));
-    } catch (e) {
-      throw Exception("Failed to write setting file: $e"); // 异常时抛出错误
-    }
+    prefs.setString("settingData", jsonEncode(settingData));
     updateTheme();
     notifyListeners();
   }
@@ -303,8 +300,10 @@ class InDevelopingPage extends StatelessWidget {
   }
 }
 
-Future<List<dynamic>> playTextToSpeech(String text, BuildContext context) async { 
+Future<List<dynamic>> playTextToSpeech(String text, BuildContext context, {double? speed}) async { 
   // return [bool isSuccessed?, String errorInfo];
+  speed ??= context.read<Global>().settingData["audio"]["playRate"];
+
   // 0: System TTS
   if (context.read<Global>().settingData["audio"]["useBackupSource"] == 0) {
     FlutterTts flutterTts = FlutterTts();
@@ -312,8 +311,9 @@ Future<List<dynamic>> playTextToSpeech(String text, BuildContext context) async 
     await flutterTts.setLanguage("ar");
     await flutterTts.setPitch(1.0);
     if(!context.mounted) return [false, "神经网络音频合成失败\n中途退出context"];
-    await flutterTts.setSpeechRate(context.read<Global>().settingData["audio"]["playRate"] / 2);
+    await flutterTts.setSpeechRate(speed! / 2);
     await flutterTts.speak(text);
+
   // 1: TextReadTTS
   } else if (context.read<Global>().settingData["audio"]["useBackupSource"] == 1) {
     try {
@@ -325,7 +325,7 @@ Future<List<dynamic>> playTextToSpeech(String text, BuildContext context) async 
         }
         await StaticsVar.player.setUrl(data["audio"]);
         if(!context.mounted) return [false, "神经网络音频合成失败\n中途退出context"];
-        await StaticsVar.player.setSpeed(context.read<Global>().settingData["audio"]["playRate"]);
+        await StaticsVar.player.setSpeed(speed!);
         await StaticsVar.player.play();
       } else {
         return [false, "备用音源请求失败:\n错误码:${response.statusCode.toString()}"];
@@ -349,17 +349,19 @@ Future<List<dynamic>> playTextToSpeech(String text, BuildContext context) async 
       final cacheFile = io.File("${basePath.path}/temp.wav");
       if(cacheFile.existsSync()) cacheFile.deleteSync();
       if(!context.mounted) return [false, "神经网络音频合成失败\n中途退出context"];
-      final audio = context.read<Global>().vitsTTS!.generate(text: text, speed: context.read<Global>().settingData["audio"]["playRate"]);
+      final audio = context.read<Global>().vitsTTS!.generate(text: text, speed: speed!);
       final ok = sherpa_onnx.writeWave(
                           filename: cacheFile.path,
                           samples: audio.samples,
                           sampleRate: audio.sampleRate,
                         );
+      final Duration duration = Duration(milliseconds: (audio.samples.length / audio.sampleRate * 1000).round());
       if(ok) {
         await StaticsVar.player.setAudioSource(AudioSource.uri(Uri.file(cacheFile.path)));
         // await StaticsVar.player.setSpeed(playRate);
-        await StaticsVar.player.play();
-        await Future.delayed(Duration(milliseconds: 1000));
+
+        StaticsVar.player.play();
+        await Future.delayed(duration);
         if(cacheFile.existsSync()) cacheFile.deleteSync();
       }else {
         return [false, "神经网络音频合成失败\n错误信息:无法将音频写入文件"];
@@ -396,21 +398,37 @@ class TextContainer extends StatelessWidget {
   final String text;
   final TextStyle? style;
   final bool? selectable;
+  final Size? size;
+  final TextAlign? textAlign;
   const TextContainer({super.key, 
                       required this.text, 
                       this.style,
-                      this.selectable = false});
+                      this.size,
+                      this.selectable = false,
+                      this.textAlign = TextAlign.start});
 
   @override
   Widget build(BuildContext context) {
+    late TextStyle actualStyle;
+    if(style == null) {
+      actualStyle = TextStyle(
+        fontSize: 18.0,
+      );
+    } else {
+      actualStyle = style!;
+    }
     return Container(
+        width: size?.width,
+        height: size?.height,
         margin: EdgeInsets.all(16.0),
         padding: EdgeInsets.all(8.0),
         decoration: BoxDecoration(
           color: Theme.of(context).colorScheme.onPrimary,
           borderRadius: StaticsVar.br,
         ),
-        child: (selectable??false) ? SelectableText(text,style: (style == null) ? TextStyle(fontSize: 18.0) : style) : Text(text,style: (style == null) ? TextStyle(fontSize: 18.0) : style),
+        child: (selectable??false) 
+                ? SelectableText(text,style: actualStyle, textAlign: textAlign,) 
+                : Text(text,style: actualStyle, textAlign: textAlign),
     );
   }
 }
@@ -445,4 +463,113 @@ Future<void> downloadFile(String url, String savePath, {ProgressCallback? onDown
     savePath,
     onReceiveProgress: onDownloading?? (count, total){},
   );
+}
+
+class ClassSelector extends StatelessWidget { 
+  const ClassSelector({super.key});
+  @override
+  Widget build(BuildContext context) {
+    final mediaQuery = MediaQuery.of(context);
+    if(!context.watch<ClassSelectModel>().initialized) {
+      return Scaffold(
+        body: Center(
+          child: CircularProgressIndicator(),
+        ),
+      );
+    }
+
+    return Scaffold(
+      appBar: AppBar(
+        title: Text('选择特定课程单词'),
+      ),
+      body: Column(
+        children: [
+          Expanded(
+            child: ListView(
+              children: classesSelectionList(context, mediaQuery)
+            ),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              fixedSize: Size(mediaQuery.size.width, mediaQuery.size.height * 0.1),
+              shape: ContinuousRectangleBorder(borderRadius: StaticsVar.br),
+            ),
+            child: Text('确认'),
+            onPressed: () {
+              Navigator.pop(context);
+            },
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+List<Widget> classesSelectionList(BuildContext context, MediaQueryData mediaQuery) {
+  Map<String, dynamic> wordData = context.read<Global>().wordData;
+  List<Widget> widgetList = [];
+  for (String sourceName in wordData["Classes"].keys) {
+    widgetList.add(
+      Container(
+        margin: EdgeInsets.all(16.0),
+        padding: EdgeInsets.all(8.0),
+        decoration: BoxDecoration(
+          color: Theme.of(context).colorScheme.onPrimary,
+          borderRadius: StaticsVar.br,
+        ),
+        child: Text(
+          sourceName,
+          style: TextStyle(
+            fontSize: 16.0,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+      ),
+    );
+    bool isEven = true;
+    for(String className in wordData["Classes"][sourceName].keys){
+      widgetList.add(
+        Container(
+          margin: EdgeInsets.all(2),
+          decoration: BoxDecoration(
+            color: isEven ? Theme.of(context).colorScheme.primaryContainer : Theme.of(context).colorScheme.secondaryContainer,
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: CheckboxListTile(
+            title: Text(className),
+            value: context.watch<ClassSelectModel>().selectedClasses.any((e) => e[0] == sourceName && e[1] == className,),
+            onChanged: (value) {
+              value! ? context.read<ClassSelectModel>().addClass([sourceName, className]) 
+                      : context.read<ClassSelectModel>().removeClass([sourceName, className]);
+            },
+          ),
+        ),
+      );
+      isEven = !isEven;
+    }
+  }
+  if(widgetList.isEmpty) {
+    widgetList.add(
+      Center(child: Text('啥啥词库都没导入，你学个啥呢？\n自己去 设置 -> 数据设置 -> 导入词库', style: TextStyle(fontSize: 24.0, color: Colors.redAccent),))
+    );
+  }
+  return widgetList;
+}
+
+List<Map<String, dynamic>> getSelectedWords(BuildContext context , {bool doShuffle = false, bool doDouble = false}) {
+  final tpcPrefs = context.read<Global>().prefs.getString("tempConfig") ?? jsonEncode(StaticsVar.tempConfig);
+  final wordData = context.read<Global>().wordData;
+  final courseList = (jsonDecode(tpcPrefs)["SelectedClasses"] as List)
+      .cast<List>()
+      .map((e) => e.cast<String>().toList())
+      .toList();
+  List<Map<String, dynamic>> ans = [];
+  for(List<String> c in courseList) {
+    for (int x in wordData["Classes"][c[0]][c[1]].cast<int>()){
+      ans.add(wordData["Words"][x]);
+    }
+  }
+  if(doDouble) ans = [...ans, ...ans];
+  if(doShuffle) ans.shuffle();
+  return ans;
 }
