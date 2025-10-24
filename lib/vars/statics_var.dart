@@ -16,4 +16,5 @@ class StaticsVar {
   static final isDesktop = kIsWeb ? false : (Platform.isWindows || Platform.isLinux || Platform.isMacOS);
   static const Curve curve = Curves.easeInOut;
   static final player = AudioPlayer(); // load Player when app start
+
 }
