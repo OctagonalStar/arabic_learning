@@ -1,4 +1,4 @@
-import 'package:arabic_learning/vars/global.dart';
+import 'package:arabic_learning/funcs/ui.dart';
 import 'package:arabic_learning/vars/statics_var.dart';
 import 'package:arabic_learning/sub_pages_builder/test_pages/listening_test_page.dart';
 import 'package:flutter/material.dart';

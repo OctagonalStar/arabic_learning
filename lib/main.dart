@@ -230,7 +230,7 @@ class _MyHomePageState extends State<MyHomePage> {
                 children: [
                   ElevatedButton(
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.teal,
+                      //backgroundColor: Colors.teal,
                       shape: ContinuousRectangleBorder(borderRadius: StaticsVar.br)
                     ),
                     onPressed: () async {
@@ -242,7 +242,7 @@ class _MyHomePageState extends State<MyHomePage> {
                   ),
                   ElevatedButton(
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.teal,
+                      //backgroundColor: Colors.teal,
                       shape: ContinuousRectangleBorder(borderRadius: StaticsVar.br)
                     ),
                     onPressed: () async {

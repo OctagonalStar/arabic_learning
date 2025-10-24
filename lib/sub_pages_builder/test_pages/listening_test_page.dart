@@ -1,7 +1,8 @@
+import 'package:arabic_learning/funcs/ui.dart';
+import 'package:arabic_learning/funcs/utili.dart';
 import 'package:arabic_learning/vars/change_notifier_models.dart';
 import 'package:arabic_learning/vars/statics_var.dart';
 import 'package:flutter/material.dart';
-import 'package:arabic_learning/vars/global.dart';
 import 'package:provider/provider.dart';
 
 class ForeListeningSettingPage extends StatelessWidget {
