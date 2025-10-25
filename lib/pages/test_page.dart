@@ -63,7 +63,6 @@ class TestPage extends StatelessWidget {
                 ),
               ),
               onPressed: () {
-                // TODO: #7 to listen test page
                 Navigator.push(
                   context, 
                   MaterialPageRoute(
