@@ -320,7 +320,7 @@ class _MainListeningPageState extends State<MainListeningPage> {
           mainAxisAlignment: MainAxisAlignment.center,
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            TextContainer(text: "当前播放数/总数: $index/${(widget.words.length * widget.playTimes)}", size: Size(mediaQuery.size.width * 0.4, mediaQuery.size.height * 0.05),textAlign: TextAlign.center,),
+            TextContainer(text: "当前播放数/总数: $index/${(widget.words.length * widget.playTimes)}",textAlign: TextAlign.center,),
             TextContainer(text: state, style: TextStyle(fontSize: 32.0), size: Size(mediaQuery.size.width * 0.8, mediaQuery.size.height * 0.4),textAlign: TextAlign.center,),
             TextContainer(text: counter, style: TextStyle(fontSize: 36.0, color: Colors.redAccent), size: Size(mediaQuery.size.width * 0.6, mediaQuery.size.height * 0.1),textAlign: TextAlign.center,),
             ElevatedButton.icon(
