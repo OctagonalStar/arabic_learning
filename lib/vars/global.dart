@@ -20,6 +20,7 @@ class Global with ChangeNotifier {
       "theme": 9,
       "font": 0, //0: Noto Sans SC, 1: Google Noto Sans SC
       "darkMode": false,
+      "hideAppDownloadButton": false,
     },
     'audio': {
       "useBackupSource": 0, // 0: Normal, 1: OnlineBackup, 2: LocalVITS

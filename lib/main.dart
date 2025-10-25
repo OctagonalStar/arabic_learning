@@ -127,7 +127,7 @@ class _MyHomePageState extends State<MyHomePage> {
                 currentIndex = index;
               });
             },
-            physics: const NeverScrollableScrollPhysics(), // 禁用滑动
+            // physics: const NeverScrollableScrollPhysics(), // 禁用滑动
             children: _pageList,
           ),
         ),
@@ -287,7 +287,7 @@ class _MyHomePageState extends State<MyHomePage> {
         centerTitle: true,
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
         title: Text(widget.title),
-        actions: kIsWeb ?  [
+        actions: kIsWeb && !gob.settingData['regular']['hideAppDownloadButton'] ?  [
           ElevatedButton.icon(
             icon: Icon(Icons.add_to_home_screen),
             label: Text('下载APP版本'),

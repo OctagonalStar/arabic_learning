@@ -99,6 +99,20 @@ class _SettingPage extends State<SettingPage> {
           )
         ]
       ),
+      if(kIsWeb) Row(
+        children: [
+          Icon(Icons.hide_source, size: 24.0),
+          SizedBox(width: mediaQuery.size.width * 0.01),
+          Expanded(child: Text("隐藏网页版右上角APP下载按钮")),
+          Switch(
+            value: setting['regular']['hideAppDownloadButton'] ?? false,
+            onChanged: (value) {
+              setting['regular']['hideAppDownloadButton'] = value;
+              context.read<Global>().updateSetting(setting);
+            },
+          )
+        ],
+      ),
     ];
   }
   List<Widget> dataSetting(MediaQueryData mediaQuery, BuildContext context, Map<String, dynamic> setting) {
