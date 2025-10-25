@@ -237,8 +237,14 @@ class Global with ChangeNotifier {
     notifyListeners();
   }
   
-  void saveLearningProgress(List<int> wordIndexs){
+  void saveLearningProgress(List<Map<String, dynamic>> words){
     final int nowDate = int.parse("${DateTime.now().year}${DateTime.now().month}${DateTime.now().day}");
+    
+    List<int> wordIndexs = [];
+    for (Map<String, dynamic> word in words){
+      wordIndexs.add(word['id']);
+    }
+
     for(int x in wordIndexs){
       wordData["Words"][x]["learningProgress"] += 1;
       if(_settingData["learning"]["KnownWords"].contains(x)) continue;
