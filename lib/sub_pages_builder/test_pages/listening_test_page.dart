@@ -12,8 +12,9 @@ class ForeListeningSettingPage extends StatelessWidget {
   Widget build(BuildContext context) {
     double playRate = 1.0;
     int playTimes = 3;
-    int interval = 3;
-    int intervalBetweenWords = 5;
+    int interval = 5;
+    int intervalBetweenWords = 10;
+    MediaQueryData mediaQuery = MediaQuery.of(context);
     return Scaffold(
       appBar: AppBar(
         title: Text('自主听写预设置'),
@@ -47,7 +48,7 @@ class ForeListeningSettingPage extends StatelessWidget {
             ElevatedButton(
               style: ElevatedButton.styleFrom(
                 padding: EdgeInsets.all(16.0),
-                minimumSize: Size.fromHeight(50.0),
+                minimumSize: Size.fromHeight(mediaQuery.size.height * 0.1),
                 shape: RoundedRectangleBorder(
                   borderRadius: StaticsVar.br,
                 ),
@@ -92,17 +93,20 @@ class ForeListeningSettingPage extends StatelessWidget {
                       Row(
                         children: [
                           Expanded(child: Text("单词播放语速")),
-                          Slider(
-                            value: playRate,
-                            min: 0.5,
-                            max: 1.5,
-                            divisions: 10,
-                            label: playRate.toStringAsFixed(1),
-                            onChanged: (double value) {
-                              setLocalState(() {
-                                playRate = value;
-                              });
-                            }
+                          SizedBox(
+                            width: mediaQuery.size.width * 0.6,
+                            child: Slider(
+                              value: playRate,
+                              min: 0.5,
+                              max: 1.5,
+                              divisions: 10,
+                              label: playRate.toStringAsFixed(1),
+                              onChanged: (double value) {
+                                setLocalState(() {
+                                  playRate = value;
+                                });
+                              }
+                            ),
                           ),
                           Text("${playRate.toStringAsFixed(1)}倍"),
                         ],
@@ -110,17 +114,20 @@ class ForeListeningSettingPage extends StatelessWidget {
                       Row(
                         children: [
                           Expanded(child: Text("单词播放次数")),
-                          Slider(
-                            value: playTimes.toDouble(),
-                            min: 1,
-                            max: 5,
-                            divisions: 4,
-                            label: playTimes.toString(),
-                            onChanged: (double value) {
-                              setLocalState(() {
-                                playTimes = value.toInt();
-                              });
-                            }
+                          SizedBox(
+                            width: mediaQuery.size.width * 0.6,
+                            child: Slider(
+                              value: playTimes.toDouble(),
+                              min: 1,
+                              max: 5,
+                              divisions: 4,
+                              label: playTimes.toString(),
+                              onChanged: (double value) {
+                                setLocalState(() {
+                                  playTimes = value.toInt();
+                                });
+                              }
+                            ),
                           ),
                           Text("${playTimes.toString()}次"),
                         ]
@@ -128,19 +135,22 @@ class ForeListeningSettingPage extends StatelessWidget {
                       Row(
                         children: [
                           Expanded(child: Text("不同单词间隔时间(秒)")),
-                          Slider(
-                            value: intervalBetweenWords.toDouble(),
-                            min: 1,
-                            max: 10,
-                            divisions: 9,
-                            label: intervalBetweenWords.toString(),
-                            onChanged: (double value) {
-                              setLocalState(
-                                () {
-                                  intervalBetweenWords = value.toInt();
-                                }
-                              );
-                            }
+                          SizedBox(
+                            width: mediaQuery.size.width * 0.6,
+                            child: Slider(
+                              value: intervalBetweenWords.toDouble(),
+                              min: 1,
+                              max: 20,
+                              divisions: 19,
+                              label: intervalBetweenWords.toString(),
+                              onChanged: (double value) {
+                                setLocalState(
+                                  () {
+                                    intervalBetweenWords = value.toInt();
+                                  }
+                                );
+                              }
+                            ),
                           ),
                           Text("${intervalBetweenWords.toString()}秒"),
                         ]
@@ -148,19 +158,22 @@ class ForeListeningSettingPage extends StatelessWidget {
                       Row(
                         children: [
                           Expanded(child: Text("同一单词间隔时间(秒)")),
-                          Slider(
-                            value: interval.toDouble(),
-                            min: 1,
-                            max: 5,
-                            divisions: 4,
-                            label: interval.toString(),
-                            onChanged: (double value) {
-                              setLocalState(
-                                () {
-                                  interval = value.toInt();
-                                }
-                              );
-                            }
+                          SizedBox(
+                            width: mediaQuery.size.width * 0.6,
+                            child: Slider(
+                              value: interval.toDouble(),
+                              min: 1,
+                              max: 15,
+                              divisions: 14,
+                              label: interval.toString(),
+                              onChanged: (double value) {
+                                setLocalState(
+                                  () {
+                                    interval = value.toInt();
+                                  }
+                                );
+                              }
+                            ),
                           ),
                           Text("${interval.toString()}秒"),
                         ]
