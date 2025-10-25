@@ -14,7 +14,8 @@ import 'package:provider/provider.dart';
 // 学习主入口页面
 class InLearningPage extends StatefulWidget {
   final int studyType; // 0:Mix 1: 中译阿 2: 阿译中
-  const InLearningPage({super.key, required this.studyType});
+  final List<Map<String, dynamic>> words;
+  const InLearningPage({super.key, required this.studyType, required this.words});
   @override
   State<InLearningPage> createState() => _InLearningPageState();
 }
@@ -26,7 +27,7 @@ class _InLearningPageState extends State<InLearningPage> {
   List<Widget> buildedCache = [];
   @override
   Widget build(BuildContext context) {
-    final int total = context.read<PageCounterModel>().totalPages;
+    final int total = widget.words.length;
     final mediaQuery = MediaQuery.of(context);
     return Scaffold(
       appBar: AppBar(
@@ -71,7 +72,7 @@ class _InLearningPageState extends State<InLearningPage> {
               child: TweenAnimationBuilder<double>(
                 tween: Tween<double>(
                   begin: 0.00,
-                  end: context.read<PageCounterModel>().currentPage / (total - 1),
+                  end: context.read<InLearningPageCounterModel>().currentPage / (total - 1),
                 ),
                 duration: const Duration(milliseconds: 500),
                 curve: StaticsVar.curve,
@@ -90,7 +91,7 @@ class _InLearningPageState extends State<InLearningPage> {
               width: mediaQuery.size.width * 0.05,
               child: FittedBox(
                 fit: BoxFit.scaleDown,
-                child: Text("${total - context.watch<PageCounterModel>().currentPage}"),
+                child: Text("${total - context.watch<InLearningPageCounterModel>().currentPage}"),
               ),
             )
           ],
@@ -101,27 +102,28 @@ class _InLearningPageState extends State<InLearningPage> {
           scrollDirection: Provider.of<Global>(context).isWideScreen ? Axis.vertical : Axis.horizontal,
           physics: NeverScrollableScrollPhysics(),
           itemCount: total,
-          controller: context.read<PageCounterModel>().controller,
+          controller: context.read<InLearningPageCounterModel>().controller,
           onPageChanged: (index) {
-            context.read<PageCounterModel>().setPage(index);
+            context.read<InLearningPageCounterModel>().setPage(index);
           },
           itemBuilder: (context, index) {
             if(index < buildedCache.length) return buildedCache[index];
-            Map<String, dynamic> wordData = Provider.of<Global>(context).wordData;
-            List<int> selectedWords = context.read<PageCounterModel>().selectedWords; // 已选择的单词 [int: 在词库中的索引]
-            int t = selectedWords[index]; // 正确答案在词库中的索引
+            // Map<String, dynamic> wordData = Provider.of<Global>(context).wordData;
+            // List<int> selectedWords = context.read<InLearningPageCounterModel>().selectedWords; // 已选择的单词 [int: 在词库中的索引]
+
+            Map<String, dynamic> t = widget.words[index]; // 正确答案在词库中的索引
             late bool testType; // true: 中文->阿拉伯, false: 阿拉伯->中文
             if(widget.studyType == 0) {
-              if (testedAr.contains(t)) {
+              if (testedAr.contains(t['id'])) {
                 testType = true;
-              } else if(testedCh.contains(t)){
+              } else if(testedCh.contains(t['id'])){
                 testType = false;
               } else {
                 testType = rnd.nextBool();
                 if (testType) {
-                  testedCh.add(t);
+                  testedCh.add(t['id']);
                 } else {
-                  testedAr.add(t);
+                  testedAr.add(t['id']);
                 }
               }
             } else if (widget.studyType == 1) {
@@ -129,37 +131,37 @@ class _InLearningPageState extends State<InLearningPage> {
             } else {
               testType = false;
             }
-            context.read<PageCounterModel>().currentType = testType;
+            context.read<InLearningPageCounterModel>().currentType = testType; // for the font identify :P
             List<String> strList = [];
             int aindex = rnd.nextInt(4); // 正确答案在选项中的索引
-            List<int> rndLst = [t]; // 已抽取的索引
+            List<int> rndLst = [t['id']]; // 已抽取的 绝对索引
             for (int i = 0; i < aindex; i++) {
-              int r = selectedWords[rnd.nextInt(total)];
-              while (rndLst.contains(r)){
-                r = selectedWords[rnd.nextInt(total)];
+              Map<String, dynamic> r = widget.words[rnd.nextInt(total)];
+              while (rndLst.contains(r['id'])){
+                r = widget.words[rnd.nextInt(total)];
               }
-              rndLst.add(r);
-              strList.add(wordData["Words"][r][testType ? "arabic" : "chinese"]);
+              rndLst.add(r['id']);
+              strList.add(r[testType ? "arabic" : "chinese"]);
             }
-            strList.add(wordData["Words"][t][testType ? "arabic" : "chinese"]);
+            strList.add(t[testType ? "arabic" : "chinese"]);
             for (int i = aindex + 1; i < 4; i++) {
-              int r = selectedWords[rnd.nextInt(total)];
-              while (rndLst.contains(r)){
-                r = selectedWords[rnd.nextInt(total)];
+              Map<String, dynamic> r = widget.words[rnd.nextInt(total)];
+              while (rndLst.contains(r['id'])){
+                r = widget.words[rnd.nextInt(total)];
               }
-              rndLst.add(r);
-              strList.add(wordData["Words"][r][testType ? "arabic" : "chinese"]);
+              rndLst.add(r['id']);
+              strList.add(r[testType ? "arabic" : "chinese"]);
             }
             Widget learningPageWidget = Column(
               mainAxisAlignment: MainAxisAlignment.center, 
               children: questionConstructer(context, 
                                           aindex,
                                           [
-                                            wordData["Words"][t][testType ? "chinese" : "arabic"], // 0
+                                            t[testType ? "chinese" : "arabic"], // 0
                                             ...strList, // 1 2 3 4
-                                            wordData["Words"][t]["explanation"], // 5
-                                            wordData["Words"][t]["subClass"], // 6
-                                            t.toString(),
+                                            t["explanation"], // 5
+                                            t["subClass"], // 6
+                                            t['id'].toString(), // 7
                                           ],
                                           testType));
             buildedCache.add(learningPageWidget);
@@ -335,12 +337,12 @@ Widget choseButtons(BuildContext context, int index, List<String> data, int show
               shape: RoundedRectangleBorder(borderRadius: StaticsVar.br),
             ),
             onPressed: () {
-              if(context.read<PageCounterModel>().isLastPage) {
-                Provider.of<PageCounterModel>(context, listen: false).finished = true;
+              if(context.read<InLearningPageCounterModel>().isLastPage) {
+                Provider.of<InLearningPageCounterModel>(context, listen: false).finished = true;
                 List<int> data = [
-                  context.read<PageCounterModel>().totalPages, 
-                  context.read<PageCounterModel>().conrrects.length, 
-                  ((DateTime.now().millisecondsSinceEpoch - context.read<PageCounterModel>().startTime)/1000.0).toInt()
+                  context.read<InLearningPageCounterModel>().totalPages, 
+                  context.read<InLearningPageCounterModel>().conrrects.length, 
+                  ((DateTime.now().millisecondsSinceEpoch - context.read<InLearningPageCounterModel>().startTime)/1000.0).toInt()
                 ];
                 Navigator.push(
                   context, 
@@ -351,7 +353,7 @@ Widget choseButtons(BuildContext context, int index, List<String> data, int show
                   )
                 );
               } else {
-                var counter = Provider.of<PageCounterModel>(context, listen: false);
+                var counter = Provider.of<InLearningPageCounterModel>(context, listen: false);
                 counter.controller.animateToPage(counter.currentPage + 1, duration: Duration(milliseconds: 500), curve: StaticsVar.curve);
               }
             },
@@ -360,9 +362,9 @@ Widget choseButtons(BuildContext context, int index, List<String> data, int show
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(context.read<PageCounterModel>().isLastPage ? Icons.done : Icons.navigate_next, size: 16.0),
+                  Icon(context.read<InLearningPageCounterModel>().isLastPage ? Icons.done : Icons.navigate_next, size: 16.0),
                   SizedBox(width: mediaQuery.size.width * 0.01),
-                  Text(context.read<PageCounterModel>().isLastPage ? "完成" : "下一个"),
+                  Text(context.read<InLearningPageCounterModel>().isLastPage ? "完成" : "下一个"),
                 ],
               ),
             ),
@@ -377,7 +379,7 @@ Widget choseButtons(BuildContext context, int index, List<String> data, int show
   void chose(int i, Function setLocalState) {
     if(!rcl.chosed) {
       rcl.chosed = true;
-      if(index == i) context.read<PageCounterModel>().conrrects.add(int.parse(data[7]));
+      if(index == i) context.read<InLearningPageCounterModel>().conrrects.add(int.parse(data[7]));
     }
     setLocalState(() {
       cl[i] = Colors.amberAccent;
@@ -477,7 +479,7 @@ StatefulBuilder buttonBox(List<Color> cl, int i, void Function(int i, Function s
                   borderRadius: StaticsVar.br,
                 ),
               ),
-              child: Center(child: FittedBox(fit: BoxFit.scaleDown ,child: Text(data[i+1], style: (context.read<Global>().settingData["regular"]["font"] == 1 && context.read<PageCounterModel>().currentType) ? GoogleFonts.markaziText(fontSize: 44.0) : TextStyle(fontSize: 24.0)))),
+              child: Center(child: FittedBox(fit: BoxFit.scaleDown ,child: Text(data[i+1], style: (context.read<Global>().settingData["regular"]["font"] == 1 && context.read<InLearningPageCounterModel>().currentType) ? GoogleFonts.markaziText(fontSize: 44.0) : TextStyle(fontSize: 24.0)))),
             ),
           );
         }

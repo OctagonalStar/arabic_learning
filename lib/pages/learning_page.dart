@@ -1,5 +1,5 @@
-import 'dart:convert';
 import 'package:arabic_learning/funcs/ui.dart';
+import 'package:arabic_learning/funcs/utili.dart';
 import 'package:arabic_learning/vars/change_notifier_models.dart';
 import 'package:arabic_learning/vars/global.dart';
 import 'package:arabic_learning/sub_pages_builder/learning_pages/learning_pages_build.dart';
@@ -147,17 +147,12 @@ class LearningPage extends StatelessWidget {
 }
 
 
-void shiftToStudy(BuildContext context, int studyType) {
-  // TODO: Refactoring to use global function
-  final jsonString = context.read<Global>().prefs.getString("tempConfig") ?? jsonEncode(StaticsVar.tempConfig);
-  final courseList = (jsonDecode(jsonString)["SelectedClasses"] as List)
-      .cast<List>()
-      .map((e) => e.cast<String>().toList())
-      .toList();
+Future<void> shiftToStudy(BuildContext context, int studyType) async {
+  List<Map<String, dynamic>> words = getSelectedWords(context);
   if(!context.mounted){
     return;
   }
-  if(courseList.isEmpty){ 
+  if(words.isEmpty){ 
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(
         content: Text('请先选择你要学习的课程'),
@@ -175,19 +170,18 @@ void shiftToStudy(BuildContext context, int studyType) {
     );
     return ;
   }
-  PageCounterModel valSetter = PageCounterModel(courseList: courseList, wordData: context.read<Global>().wordData, isMixStudy: studyType == 0);
-  valSetter.init();
-  Navigator.push(
+  final valSetter = InLearningPageCounterModel(words.length);
+  await Navigator.push(
     context,
     MaterialPageRoute(
       builder: (context) => ChangeNotifierProvider.value(
         value: valSetter,
-        child: InLearningPage(studyType: studyType,)
+        child: InLearningPage(studyType: studyType, words: words,)
       ),
     ),
   );
   if(valSetter.finished && context.mounted) {
-    context.read<Global>().saveLearningProgress(valSetter.selectedWords);
+    context.read<Global>().saveLearningProgress(words);
   }
 }
 

@@ -31,7 +31,7 @@ List<Map<String, dynamic>> getSelectedWords(BuildContext context , {bool doShuff
   List<Map<String, dynamic>> ans = [];
   for(List<String> c in courseList) {
     for (int x in wordData["Classes"][c[0]][c[1]].cast<int>()){
-      ans.add(wordData["Words"][x]);
+      ans.add({...wordData["Words"][x], "id": x}); // 保留id方便后面进度保存
     }
   }
   if(doDouble) ans = [...ans, ...ans];

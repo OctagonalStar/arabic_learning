@@ -4,12 +4,9 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 
-class PageCounterModel extends ChangeNotifier {
-  List<List<String>> courseList;
-  Map<String, dynamic> wordData;
-  bool isMixStudy;
-  PageCounterModel({required this.courseList, required this.wordData, required this.isMixStudy});
-
+class InLearningPageCounterModel extends ChangeNotifier {
+  final int totalPages; // havn't found any better solution to avoid this value to be split also State & this Model
+  InLearningPageCounterModel(this.totalPages);
 
   int _currentPage = 0;
   final PageController _controller = PageController(initialPage: 0);
@@ -19,9 +16,7 @@ class PageCounterModel extends ChangeNotifier {
   // Other value storage
   List<int> conrrects = [];
   int startTime = DateTime.now().millisecondsSinceEpoch;
-  List<int> selectedWords = [];
   bool finished = false;
-  int get totalPages => selectedWords.length;
   bool get isLastPage => _currentPage == totalPages - 1;
   bool currentType = false;
 
@@ -34,16 +29,6 @@ class PageCounterModel extends ChangeNotifier {
     _currentPage = page;
     notifyListeners();
   }
-  void init() {
-    // TODO: Refactoring to use global function
-    for(List<String> c in courseList) {
-      selectedWords.addAll(wordData["Classes"][c[0]][c[1]].cast<int>());
-    }
-    if(isMixStudy) selectedWords = [...selectedWords, ...selectedWords];
-    selectedWords.shuffle();
-  }
-  
-  
 }
 
 
