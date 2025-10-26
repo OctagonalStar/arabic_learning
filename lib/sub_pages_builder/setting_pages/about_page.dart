@@ -30,12 +30,7 @@ class AboutPage extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.start,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text("由于该软件目前还处在开发阶段，有一些bug是不可避免的。所以在正式使用该软件前你应当阅读并理解以下条款："),
-                Text("1. 该软件仅供学习使用，请勿用于商业用途。"),
-                Text("2. 该软件不会对你的阿拉伯语成绩做出任何担保，若你出现阿拉伯语成绩不理想的情况请先考虑自己的问题 :)"),
-                Text("3. 由于软件在不同系统上运行可能存在兼容性问题，软件出错造成的任何损失（包含精神损伤），软件作者和其他贡献者不会担负任何责任"),
-                Text("4. 你知晓并理解如果你错误地使用软件（如使用错误的数据集）造成的任何后果，乃至二次宇宙大爆炸，都需要你自行承担"),
-                Text("5. 其他在GNU AFFERO GENERAL PUBLIC LICENSE (Version 3)开源协议下的条款"),
+                Text(LicenseVars.noMyDutyAnnouce),
               ],
             ),
           ),
