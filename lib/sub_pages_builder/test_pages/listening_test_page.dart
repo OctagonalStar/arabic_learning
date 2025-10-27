@@ -310,59 +310,63 @@ class _MainListeningPageState extends State<MainListeningPage> {
         )
       );
     }
-    return Scaffold(
-      appBar: AppBar(
-        automaticallyImplyLeading: false,
-        title: TweenAnimationBuilder<double>(
-          tween: Tween(
-            begin: 0.0,
-            end: index/(widget.words.length * widget.playTimes),
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) {},
+      child: Scaffold(
+        appBar: AppBar(
+          automaticallyImplyLeading: false,
+          title: TweenAnimationBuilder<double>(
+            tween: Tween(
+              begin: 0.0,
+              end: index/(widget.words.length * widget.playTimes),
+            ),
+            duration: Duration(seconds: 1), 
+            builder: (context, value, child) {
+              return LinearProgressIndicator(
+                borderRadius: StaticsVar.br,
+                minHeight: 25.0,
+                value: value,
+              );
+            },
           ),
-          duration: Duration(seconds: 1), 
-          builder: (context, value, child) {
-            return LinearProgressIndicator(
-              borderRadius: StaticsVar.br,
-              minHeight: 25.0,
-              value: value,
-            );
-          },
         ),
-      ),
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            TextContainer(text: "当前播放数/总数: $index/${(widget.words.length * widget.playTimes)}",textAlign: TextAlign.center,),
-            TextContainer(text: state, style: TextStyle(fontSize: 32.0), size: Size(mediaQuery.size.width * 0.8, mediaQuery.size.height * 0.4),textAlign: TextAlign.center,),
-            TextContainer(text: counter, style: TextStyle(fontSize: 36.0, color: Colors.redAccent), size: Size(mediaQuery.size.width * 0.6, mediaQuery.size.height * 0.1),textAlign: TextAlign.center,),
-            ElevatedButton.icon(
-              icon: Icon(stage == 1 ? Icons.flag : Icons.play_arrow, size: 32.0,),
-              label: Text(stage == 1 ? "标记当前单词" : (stage == 2 ? "查看答案" : "开始听写(20秒倒计时)")),
-              style: ElevatedButton.styleFrom(
-                padding: EdgeInsets.all(16.0),
-                fixedSize: Size.fromHeight(mediaQuery.size.height * 0.15),
-                shape: RoundedRectangleBorder(
-                  borderRadius: StaticsVar.br,
+        body: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              TextContainer(text: "当前播放数/总数: $index/${(widget.words.length * widget.playTimes)}",textAlign: TextAlign.center,),
+              TextContainer(text: state, style: TextStyle(fontSize: 32.0), size: Size(mediaQuery.size.width * 0.8, mediaQuery.size.height * 0.4),textAlign: TextAlign.center,),
+              TextContainer(text: counter, style: TextStyle(fontSize: 36.0, color: Colors.redAccent), size: Size(mediaQuery.size.width * 0.6, mediaQuery.size.height * 0.1),textAlign: TextAlign.center,),
+              ElevatedButton.icon(
+                icon: Icon(stage == 1 ? Icons.flag : Icons.play_arrow, size: 32.0,),
+                label: Text(stage == 1 ? "标记当前单词" : (stage == 2 ? "查看答案" : "开始听写(20秒倒计时)")),
+                style: ElevatedButton.styleFrom(
+                  padding: EdgeInsets.all(16.0),
+                  fixedSize: Size.fromHeight(mediaQuery.size.height * 0.15),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: StaticsVar.br,
+                  ),
                 ),
-              ),
-              onPressed: (){
-                if(stage == 1) {
-                  marks.add((index / widget.playTimes).ceil());
-                } else if(stage == 2) {
-                  setState(() {
-                    stage = 3;
-                  });
-                } else {
-                  setState(() {
-                    stage++;
-                  });
-                  circlePlay(context);
-                }
-              })
-          ],
-        ),
-      )
+                onPressed: (){
+                  if(stage == 1) {
+                    marks.add((index / widget.playTimes).ceil());
+                  } else if(stage == 2) {
+                    setState(() {
+                      stage = 3;
+                    });
+                  } else {
+                    setState(() {
+                      stage++;
+                    });
+                    circlePlay(context);
+                  }
+                })
+            ],
+          ),
+        )
+      ),
     );
   }
 
