@@ -1,5 +1,6 @@
 import 'package:arabic_learning/funcs/ui.dart';
 import 'package:arabic_learning/funcs/utili.dart';
+import 'package:arabic_learning/sub_pages_builder/learning_pages/fsrs_pages.dart';
 import 'package:arabic_learning/vars/change_notifier_models.dart';
 import 'package:arabic_learning/vars/global.dart';
 import 'package:arabic_learning/sub_pages_builder/learning_pages/learning_pages_build.dart';
@@ -64,11 +65,10 @@ class LearningPage extends StatelessWidget {
                   ),
                 ),
                 onPressed: (){
-                  // TODO: #5 to ant-forget page
                   Navigator.push(
                     context, 
                     MaterialPageRoute(
-                      builder: (context) => InDevelopingPage()
+                      builder: (context) => LearningFSRSPage()
                     )
                   );
                 },
@@ -148,7 +148,7 @@ class LearningPage extends StatelessWidget {
 
 
 Future<void> shiftToStudy(BuildContext context, int studyType) async {
-  List<Map<String, dynamic>> words = getSelectedWords(context);
+  List<Map<String, dynamic>> words = getSelectedWords(context, doShuffle: true, doDouble: studyType == 1);
   if(!context.mounted){
     return;
   }
