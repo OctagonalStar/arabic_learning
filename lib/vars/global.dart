@@ -30,6 +30,12 @@ class Global with ChangeNotifier {
       "startDate": 0, // YYYYMMDD;int
       "lastDate": 0, // YYYYMMDD;int
       "KnownWords": [],
+    },
+    'fsrs': {
+      'enabled' : false,
+      'scheduler': {},
+      'cards': [],
+      'reviewLogs': [],
     }
   };
   static const List<MaterialColor> _themeList = [
