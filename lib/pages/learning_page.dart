@@ -119,15 +119,7 @@ class LearningPage extends StatelessWidget {
               fixedSize: Size(mediaQuery.size.width * 0.9, mediaQuery.size.height * 0.2)
             ),
             onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => ChangeNotifierProvider(
-                    create: (_) => ClassSelectModel()..init(),
-                    child: ClassSelector(),
-                  ),
-                ),
-              );
+              popSelectClasses(context, withCache: true);
             },
             child: FittedBox(
               child: Row(
@@ -148,7 +140,7 @@ class LearningPage extends StatelessWidget {
 
 
 Future<void> shiftToStudy(BuildContext context, int studyType) async {
-  List<Map<String, dynamic>> words = getSelectedWords(context, doShuffle: true, doDouble: studyType == 1);
+  List<Map<String, dynamic>> words = getSelectedWords(context, doShuffle: true, doDouble: studyType == 0);
   if(!context.mounted){
     return;
   }
@@ -159,16 +151,10 @@ Future<void> shiftToStudy(BuildContext context, int studyType) async {
         duration: Duration(seconds: 2),
       ),
     );
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => ChangeNotifierProvider(
-          create: (_) => ClassSelectModel()..init(),
-          child: ClassSelector(),
-        ),
-      ),
-    );
-    return ;
+    await popSelectClasses(context, withCache: true);
+    if(!context.mounted) return;
+    words = getSelectedWords(context, doShuffle: true, doDouble: studyType == 0);
+    if(words.isEmpty) return;
   }
   final valSetter = InLearningPageCounterModel(words.length);
   await Navigator.push(
