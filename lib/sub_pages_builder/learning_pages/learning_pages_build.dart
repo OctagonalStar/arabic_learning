@@ -280,6 +280,7 @@ class ClickedListener extends ChangeNotifier {
   }
 }
 
+// 这是当初的技术债，之后有时间重构 # TODO: #-1 Refactor this to use global_shared chose buttons
 // 按钮组
 Widget choseButtons(BuildContext context, int index, List<String> data, int showingMode) {
   // data:

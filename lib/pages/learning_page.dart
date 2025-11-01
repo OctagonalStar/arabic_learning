@@ -68,12 +68,12 @@ class LearningPage extends StatelessWidget {
                   Navigator.push(
                     context, 
                     MaterialPageRoute(
-                      builder: (context) => LearningFSRSPage()
+                      builder: (context) => ForeFSRSSettingPage()
                     )
                   );
                 },
                 icon: Icon(Icons.history_edu, size: 24.0),
-                label: FittedBox(fit: BoxFit.fitWidth ,child: Text("抗遗忘学习", style: TextStyle(fontSize: 32.0))),
+                label: FittedBox(fit: BoxFit.fitWidth ,child: Text("规律性学习", style: TextStyle(fontSize: 32.0))),
               ),
               Column(
                 children: [
