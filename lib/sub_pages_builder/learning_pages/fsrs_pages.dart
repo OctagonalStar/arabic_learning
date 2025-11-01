@@ -371,7 +371,18 @@ class _FSRSLearningPageState extends State<FSRSLearningPage> {
           }
           if(progressList.isEmpty) {
             buildedPages.add(Center(
-              child: TextContainer(text: "所有新单词学习完毕！\n新学习的单词将在明日开始复习", style: TextStyle(fontSize: 20.0, color: Colors.greenAccent)),
+              child: Column(
+                children: [
+                  TextContainer(text: "所有新单词学习完毕！\n新学习的单词请今天重新进入规律学习页面完成复习巩固", style: TextStyle(fontSize: 20.0, color: Colors.greenAccent)),
+                  ElevatedButton.icon(
+                    onPressed: () {
+                      Navigator.popUntil(context, (Route route) {return route.isFirst;});
+                    },
+                    icon: Icon(Icons.done),
+                    label: Text("确认")
+                  )
+                ],
+              ),
             ));
             return buildedPages.last;
           }
