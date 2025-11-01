@@ -21,13 +21,18 @@ Future<void> downloadFile(String url, String savePath, {ProgressCallback? onDown
   );
 }
 
-List<Map<String, dynamic>> getSelectedWords(BuildContext context , {bool doShuffle = false, bool doDouble = false}) {
-  final tpcPrefs = context.read<Global>().prefs.getString("tempConfig") ?? jsonEncode(StaticsVar.tempConfig);
+List<Map<String, dynamic>> getSelectedWords(BuildContext context , {List<List<String>>? forceSelectClasses, bool doShuffle = false, bool doDouble = false}) {
   final wordData = context.read<Global>().wordData;
-  final courseList = (jsonDecode(tpcPrefs)["SelectedClasses"] as List)
+  late final List<List<String>> courseList;
+  if(forceSelectClasses == null) {
+    final tpcPrefs = context.read<Global>().prefs.getString("tempConfig") ?? jsonEncode(StaticsVar.tempConfig);
+    courseList = (jsonDecode(tpcPrefs)["SelectedClasses"] as List)
       .cast<List>()
       .map((e) => e.cast<String>().toList())
       .toList();
+  } else {
+    courseList = forceSelectClasses;
+  }
   List<Map<String, dynamic>> ans = [];
   for(List<String> c in courseList) {
     for (int x in wordData["Classes"][c[0]][c[1]].cast<int>()){
@@ -134,4 +139,28 @@ Future<void> extractTarBz2(String inputPath, String outputDir) async {
       await io.Directory(filePath).create(recursive: true);
     }
   }
+}
+
+extension StringExtensions on String {
+  bool isArabic() {
+    final arabicRegExp = RegExp(r'[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\uFB50-\uFDFF\uFE70-\uFEFF]');
+    return arabicRegExp.hasMatch(this);
+  }
+}
+
+extension ListExtensions on List {
+  bool hasDuplicate() {
+    final seen = <dynamic>{};
+    for (var element in this) {
+      if (seen.contains(element)) {
+        return true;
+      }
+      seen.add(element);
+    }
+    return false;
+  }
+}
+
+int getStrokeDays(Map<String, dynamic> settingData) {
+  return (settingData["learning"]["lastDate"] - DateTime.now().difference(DateTime(2025, 11, 1)).inDays > 1) ? "0" : (settingData["learning"]["lastDate"] - settingData["learning"]["startDate"] + 1);
 }

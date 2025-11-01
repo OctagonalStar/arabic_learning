@@ -1,6 +1,4 @@
 import 'dart:convert';
-
-import 'package:arabic_learning/vars/change_notifier_models.dart';
 import 'package:arabic_learning/vars/global.dart';
 import 'package:arabic_learning/vars/statics_var.dart';
 import 'package:flutter/material.dart';
@@ -22,7 +20,8 @@ Future<List<List<String>>> popSelectClasses(BuildContext context, {bool withCach
     // 假装圆角... :)
     shape: RoundedSuperellipseBorder(side: BorderSide(width: 1.0, color: Theme.of(context).colorScheme.onSurface), borderRadius: StaticsVar.br),
     isDismissible: false,
-    isScrollControlled: true,
+    isScrollControlled: context.read<Global>().isWideScreen,
+    enableDrag: true,
     builder: (BuildContext context) {
       return ClassSelector(beforeSelectedClasses: beforeSelectedClasses);
     }
@@ -81,7 +80,7 @@ class ClassSelector extends StatelessWidget {
           ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(
-              fixedSize: Size(mediaQuery.size.width, mediaQuery.size.height * 0.08),
+              fixedSize: Size(mediaQuery.size.width, mediaQuery.size.height * 0.05),
               shape: ContinuousRectangleBorder(borderRadius: StaticsVar.br),
             ),
             child: Text('确认'),
@@ -257,11 +256,10 @@ class ChooseButtons extends StatelessWidget {
   final List<String> options;
   final bool? Function(int) onSelected;
   final Widget? belowTip;
-  final bool isAllowAudio;
   final bool isShowAnimation;
   final int settingShowingMode; // 0: Auto, 1: 1 Row, 2: 2 Rows, 3: 4 Rows
 
-  const ChooseButtons({super.key, required this.options, required this.onSelected, this.belowTip, this.isAllowAudio = false, this.isShowAnimation = false, this.settingShowingMode = 0});
+  const ChooseButtons({super.key, required this.options, required this.onSelected, this.belowTip, this.isShowAnimation = false, this.settingShowingMode = 0});
   @override
   Widget build(BuildContext context) {
     MediaQueryData mediaQuery = MediaQuery.of(context);
@@ -269,7 +267,7 @@ class ChooseButtons extends StatelessWidget {
     // showingMode 0: 1 Row, 1: 2 Rows, 2: 4 Rows
     if(showingMode == 0) {
       bool overFlowPossible = false;
-      for(int i = 1; i < 5; i++) {
+      for(int i = 1; i < 4; i++) {
         if(options[i].length * 16 > mediaQuery.size.width * (context.read<Global>().isWideScreen ? 0.21 : 0.8)){
           overFlowPossible = true;
           break;
@@ -296,10 +294,13 @@ class ChooseButtons extends StatelessWidget {
           index: i,
           chose: onSelected,
           width: showingMode == 0 ? mediaQuery.size.width * 0.2 : showingMode == 1 ? mediaQuery.size.width * 0.45 : mediaQuery.size.width * 0.85,
-          height: 50.0,
+          height: mediaQuery.size.height * 0.15,
           isAnimated: isShowAnimation,
-          child: Text(
-            options[i],
+          child: FittedBox(
+            child: Text(
+              options[i],
+              style: TextStyle(fontSize: 36),
+            ),
           ),
         ),
       );
@@ -354,10 +355,10 @@ class ChooseButtonBox extends StatefulWidget {
 }
 
 class _ChooseButtonBoxState extends State<ChooseButtonBox> {
-
+  Color? color;
   @override
   Widget build(BuildContext context) {
-    Color color = widget.cl ?? Theme.of(context).colorScheme.primaryContainer;
+    color ??= widget.cl ?? Theme.of(context).colorScheme.primaryContainer;
     return AnimatedContainer(
       margin: EdgeInsets.all(8.0),
       duration: Duration(milliseconds: widget.isAnimated == true ? 500 : 0),
