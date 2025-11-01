@@ -1,6 +1,6 @@
 # Changelog
 
-## INDEVLOPING VERSION - 2025-11-? - (000108)
+## v0.1.8 - 2025-11-2 - (000108)
 
 ### Added
 
