@@ -31,12 +31,13 @@ class Global with ChangeNotifier {
       "lastDate": 0, // YYYYMMDD;int
       "KnownWords": [],
     },
-    'fsrs': {
-      'enabled' : false,
-      'scheduler': {},
-      'cards': [],
-      'reviewLogs': [],
-    }
+    // fsrs 独立设置
+    // 'fsrs': {
+    //   'enabled' : false,
+    //   'scheduler': {},
+    //   'cards': [],
+    //   'reviewLogs': [],
+    // }
   };
   static const List<MaterialColor> _themeList = [
       Colors.pink,
@@ -245,8 +246,6 @@ class Global with ChangeNotifier {
   }
   
   void saveLearningProgress(List<Map<String, dynamic>> words){
-    final int nowDate = int.parse("${DateTime.now().year}${DateTime.now().month}${DateTime.now().day}");
-    
     List<int> wordIndexs = [];
     for (Map<String, dynamic> word in words){
       wordIndexs.add(word['id']);
@@ -258,6 +257,8 @@ class Global with ChangeNotifier {
       if(wordData["Words"][x]["learningProgress"] >= 3) _settingData["learning"]["KnownWords"].add(x);
     }
     prefs.setString("wordData", jsonEncode(wordData));
+    // 以 2025/11/1 为基准计算天数（因为这个bug是这天修的:} ）
+    final int nowDate = DateTime.now().difference(DateTime(2025, 11, 1)).inDays;
     if (nowDate == _settingData["learning"]["lastDate"]) return;
     if (nowDate - _settingData["learning"]["lastDate"] > 1) {
       _settingData["learning"]["startDate"] = nowDate;
