@@ -10,12 +10,14 @@ import '../package_replacement/fake_sherpa_onnx.dart' if (dart.library.io) 'pack
 
 class Global with ChangeNotifier {
   late bool firstStart;
+  late bool updateLogRequire;
   late bool isWideScreen;
   late final SharedPreferences prefs;
   late String dailyWord = "";
   late bool modelTTSDownloaded = false;
   Map<String, dynamic> _settingData = {
     'User': "",
+    'LastVersion': StaticsVar.appVersion,
     'regular': {
       "theme": 9,
       "font": 0, //0: Noto Sans SC, 1: Google Noto Sans SC
@@ -127,24 +129,18 @@ class Global with ChangeNotifier {
 
   void conveySetting() {
     Map<String, dynamic> oldSetting = jsonDecode(prefs.getString("settingData")!) as Map<String, dynamic>;
-    
-    // For v0.1.5 upgrade
-    if(oldSetting["audio"]["useBackupSource"].runtimeType == bool) {
-      if(oldSetting["audio"]["useBackupSource"]) {
-        oldSetting["audio"]["useBackupSource"] = 1;
-      } else {
-        oldSetting["audio"]["useBackupSource"] = 0;
-      }
+    if(oldSetting["LastVersion"]??"" != _settingData["LastVersion"]) {
+      updateLogRequire = true;
+    } else {
+      updateLogRequire = false;
     }
-
-
     _settingData = deepMerge(_settingData, oldSetting);
   }
 
   Future<void> init() async {
     prefs = await SharedPreferences.getInstance();
     firstStart = prefs.getString("settingData") == null;
-    if(prefs.getString("wordData") == null) {
+    if(firstStart) {
       await prefs.setString("wordData", jsonEncode({"Words": [], "Classes": {}}));
       wordData = jsonDecode(jsonEncode({"Words": [], "Classes": {}})) as Map<String, dynamic>;
     } else {
