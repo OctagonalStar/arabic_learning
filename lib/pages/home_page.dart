@@ -83,7 +83,7 @@ class HomePage extends StatelessWidget {
                     ],
                   ),
                   SizedBox(height: mediaQuery.size.height * 0.03),
-                  Text(context.read<Global>().settingData["learning"]["lastDate"] == 0 ? "0" : (context.read<Global>().settingData["learning"]["lastDate"] - context.read<Global>().settingData["learning"]["startDate"] + 1).toString(), style: TextStyle(fontSize: 24.0, fontWeight: FontWeight.bold)),
+                  Text(getStrokeDays(context.read<Global>().settingData).toString(), style: TextStyle(fontSize: 24.0, fontWeight: FontWeight.bold)),
                 ],
               ),
             ),
