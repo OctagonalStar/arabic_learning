@@ -6,7 +6,7 @@ import 'package:just_audio/just_audio.dart';
 
 class StaticsVar {
   static const String appName = 'Ar 学';
-  static const double appVersion = 0.010702;
+  static const int appVersion = 000108;
   static const String modelPath = 'arabicLearning/tts/model/vits-piper-ar_JO-kareem-medium';
   static const Map<String, dynamic> tempConfig = {"SelectedClasses": []};
   static const String onlineDictOwner = 'JYinherit';

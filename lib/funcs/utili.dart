@@ -164,3 +164,21 @@ extension ListExtensions on List {
 int getStrokeDays(Map<String, dynamic> settingData) {
   return (settingData["learning"]["lastDate"] - DateTime.now().difference(DateTime(2025, 11, 1)).inDays > 1) ? "0" : (settingData["learning"]["lastDate"] - settingData["learning"]["startDate"] + 1);
 }
+
+extension ZFillExtension on num {
+  String zfill(int width) => _zfillImpl(this, width);
+}
+
+String _zfillImpl(num value, int width) {
+  if (width <= 0) return value.toString();
+
+  String raw = value.toString();
+  bool isNegative = raw.startsWith('-');
+  if (isNegative) raw = raw.substring(1);
+
+  int padding = width - raw.length - (isNegative ? 1 : 0);
+  if (padding <= 0) return isNegative ? '-$raw' : raw;
+
+  String zeros = '0' * padding;
+  return isNegative ? '-$zeros$raw' : '$zeros$raw';
+}
