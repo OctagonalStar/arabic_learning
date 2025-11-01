@@ -1,3 +1,5 @@
+import 'package:arabic_learning/funcs/ui.dart';
+import 'package:arabic_learning/funcs/utili.dart';
 import 'package:arabic_learning/vars/global.dart';
 import 'package:arabic_learning/vars/license_storage.dart';
 import 'package:arabic_learning/vars/statics_var.dart';
@@ -5,6 +7,8 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:convex_bottom_bar/convex_bottom_bar.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_markdown_plus/flutter_markdown_plus.dart';
+import 'package:http/http.dart' as http;
 import 'package:window_manager/window_manager.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -194,7 +198,6 @@ class _MyHomePageState extends State<MyHomePage> {
   Widget build(BuildContext context) {
     final gob = context.watch<Global>();
     if(gob.firstStart) {
-      
       return Scaffold(
         body: PopScope(
           canPop: false,
@@ -293,6 +296,48 @@ class _MyHomePageState extends State<MyHomePage> {
       ),
       body: LayoutBuilder(
         builder: (context, constraints) {
+          if(gob.updateLogRequire) {
+            gob.updateLogRequire = false;
+            Future.delayed(Duration(seconds: 2), () async {
+              late http.Response githubResponse;
+              try {
+                githubResponse = await http.get(Uri.parse("https://github.com/OctagonalStar/arabic_learning/raw/refs/heads/main/CHANGELOG.md"));
+              } catch (e){
+                return;
+              }
+              if(githubResponse.statusCode == 200 && context.mounted) {
+                showModalBottomSheet(
+                  context: context,
+                  shape: RoundedSuperellipseBorder(side: BorderSide(width: 1.0, color: Theme.of(context).colorScheme.onSurface), borderRadius: StaticsVar.br),
+                  enableDrag: true,
+                  isDismissible: false,
+                  isScrollControlled: true,
+                  builder: (context) {
+                    return Material(
+                      child: Column(
+                        children: [
+                          TextContainer(text: "更新内容 软件版本: ${StaticsVar.appVersion.zfill(6)}"),
+                          SizedBox(
+                            height: MediaQuery.of(context).size.height * 0.8,
+                            child: Markdown(data: githubResponse.body)
+                          ),
+                          ElevatedButton(
+                            style: ElevatedButton.styleFrom(
+                              fixedSize: Size(double.infinity, MediaQuery.of(context).size.height * 0.07)
+                            ),
+                            onPressed: () {
+                              Navigator.pop(context);
+                            }, 
+                            child: Text("知道了")
+                          )
+                        ],
+                      )
+                    );
+                  },
+                );
+              }
+            });
+          }
           // 根据屏幕宽度决定使用哪种布局
           if (constraints.maxWidth > _desktopBreakpoint) {
             Provider.of<Global>(context, listen: false).isWideScreen = true;

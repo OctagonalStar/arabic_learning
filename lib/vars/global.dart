@@ -129,18 +129,21 @@ class Global with ChangeNotifier {
 
   void conveySetting() {
     Map<String, dynamic> oldSetting = jsonDecode(prefs.getString("settingData")!) as Map<String, dynamic>;
-    if(oldSetting["LastVersion"]??"" != _settingData["LastVersion"]) {
+    if(oldSetting["LastVersion"] != _settingData["LastVersion"]) {
       updateLogRequire = true;
+      oldSetting["LastVersion"] = _settingData["LastVersion"];
     } else {
       updateLogRequire = false;
     }
     _settingData = deepMerge(_settingData, oldSetting);
+    if(updateLogRequire) updateSetting(_settingData);
   }
 
   Future<void> init() async {
     prefs = await SharedPreferences.getInstance();
     firstStart = prefs.getString("settingData") == null;
     if(firstStart) {
+      updateLogRequire = false;
       await prefs.setString("wordData", jsonEncode({"Words": [], "Classes": {}}));
       wordData = jsonDecode(jsonEncode({"Words": [], "Classes": {}})) as Map<String, dynamic>;
     } else {
