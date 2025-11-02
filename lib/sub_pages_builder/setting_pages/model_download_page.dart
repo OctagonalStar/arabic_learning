@@ -67,10 +67,8 @@ class ModelDownload extends StatelessWidget {
           ),
           SizedBox(height: 20),
           ExpansionTile(
-            title: Text("使用接口及模型的开源信息"),
+            title: Text("模型开源信息"),
             children: [
-              TextContainer(text: "接口开源地址: https://github.com/k2-fsa/sherpa-onnx/"),
-              TextContainer(text: '接口授权许可: Apache-2.0\n${LicenseVars.theTTSModelAPILICENSE}'),
               TextContainer(text: "模型开源地址: https://huggingface.co/rhasspy/piper-voices/tree/main/ar/ar_JO/kareem"),
               TextContainer(text: '模型授权许可: MIT License\n${LicenseVars.theModelLICENSE}'),
             ],
