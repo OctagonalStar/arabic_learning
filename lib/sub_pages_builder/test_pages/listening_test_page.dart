@@ -1,9 +1,7 @@
 import 'package:arabic_learning/funcs/ui.dart';
 import 'package:arabic_learning/funcs/utili.dart';
-import 'package:arabic_learning/vars/change_notifier_models.dart';
 import 'package:arabic_learning/vars/statics_var.dart';
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
 
 class ForeListeningSettingPage extends StatelessWidget {
   const ForeListeningSettingPage({super.key});
@@ -14,6 +12,7 @@ class ForeListeningSettingPage extends StatelessWidget {
     int playTimes = 3;
     int interval = 5;
     int intervalBetweenWords = 10;
+    List<List<String>>? selectedClasses;
     MediaQueryData mediaQuery = MediaQuery.of(context);
     return Scaffold(
       appBar: AppBar(
@@ -53,16 +52,8 @@ class ForeListeningSettingPage extends StatelessWidget {
                   borderRadius: StaticsVar.br,
                 ),
               ),
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => ChangeNotifierProvider(
-                      create: (_) => ClassSelectModel()..init(),
-                      child: ClassSelector(),
-                    ),
-                  ),
-                );
+              onPressed: () async {
+                selectedClasses = await popSelectClasses(context, withCache: false);
               }, 
               child: Column(
                 children: [
@@ -178,7 +169,7 @@ class ForeListeningSettingPage extends StatelessWidget {
                           Text("${interval.toString()}秒"),
                         ]
                       ),
-                      TextContainer(text: "已选择了 ${getSelectedWords(context).length} 个单词，大致需要${((getSelectedWords(context).length * playTimes * (interval + 1) + getSelectedWords(context).length * intervalBetweenWords)) ~/ 60}分钟 完成"),
+                      TextContainer(text: "已选择了 ${getSelectedWords(context, forceSelectClasses: selectedClasses).length} 个单词，大致需要${((getSelectedWords(context, forceSelectClasses: selectedClasses).length * playTimes * (interval + 1) + getSelectedWords(context, forceSelectClasses: selectedClasses).length * intervalBetweenWords)) ~/ 60}分钟 完成"),
                     ],
                   ),
                 );
@@ -195,18 +186,22 @@ class ForeListeningSettingPage extends StatelessWidget {
               icon: Icon(Icons.rocket_launch, size: 32.0,),
               label: Text("听写，启动！", style: TextStyle(fontSize: 24.0),),
               onPressed: () {
+                if((selectedClasses ?? []).isEmpty) {
+                  alart(context, "是哪个小可爱没选课程就来听写了");
+                  return;
+                }
                 Navigator.push(
-                context, 
-                MaterialPageRoute(
-                  builder: (context) => MainListeningPage(
-                    playRate: playRate, 
-                    playTimes: playTimes, 
-                    interval: interval, 
-                    intervalBetweenWords: intervalBetweenWords, 
-                    words: getSelectedWords(context, doShuffle: true)
+                  context, 
+                  MaterialPageRoute(
+                    builder: (context) => MainListeningPage(
+                      playRate: playRate, 
+                      playTimes: playTimes, 
+                      interval: interval, 
+                      intervalBetweenWords: intervalBetweenWords, 
+                      words: getSelectedWords(context, forceSelectClasses: selectedClasses, doShuffle: true)
+                    )
                   )
-                )
-              );
+                );
               },
             ),
           ],
@@ -351,7 +346,7 @@ class _MainListeningPageState extends State<MainListeningPage> {
                 ),
                 onPressed: (){
                   if(stage == 1) {
-                    marks.add((index / widget.playTimes).ceil());
+                    marks.add((index / widget.playTimes).floor());
                   } else if(stage == 2) {
                     setState(() {
                       stage = 3;

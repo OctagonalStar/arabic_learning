@@ -1,5 +1,15 @@
 # Changelog
 
+## INDEVELPOING VERSION - ????-??-? - (??????)
+
+### Improvement
+
+- 优化了听写没选词时的逻辑
+
+### Fix
+
+- 修复了听写无法选词的bug `需要使用相关功能的请自行在Action中下载最新构建版`
+
 ## v0.1.8 - 2025-11-2 - (000108)
 
 ### Added
