@@ -1,4 +1,5 @@
 import 'package:arabic_learning/funcs/ui.dart';
+import 'package:arabic_learning/sub_pages_builder/setting_pages/open_source_licenses.dart';
 import 'package:arabic_learning/vars/license_storage.dart';
 import 'package:arabic_learning/vars/statics_var.dart';
 import 'package:flutter/material.dart';
@@ -34,9 +35,23 @@ class AboutPage extends StatelessWidget {
               ],
             ),
           ),
-          TextContainer(text: "GNU AFFERO GENERAL PUBLIC LICENSE (Version 3)开源协议 / GNU AFFERO GENERAL PUBLIC LICENSE"),
-          TextContainer(text: "Copyright (C) <2025>  <OctagonalStar>\n该软件通过GNU GENERAL PUBLIC LICENSE (Version 3)协议授权给 \"${setting["User"]}\"，协议内容详见下方："),
-          TextContainer(text: LicenseVars.theAPPLICENSE)
+          TextContainer(text: "LICENSE"),
+          TextContainer(text: "Copyright (C) <2025>  <OctagonalStar>\n该软件通过GNU GENERAL PUBLIC LICENSE (Version 3)协议授权给 \"${setting["User"]}\"，协议内容详见开放源代码许可页面"),
+          ElevatedButton.icon(
+            style: ElevatedButton.styleFrom(
+              fixedSize: Size.fromHeight(MediaQuery.of(context).size.height * 0.1)
+            ),
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => OpenSourceLicensePage(),
+                )
+              );
+            }, 
+            icon: Icon(Icons.balance),
+            label: Text("开放源代码许可"),
+          )
         ],
       ),
     );
