@@ -77,7 +77,7 @@ class HomePage extends StatelessWidget {
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       Text('连胜天数', style: TextStyle(fontSize: 12.0)),
-                      context.read<Global>().settingData["learning"]["lastDate"] == int.parse("${DateTime.now().year}${DateTime.now().month}${DateTime.now().day}") 
+                      context.read<Global>().settingData["learning"]["lastDate"] == DateTime.now().difference(DateTime(2025, 11, 1)).inDays
                         ? Icon(Icons.done, size: 15.0, color: Colors.tealAccent)
                         : Icon(Icons.error_outline, size: 15.0, color: Colors.amber, semanticLabel: "今天还没学习~"),
                     ],
