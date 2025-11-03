@@ -57,6 +57,7 @@ Future<List<dynamic>> playTextToSpeech(String text, BuildContext context, {doubl
     if(!context.mounted) return [false, "神经网络音频合成失败\n中途退出context"];
     await flutterTts.setSpeechRate(speed! / 2);
     await flutterTts.speak(text);
+    await Future.delayed(Duration(seconds: 2));
 
   // 1: TextReadTTS
   } else if (context.read<Global>().settingData["audio"]["useBackupSource"] == 1) {
@@ -71,6 +72,7 @@ Future<List<dynamic>> playTextToSpeech(String text, BuildContext context, {doubl
         if(!context.mounted) return [false, "神经网络音频合成失败\n中途退出context"];
         await StaticsVar.player.setSpeed(speed!);
         await StaticsVar.player.play();
+        await Future.delayed(Duration(seconds: 2));
       } else {
         return [false, "备用音源请求失败:\n错误码:${response.statusCode.toString()}"];
       }
