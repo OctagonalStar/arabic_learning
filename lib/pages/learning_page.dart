@@ -156,7 +156,7 @@ Future<void> shiftToStudy(BuildContext context, int studyType) async {
     words = getSelectedWords(context, doShuffle: true, doDouble: studyType == 0);
     if(words.isEmpty) return;
   }
-  final valSetter = InLearningPageCounterModel(words.length);
+  final valSetter = AreYouFinishedModel();
   await Navigator.push(
     context,
     MaterialPageRoute(
