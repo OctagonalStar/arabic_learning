@@ -4,6 +4,8 @@ import 'package:arabic_learning/vars/statics_var.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import 'utili.dart';
+
 Future<List<List<String>>> popSelectClasses(BuildContext context, {bool withCache = false}) async {
   late final List<List<String>> beforeSelectedClasses;
   if(withCache) {
@@ -255,17 +257,22 @@ class InDevelopingPage extends StatelessWidget {
 class ChooseButtons extends StatelessWidget {
   final List<String> options;
   final bool? Function(int) onSelected;
-  final Widget? belowTip;
   final bool isShowAnimation;
-  final int settingShowingMode; // 0: Auto, 1: 1 Row, 2: 2 Rows, 3: 4 Rows
+  final bool allowMutipleSelect;
+  final int settingShowingMode; // -1: Auto, 0: 1 Row, 1: 2 Rows, 2: 4 Rows
 
-  const ChooseButtons({super.key, required this.options, required this.onSelected, this.belowTip, this.isShowAnimation = false, this.settingShowingMode = 0});
+  const ChooseButtons({super.key, 
+                      required this.options, 
+                      required this.onSelected, 
+                      this.allowMutipleSelect = false,
+                      this.isShowAnimation = false, 
+                      this.settingShowingMode = -1});
   @override
   Widget build(BuildContext context) {
     MediaQueryData mediaQuery = MediaQuery.of(context);
     int showingMode = settingShowingMode;
     // showingMode 0: 1 Row, 1: 2 Rows, 2: 4 Rows
-    if(showingMode == 0) {
+    if(showingMode == -1) {
       bool overFlowPossible = false;
       for(int i = 1; i < 4; i++) {
         if(options[i].length * 16 > mediaQuery.size.width * (context.read<Global>().isWideScreen ? 0.21 : 0.8)){
@@ -294,7 +301,7 @@ class ChooseButtons extends StatelessWidget {
           index: i,
           chose: onSelected,
           width: showingMode == 0 ? mediaQuery.size.width * 0.2 : showingMode == 1 ? mediaQuery.size.width * 0.45 : mediaQuery.size.width * 0.85,
-          height: mediaQuery.size.height * 0.15,
+          height: showingMode == 0 ? mediaQuery.size.height * 0.15 : showingMode == 1 ? mediaQuery.size.height * 0.12 : mediaQuery.size.height * 0.11,
           isAnimated: isShowAnimation,
           child: FittedBox(
             child: Text(
@@ -317,7 +324,7 @@ class ChooseButtons extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: buttonWidgets.sublist(0, 2),
             ),
-            SizedBox(height: mediaQuery.size.height * 0.02),
+            // SizedBox(height: mediaQuery.size.height * 0.01),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: buttonWidgets.sublist(2),
@@ -325,21 +332,19 @@ class ChooseButtons extends StatelessWidget {
           ],
         ),
         if(showingMode == 2) ...buttonWidgets,
-        SizedBox(height: mediaQuery.size.height * 0.02),
-        if(belowTip != null) belowTip!,
       ],
     );
   }
 }
 
 class ChooseButtonBox extends StatefulWidget {
-    final int index;
+  final int index;
   final bool? Function(int) chose;
   final Widget child;
   final Color? cl;
   final double? width;
   final double? height;
-  final bool? isAnimated;
+  final bool isAnimated;
   const ChooseButtonBox({super.key,
                     required this.index, 
                     required this.chose, 
@@ -361,7 +366,7 @@ class _ChooseButtonBoxState extends State<ChooseButtonBox> {
     color ??= widget.cl ?? Theme.of(context).colorScheme.primaryContainer;
     return AnimatedContainer(
       margin: EdgeInsets.all(8.0),
-      duration: Duration(milliseconds: widget.isAnimated == true ? 500 : 0),
+      duration: Duration(milliseconds: widget.isAnimated ? 500 : 0),
       curve: StaticsVar.curve,
       decoration: BoxDecoration(
         color: color,
@@ -372,11 +377,18 @@ class _ChooseButtonBoxState extends State<ChooseButtonBox> {
           setState(() {
             bool? ans = widget.chose(widget.index);
             if(ans != null) {
-              if(ans) {
-                color = Colors.greenAccent;
-              } else {
-                color = Colors.redAccent;
-              }
+              color = Colors.amber;
+              Future.delayed(Duration(milliseconds: widget.isAnimated ? 500 : 0), (){
+                setState(() {
+                  if(ans) {
+                    color = Colors.greenAccent;
+                  } else {
+                    color = Colors.redAccent;
+                  }
+                });
+              });
+            } else {
+              color = Theme.of(context).colorScheme.onPrimary;
             }
           });
         },
@@ -389,6 +401,126 @@ class _ChooseButtonBoxState extends State<ChooseButtonBox> {
           ),
         ),
         child: widget.child,
+      ),
+    );
+  }
+}
+
+class ChoiceQuestions extends StatelessWidget {
+  final String mainWord;
+  final List<String> choices;
+  final bool? Function(int) onSelected;
+  final String? hint;
+  final Widget? bottomWidget;
+  final Function? onDisAllowMutipleSelect;
+  final bool allowMutipleSelect;
+  final bool allowAudio;
+  final int bottonLayout;
+  final bool allowAnitmation;
+  const ChoiceQuestions({super.key, 
+                        required this.mainWord, 
+                        required this.choices, 
+                        required this.allowAudio, 
+                        required this.onSelected,
+                        this.hint, 
+                        this.bottomWidget, 
+                        this.onDisAllowMutipleSelect,
+                        this.bottonLayout = 0,
+                        this.allowMutipleSelect = true,
+                        this.allowAnitmation = true});
+
+  @override
+  Widget build(BuildContext context) {
+    bool playing = false;
+    bool choosed = false;
+    MediaQueryData mediaQuery = MediaQuery.of(context);
+    late final bool overFlowPossible;
+    int showingMode = bottonLayout;
+    // showingMode 0: 1 Row, 1: 2 Rows, 2: 4 Rows
+    if(showingMode == -1){
+      for(int i = 1; i < 5; i++) {
+        if(choices[i].length * 16 > mediaQuery.size.width * (context.read<Global>().isWideScreen ? 0.21 : 0.8)){
+          overFlowPossible = true;
+          break;
+        }
+      }
+
+      if (context.read<Global>().isWideScreen) {
+        if(overFlowPossible){
+          showingMode = 1;
+        } else {
+          showingMode = 0;
+        }
+      } else {
+        if(overFlowPossible){
+          showingMode = 2;
+        } else {
+          showingMode = 1;
+        }
+      }
+    }
+    return Material(
+      child: Center(
+        child: Column(
+          children: [
+            if(hint!=null) TextContainer(text: hint!),
+            Expanded(
+              child: StatefulBuilder(
+                builder: (context, setLocalState) {
+                  return ElevatedButton.icon(
+                    icon: Icon(allowAudio ? (playing ? Icons.multitrack_audio : Icons.volume_up) : Icons.short_text, size: 24.0),
+                    label: FittedBox(fit: BoxFit.contain ,child: Text(mainWord, style: TextStyle(fontSize: 72.0, fontWeight: FontWeight.bold))),
+                    style: ElevatedButton.styleFrom(
+                      fixedSize: Size.fromWidth(mediaQuery.size.width * 0.8),
+                      shape: RoundedRectangleBorder(borderRadius: StaticsVar.br),
+                    ),
+                    onPressed: () async {
+                      if (playing || !allowAudio) {
+                        return;
+                      }
+                      setLocalState(() {
+                        playing = true;
+                      });
+                      late List<dynamic> temp;
+                      temp = await playTextToSpeech(mainWord, context);
+                      if(!temp[0] && context.mounted) {
+                        alart(context, temp[1]);
+                      }
+                      setLocalState(() {
+                        playing = false;
+                      });
+                    },
+                  );
+                }
+              ),
+            ),
+            SizedBox(height: mediaQuery.size.height *0.01),
+            ChooseButtons(
+              options: choices, 
+              onSelected: (value) {
+                if(allowMutipleSelect) return onSelected(value);
+                if(choosed) {
+                  if(onDisAllowMutipleSelect != null) return onDisAllowMutipleSelect!(value);
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('该页面不允许多次选择'),
+                      duration: Duration(seconds: 1),
+                    ),
+                  );
+                  return null;
+                } else {
+                  choosed = true;
+                  return onSelected(value);
+                }
+              }, 
+              allowMutipleSelect: allowMutipleSelect, 
+              isShowAnimation: allowAnitmation
+            ),
+            SizedBox(height: mediaQuery.size.height *0.01),
+            if(bottomWidget != null) bottomWidget!,
+            SizedBox(height: mediaQuery.size.height *0.05),
+          ],
+        ),
       ),
     );
   }
