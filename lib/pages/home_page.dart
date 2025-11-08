@@ -32,8 +32,8 @@ class HomePage extends StatelessWidget {
             } else {toPage(3);}
           },
           style: ElevatedButton.styleFrom(
-            backgroundColor: themeColor.onPrimary,
-            shadowColor: themeColor.surfaceBright,
+            backgroundColor: themeColor.onPrimary.withAlpha(150),
+            shadowColor: themeColor.surfaceBright.withAlpha(150),
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.vertical(bottom: Radius.circular(25.0))),
             fixedSize: Size(mediaQuery.size.width * 0.9, mediaQuery.size.height * 0.3),
           ),
@@ -60,10 +60,10 @@ class HomePage extends StatelessWidget {
               margin: EdgeInsets.all(8.0),
               padding: EdgeInsets.all(16.0),
               decoration: BoxDecoration(
-                color: themeColor.secondaryContainer,
+                color: themeColor.secondaryContainer.withAlpha(150),
                 boxShadow: [
                   BoxShadow(
-                    color: themeColor.surfaceBright,
+                    color: themeColor.surfaceBright.withAlpha(150),
                     offset: Offset(2, 4),
                     blurRadius: 8.0,
                   ),
@@ -93,10 +93,10 @@ class HomePage extends StatelessWidget {
               margin: EdgeInsets.all(8.0),
               padding: EdgeInsets.all(16.0),
               decoration: BoxDecoration(
-                color: themeColor.secondaryContainer,
+                color: themeColor.secondaryContainer.withAlpha(150),
                 boxShadow: [
                   BoxShadow(
-                    color: themeColor.surfaceBright,
+                    color: themeColor.surfaceBright.withAlpha(150),
                     offset: Offset(2, 4),
                     blurRadius: 8.0,
                   ),
@@ -126,8 +126,8 @@ class HomePage extends StatelessWidget {
               ),
               child: ElevatedButton(
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: themeColor.onPrimary,
-                  shadowColor: themeColor.surfaceBright,
+                  backgroundColor: themeColor.onPrimary.withAlpha(150),
+                  shadowColor: themeColor.surfaceBright.withAlpha(150),
                   padding: EdgeInsets.all(16.0),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(25.0),
@@ -154,6 +154,8 @@ class HomePage extends StatelessWidget {
               ),
               child: ElevatedButton(
                 style: ElevatedButton.styleFrom(
+                  backgroundColor: themeColor.onSecondary.withAlpha(150),
+                  shadowColor: themeColor.surfaceBright.withAlpha(150),
                   padding: EdgeInsets.all(16.0),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(25.0),

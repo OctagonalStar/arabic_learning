@@ -3,7 +3,6 @@ import 'package:arabic_learning/vars/global.dart';
 import 'package:arabic_learning/vars/statics_var.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-
 import 'utili.dart';
 
 Future<List<List<String>>> popSelectClasses(BuildContext context, {bool withCache = false}) async {
@@ -20,7 +19,7 @@ Future<List<List<String>>> popSelectClasses(BuildContext context, {bool withCach
   List<List<String>>? selectedClasses = await showModalBottomSheet<List<List<String>>>(
     context: context,
     // 假装圆角... :)
-    shape: RoundedSuperellipseBorder(side: BorderSide(width: 1.0, color: Theme.of(context).colorScheme.onSurface), borderRadius: StaticsVar.br),
+    shape: RoundedSuperellipseBorder(side: BorderSide(width: 1.0, color: Theme.of(context).colorScheme.onSurface.withAlpha(150)), borderRadius: StaticsVar.br),
     isDismissible: false,
     isScrollControlled: context.read<Global>().isWideScreen,
     enableDrag: true,
@@ -105,7 +104,7 @@ List<Widget> classesSelectionList(BuildContext context, MediaQueryData mediaQuer
         margin: EdgeInsets.all(16.0),
         padding: EdgeInsets.all(8.0),
         decoration: BoxDecoration(
-          color: Theme.of(context).colorScheme.onPrimary,
+          color: Theme.of(context).colorScheme.onPrimary.withAlpha(150),
           borderRadius: StaticsVar.br,
         ),
         child: Text(
@@ -123,7 +122,7 @@ List<Widget> classesSelectionList(BuildContext context, MediaQueryData mediaQuer
         Container(
           margin: EdgeInsets.all(2),
           decoration: BoxDecoration(
-            color: isEven ? Theme.of(context).colorScheme.primaryContainer : Theme.of(context).colorScheme.secondaryContainer,
+            color: isEven ? Theme.of(context).colorScheme.primaryContainer.withAlpha(150) : Theme.of(context).colorScheme.secondaryContainer.withAlpha(150),
             borderRadius: BorderRadius.circular(8),
           ),
           child: StatefulBuilder(
@@ -152,8 +151,7 @@ List<Widget> classesSelectionList(BuildContext context, MediaQueryData mediaQuer
   return widgetList;
 }
 
-
-void alart(context, String e, {Function? onConfirmed}) {
+void alart(context, String e, {Function? onConfirmed, Duration delayConfirm = const Duration(milliseconds: 0)}) {
   showDialog(
     context: context, 
     builder: (BuildContext context) {
@@ -161,19 +159,27 @@ void alart(context, String e, {Function? onConfirmed}) {
         title: Text("提示"),
         content: Text(e),
         actions: [
-          TextButton(
-            child: Text("确定"),
-            onPressed: () {
-              Navigator.of(context).pop();
-              if(onConfirmed != null) onConfirmed();
-            },
+          FutureBuilder(
+            future: Future.delayed(delayConfirm, (){return 0;}),
+            builder: (context, asyncSnapshot) {
+              if(asyncSnapshot.hasData){
+                return TextButton(
+                  child: Text("确定"),
+                  onPressed: () {
+                    Navigator.of(context).pop();
+                    if(onConfirmed != null) onConfirmed();
+                  },
+                );
+              } else {
+                return CircularProgressIndicator();
+              }
+            }
           )
         ],
       );
     }
   );
 }
-
 
 class TextContainer extends StatelessWidget {
   final String text;
@@ -204,7 +210,7 @@ class TextContainer extends StatelessWidget {
         margin: EdgeInsets.all(16.0),
         padding: EdgeInsets.all(8.0),
         decoration: BoxDecoration(
-          color: Theme.of(context).colorScheme.onPrimary,
+          color: Theme.of(context).colorScheme.onPrimary.withAlpha(150),
           borderRadius: StaticsVar.br,
         ),
         child: (selectable??false) 
@@ -252,7 +258,6 @@ class InDevelopingPage extends StatelessWidget {
     );
   }
 }
-
 
 class ChooseButtons extends StatelessWidget {
   final List<String> options;
@@ -363,7 +368,7 @@ class _ChooseButtonBoxState extends State<ChooseButtonBox> {
   Color? color;
   @override
   Widget build(BuildContext context) {
-    color ??= widget.cl ?? Theme.of(context).colorScheme.primaryContainer;
+    color ??= widget.cl ?? Theme.of(context).colorScheme.primaryContainer.withAlpha(150);
     return AnimatedContainer(
       margin: EdgeInsets.all(8.0),
       duration: Duration(milliseconds: widget.isAnimated ? 500 : 0),
@@ -388,7 +393,7 @@ class _ChooseButtonBoxState extends State<ChooseButtonBox> {
                 });
               });
             } else {
-              color = Theme.of(context).colorScheme.onPrimary;
+              color = Theme.of(context).colorScheme.onPrimary.withAlpha(150);
             }
           });
         },
@@ -528,6 +533,50 @@ class _ChoiceQuestions extends State<ChoiceQuestions> {
           ],
         ),
       ),
+    );
+  }
+}
+
+class WordCard extends StatelessWidget {
+  final Map<String, dynamic> word;
+  final double? width;
+  final double? height;
+  const WordCard({super.key, required this.word, this.width, this.height});
+
+  @override
+  Widget build(BuildContext context) {
+    MediaQueryData mediaQuery = MediaQuery.of(context);
+    return Container(
+      margin: const EdgeInsets.all(16.0),
+      //padding: const EdgeInsets.all(16.0),
+      width: mediaQuery.size.width * 0.9,
+      height: mediaQuery.size.height * 0.5,
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.onInverseSurface.withAlpha(150),
+        borderRadius: StaticsVar.br,
+      ),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.start,
+        children: [
+          ElevatedButton.icon(
+            style: ElevatedButton.styleFrom(
+              fixedSize: Size(mediaQuery.size.width * 0.9, mediaQuery.size.height * 0.2),
+              backgroundColor: Theme.of(context).colorScheme.onPrimary.withAlpha(150),
+              shape: RoundedRectangleBorder(borderRadius: StaticsVar.br),
+              padding: const EdgeInsets.all(16.0),
+            ),
+            icon: const Icon(Icons.volume_up, size: 24.0),
+            label: FittedBox(child: Text(word["arabic"], style: TextStyle(fontSize: 64.0))),
+            onPressed: (){
+              playTextToSpeech(word["arabic"], context);
+            },
+          ),
+          Text(
+            ' 中文：${word["chinese"]}\n 示例：${word["explanation"]}\n 归属课程：${word["subClass"]}',
+            style: TextStyle(fontSize: mediaQuery.size.height * 0.025),
+          )
+        ],
+      )
     );
   }
 }
