@@ -57,8 +57,7 @@ class _SettingPage extends State<SettingPage> {
               DropdownMenuItem(value: 7, child: Text('冷灰')),
               DropdownMenuItem(value: 8, child: Text('茶香')),
               DropdownMenuItem(value: 9, child: Text('烟蓝')),
-              DropdownMenuItem(value: 10, child: Text('星青')),
-              DropdownMenuItem(value: 11, child: Text('淡绿')),
+              DropdownMenuItem(value: 10, child: Text('星青'))
             ],
             onChanged: (value) async {
               setting['regular']['theme'] = value;
@@ -336,7 +335,7 @@ class _SettingPage extends State<SettingPage> {
       ),
       ElevatedButton(
         style: ElevatedButton.styleFrom(
-          backgroundColor: Theme.of(context).colorScheme.onPrimary,
+          backgroundColor: Theme.of(context).colorScheme.onPrimary.withAlpha(150),
           minimumSize: Size.fromHeight(mediaQuery.size.height * 0.08),
           shape: RoundedRectangleBorder(borderRadius: BorderRadiusGeometry.vertical(bottom: Radius.circular(25.0))),
         ),
@@ -365,7 +364,7 @@ class _SettingPage extends State<SettingPage> {
     return [
       ElevatedButton(
         style: ElevatedButton.styleFrom(
-          backgroundColor: Theme.of(context).colorScheme.onPrimary,
+          backgroundColor: Theme.of(context).colorScheme.onPrimary.withAlpha(150),
           minimumSize: Size.fromHeight(mediaQuery.size.height * 0.08),
           shape: RoundedRectangleBorder(borderRadius: BorderRadiusGeometry.vertical(top: Radius.circular(25.0))),
         ),
@@ -393,7 +392,7 @@ class _SettingPage extends State<SettingPage> {
       ),
       ElevatedButton(
         style: ElevatedButton.styleFrom(
-          backgroundColor: Theme.of(context).colorScheme.onPrimary,
+          backgroundColor: Theme.of(context).colorScheme.onPrimary.withAlpha(150),
           minimumSize: Size.fromHeight(mediaQuery.size.height * 0.08),
           shape: RoundedRectangleBorder(borderRadius: BorderRadiusGeometry.vertical(bottom: Radius.circular(25.0))),
         ),

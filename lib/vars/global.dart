@@ -1,6 +1,7 @@
 import 'package:arabic_learning/vars/statics_var.dart';
 import 'package:flutter/foundation.dart';
 import 'package:path_provider/path_provider.dart' as path_provider;
+import 'package:flutter/services.dart' show rootBundle;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
 import 'package:flutter/material.dart';
@@ -33,6 +34,9 @@ class Global with ChangeNotifier {
       "lastDate": 0, // YYYYMMDD;int
       "KnownWords": [],
     },
+    'eggs': {
+      'stella': false
+    },
     // fsrs 独立设置
     // 'fsrs': {
     //   'enabled' : false,
@@ -45,13 +49,14 @@ class Global with ChangeNotifier {
       Colors.pink,
       Colors.blue,
       Colors.green,
-      Colors.yellow,
+      Colors.lime,
       Colors.orange,
       Colors.purple,
       Colors.brown,
-      Colors.grey,
+      Colors.blueGrey,
       Colors.teal,
       Colors.cyan,
+      // 下面的是彩蛋颜色 :)
       MaterialColor(0xFF97FFF6, <int, Color>{
         50: Color(0xFFE0FFFF),
         100: Color(0xFFB3FFFF),
@@ -63,8 +68,7 @@ class Global with ChangeNotifier {
         700: Color(0xFF00998C),
         800: Color(0xFF007366),
         900: Color(0xFF004D40),
-      }),
-      Colors.lime,
+      })
     ];
   late var _themeData = ThemeData(
         useMaterial3: true,
@@ -77,6 +81,7 @@ class Global with ChangeNotifier {
 
   late Map<String, dynamic> wordData = {};
   late sherpa_onnx.OfflineTts? vitsTTS;
+  late Uint8List stella;
   ThemeData get themeData => _themeData;
   Map<String, dynamic> get settingData => _settingData;
   int get wordCount => wordData["Words"]!.length;
@@ -152,7 +157,16 @@ class Global with ChangeNotifier {
     if(!kIsWeb) loadTTS();
     if (firstStart) return;
     conveySetting();
+    await loadEggs();
   }
+
+  Future<void> loadEggs() async {
+    if(settingData['eggs']['stella']){
+      final rawString = await rootBundle.loadString("assets\\eggs\\s.txt");
+      stella = base64Decode(rawString.replaceAll('\n', '').replaceAll('\r', '').trim());
+    }
+  }
+
   void updateTheme() {
     _themeData = ThemeData(
         useMaterial3: true,

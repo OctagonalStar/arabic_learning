@@ -19,7 +19,7 @@ class LearningPage extends StatelessWidget {
         children: [
           ElevatedButton(
             style: ElevatedButton.styleFrom(
-              backgroundColor: Theme.of(context).colorScheme.onPrimary,
+              backgroundColor: Theme.of(context).colorScheme.onPrimary.withAlpha(150),
               shadowColor: Colors.transparent,
               fixedSize: Size(mediaQuery.size.width * 0.9, mediaQuery.size.height * 0.2),
               shape: RoundedRectangleBorder(
@@ -56,8 +56,8 @@ class LearningPage extends StatelessWidget {
             children: [
               ElevatedButton.icon(
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: Theme.of(context).colorScheme.onPrimary,
-                  foregroundColor: Theme.of(context).colorScheme.onSurface,
+                  backgroundColor: Theme.of(context).colorScheme.onPrimary.withAlpha(150),
+                  foregroundColor: Theme.of(context).colorScheme.onSurface.withAlpha(150),
                   shadowColor: Colors.transparent,
                   fixedSize: Size(mediaQuery.size.width * 0.42, mediaQuery.size.height * 0.18),
                   shape: RoundedRectangleBorder(
@@ -79,8 +79,8 @@ class LearningPage extends StatelessWidget {
                 children: [
                   ElevatedButton.icon(
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: Theme.of(context).colorScheme.secondaryContainer,
-                      foregroundColor: Theme.of(context).colorScheme.onSurface,
+                      backgroundColor: Theme.of(context).colorScheme.secondaryContainer.withAlpha(150),
+                      foregroundColor: Theme.of(context).colorScheme.onSurface.withAlpha(150),
                       shadowColor: Colors.transparent,
                       fixedSize: Size(mediaQuery.size.width * 0.42, mediaQuery.size.height * 0.09),
                       shape: RoundedRectangleBorder(borderRadius: BorderRadiusGeometry.vertical(top: Radius.circular(25.0))),
@@ -94,8 +94,8 @@ class LearningPage extends StatelessWidget {
                   SizedBox(height: mediaQuery.size.height * 0.005),
                   ElevatedButton.icon(
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: Theme.of(context).colorScheme.secondaryContainer,
-                      foregroundColor: Theme.of(context).colorScheme.onSurface,
+                      backgroundColor: Theme.of(context).colorScheme.secondaryContainer.withAlpha(150),
+                      foregroundColor: Theme.of(context).colorScheme.onSurface.withAlpha(150),
                       shadowColor: Colors.transparent,
                       fixedSize: Size(mediaQuery.size.width * 0.42, mediaQuery.size.height * 0.09),
                       shape: RoundedRectangleBorder(borderRadius: BorderRadiusGeometry.vertical(bottom: Radius.circular(25.0))),
@@ -114,7 +114,7 @@ class LearningPage extends StatelessWidget {
           SizedBox(height: mediaQuery.size.height * 0.05),
           ElevatedButton(
             style: ElevatedButton.styleFrom(
-              backgroundColor: Theme.of(context).colorScheme.secondaryContainer,
+              backgroundColor: Theme.of(context).colorScheme.secondaryContainer.withAlpha(150),
               shape: RoundedRectangleBorder(borderRadius: StaticsVar.br),
               fixedSize: Size(mediaQuery.size.width * 0.9, mediaQuery.size.height * 0.2)
             ),

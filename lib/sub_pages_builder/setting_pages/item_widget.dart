@@ -8,7 +8,7 @@ Widget settingItem(BuildContext context, MediaQueryData mediaQuery, List<Widget>
       //height: mediaQuery.size.height * 0.08,
       padding: withPadding ? EdgeInsets.all(8.0) : EdgeInsets.zero,
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.onPrimary,
+        color: Theme.of(context).colorScheme.onPrimary.withAlpha(150),
         borderRadius: BorderRadius.all(Radius.circular(5.0)),
       ),
       child: widget,
@@ -21,7 +21,7 @@ Widget settingItem(BuildContext context, MediaQueryData mediaQuery, List<Widget>
       margin: decoratedContainers[0].margin,
       padding: decoratedContainers[0].padding,
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.onPrimary,
+        color: Theme.of(context).colorScheme.onPrimary.withAlpha(150),
         borderRadius: BorderRadius.vertical(top: Radius.circular(25.0), bottom: Radius.circular(5.0)),
       ),
       child: decoratedContainers[0].child,
@@ -32,7 +32,7 @@ Widget settingItem(BuildContext context, MediaQueryData mediaQuery, List<Widget>
       margin: decoratedContainers[decoratedContainers.length - 1].margin,
       padding: decoratedContainers[decoratedContainers.length - 1].padding,
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.onPrimary,
+        color: Theme.of(context).colorScheme.onPrimary.withAlpha(150),
         borderRadius: BorderRadius.vertical(bottom: Radius.circular(25.0), top: Radius.circular(5.0)),
       ),
       child: decoratedContainers[decoratedContainers.length - 1].child,
@@ -44,7 +44,7 @@ Widget settingItem(BuildContext context, MediaQueryData mediaQuery, List<Widget>
       margin: decoratedContainers[0].margin,
       padding: decoratedContainers[0].padding,
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.onPrimary,
+        color: Theme.of(context).colorScheme.onPrimary.withAlpha(150),
         borderRadius: BorderRadius.all(Radius.circular(25.0)),
       ),
       child: decoratedContainers[0].child,

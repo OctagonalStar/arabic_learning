@@ -55,7 +55,22 @@ class MyApp extends StatelessWidget {
           title: StaticsVar.appName,
           themeMode: ThemeMode.system,
           theme: value.themeData,
-          home: const MyHomePage(title: StaticsVar.appName),
+          home: value.settingData["eggs"]['stella'] 
+            ? Scaffold(
+              body: Stack(
+                children: [
+                  Container(
+                    decoration: BoxDecoration(
+                      image: DecorationImage(
+                        image: MemoryImage(value.stella),
+                        fit: BoxFit.cover,
+                      ),
+                    ),
+                  ),
+                  const MyHomePage(title: StaticsVar.appName),
+                ],
+              ),)
+            : const MyHomePage(title: StaticsVar.appName),
         );
       },
     );
@@ -94,7 +109,7 @@ class _MyHomePageState extends State<MyHomePage> {
             _onNavigationTapped(index);
           },
           labelType: NavigationRailLabelType.selected,
-          backgroundColor: Theme.of(context).colorScheme.onPrimary,
+          backgroundColor: Theme.of(context).colorScheme.onPrimary.withAlpha(150),
           destinations: const [
             NavigationRailDestination(
               icon: Icon(Icons.home_outlined),
@@ -162,7 +177,7 @@ class _MyHomePageState extends State<MyHomePage> {
           key: ValueKey<int>(currentIndex),
           curve: StaticsVar.curve,
           style: TabStyle.flip,
-          backgroundColor: Theme.of(context).colorScheme.primary,
+          backgroundColor: Theme.of(context).colorScheme.primary.withAlpha(150),
           items: const [
             TabItem(icon: Icons.home_outlined, title: '主页', activeIcon: Icons.home_filled),
             TabItem(icon: Icons.book_outlined, title: '学习', activeIcon: Icons.book),
@@ -279,9 +294,10 @@ class _MyHomePageState extends State<MyHomePage> {
       SettingPage(),
     ];
     return Scaffold(
+      backgroundColor: context.read<Global>().settingData["eggs"]["stella"] ? Colors.transparent : null,
       appBar: AppBar(
         centerTitle: true,
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
+        backgroundColor: Theme.of(context).colorScheme.inversePrimary.withAlpha(150),
         title: Text(widget.title),
         actions: kIsWeb && !gob.settingData['regular']['hideAppDownloadButton'] ?  [
           ElevatedButton.icon(

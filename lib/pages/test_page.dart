@@ -23,7 +23,7 @@ class TestPage extends StatelessWidget {
               ),
               child: ElevatedButton(
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: Theme.of(context).colorScheme.onPrimary,
+                  backgroundColor: Theme.of(context).colorScheme.onPrimary.withAlpha(150),
                   shape: RoundedRectangleBorder(
                     borderRadius: StaticsVar.br,
                   ),
@@ -56,7 +56,7 @@ class TestPage extends StatelessWidget {
               icon: Icon(Icons.multitrack_audio, size: 36.0),
               label: Text('自主\n听写', style: TextStyle(fontSize: 34.0)),
               style: ElevatedButton.styleFrom(
-                backgroundColor: Theme.of(context).colorScheme.onPrimary,
+                backgroundColor: Theme.of(context).colorScheme.onPrimary.withAlpha(150),
                 fixedSize: Size(mediaQuery.size.width * 0.42, mediaQuery.size.height * 0.45,),
                 shape: RoundedRectangleBorder(
                   borderRadius: StaticsVar.br,
@@ -86,7 +86,7 @@ class TestPage extends StatelessWidget {
               ),
               child: ElevatedButton(
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: Theme.of(context).colorScheme.onSecondary,
+                  backgroundColor: Theme.of(context).colorScheme.onSecondary.withAlpha(150),
                   shape: RoundedRectangleBorder(
                     borderRadius: StaticsVar.br,
                   ),
@@ -119,7 +119,7 @@ class TestPage extends StatelessWidget {
               ),
               child: ElevatedButton(
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: Theme.of(context).colorScheme.onPrimary,
+                  backgroundColor: Theme.of(context).colorScheme.onPrimary.withAlpha(150),
                   shape: RoundedRectangleBorder(
                     borderRadius: StaticsVar.br,
                   ),
