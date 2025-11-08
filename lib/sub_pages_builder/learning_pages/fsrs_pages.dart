@@ -163,12 +163,6 @@ class MainFSRSPage extends StatelessWidget {
       appBar: AppBar(
         title: const Text("规律学习"),
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          controller.nextPage(duration: Duration(milliseconds: 500), curve: StaticsVar.curve);
-        },
-        child: Icon(Icons.arrow_downward),
-      ),
       body: PageView.builder(
         scrollDirection: Axis.vertical,
         controller: controller,
@@ -191,7 +185,7 @@ class MainFSRSPage extends StatelessWidget {
               child: TextContainer(text: "今日复习任务已完成"),
             );
           }
-          return FSRSReviewCardPage(wordID: wordID, fsrs: fsrs, rnd: sharedRnd);
+          return FSRSReviewCardPage(wordID: wordID, fsrs: fsrs, rnd: sharedRnd, controller: controller,);
         }
       )
     );
@@ -203,7 +197,8 @@ class FSRSReviewCardPage extends StatefulWidget {
   final int wordID;
   final FSRS fsrs;
   final Random rnd;
-  const FSRSReviewCardPage({super.key, required this.wordID, required this.fsrs, required this.rnd});
+  final PageController controller;
+  const FSRSReviewCardPage({super.key, required this.wordID, required this.fsrs, required this.rnd, required this.controller});
 
   @override
   State<FSRSReviewCardPage> createState() => _FSRSReviewCardPageState();
@@ -211,12 +206,14 @@ class FSRSReviewCardPage extends StatefulWidget {
 
 class _FSRSReviewCardPageState extends State<FSRSReviewCardPage> {
   List<String>? options;
+  bool choosed = false;
+  final DateTime start = DateTime.now();
   @override
   Widget build(BuildContext context) {
-    final DateTime start = DateTime.now();
     MediaQueryData mediaQuery = MediaQuery.of(context);
-    bool choosed = false;
     final List<dynamic> wordData = context.read<Global>().wordData["Words"];
+
+    // 防止重建后选项丢失
     options ??= [context.read<Global>().wordData["Words"][widget.wordID]["chinese"] as String,
                       context.read<Global>().wordData["Words"][widget.rnd.nextInt(context.read<Global>().wordCount)]["chinese"] as String,
                       context.read<Global>().wordData["Words"][widget.rnd.nextInt(context.read<Global>().wordCount)]["chinese"] as String,
@@ -229,41 +226,72 @@ class _FSRSReviewCardPageState extends State<FSRSReviewCardPage> {
     }
     final int correct = options!.indexOf(context.read<Global>().wordData["Words"][widget.wordID]["chinese"] as String);
     return Material(
-      child: Column(
-        children: [
-          TextContainer(text: "单词ID: ${widget.wordID}", style: TextStyle(fontSize: 18.0)),
-          SizedBox(height: mediaQuery.size.height * 0.01),
-          Container(
-            width: mediaQuery.size.width * 0.9,
-            height: mediaQuery.size.height * 0.3,
-            decoration: BoxDecoration(
-              borderRadius: StaticsVar.br,
-              color: Theme.of(context).colorScheme.onPrimary
-            ),
-            child: FittedBox(fit: BoxFit.scaleDown ,child: Text(wordData[widget.wordID]["arabic"], style: TextStyle(fontSize: 128),)),
+      child: ChoiceQuestions(
+        mainWord: wordData[widget.wordID]["arabic"], 
+        choices: options!, 
+        allowAudio: true, 
+        allowAnitmation: true,
+        allowMutipleSelect: false,
+        hint: "单词ID: ${widget.wordID}",
+        onDisAllowMutipleSelect: (value) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text("人要向前看 题要向下翻 :)"), duration: Duration(seconds: 1),),
+          );
+        },
+        onSelected: (value) {
+          setState(() {
+            choosed = true;
+          });
+          if(correct == value) {
+            widget.fsrs.reviewCard(widget.wordID, DateTime.now().difference(start).inMilliseconds, true);
+            return true;
+          } else {
+            widget.fsrs.reviewCard(widget.wordID, DateTime.now().difference(start).inMilliseconds, false);
+            return false;
+          }
+        },
+        bottomWidget: TweenAnimationBuilder<double>(
+          tween: Tween(
+            begin: 0.0,
+            end: choosed ? 1.0 : 0.0
           ),
-          SizedBox(height: mediaQuery.size.height * 0.02),
-          ChooseButtons(
-            onSelected: (value) {
-              if(choosed) return null;
-              setState(() {
-                choosed = true;
-              });
-              if(value == correct) {
-                widget.fsrs.reviewCard(widget.wordID, DateTime.now().difference(start).inMilliseconds, true);
-                return true;
-              } else {
-                widget.fsrs.reviewCard(widget.wordID, DateTime.now().difference(start).inMilliseconds, false);
-                return false;
-              }
-            },
-            isShowAnimation: true,
-            options: options!,
-          ),
-          SizedBox(height: mediaQuery.size.height * 0.02),
-          choosed ? Icon(Icons.arrow_upward, size: 48.0, color: Colors.greenAccent) : SizedBox(height: mediaQuery.size.height * 0.05),
-        ],
-      ),
+          duration: Duration(milliseconds: 500),
+          curve: StaticsVar.curve,
+          builder: (context, value, child) {
+            return Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                ElevatedButton.icon(
+                  style: ElevatedButton.styleFrom(
+                    fixedSize: Size(mediaQuery.size.width * 0.9 - mediaQuery.size.width * 0.2 * value, mediaQuery.size.height * 0.1),
+                    shape: RoundedRectangleBorder(borderRadius: StaticsVar.br)
+                  ),
+                  onPressed: (){
+                    viewAnswer(mediaQuery, context, wordData[widget.wordID]);
+                    setState(() {
+                      choosed = true;
+                    });
+                  }, 
+                  icon: Icon(Icons.tips_and_updates),
+                  label: Text(value == 0.0 ? "忘了？" : "查看详解"),
+                ),
+                SizedBox(width: mediaQuery.size.width*0.02*value),
+                if(value != 0.0) ElevatedButton.icon(
+                  style: ElevatedButton.styleFrom(
+                    fixedSize: Size(mediaQuery.size.width * 0.2 * value, mediaQuery.size.height * 0.1),
+                    shape: RoundedRectangleBorder(borderRadius: StaticsVar.br)
+                  ),
+                  onPressed: () {
+                    widget.controller.nextPage(duration: Duration(milliseconds: 500), curve: StaticsVar.curve);
+                  },
+                  icon: Icon(Icons.arrow_downward),
+                  label: Text("下一题"),
+                )
+              ],
+            );
+          }
+        )
+      )
     );
   }
 }
@@ -323,135 +351,168 @@ class FSRSLearningPage extends StatefulWidget {
   State<FSRSLearningPage> createState() => _FSRSLearningPageState();
 }
 class _FSRSLearningPageState extends State<FSRSLearningPage> {
-  List<Set<dynamic>> wordTest = [];
-  List<Set<dynamic>> progressList = [];
-  List<Widget> buildedPages = [];
-  Random rnd = Random();
-  bool allowScoll = true;
+  final PageController controllerHor = PageController();
+  final PageController controllerLearning = PageController();
+  final PageController controllerQuestions = PageController();
+  bool corrected = false;
+  List<List<String>> options = [];
 
   @override
   void initState() {
-    super.initState();
-    for(int i = 0; i < 2; i++) {
-      for (Map<String, dynamic> word in widget.words) {
-        if(widget.fsrs.isContained(word['id'])) continue;
-        wordTest.add({i, word});
+    final Random rnd = Random();
+    for(Map<String, dynamic> word in widget.words) {
+      List<String> option = [widget.words[rnd.nextInt(widget.words.length)]["chinese"],
+                            widget.words[rnd.nextInt(widget.words.length)]["chinese"],
+                            widget.words[rnd.nextInt(widget.words.length)]["chinese"],
+                            word["chinese"]];
+      while(option.hasDuplicate()) {
+        option = [widget.words[rnd.nextInt(widget.words.length)]["chinese"],
+                            widget.words[rnd.nextInt(widget.words.length)]["chinese"],
+                            widget.words[rnd.nextInt(widget.words.length)]["chinese"],
+                            word["chinese"]];
       }
+      option.shuffle();
+      options.add(option);
     }
-    progressList = [...wordTest];
+    super.initState();
   }
 
   @override
   Widget build(BuildContext context) {
     MediaQueryData mediaQuery = MediaQuery.of(context);
-    if(wordTest.isEmpty) {
-      return Material(
-        child: Center(child: TextContainer(text: "你选择的课程中所有的单词都已经学习过了\n等明天复习去")),
+    if(widget.words.isEmpty) {
+      return Scaffold(
+        appBar: AppBar(),
+        body: Center(child: TextContainer(text: "你选择的课程中所有的单词都已经学习过了\n等复习吧")),
       );
     }
     return Scaffold(
       appBar: AppBar(
         title: const Text("规律学习"),
       ),
-      body: PageView.builder(
-        scrollDirection: Axis.vertical,
-        itemBuilder: (context, index) {
-          if(index < buildedPages.length) return buildedPages[index];
-          if(index == 0) {
-            buildedPages.add(Center(
-              child: Column(
+      body: PageView(
+        scrollDirection: Axis.horizontal,
+        physics: NeverScrollableScrollPhysics(),
+        controller: controllerHor,
+        children: [
+          // 学习阶段的
+          PageView.builder(
+            scrollDirection: Axis.vertical,
+            controller: controllerLearning,
+            itemCount: widget.words.length,
+            itemBuilder: (context, index) {
+              return Column(
                 children: [
-                  TextContainer(text: "上滑页面开始学习新单词\n(不作答的单词不计入学习)"),
+                  WordCard(word: widget.words[index]),
                   Expanded(child: SizedBox()),
-                  Icon(Icons.arrow_upward, size: 48.0, color: Colors.grey),
-                ],
-              ),
-            ));
-            return buildedPages.last;
-          }
-          if(progressList.isEmpty) {
-            buildedPages.add(Center(
-              child: Column(
-                children: [
-                  TextContainer(text: "所有新单词学习完毕！\n新学习的单词请今天重新进入规律学习页面完成复习巩固", style: TextStyle(fontSize: 20.0, color: Colors.greenAccent)),
-                  ElevatedButton.icon(
-                    onPressed: () {
-                      Navigator.popUntil(context, (Route route) {return route.isFirst;});
-                    },
-                    icon: Icon(Icons.done),
-                    label: Text("确认")
+                  ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      fixedSize: Size.fromRadius(mediaQuery.size.height * 0.08),
+                      shape: CircleBorder()
+                    ),
+                    child: Icon(index == widget.words.length-1 ? Icons.arrow_forward : Icons.arrow_downward, size: 48),
+                    onPressed: (){
+                      if(index == widget.words.length-1) {
+                        controllerHor.nextPage(duration: Duration(milliseconds: 500), curve: StaticsVar.curve);
+                      } else {
+                      controllerLearning.nextPage(duration: Duration(milliseconds: 500), curve: StaticsVar.curve);
+                      }
+                    }, 
                   )
                 ],
-              ),
-            ));
-            return buildedPages.last;
-          }
-          Set<dynamic> current = progressList.removeAt(0);
-          Map<String, dynamic> word = current.elementAt(1);
-          int stage = current.elementAt(0);
-          if(stage == 0) {
-            buildedPages.add(Center(
-              child: Column(
-                children: [
-                  WordCard(word: word),
-                  Expanded(child: SizedBox()),
-                  Icon(Icons.arrow_upward, size: 48.0, color: Colors.grey),
-                ],
-              ),
-            ));
-            return buildedPages.last;
-          }else {
-            bool choosed = false;
-            List<String> options = [word["chinese"] as String,
-                              wordTest[rnd.nextInt(wordTest.length)].elementAt(1)["chinese"] as String,
-                              wordTest[rnd.nextInt(wordTest.length)].elementAt(1)["chinese"] as String,
-                              wordTest[rnd.nextInt(wordTest.length)].elementAt(1)["chinese"] as String]..shuffle();
-            while(options.hasDuplicate()) {
-              options = [word["chinese"] as String,
-                              wordTest[rnd.nextInt(wordTest.length)].elementAt(1)["chinese"] as String,
-                              wordTest[rnd.nextInt(wordTest.length)].elementAt(1)["chinese"] as String,
-                              wordTest[rnd.nextInt(wordTest.length)].elementAt(1)["chinese"] as String]..shuffle();
+              );
             }
-            int correct = options.indexOf(word["chinese"] as String);
-            buildedPages.add(
-              Center(
-                child: Column(
-                  children: [
-                    Container(
-                      width: mediaQuery.size.width * 0.9,
-                      height: mediaQuery.size.height * 0.4,
-                      decoration: BoxDecoration(
-                        borderRadius: StaticsVar.br,
-                        color: Theme.of(context).colorScheme.onPrimary
-                      ),
-                      child: FittedBox(fit: BoxFit.scaleDown ,child: Text(word["arabic"], style: TextStyle(fontSize: 128),)),
-                    ),
-                    SizedBox(height: mediaQuery.size.height * 0.02),
-                    ChooseButtons(
-                      onSelected: (value) {
-                        if(choosed) return null;
-                        setState(() {
-                          choosed = true;
-                          allowScoll = true;
-                        });
-                        if(value == correct) {
-                          widget.fsrs.addWordCard(word['id']);
-                          return true;
-                        } else {
-                          progressList.add({1, word});
-                          return false;
-                        }
-                      },
-                      isShowAnimation: true,
-                      options: options,
-                    ),
-                  ],
-                ),
-              ),
-            );
-            return buildedPages.last;
-          }
-        }
+          ),
+          // 测试阶段的
+          PageView.builder(
+            scrollDirection: Axis.vertical,
+            controller: controllerQuestions,
+            physics: corrected ? PageScrollPhysics() : NeverScrollableScrollPhysics(),
+            itemCount: widget.words.length,
+            onPageChanged: (value) {
+              setState(() {
+                // 防止跳过
+                corrected = false;
+              });
+            },
+            itemBuilder: (context, index) {
+              final int correct = options[index].indexOf(widget.words[index]["chinese"]);
+              return ChoiceQuestions(
+                mainWord: widget.words[index]["arabic"], 
+                choices: options[index], 
+                allowAudio: true, 
+                allowAnitmation: true,
+                allowMutipleSelect: true,
+                onSelected: (value) {
+                  if(value == correct) {
+                    setState(() {
+                      corrected = true;
+                    });
+                    widget.fsrs.addWordCard(widget.words[index]["id"]);
+                    return true;
+                  } else {
+                    return false;
+                  }
+                },
+                bottomWidget: TweenAnimationBuilder<double>(
+                  tween: Tween(
+                    begin: 0.0,
+                    end: corrected ? 1.0 : 0.0
+                  ),
+                  duration: Duration(milliseconds: 500),
+                  curve: StaticsVar.curve,
+                  builder: (context, value, child) {
+                    return Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        ElevatedButton.icon(
+                          style: ElevatedButton.styleFrom(
+                            fixedSize: Size(mediaQuery.size.width * 0.9 - mediaQuery.size.width * 0.2 * value, mediaQuery.size.height * 0.1),
+                            shape: RoundedRectangleBorder(borderRadius: StaticsVar.br),
+                          ),
+                          onPressed: (){
+                            viewAnswer(mediaQuery, context, [widget.words[index]["arabic"], widget.words[index]["chinese"], widget.words[index]["explanation"], widget.words[index]["subClass"]]);
+                          }, 
+                          icon: Icon(Icons.tips_and_updates),
+                          label: Text(value == 0.0 ? "提示" : "查看详解"),
+                        ),
+                        SizedBox(width: mediaQuery.size.width * 0.02 * value),
+                        if(value > 0.2) ElevatedButton.icon(
+                          style: ElevatedButton.styleFrom(
+                            fixedSize: Size(mediaQuery.size.width * 0.2 * value, mediaQuery.size.height * 0.1),
+                            shape: RoundedRectangleBorder(borderRadius: StaticsVar.br)
+                          ),
+                          onPressed: () {
+                            if(index == widget.words.length-1) {
+                              controllerHor.nextPage(duration: Duration(milliseconds: 500), curve: StaticsVar.curve);
+                            }
+                            controllerQuestions.nextPage(duration: Duration(milliseconds: 500), curve: StaticsVar.curve);
+                          },
+                          icon: Icon(index == widget.words.length-1 ? Icons.done_all : Icons.arrow_downward),
+                          label: FittedBox(child: Text(index == widget.words.length-1 ? "完成学习" : "下一题")),
+                        )
+                      ],
+                    );
+                  },
+                )
+              );
+            }
+          ),
+          Center(
+            child: Column(
+              children: [
+                TextContainer(text: "该课程学习已完成\n已加入复习计划\n请过几个小时后再次进入规律学习页面复习课程"),
+                ElevatedButton.icon(
+                  onPressed: (){
+                    Navigator.popUntil(context, (route)=>route.isFirst);
+                  }, 
+                  label: Text("确认"),
+                  icon: Icon(Icons.done_all),
+                )
+              ],
+            )
+          )
+        ],
       )
     );
   }
