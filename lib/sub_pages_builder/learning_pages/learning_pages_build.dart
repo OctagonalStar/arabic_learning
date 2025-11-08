@@ -1,6 +1,7 @@
 import 'dart:math';
 
 import 'package:arabic_learning/funcs/ui.dart';
+import 'package:arabic_learning/funcs/utili.dart';
 import 'package:arabic_learning/vars/change_notifier_models.dart';
 import 'package:arabic_learning/vars/global.dart';
 import 'package:flutter/material.dart';
@@ -273,53 +274,6 @@ class _InLearningPageState extends State<InLearningPage> {
       )
     );
   }
-}
-
-void viewAnswer(MediaQueryData mediaQuery, BuildContext context, List<String> data) async {
-  showBottomSheet(
-    context: context, 
-    shape: RoundedSuperellipseBorder(side: BorderSide(width: 1.0, color: Theme.of(context).colorScheme.onSurface), borderRadius: StaticsVar.br),
-    enableDrag: true,
-    builder: (context) {
-      return Container(
-        padding: EdgeInsets.only(top: mediaQuery.size.height * 0.05),
-        decoration: BoxDecoration(
-          color: Theme.of(context).colorScheme.onPrimary,
-          borderRadius: StaticsVar.br,
-        ),
-        child: Column(
-          children: [
-            Row(
-              children: [
-                SizedBox(width: mediaQuery.size.width * 0.05),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: context.read<Global>().isWideScreen ? CrossAxisAlignment.center : CrossAxisAlignment.start,
-                    children: [
-                      Text(data[0], style: TextStyle(fontSize: 36.0, fontWeight: FontWeight.bold),),
-                      Text(data[1], style: TextStyle(fontSize: 36.0, fontWeight: FontWeight.bold),),
-                      Text("例句:\t${data[2]}", style: TextStyle(fontSize: 20.0),),
-                      Text("所属课程:\t${data[3]}", style: TextStyle(fontSize: 20.0),),
-                    ]
-                  ),
-                ),
-                SizedBox(width: mediaQuery.size.width * 0.05),
-              ],
-            ),
-            Expanded(child: SizedBox()),
-            ElevatedButton(
-              onPressed: () {Navigator.pop(context);}, 
-              style: ElevatedButton.styleFrom(
-                fixedSize: Size(mediaQuery.size.width * 0.8, mediaQuery.size.height * 0.1),
-                shape: RoundedRectangleBorder(borderRadius: StaticsVar.br)
-              ),
-              child: Text("我知道了"),
-            )
-          ],
-        ),
-      );
-    },
-  );
 }
 
 class ConcludePage extends StatefulWidget {

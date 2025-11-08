@@ -44,6 +44,57 @@ List<Map<String, dynamic>> getSelectedWords(BuildContext context , {List<List<St
   return ans;
 }
 
+
+void viewAnswer(MediaQueryData mediaQuery, 
+                BuildContext context, 
+                List<String> data // data: [arabic, chinese, exp, subClass]
+                ) async {
+  showBottomSheet(
+    context: context, 
+    shape: RoundedSuperellipseBorder(side: BorderSide(width: 1.0, color: Theme.of(context).colorScheme.onSurface), borderRadius: StaticsVar.br),
+    enableDrag: true,
+    builder: (context) {
+      return Container(
+        padding: EdgeInsets.only(top: mediaQuery.size.height * 0.05),
+        decoration: BoxDecoration(
+          color: Theme.of(context).colorScheme.onPrimary,
+          borderRadius: StaticsVar.br,
+        ),
+        child: Column(
+          children: [
+            Row(
+              children: [
+                SizedBox(width: mediaQuery.size.width * 0.05),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: context.read<Global>().isWideScreen ? CrossAxisAlignment.center : CrossAxisAlignment.start,
+                    children: [
+                      Text(data[0], style: TextStyle(fontSize: 36.0, fontWeight: FontWeight.bold),),
+                      Text(data[1], style: TextStyle(fontSize: 36.0, fontWeight: FontWeight.bold),),
+                      Text("例句:\t${data[2]}", style: TextStyle(fontSize: 20.0),),
+                      Text("所属课程:\t${data[3]}", style: TextStyle(fontSize: 20.0),),
+                    ]
+                  ),
+                ),
+                SizedBox(width: mediaQuery.size.width * 0.05),
+              ],
+            ),
+            Expanded(child: SizedBox()),
+            ElevatedButton(
+              onPressed: () {Navigator.pop(context);}, 
+              style: ElevatedButton.styleFrom(
+                fixedSize: Size(mediaQuery.size.width * 0.8, mediaQuery.size.height * 0.1),
+                shape: RoundedRectangleBorder(borderRadius: StaticsVar.br)
+              ),
+              child: Text("我知道了"),
+            )
+          ],
+        ),
+      );
+    },
+  );
+}
+
 Future<List<dynamic>> playTextToSpeech(String text, BuildContext context, {double? speed}) async { 
   // return [bool isSuccessed?, String errorInfo];
   speed ??= context.read<Global>().settingData["audio"]["playRate"];

@@ -82,7 +82,7 @@ class ClassSelector extends StatelessWidget {
           ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(
-              fixedSize: Size(mediaQuery.size.width, mediaQuery.size.height * 0.05),
+              fixedSize: Size(mediaQuery.size.width, mediaQuery.size.height * 0.08),
               shape: ContinuousRectangleBorder(borderRadius: StaticsVar.br),
             ),
             child: Text('确认'),
@@ -406,7 +406,7 @@ class _ChooseButtonBoxState extends State<ChooseButtonBox> {
   }
 }
 
-class ChoiceQuestions extends StatelessWidget {
+class ChoiceQuestions extends StatefulWidget {
   final String mainWord;
   final List<String> choices;
   final bool? Function(int) onSelected;
@@ -430,16 +430,22 @@ class ChoiceQuestions extends StatelessWidget {
                         this.allowAnitmation = true});
 
   @override
+  State<StatefulWidget> createState() => _ChoiceQuestions();
+}
+
+class _ChoiceQuestions extends State<ChoiceQuestions> {
+  bool choosed = false;
+  bool playing = false;
+
+  @override
   Widget build(BuildContext context) {
-    bool playing = false;
-    bool choosed = false;
     MediaQueryData mediaQuery = MediaQuery.of(context);
     late final bool overFlowPossible;
-    int showingMode = bottonLayout;
+    int showingMode = widget.bottonLayout;
     // showingMode 0: 1 Row, 1: 2 Rows, 2: 4 Rows
     if(showingMode == -1){
       for(int i = 1; i < 5; i++) {
-        if(choices[i].length * 16 > mediaQuery.size.width * (context.read<Global>().isWideScreen ? 0.21 : 0.8)){
+        if(widget.choices[i].length * 16 > mediaQuery.size.width * (context.read<Global>().isWideScreen ? 0.21 : 0.8)){
           overFlowPossible = true;
           break;
         }
@@ -463,26 +469,26 @@ class ChoiceQuestions extends StatelessWidget {
       child: Center(
         child: Column(
           children: [
-            if(hint!=null) TextContainer(text: hint!),
+            if(widget.hint!=null) TextContainer(text: widget.hint!),
             Expanded(
               child: StatefulBuilder(
                 builder: (context, setLocalState) {
                   return ElevatedButton.icon(
-                    icon: Icon(allowAudio ? (playing ? Icons.multitrack_audio : Icons.volume_up) : Icons.short_text, size: 24.0),
-                    label: FittedBox(fit: BoxFit.contain ,child: Text(mainWord, style: TextStyle(fontSize: 72.0, fontWeight: FontWeight.bold))),
+                    icon: Icon(widget.allowAudio ? (playing ? Icons.multitrack_audio : Icons.volume_up) : Icons.short_text, size: 24.0),
+                    label: FittedBox(fit: BoxFit.contain ,child: Text(widget.mainWord, style: TextStyle(fontSize: 72.0, fontWeight: FontWeight.bold))),
                     style: ElevatedButton.styleFrom(
                       fixedSize: Size.fromWidth(mediaQuery.size.width * 0.8),
                       shape: RoundedRectangleBorder(borderRadius: StaticsVar.br),
                     ),
                     onPressed: () async {
-                      if (playing || !allowAudio) {
+                      if (playing || !widget.allowAudio) {
                         return;
                       }
                       setLocalState(() {
                         playing = true;
                       });
                       late List<dynamic> temp;
-                      temp = await playTextToSpeech(mainWord, context);
+                      temp = await playTextToSpeech(widget.mainWord, context);
                       if(!temp[0] && context.mounted) {
                         alart(context, temp[1]);
                       }
@@ -496,11 +502,11 @@ class ChoiceQuestions extends StatelessWidget {
             ),
             SizedBox(height: mediaQuery.size.height *0.01),
             ChooseButtons(
-              options: choices, 
+              options: widget.choices, 
               onSelected: (value) {
-                if(allowMutipleSelect) return onSelected(value);
+                if(widget.allowMutipleSelect) return widget.onSelected(value);
                 if(choosed) {
-                  if(onDisAllowMutipleSelect != null) return onDisAllowMutipleSelect!(value);
+                  if(widget.onDisAllowMutipleSelect != null) return widget.onDisAllowMutipleSelect!(value);
                   ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(
                       content: Text('该页面不允许多次选择'),
@@ -510,14 +516,14 @@ class ChoiceQuestions extends StatelessWidget {
                   return null;
                 } else {
                   choosed = true;
-                  return onSelected(value);
+                  return widget.onSelected(value);
                 }
               }, 
-              allowMutipleSelect: allowMutipleSelect, 
-              isShowAnimation: allowAnitmation
+              allowMutipleSelect: widget.allowMutipleSelect, 
+              isShowAnimation: widget.allowAnitmation
             ),
             SizedBox(height: mediaQuery.size.height *0.01),
-            if(bottomWidget != null) bottomWidget!,
+            if(widget.bottomWidget != null) widget.bottomWidget!,
             SizedBox(height: mediaQuery.size.height *0.05),
           ],
         ),
