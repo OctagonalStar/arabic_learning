@@ -48,7 +48,7 @@ class OpenSourceLicensePage extends StatelessWidget {
             ),
             children: [
               TextContainer(text: app.license??""),
-              ElevatedButton.icon(
+              if(context.read<Global>().settingData['regular']['theme'] == 10) ElevatedButton.icon(
                 onPressed: () {
                   alart(context, "荏苒的时光足以使沧海化为桑田...", delayConfirm: Duration(seconds: 3),
                   onConfirmed: (){
@@ -64,7 +64,7 @@ class OpenSourceLicensePage extends StatelessWidget {
                             onConfirmed: (){
                               alart(context, "致敬: 終のステラ (星之终途)", delayConfirm: Duration(seconds: 3),
                               onConfirmed: (){
-                                alart(context, "注：你开启了一项彩蛋功能\n若要关闭请再次点击此按钮\n请手动重启软件以应用更改...", delayConfirm: Duration(seconds: 3),
+                                alart(context, "注：你开启了一项彩蛋功能\n若要关闭请再次点击此按钮\n请*手动*重启软件以应用更改...", delayConfirm: Duration(seconds: 3),
                                 onConfirmed: (){
                                   Map<String, dynamic> setting = context.read<Global>().settingData;
                                   setting["eggs"]['stella'] = !setting["eggs"]['stella'];

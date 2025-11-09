@@ -57,7 +57,7 @@ class LearningPage extends StatelessWidget {
               ElevatedButton.icon(
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Theme.of(context).colorScheme.onPrimary.withAlpha(150),
-                  foregroundColor: Theme.of(context).colorScheme.onSurface.withAlpha(150),
+                  // foregroundColor: Theme.of(context).colorScheme.onSurface.withAlpha(150),
                   shadowColor: Colors.transparent,
                   fixedSize: Size(mediaQuery.size.width * 0.42, mediaQuery.size.height * 0.18),
                   shape: RoundedRectangleBorder(
