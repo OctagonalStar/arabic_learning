@@ -162,7 +162,7 @@ class Global with ChangeNotifier {
 
   Future<void> loadEggs() async {
     if(settingData['eggs']['stella']){
-      final rawString = await rootBundle.loadString("assets\\eggs\\s.txt");
+      final rawString = await rootBundle.loadString("assets/eggs/s.txt");
       stella = base64Decode(rawString.replaceAll('\n', '').replaceAll('\r', '').trim());
     }
   }
