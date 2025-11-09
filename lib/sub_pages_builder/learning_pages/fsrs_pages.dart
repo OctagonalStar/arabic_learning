@@ -9,7 +9,8 @@ import 'package:provider/provider.dart';
 // import 'package:fl_chart/fl_chart.dart';
 
 class ForeFSRSSettingPage extends StatelessWidget {
-  const ForeFSRSSettingPage({super.key});
+  final bool forceChoosing;
+  const ForeFSRSSettingPage({super.key, this.forceChoosing = false});
 
   @override
   Widget build(BuildContext context) {
@@ -32,7 +33,7 @@ class ForeFSRSSettingPage extends StatelessWidget {
         if (snapshot.hasError) {
           return Center(child: Text("Error: ${snapshot.error}"));
         }
-        if(fsrs.isEnabled()) {
+        if(fsrs.isEnabled() && !forceChoosing) {
           return MainFSRSPage(fsrs: fsrs);
         }
         return Scaffold(
@@ -44,7 +45,7 @@ class ForeFSRSSettingPage extends StatelessWidget {
               return ListView(
                 children: [
                   TextContainer(text: "该功能仍处于实验中，存在较多不稳定因素且可能随时被移除", style: TextStyle(color: Colors.redAccent, fontSize: 24)),
-                  TextContainer(text: "FSRS（Forgetting Spaced Repetition System）是一种基于遗忘曲线的间隔重复学习系统，旨在帮助用户更有效地记忆信息。通过调整复习间隔，FSRS能够最大限度地提高记忆的持久性，减少遗忘的发生。\n为了让您更个性化地学习，请选择一个适合您的难度方案（**选定之后无法更改**）："),
+                  TextContainer(text: "FSRS（Forgetting Spaced Repetition System）是一种基于遗忘曲线的间隔重复学习系统，旨在帮助用户更有效地记忆信息。通过调整复习间隔，FSRS能够最大限度地提高记忆的持久性，减少遗忘的发生。\n为了让您更个性化地学习，之后可在页面右上角更改："),
                   SizedBox(height: mediaQuery.size.height * 0.02),
                   difficultyButton(
                     context,
@@ -162,6 +163,18 @@ class MainFSRSPage extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(
         title: const Text("规律学习"),
+        actions: [
+          IconButton(
+            icon: Icon(Icons.keyboard_option_key),
+            onPressed: () {
+              showModalBottomSheet(
+                context: context, 
+                isScrollControlled: true,
+                builder: (context) => ForeFSRSSettingPage(forceChoosing: true)
+              );
+            },
+          ),
+        ],
       ),
       body: PageView.builder(
         scrollDirection: Axis.vertical,
@@ -312,6 +325,18 @@ class _FSRSOverViewPageState extends State<FSRSOverViewPage> {
     return Scaffold(
       appBar: AppBar(
         title: const Text("进度概览"),
+        actions: [
+          IconButton(
+            icon: Icon(Icons.keyboard_option_key),
+            onPressed: () {
+              showModalBottomSheet(
+                context: context, 
+                isScrollControlled: true,
+                builder: (context) => ForeFSRSSettingPage(forceChoosing: true)
+              );
+            },
+          ),
+        ],
       ),
       body: ListView(
         children: [
