@@ -3,7 +3,7 @@ import 'package:arabic_learning/vars/statics_var.dart';
 import 'package:flutter/foundation.dart';
 import 'package:path_provider/path_provider.dart' as path_provider;
 import 'package:flutter/services.dart' show rootBundle;
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:arabic_learning/package_replacement/storage.dart';
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:arabic_learning/package_replacement/fake_dart_io.dart' if (dart.library.io) 'dart:io' as io;
@@ -71,7 +71,14 @@ class Global with ChangeNotifier {
         900: Color(0xFF004D40),
       })
     ];
-  late ThemeData _themeData;
+  ThemeData _themeData = ThemeData(
+    useMaterial3: true,
+    colorScheme: ColorScheme.fromSeed(
+      seedColor: _themeList[9],
+      brightness: Brightness.light,
+    ),
+    fontFamily: null,
+  );
   late Map<String, dynamic> wordData = {};
   Uint8List? stella;
   sherpa_onnx.OfflineTts? vitsTTS;
