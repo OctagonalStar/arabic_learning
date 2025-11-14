@@ -311,7 +311,7 @@ class ChooseButtons extends StatelessWidget {
           child: FittedBox(
             child: Text(
               options[i],
-              style: TextStyle(fontSize: 36),
+              style: TextStyle(fontSize: 36, fontFamily:options[i].isArabic() ? context.read<Global>().arFont : null),
             ),
           ),
         ),
@@ -480,7 +480,7 @@ class _ChoiceQuestions extends State<ChoiceQuestions> {
                 builder: (context, setLocalState) {
                   return ElevatedButton.icon(
                     icon: Icon(widget.allowAudio ? (playing ? Icons.multitrack_audio : Icons.volume_up) : Icons.short_text, size: 24.0),
-                    label: FittedBox(fit: BoxFit.contain ,child: Text(widget.mainWord, style: TextStyle(fontSize: 72.0, fontWeight: FontWeight.bold))),
+                    label: FittedBox(fit: BoxFit.contain ,child: Text(widget.mainWord, style: TextStyle(fontSize: 72.0, fontFamily: widget.mainWord.isArabic() ? context.read<Global>().arFont : null))),
                     style: ElevatedButton.styleFrom(
                       fixedSize: Size.fromWidth(mediaQuery.size.width * 0.8),
                       shape: RoundedRectangleBorder(borderRadius: StaticsVar.br),
@@ -566,7 +566,7 @@ class WordCard extends StatelessWidget {
               padding: const EdgeInsets.all(16.0),
             ),
             icon: const Icon(Icons.volume_up, size: 24.0),
-            label: FittedBox(child: Text(word["arabic"], style: TextStyle(fontSize: 64.0))),
+            label: FittedBox(child: Text(word["arabic"], style: TextStyle(fontSize: 64.0, fontFamily: context.read<Global>().arFont))),
             onPressed: (){
               playTextToSpeech(word["arabic"], context);
             },

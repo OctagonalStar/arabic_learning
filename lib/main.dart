@@ -35,11 +35,11 @@ void main() async {
       await windowManager.focus();
     });
   }
-  final global = Global();
-  await global.init();
+  // final global = Global();
+  // await global.init();
   runApp(
-    ChangeNotifierProvider.value(
-      value: global, // 创建状态实例
+    ChangeNotifierProvider(
+      create: (context) => Global()..init(),
       child: MyApp(),
     ),
   );
@@ -49,31 +49,29 @@ class MyApp extends StatelessWidget {
   const MyApp({super.key});
   @override
   Widget build(BuildContext context) {
-    return Consumer<Global>(
-      builder: (context, value, child) {
-        return MaterialApp(
-          title: StaticsVar.appName,
-          themeMode: ThemeMode.system,
-          theme: value.themeData,
-          home: value.settingData["eggs"]['stella'] 
-            ? Scaffold(
-              body: Stack(
-                children: [
-                  Container(
-                    decoration: BoxDecoration(
-                      image: DecorationImage(
-                        image: MemoryImage(value.stella),
-                        fit: BoxFit.cover,
-                      ),
+    return context.watch<Global>().inited? 
+      MaterialApp(
+        title: StaticsVar.appName,
+        themeMode: ThemeMode.system,
+        theme: context.watch<Global>().themeData,
+        home: context.watch<Global>().settingData["eggs"]['stella'] 
+          ? Scaffold(
+            body: Stack(
+              children: [
+                Container(
+                  decoration: BoxDecoration(
+                    image: DecorationImage(
+                      image: MemoryImage(context.read<Global>().stella),
+                      fit: BoxFit.cover,
                     ),
                   ),
-                  const MyHomePage(title: StaticsVar.appName),
-                ],
-              ),)
-            : const MyHomePage(title: StaticsVar.appName),
-        );
-      },
-    );
+                ),
+                const MyHomePage(title: StaticsVar.appName),
+              ],
+            ),)
+          : const MyHomePage(title: StaticsVar.appName),
+      )
+      : Material(child: Center(child: CircularProgressIndicator()));
   }
 }
 

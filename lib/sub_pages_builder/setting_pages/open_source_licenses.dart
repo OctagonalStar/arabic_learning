@@ -2,6 +2,7 @@ import 'package:arabic_learning/funcs/ui.dart';
 import 'package:flutter/material.dart';
 import 'package:arabic_learning/vars/global.dart';
 import 'package:arabic_learning/oss_licenses.dart' as oss;
+import 'package:arabic_learning/vars/license_storage.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 
@@ -10,8 +11,37 @@ class OpenSourceLicensePage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    List<oss.Package> licenses = oss.allDependencies;
+    List<oss.Package> licenses = [...oss.allDependencies];
     List<Widget> widgets = [];
+
+    // 字体许可证
+    licenses.add(
+      oss.Package(
+        name: "Vazirmatn", 
+        description: "Vazirmatn Font", 
+        authors: ["Saber Rastikerdar <saber.rastikerdar@gmail.com>"], 
+        isMarkdown: false, 
+        isSdk: false, 
+        dependencies: [], 
+        devDependencies: [],
+        spdxIdentifiers: ["OFL"],
+        license: LicenseVars.theVazirmatnLicense
+      )
+    );
+    licenses.add(
+      oss.Package(
+        name: "NotoSansSC", 
+        description: "NotoSansSC Font", 
+        authors: ["Adobe"], 
+        isMarkdown: false, 
+        isSdk: false, 
+        dependencies: [], 
+        devDependencies: [],
+        spdxIdentifiers: ["OFL"],
+        license: LicenseVars.theNotoSansSCLicense
+      )
+    );
+
     for(oss.Package x in licenses) {
       widgets.add(
         ExpansionTile(
