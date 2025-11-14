@@ -166,13 +166,17 @@ class _DailyWord extends State<DailyWord> {
     final now = DateTime.now();
     final seed = now.year * 10000 + now.month * 100 + now.day;
     Random rnd = Random(seed);
-    Map<String, dynamic> data = context.read<Global>().wordData["Words"][rnd.nextInt(context.read<Global>().wordCount)];
-    String dailyWord = data["arabic"];
+    late Map<String, dynamic> data;
+    late String dailyWord;
+    if(context.read<Global>().wordCount != 0) {
+      data = context.read<Global>().wordData["Words"][rnd.nextInt(context.read<Global>().wordCount)];
+      dailyWord = data["arabic"];
+    }
 
     return ElevatedButton(
       onPressed: () async {
         if(playing) return;
-        if(context.read<Global>().wordCount == 0) {
+        if(context.read<Global>().wordCount != 0) {
           playing = true;
           late List<dynamic> temp;
           temp = await playTextToSpeech(dailyWord, context);

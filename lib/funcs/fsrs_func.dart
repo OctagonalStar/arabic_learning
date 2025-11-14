@@ -1,5 +1,5 @@
 import 'dart:convert';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:arabic_learning/package_replacement/storage.dart';
 import 'package:fsrs/fsrs.dart';
 
 class FSRS { 

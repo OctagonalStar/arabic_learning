@@ -53,15 +53,15 @@ class MyApp extends StatelessWidget {
       MaterialApp(
         title: StaticsVar.appName,
         themeMode: ThemeMode.system,
-        theme: context.watch<Global>().themeData,
-        home: context.watch<Global>().settingData["eggs"]['stella'] 
+        theme: context.read<Global>().themeData,
+        home: context.read<Global>().settingData["eggs"]['stella'] 
           ? Scaffold(
             body: Stack(
               children: [
                 Container(
                   decoration: BoxDecoration(
                     image: DecorationImage(
-                      image: MemoryImage(context.read<Global>().stella),
+                      image: MemoryImage(context.read<Global>().stella!),
                       fit: BoxFit.cover,
                     ),
                   ),
@@ -71,7 +71,7 @@ class MyApp extends StatelessWidget {
             ),)
           : const MyHomePage(title: StaticsVar.appName),
       )
-      : Material(child: Center(child: CircularProgressIndicator()));
+      : Material(child: Container(width: double.infinity, height: double.infinity, color: Colors.black ,child: Center(child: CircularProgressIndicator())));
   }
 }
 
