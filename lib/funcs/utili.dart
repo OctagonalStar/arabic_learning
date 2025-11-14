@@ -215,7 +215,7 @@ extension ListExtensions on List {
 }
 
 int getStrokeDays(Map<String, dynamic> settingData) {
-  return (settingData["learning"]["lastDate"] - DateTime.now().difference(DateTime(2025, 11, 1)).inDays > 1) ? "0" : (settingData["learning"]["lastDate"] - settingData["learning"]["startDate"] + 1);
+  return (DateTime.now().difference(DateTime(2025, 11, 1)).inDays - settingData["learning"]["lastDate"] > 1) ? 0 : (settingData["learning"]["lastDate"] - settingData["learning"]["startDate"] + 1);
 }
 
 extension ZFillExtension on num {
