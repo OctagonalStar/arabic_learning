@@ -10,6 +10,8 @@ class FSRS {
   late Rater rater;
   late Map<String, dynamic> settingData;
 
+  // index != cardId; cardId = wordId = the index of word in global.wordData[words]
+
   Future<void> init() async {
     prefs = await SharedPreferences.getInstance();
     if(!prefs.containsKey("fsrsData")) {
@@ -62,22 +64,23 @@ class FSRS {
     save();
   }
 
-  int willDue(int index) {
+  int willDueIn(int index) {
     return cards[index].due.difference(DateTime.now()).inDays;
   }
 
-  void reviewCard(int index, int duration, bool isCorrect) {
+  void reviewCard(int wordId, int duration, bool isCorrect) {
+    int index = cards.indexWhere((Card card) => card.cardId == wordId); // 避免有时候cardId != wordId
     final (:card, :reviewLog) = scheduler.reviewCard(cards[index], rater.calculate(duration, isCorrect));
     cards[index] = card;
     reviewLogs[index] = reviewLog;
     save();
   }
 
-  List<int> getWillDueCards() {
-    List<int> dueCards = [];
+  int getWillDueCount() {
+    int dueCards = 0;
     for(int i = 0; i < cards.length; i++) {
-      if(willDue(i) == 0) {
-        dueCards.add(i);
+      if(willDueIn(i) == 0) {
+        dueCards++;
       }
     }
     return dueCards;
@@ -91,12 +94,12 @@ class FSRS {
       }
     }
     if(cards[leastDueIndex].due.difference(DateTime.now()) > Duration(days: 1)) return -1;
-    return leastDueIndex;
+    return cards[leastDueIndex].cardId;
   }
 
-  bool isContained(int wordID) {
+  bool isContained(int wordId) {
     for(Card card in cards) {
-      if(card.cardId == wordID) return true;
+      if(card.cardId == wordId) return true;
     }
     return false;
   }
