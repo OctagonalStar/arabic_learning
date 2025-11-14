@@ -153,7 +153,7 @@ class MainFSRSPage extends StatelessWidget {
   
   @override
   Widget build(BuildContext context) {
-    bool isAnyDue = fsrs.getWillDueCards().isNotEmpty;
+    bool isAnyDue = fsrs.getWillDueCount() != 0;
     MediaQueryData mediaQuery = MediaQuery.of(context);
     final PageController controller = PageController();
     Random sharedRnd = Random();
@@ -184,7 +184,7 @@ class MainFSRSPage extends StatelessWidget {
             return Center(
               child: Column(
                 children: [
-                  TextContainer(text: "你有${fsrs.getWillDueCards().length}个单词即将逾期!\n上滑页面开始复习",size: Size(mediaQuery.size.width * 0.8, mediaQuery.size.height * 0.4),textAlign: TextAlign.center),
+                  TextContainer(text: "你有${fsrs.getWillDueCount().toString()}个单词即将逾期!\n上滑页面开始复习",size: Size(mediaQuery.size.width * 0.8, mediaQuery.size.height * 0.4),textAlign: TextAlign.center),
                   Icon(Icons.arrow_upward, size: 48.0, color: Colors.grey)
                 ],
               ),
@@ -354,6 +354,8 @@ class _FSRSOverViewPageState extends State<FSRSOverViewPage> {
               selectedClasses = await popSelectClasses(context, withCache: false);
               if(!context.mounted || selectedClasses.isEmpty) return;
               words = getSelectedWords(context, forceSelectClasses: selectedClasses, doShuffle: true, doDouble: false);
+              // 去除已经学习的项目
+              words.removeWhere((Map<String, dynamic> item) => widget.fsrs.isContained(item['id']));
               Navigator.push(context, MaterialPageRoute(
                 builder: (context) => FSRSLearningPage(words: words, fsrs: widget.fsrs,),
               ));
