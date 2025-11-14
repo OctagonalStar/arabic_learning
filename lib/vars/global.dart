@@ -73,7 +73,7 @@ class Global with ChangeNotifier {
     ];
   late ThemeData _themeData;
   late Map<String, dynamic> wordData = {};
-  late Uint8List stella;
+  Uint8List? stella;
   sherpa_onnx.OfflineTts? vitsTTS;
   String? arFont;
   String? zhFont;
@@ -156,7 +156,7 @@ class Global with ChangeNotifier {
   }
 
   Future<void> loadEggs() async {
-    if(settingData['eggs']['stella']){
+    if(settingData['eggs']['stella'] && stella == null){
       final rawString = await rootBundle.loadString("assets/eggs/s.txt");
       stella = base64Decode(rawString.replaceAll('\n', '').replaceAll('\r', '').trim());
     }
