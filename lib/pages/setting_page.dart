@@ -88,8 +88,9 @@ class _SettingPage extends State<SettingPage> {
           DropdownButton<int>(
             value: setting['regular']['font'] ?? 0,
             items: [
-              DropdownMenuItem(value: 0, child: Text('默认')),
-              DropdownMenuItem(value: 1, child: Text('备用字体')),
+              DropdownMenuItem(value: 0, child: Text('默认字体')),
+              DropdownMenuItem(value: 1, child: Text('仅阿语使用备用字体')),
+              DropdownMenuItem(value: 2, child: Text('中阿均使用备用字体')),
             ],
             onChanged: (value) {
               setting['regular']['font'] = value;

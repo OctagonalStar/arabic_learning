@@ -5,7 +5,6 @@ import 'package:arabic_learning/funcs/utili.dart';
 import 'package:arabic_learning/vars/global.dart';
 import 'package:arabic_learning/vars/statics_var.dart';
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 
 class HomePage extends StatelessWidget {
@@ -15,41 +14,10 @@ class HomePage extends StatelessWidget {
   Widget build(BuildContext context) {
     final themeColor = Theme.of(context).colorScheme;
     final mediaQuery = MediaQuery.of(context);
-    bool playing = false;
+    
     return Column(
       children: [
-        ElevatedButton(
-          onPressed: () async {
-            if(playing) return;
-            if(context.read<Global>().dailyWord.isNotEmpty) {
-              playing = true;
-              late List<dynamic> temp;
-              temp = await playTextToSpeech(context.read<Global>().dailyWord, context);
-              if(!temp[0] && context.mounted) {
-                alart(context, temp[1]);
-              }
-              playing = false;
-            } else {toPage(3);}
-          },
-          style: ElevatedButton.styleFrom(
-            backgroundColor: themeColor.onPrimary.withAlpha(150),
-            shadowColor: themeColor.surfaceBright.withAlpha(150),
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.vertical(bottom: Radius.circular(25.0))),
-            fixedSize: Size(mediaQuery.size.width * 0.9, mediaQuery.size.height * 0.3),
-          ),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              Text(
-                '每日一词',
-                style: TextStyle(fontSize: 18.0),
-              ),
-              SizedBox(height: mediaQuery.size.height * 0.02),
-              FittedBox(fit: BoxFit.scaleDown,child: dailyWord(context, mediaQuery, toPage)),
-            ],
-          ),
-        ),
+        DailyWord(toPage: toPage),
         SizedBox(height: mediaQuery.size.height * 0.01),
         Row(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -180,29 +148,77 @@ class HomePage extends StatelessWidget {
   }
 }
 
-Widget dailyWord(BuildContext context, MediaQueryData mediaQuery, Function toPage) {
-  if(context.read<Global>().wordCount == 0){
-    return Text("当前未导入词库数据\n请点此以跳转设置页面导入");
+class DailyWord extends StatefulWidget {
+  final Function(int) toPage;
+  const DailyWord({super.key, required this.toPage});
+
+  @override
+  State<StatefulWidget> createState() => _DailyWord();
+}
+
+
+class _DailyWord extends State<DailyWord> {
+  bool playing = false;
+
+  @override
+  Widget build(BuildContext context) {
+    MediaQueryData mediaQuery = MediaQuery.of(context);
+    final now = DateTime.now();
+    final seed = now.year * 10000 + now.month * 100 + now.day;
+    Random rnd = Random(seed);
+    Map<String, dynamic> data = context.read<Global>().wordData["Words"][rnd.nextInt(context.read<Global>().wordCount)];
+    String dailyWord = data["arabic"];
+
+    return ElevatedButton(
+      onPressed: () async {
+        if(playing) return;
+        if(context.read<Global>().wordCount == 0) {
+          playing = true;
+          late List<dynamic> temp;
+          temp = await playTextToSpeech(dailyWord, context);
+          if(!temp[0] && context.mounted) {
+            alart(context, temp[1]);
+          }
+          playing = false;
+        } else {widget.toPage(3);}
+      },
+      style: ElevatedButton.styleFrom(
+        backgroundColor: Theme.of(context).colorScheme.onPrimary.withAlpha(150),
+        shadowColor: Theme.of(context).colorScheme.surfaceBright.withAlpha(150),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.vertical(bottom: Radius.circular(25.0))),
+        fixedSize: Size(mediaQuery.size.width * 0.9, mediaQuery.size.height * 0.3),
+      ),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          Text(
+            '每日一词',
+            style: TextStyle(fontSize: 18.0),
+          ),
+          SizedBox(height: mediaQuery.size.height * 0.02),
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            child: Column(
+              children: context.read<Global>().wordCount == 0 ? [Text("当前未导入词库数据\n请点此以跳转设置页面导入")]
+                : [
+                Text(
+                  data["arabic"] ?? "读取出错 data:${data.toString()}",
+                  style: TextStyle(fontSize: 52.0, fontFamily: context.read<Global>().arFont),
+                ),
+                SizedBox(height: mediaQuery.size.height * 0.005),
+                Text(
+                  data["chinese"] ?? "读取出错 data:${data.toString()}",
+                  style: TextStyle(fontSize: 18.0),
+                  textAlign: TextAlign.center,
+                ),
+                SizedBox(height: mediaQuery.size.height * 0.03),
+                Icon(Icons.volume_up, size: 18.0),
+              ],
+            )
+          ),
+        ],
+      ),
+    );
   }
-  final now = DateTime.now();
-  final seed = now.year * 10000 + now.month * 100 + now.day;
-  Random rnd = Random(seed);
-  Map<String, dynamic> data = context.read<Global>().wordData["Words"][rnd.nextInt(context.read<Global>().wordCount)];
-  context.read<Global>().dailyWord = data["arabic"];
-  return Column(
-    children: [
-      Text(
-        data["arabic"] ?? "读取出错 data:${data.toString()}",
-        style: Provider.of<Global>(context, listen: false).settingData["regular"]["font"] == 1 ? GoogleFonts.markaziText(fontSize: 52.0, fontWeight: FontWeight.bold) : TextStyle(fontSize: 52.0, fontWeight: FontWeight.bold),
-      ),
-      SizedBox(height: mediaQuery.size.height * 0.005),
-      Text(
-        data["chinese"] ?? "读取出错 data:${data.toString()}",
-        style: TextStyle(fontSize: 18.0),
-        textAlign: TextAlign.center,
-      ),
-      SizedBox(height: mediaQuery.size.height * 0.03),
-      Icon(Icons.volume_up, size: 18.0),
-    ],
-  );
 }

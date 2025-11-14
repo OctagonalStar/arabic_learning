@@ -69,8 +69,8 @@ void viewAnswer(MediaQueryData mediaQuery,
                   child: Column(
                     crossAxisAlignment: context.read<Global>().isWideScreen ? CrossAxisAlignment.center : CrossAxisAlignment.start,
                     children: [
-                      Text(data[0], style: TextStyle(fontSize: 36.0, fontWeight: FontWeight.bold),),
-                      Text(data[1], style: TextStyle(fontSize: 36.0, fontWeight: FontWeight.bold),),
+                      Text(data[0], style: TextStyle(fontSize: 36.0, fontFamily: data[0].isArabic() ? context.read<Global>().arFont : null)),
+                      Text(data[1], style: TextStyle(fontSize: 36.0, fontFamily: data[1].isArabic() ? context.read<Global>().arFont : null)),
                       Text("例句:\t${data[2]}", style: TextStyle(fontSize: 20.0),),
                       Text("所属课程:\t${data[3]}", style: TextStyle(fontSize: 20.0),),
                     ]
@@ -234,4 +234,19 @@ String _zfillImpl(num value, int width) {
 
   String zeros = '0' * padding;
   return isNegative ? '-$zeros$raw' : '$zeros$raw';
+}
+
+Map<K, V> deepMerge<K, V>(Map<K, V> base, Map<K, V> overlay) {
+  final result = Map<K, V>.from(base);
+  overlay.forEach((key, value) {
+    if (result[key] is Map && value is Map) {
+      result[key] = deepMerge(
+        Map<String, dynamic>.from(result[key] as Map),
+        Map<String, dynamic>.from(value as Map),
+      ) as V;
+    } else {
+      result[key] = value;
+    }
+  });
+  return result;
 }

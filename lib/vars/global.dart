@@ -1,3 +1,4 @@
+import 'package:arabic_learning/funcs/utili.dart';
 import 'package:arabic_learning/vars/statics_var.dart';
 import 'package:flutter/foundation.dart';
 import 'package:path_provider/path_provider.dart' as path_provider;
@@ -5,23 +6,23 @@ import 'package:flutter/services.dart' show rootBundle;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
-import '../package_replacement/fake_dart_io.dart' if (dart.library.io) 'dart:io' as io;
-import '../package_replacement/fake_sherpa_onnx.dart' if (dart.library.io) 'package:sherpa_onnx/sherpa_onnx.dart' as sherpa_onnx;
+import 'package:arabic_learning/package_replacement/fake_dart_io.dart' if (dart.library.io) 'dart:io' as io;
+import 'package:arabic_learning/package_replacement/fake_sherpa_onnx.dart' if (dart.library.io) 'package:sherpa_onnx/sherpa_onnx.dart' as sherpa_onnx;
 
 class Global with ChangeNotifier {
-  late bool firstStart;
-  late bool updateLogRequire;
-  late bool isWideScreen;
-  late final SharedPreferences prefs;
-  late String dailyWord = "";
+  late bool firstStart; // 是否为第一次使用
+  bool inited = false; //是否初始化完成
+  late bool updateLogRequire; //是否需要显示更新日志
+  late bool isWideScreen; // 设备是否是宽屏幕
+  late final SharedPreferences prefs; // 储存实例
+
   late bool modelTTSDownloaded = false;
   Map<String, dynamic> _settingData = {
     'User': "",
     'LastVersion': StaticsVar.appVersion,
     'regular': {
       "theme": 9,
-      "font": 0, //0: Noto Sans SC, 1: Google Noto Sans SC
+      "font": 0, //0: normal, 1: backup for ar, 2:backup for ar&zh
       "darkMode": false,
       "hideAppDownloadButton": false,
     },
@@ -70,25 +71,62 @@ class Global with ChangeNotifier {
         900: Color(0xFF004D40),
       })
     ];
-  late var _themeData = ThemeData(
-        useMaterial3: true,
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: _themeList[settingData["regular"]["theme"]],
-          brightness: settingData["regular"]["darkMode"] ? Brightness.dark : Brightness.light,
-        ),
-        textTheme: settingData["regular"]["font"] == 1 ? settingData["regular"]["darkMode"] ? GoogleFonts.notoSansScTextTheme(ThemeData.dark().textTheme) : GoogleFonts.notoSansScTextTheme(ThemeData.light().textTheme) : settingData["regular"]["darkMode"] ? ThemeData.dark().textTheme : ThemeData.light().textTheme,
-  );
-
+  late ThemeData _themeData;
   late Map<String, dynamic> wordData = {};
-  late sherpa_onnx.OfflineTts? vitsTTS;
   late Uint8List stella;
+  sherpa_onnx.OfflineTts? vitsTTS;
+  String? arFont;
+  String? zhFont;
   ThemeData get themeData => _themeData;
   Map<String, dynamic> get settingData => _settingData;
   int get wordCount => wordData["Words"]!.length;
 
+  Future<bool> init() async {
+    if(inited) return false;
+    prefs = await SharedPreferences.getInstance();
+    firstStart = prefs.getString("settingData") == null;
+    if(firstStart) {
+      updateLogRequire = false;
+      await prefs.setString("wordData", jsonEncode({"Words": [], "Classes": {}}));
+      wordData = jsonDecode(jsonEncode({"Words": [], "Classes": {}})) as Map<String, dynamic>;
+    } else {
+      wordData = jsonDecode(prefs.getString("wordData")!) as Map<String, dynamic>;
+      await conveySetting();
+    }
+    inited = true;
+    return true;
+  }
+
+  // 预处理一些版本更新的配置文件兼容
+  Future<void> conveySetting() async {
+    Map<String, dynamic> oldSetting = jsonDecode(prefs.getString("settingData")!) as Map<String, dynamic>;
+    if(oldSetting["LastVersion"] != _settingData["LastVersion"]) {
+      updateLogRequire = true;
+      oldSetting["LastVersion"] = _settingData["LastVersion"];
+    } else {
+      updateLogRequire = false;
+    }
+    _settingData = deepMerge(_settingData, oldSetting);
+    await updateSetting(_settingData);
+  }
+
+  // 更新配置到存储中
+  Future<void> updateSetting(Map<String, dynamic> settingData) async {
+    _settingData = settingData;
+    prefs.setString("settingData", jsonEncode(settingData));
+    await postInit();
+  }
+
+  Future<void> postInit() async {
+    await loadTTS();
+    await loadEggs();
+    updateTheme();
+    notifyListeners();
+  }
+
   // load TTS model if any
   Future<void> loadTTS() async {
-    if(kIsWeb) return;
+    if(kIsWeb || vitsTTS != null) return;
     final basePath = await path_provider.getApplicationDocumentsDirectory();
     if(io.File("${basePath.path}/${StaticsVar.modelPath}/ar_JO-kareem-medium.onnx").existsSync()){
       modelTTSDownloaded = true;
@@ -117,49 +155,6 @@ class Global with ChangeNotifier {
     }
   }
 
-  Map<K, V> deepMerge<K, V>(Map<K, V> base, Map<K, V> overlay) {
-  final result = Map<K, V>.from(base);
-  overlay.forEach((key, value) {
-    if (result[key] is Map && value is Map) {
-      result[key] = deepMerge(
-        Map<String, dynamic>.from(result[key] as Map),
-        Map<String, dynamic>.from(value as Map),
-      ) as V;
-    } else {
-      result[key] = value;
-    }
-  });
-  return result;
-  }
-
-  void conveySetting() {
-    Map<String, dynamic> oldSetting = jsonDecode(prefs.getString("settingData")!) as Map<String, dynamic>;
-    if(oldSetting["LastVersion"] != _settingData["LastVersion"]) {
-      updateLogRequire = true;
-      oldSetting["LastVersion"] = _settingData["LastVersion"];
-    } else {
-      updateLogRequire = false;
-    }
-    _settingData = deepMerge(_settingData, oldSetting);
-    if(updateLogRequire) updateSetting(_settingData);
-  }
-
-  Future<void> init() async {
-    prefs = await SharedPreferences.getInstance();
-    firstStart = prefs.getString("settingData") == null;
-    if(firstStart) {
-      updateLogRequire = false;
-      await prefs.setString("wordData", jsonEncode({"Words": [], "Classes": {}}));
-      wordData = jsonDecode(jsonEncode({"Words": [], "Classes": {}})) as Map<String, dynamic>;
-    } else {
-      wordData = jsonDecode(prefs.getString("wordData")!) as Map<String, dynamic>;
-    }
-    if(!kIsWeb) loadTTS();
-    if (firstStart) return;
-    conveySetting();
-    await loadEggs();
-  }
-
   Future<void> loadEggs() async {
     if(settingData['eggs']['stella']){
       final rawString = await rootBundle.loadString("assets/eggs/s.txt");
@@ -169,14 +164,23 @@ class Global with ChangeNotifier {
 
   void updateTheme() {
     _themeData = ThemeData(
-        useMaterial3: true,
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: _themeList[settingData["regular"]["theme"]],
-          brightness: settingData["regular"]["darkMode"] ? Brightness.dark : Brightness.light,
-        ),
-        textTheme: settingData["regular"]["font"] == 1 ? settingData["regular"]["darkMode"] ? GoogleFonts.notoSansScTextTheme(ThemeData.dark().textTheme) : GoogleFonts.notoSansScTextTheme(ThemeData.light().textTheme) : settingData["regular"]["darkMode"] ? ThemeData.dark().textTheme : ThemeData.light().textTheme,
+      useMaterial3: true,
+      colorScheme: ColorScheme.fromSeed(
+        seedColor: _themeList[settingData["regular"]["theme"]],
+        brightness: settingData["regular"]["darkMode"] ? Brightness.dark : Brightness.light,
+      ),
+      fontFamily: settingData["regular"]["font"] == 2 ? "NotoSansSC" : null,
     );
-    notifyListeners();
+    if(settingData["regular"]["font"] == 2) {
+      arFont = StaticsVar.arBackupFont;
+      zhFont = StaticsVar.zhBackupFont;
+    } else if(settingData["regular"]["font"] == 1) {
+      arFont = StaticsVar.arBackupFont;
+      zhFont = null;
+    } else {
+      arFont = null;
+      zhFont = null;
+    }
   }
 
   void acceptAggrement(String name) {
@@ -185,13 +189,7 @@ class Global with ChangeNotifier {
     prefs.setString("settingData", jsonEncode(settingData));
     notifyListeners();
   }
-  
-  void updateSetting(Map<String, dynamic> settingData) {
-    _settingData = settingData;
-    prefs.setString("settingData", jsonEncode(settingData));
-    updateTheme();
-    notifyListeners();
-  }
+
 
   // Non-Format Data:
   // {

@@ -12,9 +12,10 @@ class StaticsVar {
   static const String onlineDictOwner = 'JYinherit';
   static const String onlineDictRepo = 'Arabiclearning';
   static const String onlineDictPath = '词库';
-  static final BorderRadius br = BorderRadius.circular(25.0);
-  static final isDesktop = kIsWeb ? false : (Platform.isWindows || Platform.isLinux || Platform.isMacOS);
   static const Curve curve = Curves.easeInOut;
+  static const String arBackupFont = "Vazirmatn";
+  static const String zhBackupFont = "NotoSansSC";
+  static final isDesktop = kIsWeb ? false : (Platform.isWindows || Platform.isLinux || Platform.isMacOS);
   static final player = AudioPlayer(); // load Player when app start
-
+  static final BorderRadius br = BorderRadius.circular(25.0);
 }

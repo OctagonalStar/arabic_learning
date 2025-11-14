@@ -52,7 +52,6 @@ const allDependencies = <Package>[
   _frontend_server_client,
   _fsrs,
   _glob,
-  _google_fonts,
   _html,
   _http,
   _http_multi_server,
@@ -162,7 +161,6 @@ const dependencies = <Package>[
   _convex_bottom_bar,
   _window_manager,
   _path_provider,
-  _google_fonts,
   _provider,
   _file_picker,
   _flutter_tts,
@@ -177,9 +175,9 @@ const dependencies = <Package>[
   _dio,
   _fsrs,
   _flutter_markdown_plus,
-  _dart_pubspec_licenses,
   _cupertino_icons,
-  _http
+  _http,
+  _dart_pubspec_licenses
 ];
 
 /// Direct `dev_dependencies`.
@@ -2649,45 +2647,6 @@ DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
 THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.''',
-  );
-
-/// google_fonts 6.3.2
-const _google_fonts = Package(
-    name: 'google_fonts',
-    description: 'A Flutter package to use fonts from fonts.google.com. Supports HTTP fetching, caching, and asset bundling.',
-    repository: 'https://github.com/flutter/packages/tree/main/packages/google_fonts',
-    authors: [],
-    version: '6.3.2',
-    spdxIdentifiers: ['BSD-3-Clause'],
-    isMarkdown: false,
-    isSdk: false,
-    dependencies: [PackageRef('crypto'), PackageRef('flutter'), PackageRef('http'), PackageRef('path_provider')],
-    devDependencies: [PackageRef('path_provider_platform_interface'), PackageRef('plugin_platform_interface'), PackageRef('test')],
-    license: '''Copyright 2013 The Flutter Authors
-
-Redistribution and use in source and binary forms, with or without modification,
-are permitted provided that the following conditions are met:
-
-    * Redistributions of source code must retain the above copyright
-      notice, this list of conditions and the following disclaimer.
-    * Redistributions in binary form must reproduce the above
-      copyright notice, this list of conditions and the following
-      disclaimer in the documentation and/or other materials provided
-      with the distribution.
-    * Neither the name of Google Inc. nor the names of its
-      contributors may be used to endorse or promote products derived
-      from this software without specific prior written permission.
-
-THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
-ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
-WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
-DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR
-ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
-(INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
-LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
-ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.''',
   );
 
 /// html 0.15.6
@@ -8860,16 +8819,16 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.''',
   );
 
-/// arabic_learning 0.1.8+3
+/// arabic_learning 0.1.9+7
 const _arabic_learning = Package(
     name: 'arabic_learning',
     description: '一个用于记背阿拉伯语单词的学习软件。',
     authors: [],
-    version: '0.1.8+3',
+    version: '0.1.9+7',
     spdxIdentifiers: ['AGPL-3.0'],
     isMarkdown: false,
     isSdk: false,
-    dependencies: [PackageRef('flutter'), PackageRef('convex_bottom_bar'), PackageRef('window_manager'), PackageRef('path_provider'), PackageRef('google_fonts'), PackageRef('provider'), PackageRef('file_picker'), PackageRef('flutter_tts'), PackageRef('just_audio'), PackageRef('just_audio_windows'), PackageRef('flutter_launcher_icons'), PackageRef('change_app_package_name'), PackageRef('shared_preferences'), PackageRef('url_launcher'), PackageRef('sherpa_onnx'), PackageRef('archive'), PackageRef('dio'), PackageRef('fsrs'), PackageRef('flutter_markdown_plus'), PackageRef('dart_pubspec_licenses'), PackageRef('cupertino_icons'), PackageRef('http')],
+    dependencies: [PackageRef('flutter'), PackageRef('convex_bottom_bar'), PackageRef('window_manager'), PackageRef('path_provider'), PackageRef('provider'), PackageRef('file_picker'), PackageRef('flutter_tts'), PackageRef('just_audio'), PackageRef('just_audio_windows'), PackageRef('flutter_launcher_icons'), PackageRef('change_app_package_name'), PackageRef('shared_preferences'), PackageRef('url_launcher'), PackageRef('sherpa_onnx'), PackageRef('archive'), PackageRef('dio'), PackageRef('fsrs'), PackageRef('flutter_markdown_plus'), PackageRef('cupertino_icons'), PackageRef('http'), PackageRef('dart_pubspec_licenses')],
     devDependencies: [PackageRef('flutter_lints')],
     license: '''GNU AFFERO GENERAL PUBLIC LICENSE
                        Version 3, 19 November 2007
