@@ -4,6 +4,7 @@ import 'package:arabic_learning/sub_pages_builder/setting_pages/about_page.dart'
 import 'package:arabic_learning/sub_pages_builder/setting_pages/data_download_page.dart' show DownloadPage;
 import 'package:arabic_learning/sub_pages_builder/setting_pages/item_widget.dart';
 import 'package:arabic_learning/sub_pages_builder/setting_pages/model_download_page.dart' show ModelDownload;
+import 'package:arabic_learning/sub_pages_builder/setting_pages/questions_setting_page.dart' show QuestionsSettingLeadingPage;
 import 'package:arabic_learning/vars/global.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:file_picker/file_picker.dart';
@@ -28,7 +29,7 @@ class _SettingPage extends State<SettingPage> {
         return ListView(
           children: [
             settingItem(context, mediaQuery, regularSetting(mediaQuery, context, setting), "常规设置"),
-            settingItem(context, mediaQuery, dataSetting(mediaQuery, context, setting), "数据设置"),
+            settingItem(context, mediaQuery, dataSetting(mediaQuery, context, setting), "学习设置", withPadding: false),
             settingItem(context, mediaQuery, audioSetting(mediaQuery, context, setting), "音频设置", withPadding: false),
             settingItem(context, mediaQuery, aboutSetting(mediaQuery, context, setting), "关于", withPadding: false),
           ],
@@ -61,7 +62,7 @@ class _SettingPage extends State<SettingPage> {
             ],
             onChanged: (value) async {
               setting['regular']['theme'] = value;
-              Provider.of<Global>(context, listen: false).updateSetting(setting);
+              Provider.of<Global>(context, listen: false).updateSetting();
             },
           ),
         ],
@@ -75,7 +76,7 @@ class _SettingPage extends State<SettingPage> {
             value: setting['regular']['darkMode'] ?? false,
             onChanged: (value) {
               setting['regular']['darkMode'] = value;
-              Provider.of<Global>(context, listen: false).updateSetting(setting);
+              context.read<Global>().updateSetting();
             },
           )
         ],
@@ -94,7 +95,7 @@ class _SettingPage extends State<SettingPage> {
             ],
             onChanged: (value) {
               setting['regular']['font'] = value;
-              Provider.of<Global>(context, listen: false).updateSetting(setting);
+              Provider.of<Global>(context, listen: false).updateSetting();
             },
           )
         ]
@@ -108,31 +109,26 @@ class _SettingPage extends State<SettingPage> {
             value: setting['regular']['hideAppDownloadButton'] ?? false,
             onChanged: (value) {
               setting['regular']['hideAppDownloadButton'] = value;
-              context.read<Global>().updateSetting(setting);
+              context.read<Global>().updateSetting();
             },
           )
         ],
       ),
     ];
   }
+  
   List<Widget> dataSetting(MediaQueryData mediaQuery, BuildContext context, Map<String, dynamic> setting) {
     return [
       Column(
         children: [
           Row(
             children: [
+              SizedBox(width: mediaQuery.size.width * 0.02),
               Icon(Icons.download, size: 24.0),
               SizedBox(width: mediaQuery.size.width * 0.01),
-              Expanded(child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.max,
-                children: [
-                  Text("导入词库数据"),
-                  Text("词库中现有: ${Provider.of<Global>(context, listen: false).wordCount}", 
-                          style: TextStyle(fontSize: 8.0, color: Colors.grey))
-                ],
-              )),
+              Expanded(child: Text("导入词库数据")),
+              Text("词库中现有: ${context.read<Global>().wordCount}"),
+              SizedBox(width: mediaQuery.size.width * 0.02),
             ],
           ),
           Row(
@@ -255,6 +251,22 @@ class _SettingPage extends State<SettingPage> {
             ],
           ),
         ],
+      ),
+      ElevatedButton(
+        style: ElevatedButton.styleFrom(
+          minimumSize: Size.fromHeight(mediaQuery.size.height * 0.08),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadiusGeometry.vertical(bottom: Radius.circular(25.0)))
+        ),
+        onPressed: (){
+          Navigator.of(context).push(MaterialPageRoute(builder: (context) => QuestionsSettingLeadingPage()));
+        }, 
+        child: Row(
+          children: [
+            Icon(Icons.quiz),
+            Expanded(child: Text("题型配置")),
+            Icon(Icons.arrow_forward_ios)
+          ],
+        )
       )
     ];
   }
@@ -289,7 +301,7 @@ class _SettingPage extends State<SettingPage> {
             onChanged: (value) {
               if(value == 1) alart(context, "警告: \n来自\"TextReadTTS.com\"的音频不支持发音符号，且只能合成40字以内的文本。\n开启此功能请知悉。");
               set["audio"]["useBackupSource"] = value;
-              context.read<Global>().updateSetting(set);
+              context.read<Global>().updateSetting();
             },
             items: [
               DropdownMenuItem(value: 0, child: Text("系统文本转语音", overflow: TextOverflow.ellipsis,)),
@@ -328,7 +340,7 @@ class _SettingPage extends State<SettingPage> {
               });
             },
             onChangeEnd: (value) {
-              context.read<Global>().updateSetting(set);
+              context.read<Global>().updateSetting();
             },
           ),
           SizedBox(width: mediaQuery.size.width * 0.02),

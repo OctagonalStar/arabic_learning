@@ -35,6 +35,30 @@ class Global with ChangeNotifier {
       "lastDate": 0, // YYYYMMDD;int
       "KnownWords": [],
     },
+    'quiz': {
+      /*
+      题型说明 
+      0: 单词卡片
+      1: 中译阿 选择题
+      2: 阿译中 选择题
+      3: 中译阿 拼写题
+      
+      结构：
+      [[int], bool, bool]
+      [[the questions], doShuffleInternaly?, doShuffleGlobally? ,isAllowModify?]
+      Internaly: do shuffle only in only each type of question. The order of questionType was not changed.
+      Globally: shuffle everything
+      */
+
+      // 中阿混合学习
+      'zh_ar': [[1, 2], true, false, true],
+
+      // 阿译中学习
+      'ar': [[2], true, true],
+
+      // 中译阿学习
+      'zh': [[1], true, true]
+    },
     'eggs': {
       'stella': false
     },
@@ -108,14 +132,14 @@ class Global with ChangeNotifier {
       updateLogRequire = false;
     }
     _settingData = deepMerge(_settingData, oldSetting);
-    await updateSetting(_settingData);
+    await updateSetting();
   }
 
   // 更新配置到存储中
-  Future<void> updateSetting(Map<String, dynamic> settingData) async {
-    _settingData = settingData;
-    prefs.setString("settingData", jsonEncode(settingData));
-    await postInit();
+  Future<void> updateSetting({Map<String, dynamic>? settingData, bool refresh = true}) async {
+    if(settingData != null) _settingData = settingData;
+    prefs.setString("settingData", jsonEncode(_settingData));
+    if(refresh) await postInit();
   }
 
   Future<void> postInit() async {

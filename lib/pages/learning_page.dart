@@ -140,7 +140,7 @@ class LearningPage extends StatelessWidget {
 
 
 Future<void> shiftToStudy(BuildContext context, int studyType) async {
-  List<Map<String, dynamic>> words = getSelectedWords(context, doShuffle: true, doDouble: studyType == 0);
+  List<Map<String, dynamic>> words = getSelectedWords(context, doShuffle: false, doDouble: false);
   if(!context.mounted){
     return;
   }
@@ -153,7 +153,7 @@ Future<void> shiftToStudy(BuildContext context, int studyType) async {
     );
     await popSelectClasses(context, withCache: true);
     if(!context.mounted) return;
-    words = getSelectedWords(context, doShuffle: true, doDouble: studyType == 0);
+    words = getSelectedWords(context, doShuffle: false, doDouble: false);
     if(words.isEmpty) return;
   }
   final valSetter = AreYouFinishedModel();
