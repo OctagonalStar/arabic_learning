@@ -1,7 +1,6 @@
 import 'dart:convert';
 import 'package:archive/archive.dart';
 import 'package:flutter_tts/flutter_tts.dart';
-import 'package:http/http.dart' as http;
 import 'package:path_provider/path_provider.dart' as path_provider;
 import 'package:arabic_learning/package_replacement/fake_dart_io.dart' if (dart.library.io) 'dart:io' as io;
 import 'package:arabic_learning/package_replacement/fake_sherpa_onnx.dart' if (dart.library.io) 'package:sherpa_onnx/sherpa_onnx.dart' as sherpa_onnx;
@@ -113,13 +112,12 @@ Future<List<dynamic>> playTextToSpeech(String text, BuildContext context, {doubl
   // 1: TextReadTTS
   } else if (context.read<Global>().settingData["audio"]["useBackupSource"] == 1) {
     try {
-      final response = await http.get(Uri.parse("https://textreadtts.com/tts/convert?accessKey=FREE&language=arabic&speaker=speaker2&text=$text")).timeout(Duration(seconds: 8), onTimeout: () => throw Exception("请求超时"));
+      final response = await Dio().getUri(Uri.parse("https://textreadtts.com/tts/convert?accessKey=FREE&language=arabic&speaker=speaker2&text=$text")).timeout(Duration(seconds: 8), onTimeout: () => throw Exception("请求超时"));
       if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-        if(data["code"] == 1) {
+        if(response.data["code"] == 1) {
           return [false, "备用音源请求失败:\n错误信息:文本长度超过API限制"];
         }
-        await StaticsVar.player.setUrl(data["audio"]);
+        await StaticsVar.player.setUrl(response.data["audio"]);
         if(!context.mounted) return [false, "神经网络音频合成失败\n中途退出context"];
         await StaticsVar.player.setSpeed(speed!);
         await StaticsVar.player.play();
