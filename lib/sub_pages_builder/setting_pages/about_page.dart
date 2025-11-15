@@ -1,8 +1,10 @@
 import 'package:arabic_learning/funcs/ui.dart';
 import 'package:arabic_learning/sub_pages_builder/setting_pages/open_source_licenses.dart';
+import 'package:arabic_learning/vars/global.dart';
 import 'package:arabic_learning/vars/license_storage.dart';
 import 'package:arabic_learning/vars/statics_var.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
 class AboutPage extends StatelessWidget {
   final Map<String, dynamic> setting;
@@ -51,6 +53,12 @@ class AboutPage extends StatelessWidget {
             }, 
             icon: Icon(Icons.balance),
             label: Text("开放源代码许可"),
+          ),
+          ExpansionTile(
+            title: Text("调试信息"),
+            children: [
+              TextContainer(text: "Storage Type: ${context.read<Global>().prefs.type ? "SharedPreferences" : "IndexDB"}"),
+            ],
           )
         ],
       ),

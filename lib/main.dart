@@ -71,7 +71,7 @@ class MyApp extends StatelessWidget {
             ),)
           : const MyHomePage(title: StaticsVar.appName),
       )
-      : Material(child: Container(width: double.infinity, height: double.infinity, color: Colors.black ,child: Center(child: CircularProgressIndicator())));
+      : Material(child: Container(width: double.infinity, height: double.infinity, color: Colors.black ,child: Center(child: CircularProgressIndicator())));    
   }
 }
 

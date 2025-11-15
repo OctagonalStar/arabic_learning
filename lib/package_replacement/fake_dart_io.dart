@@ -35,3 +35,23 @@ class Platform{
 
   static bool get isMacOS => false;
 }
+
+class IdbFactory{
+  Future<Database> open(String s, {required int version, required Null Function(VersionChangeEvent event) onUpgradeNeeded}) async {return Database();}
+  
+}
+
+class Database {
+  transaction(String s, String t) {}
+  void createObjectStore(String s, {required bool autoIncrement}) {}
+}
+
+IdbFactory? getIdbFactory(){
+  return IdbFactory();
+}
+
+class VersionChangeEvent {
+  Database get database => Database();
+}
+
+const String idbModeReadWrite = "";

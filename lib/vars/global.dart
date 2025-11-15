@@ -71,14 +71,7 @@ class Global with ChangeNotifier {
         900: Color(0xFF004D40),
       })
     ];
-  ThemeData _themeData = ThemeData(
-    useMaterial3: true,
-    colorScheme: ColorScheme.fromSeed(
-      seedColor: _themeList[9],
-      brightness: Brightness.light,
-    ),
-    fontFamily: null,
-  );
+  late ThemeData _themeData;
   late Map<String, dynamic> wordData = {};
   Uint8List? stella;
   sherpa_onnx.OfflineTts? vitsTTS;
@@ -96,6 +89,7 @@ class Global with ChangeNotifier {
       updateLogRequire = false;
       await prefs.setString("wordData", jsonEncode({"Words": [], "Classes": {}}));
       wordData = jsonDecode(jsonEncode({"Words": [], "Classes": {}})) as Map<String, dynamic>;
+      await postInit();
     } else {
       wordData = jsonDecode(prefs.getString("wordData")!) as Map<String, dynamic>;
       await conveySetting();
