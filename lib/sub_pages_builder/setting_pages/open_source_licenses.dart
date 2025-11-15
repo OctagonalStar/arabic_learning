@@ -98,7 +98,7 @@ class OpenSourceLicensePage extends StatelessWidget {
                                 onConfirmed: (){
                                   Map<String, dynamic> setting = context.read<Global>().settingData;
                                   setting["eggs"]['stella'] = !setting["eggs"]['stella'];
-                                  context.read<Global>().updateSetting(setting);
+                                  context.read<Global>().updateSetting();
                                   SystemNavigator.pop();
                                 });
                               });
