@@ -146,17 +146,18 @@ class _QuestionsSettingPage extends State<QuestionsSettingPage> {
         curve: Curves.bounceOut, 
         builder: (context, value, child) {
           return Container(
-            width: mediaQuery.size.width * 0.07 + mediaQuery.size.width * 0.1 * value,
-            height: mediaQuery.size.height * 0.1 + mediaQuery.size.height * 0.45 * value, //实际稍高一些 避免默认margin导致的溢出
+            // width: mediaQuery.size.width * 0.07 + mediaQuery.size.width * 0.1 * value,
+            // height: mediaQuery.size.height * 0.1 + mediaQuery.size.height * 0.45 * value, //实际稍高一些 避免默认margin导致的溢出
             decoration: BoxDecoration(
               color: Colors.transparent,
             ),
             child: Column(
               mainAxisAlignment: MainAxisAlignment.end,
+              mainAxisSize: MainAxisSize.min,
               children: [
                 if(value > 0.3) ElevatedButton.icon(
                   style: ElevatedButton.styleFrom(
-                    fixedSize: Size(mediaQuery.size.width * 0.07 + mediaQuery.size.width * 0.1 * value, mediaQuery.size.height * 0.1 * value),
+                    fixedSize: Size(70 + 150 * value, mediaQuery.size.height * 0.1 * value),
                     backgroundColor: Theme.of(context).colorScheme.onPrimary,
                     shape: RoundedRectangleBorder(borderRadius: BorderRadiusGeometry.vertical(top: Radius.circular(25.0)))
                   ),
@@ -170,7 +171,7 @@ class _QuestionsSettingPage extends State<QuestionsSettingPage> {
                 ),
                 if(value > 0.3) ElevatedButton.icon(
                   style: ElevatedButton.styleFrom(
-                    fixedSize: Size(mediaQuery.size.width * 0.07 + mediaQuery.size.width * 0.1 * value, mediaQuery.size.height * 0.1 * value),
+                    fixedSize: Size(70 + 150 * value, mediaQuery.size.height * 0.1 * value),
                     backgroundColor: Theme.of(context).colorScheme.onPrimary,
                     shape: BeveledRectangleBorder()
                   ),
@@ -184,7 +185,7 @@ class _QuestionsSettingPage extends State<QuestionsSettingPage> {
                 ),
                 if(value > 0.3) ElevatedButton.icon(
                   style: ElevatedButton.styleFrom(
-                    fixedSize: Size(mediaQuery.size.width * 0.07 + mediaQuery.size.width * 0.1 * value, mediaQuery.size.height * 0.1 * value),
+                    fixedSize: Size(70 + 150 * value, mediaQuery.size.height * 0.1 * value),
                     backgroundColor: Theme.of(context).colorScheme.onPrimary,
                     shape: BeveledRectangleBorder()
                   ),
@@ -198,7 +199,7 @@ class _QuestionsSettingPage extends State<QuestionsSettingPage> {
                 ),
                 if(value > 0.3) ElevatedButton.icon(
                   style: ElevatedButton.styleFrom(
-                    fixedSize: Size(mediaQuery.size.width * 0.07 + mediaQuery.size.width * 0.1 * value, mediaQuery.size.height * 0.1 * value),
+                    fixedSize: Size(70 + 150 * value, mediaQuery.size.height * 0.1 * value),
                     backgroundColor: Theme.of(context).colorScheme.onPrimary,
                     shape: BeveledRectangleBorder()
                   ),
@@ -212,7 +213,7 @@ class _QuestionsSettingPage extends State<QuestionsSettingPage> {
                 ),
                 ElevatedButton(
                   style: ElevatedButton.styleFrom(
-                    fixedSize: Size(mediaQuery.size.width * 0.07 + mediaQuery.size.width * 0.1 * value, mediaQuery.size.height * 0.1),
+                    fixedSize: Size(70 + 150 * value, 70),
                     backgroundColor: Theme.of(context).colorScheme.onPrimary,
                     shape: RoundedRectangleBorder(borderRadius: BorderRadiusGeometry.vertical(bottom: Radius.circular(25.0), top: value < 0.4 ? Radius.circular(25.0) : Radius.zero))
                   ),
