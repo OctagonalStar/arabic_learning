@@ -51,13 +51,13 @@ class Global with ChangeNotifier {
       */
 
       // 中阿混合学习
-      'zh_ar': [[1, 2], true, false, true],
+      'zh_ar': [[1, 2], true, true, true],
 
       // 阿译中学习
-      'ar': [[2], true, true],
+      'ar': [[2], true, true, false],
 
       // 中译阿学习
-      'zh': [[1], true, true]
+      'zh': [[1], true, true, false]
     },
     'eggs': {
       'stella': false
