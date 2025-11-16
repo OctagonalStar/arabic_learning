@@ -411,6 +411,237 @@ class _ChooseButtonBoxState extends State<ChooseButtonBox> {
   }
 }
 
+/// 单词卡片组件
+/// 
+/// 显示一个阿语单词在上，下有中文解释的卡片
+/// 
+/// [word] :单词数据 参考Global.wordData中单个单词储存的数据结构
+/// 
+/// [width] :限定宽度，默认全屏
+/// 
+/// [height] :限定高度，默认自动
+/// 
+/// [useMask] :是否显示高斯遮罩
+class WordCard extends StatelessWidget {
+  final Map<String, dynamic> word;
+  final double? width;
+  final double? height;
+  final bool useMask;
+  const WordCard({super.key, required this.word, this.width, this.height, this.useMask = true});
+
+  @override
+  Widget build(BuildContext context) {
+    MediaQueryData mediaQuery = MediaQuery.of(context);
+    bool hide = useMask;
+    return Container(
+      margin: const EdgeInsets.all(16.0),
+      //padding: const EdgeInsets.all(16.0),
+      width: width ?? (mediaQuery.size.width * 0.9),
+      height: height ?? (mediaQuery.size.height * 0.5),
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.onInverseSurface.withAlpha(150),
+        borderRadius: StaticsVar.br,
+      ),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.start,
+        children: [
+          ElevatedButton.icon(
+            style: ElevatedButton.styleFrom(
+              fixedSize: Size(width ?? (mediaQuery.size.width * 0.9), height == null ? (mediaQuery.size.height * 0.2) : height! * 0.4),
+              backgroundColor: Theme.of(context).colorScheme.onPrimary.withAlpha(150),
+              shape: RoundedRectangleBorder(borderRadius: StaticsVar.br),
+              padding: const EdgeInsets.all(16.0),
+            ),
+            icon: const Icon(Icons.volume_up, size: 24.0),
+            label: FittedBox(child: Text(word["arabic"], style: TextStyle(fontSize: 64.0, fontFamily: context.read<Global>().arFont))),
+            onPressed: (){
+              playTextToSpeech(word["arabic"], context);
+            },
+          ),
+          Stack(
+            children: [
+              Center(
+                child: Text(' 中文：${word["chinese"]}\n 示例：${word["explanation"]}\n 归属课程：${word["subClass"]}',
+                  style: Theme.of(context).textTheme.bodyLarge,
+                  textAlign: TextAlign.left,
+                ),
+              ),
+              StatefulBuilder(
+                builder: (context, setLocalState) {
+                  return TweenAnimationBuilder<double>(
+                    tween: Tween(
+                      begin: 1.0,
+                      end: hide ? 1.0 : 0.0
+                    ),
+                    duration: Duration(milliseconds: 500),
+                    curve: StaticsVar.curve,
+                    builder: (context, value, child) {
+                      return ClipRRect(
+                        borderRadius: BorderRadiusGeometry.vertical(bottom: Radius.circular(25.0)),
+                        child: BackdropFilter(
+                          filter: ImageFilter.blur(sigmaX: 10.0 * value,sigmaY: 10.0 * value),
+                          enabled: true,
+                          child: value == 0.0 ? null : ElevatedButton(
+                            style: ElevatedButton.styleFrom(
+                              fixedSize: Size(width ?? (mediaQuery.size.width * 0.9), height == null ? (mediaQuery.size.height * 0.3) : height! * 0.6),
+                              backgroundColor: Colors.transparent,
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadiusGeometry.vertical(bottom: Radius.circular(25.0)))
+                            ),
+                            onPressed: (){
+                              setLocalState(() {
+                                hide = false;
+                              },);
+                            }, 
+                            child: hide ? Text("点此查看释义") : SizedBox()
+                          ),
+                        ),
+                      );
+                    },
+                  );
+                }
+              )
+            ],
+          )
+          
+        ],
+      )
+    );
+  }
+}
+
+// Page Widget 可复用的页面Widget
+
+/// 课程选择页面
+/// 
+/// 若要直接获取选择数据，请使用Route或者push调用，在其返回值中有[[词库键, 课程键]]的列表返回
+/// 
+/// [beforeSelectedClasses] :已经勾选的课程，可以自定义，但一般搭配缓存使用
+/// 
+/// 注意：如果你要进行课程选择，请先考虑 [popSelectClasses] 函数，这是一个已经基本成熟的实现
+class ClassSelectPage extends StatelessWidget { 
+  final List<List<String>> beforeSelectedClasses;
+  const ClassSelectPage({super.key, this.beforeSelectedClasses = const []});
+  @override
+  Widget build(BuildContext context) {
+    final mediaQuery = MediaQuery.of(context);
+    List<List<String>> selectedClass = beforeSelectedClasses.toList();
+    void addClass(List<String> classInfo) {
+      selectedClass.add(classInfo);
+    }
+    void removeClass(List<String> classInfo) {
+      selectedClass.removeWhere((e) => e[0] == classInfo[0] && e[1] == classInfo[1]);
+    }
+    bool isClassSelected(List<String> classInfo) {
+      return selectedClass.any((e) => e[0] == classInfo[0] && e[1] == classInfo[1]);
+    }
+    void onClassChanged(List<String> classInfo) {
+      if(isClassSelected(classInfo)) {
+        removeClass(classInfo);
+      } else {
+        addClass(classInfo);
+      }
+    }
+    // 和监听器脱钩...
+    // if(!context.watch<ClassSelectModel>().initialized) {
+    //   return Scaffold(
+    //     body: Center(
+    //       child: CircularProgressIndicator(),
+    //     ),
+    //   );
+    // }
+
+    return Scaffold(
+      appBar: AppBar(
+        title: Text('选择特定课程单词'),
+      ),
+      body: Column(
+        children: [
+          Expanded(
+            child: ListView(
+              children: classesSelectionList(context, mediaQuery, onClassChanged, isClassSelected)
+            ),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              fixedSize: Size(mediaQuery.size.width, mediaQuery.size.height * 0.08),
+              shape: ContinuousRectangleBorder(borderRadius: StaticsVar.br),
+            ),
+            child: Text('确认'),
+            onPressed: () {
+              Navigator.pop(context, selectedClass);
+            },
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// 开发中页面
+/// 
+/// 用于代替还没完成的功能的组件
+class InDevelopingPage extends StatelessWidget {
+  const InDevelopingPage({super.key});
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text("开发中"),
+      ),
+      body: Center(
+        child: FittedBox(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                Icons.build,
+                size: 100.0,
+              ),
+              Text(
+                "该页面还在开发中...",
+                style: TextStyle(
+                  fontSize: 40.0,
+                ),
+              ),
+              Text(
+                "日子要一天一天过，单词要一个一个背...\n高数要一课一课学，阿语要一句一句记...\n牙膏要一点一点挤，代码要一行一行敲...",
+                style: TextStyle(
+                  fontSize: 18.0,
+                  fontStyle: FontStyle.italic,
+                  color: Colors.grey,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// 选择题页面
+/// 
+/// 构建一个选择题
+/// 
+/// [mainWord] :做为题目的文本
+/// 
+/// [choices] :作为选项的文本（不会进行二次洗牌）
+/// 
+/// [onSelected] :在选择后触发的回调，会传入所选择选项的索引号，需要再返回一个bool值。
+/// 该组件不知道正确答案，请在回调中进行判断，正确则返回true，否则返回false
+/// 
+/// [hint] :在题目上方用于提示的文本
+/// 
+/// [bottomWidget] :题目下方的组件，可用于翻页之类的其他功能，自行设置
+/// 
+/// [onDisAllowMutipleSelect] :在不允许多次选择的题目中尝试多选时触发，默认会触发底部通知"该题目不允许多次选择"
+/// 
+/// [allowAudio] :是否允许播放音频（通常 [mainWord] 为中文时设置为不允许(false)）
+/// 
+/// [bottonLayout] :控制选项按钮的排布
+/// 允许值：-1：自动；0：1行；1：2行；2：4行，默认自动
+/// 
+/// [allowAnitmation] :是否显示动画，即按钮变黄后变红
 class ChoiceQuestions extends StatefulWidget {
   final String mainWord;
   final List<String> choices;
