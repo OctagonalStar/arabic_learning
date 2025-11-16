@@ -31,7 +31,7 @@ class _InLearningPageState extends State<InLearningPage> {
   List<List<dynamic>> testList = []; // [[word(Map), testType(int), [extraValues]]]
   bool clicked = false;
   int currentPage = 0;
-  List<int> conrrects = [];
+  int correctCount = 0;
   late final int startTime;
   bool finished = false;
   late final int total;
@@ -175,7 +175,7 @@ class _InLearningPageState extends State<InLearningPage> {
               Provider.of<AreYouFinishedModel>(context, listen: false).finished = true;
               List<int> data = [
                 total, 
-                conrrects.length, 
+                correctCount, 
                 ((DateTime.now().millisecondsSinceEpoch - startTime)/1000.0).toInt()
               ];
               return ConcludePage(data: data);
@@ -210,7 +210,7 @@ class _InLearningPageState extends State<InLearningPage> {
                   if(!ans) {
                     Future.delayed(Duration(seconds: 1), (){if(context.mounted) viewAnswer(mediaQuery, context, testItem[0]);});
                   } else {
-                    conrrects.add(testItem[0]['id']);
+                    correctCount++;
                   }
                   Future.delayed(Duration(milliseconds: 700) ,(){setState(() {
                     clicked = true;
@@ -287,7 +287,87 @@ class _InLearningPageState extends State<InLearningPage> {
               );
             } else if(testItem[1] == 3) {
               // spell question
-              return InDevelopingPage();
+              return SpellQuestion(
+                word: testItem[0],
+                hint: "拼写以下单词",
+                onCheck: (text) {
+                  setState(() {
+                    clicked = true;
+                  });
+                  if(text == testItem[0]["chinese"]) {
+                    correctCount++;
+                    return true;
+                  } else {
+                    viewAnswer(mediaQuery, context, testItem[0]);
+                    return false;
+                  }
+                },
+                bottomWidget: TweenAnimationBuilder<double>(
+                  tween: Tween<double>(
+                    begin: 0.0,
+                    end: clicked ? 1.0 : 0.0,
+                  ),
+                  duration: const Duration(milliseconds: 500),
+                  curve: StaticsVar.curve,
+                  builder: (context, value, child) {
+                    return Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        ElevatedButton(
+                          style: ElevatedButton.styleFrom(
+                            fixedSize: Size(mediaQuery.size.width * (0.8 - (0.45 * value)), mediaQuery.size.height * 0.1),
+                            backgroundColor: Theme.of(context).colorScheme.secondaryContainer,
+                            foregroundColor: Theme.of(context).colorScheme.onSurface,
+                            shadowColor: Colors.transparent,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: StaticsVar.br,
+                            ),
+                          ),
+                          onPressed: () {
+                            viewAnswer(mediaQuery, context, testItem[0]);
+                          }, 
+                          child: FittedBox(
+                            fit: BoxFit.contain,
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(Icons.view_list, size: 16.0, semanticLabel: "查看详解"),
+                                SizedBox(width: mediaQuery.size.width * 0.01),
+                                Text("查看详解"),
+                              ],
+                            ),
+                          )
+                        ),
+                        SizedBox(width: mediaQuery.size.width * 0.05 * value),
+                        if(value != 0.0) ElevatedButton(
+                          style: ElevatedButton.styleFrom(
+                            fixedSize: Size(mediaQuery.size.width * (0.45 * value), mediaQuery.size.height * 0.1),
+                            backgroundColor: Theme.of(context).colorScheme.primaryContainer,
+                            foregroundColor: Theme.of(context).colorScheme.onSurface,
+                            shadowColor: Colors.transparent,
+                            shape: RoundedRectangleBorder(borderRadius: StaticsVar.br),
+                          ),
+                          onPressed: () {
+                            clicked = false; // 还原未点击状态
+                            controller.animateToPage(currentPage + 1, duration: Duration(milliseconds: 500), curve: StaticsVar.curve);
+                          },
+                          child: FittedBox(
+                            fit: BoxFit.contain,
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(currentPage == total-1 ? Icons.done : Icons.navigate_next, size: 16.0),
+                                SizedBox(width: mediaQuery.size.width * 0.01),
+                                Text(currentPage == total-1 ? "完成" : "下一个"),
+                              ],
+                            ),
+                          ),
+                        )
+                      ],
+                    );
+                  }
+                ),
+              );
             }
             return Center(
               child: TextContainer(text: "真奇怪，你不应该到这里来的，有时间给开发者反馈下吧"),

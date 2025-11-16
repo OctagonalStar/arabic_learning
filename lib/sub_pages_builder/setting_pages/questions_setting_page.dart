@@ -70,11 +70,10 @@ class _QuestionsSettingPage extends State<QuestionsSettingPage> {
     selectedTypes ??= context.read<Global>().settingData['quiz'][widget.sectionKey][0];
     List<Widget> listTiles = [];
     bool isEven = true;
-    int key = -1;
-    for(int x in selectedTypes!) {
+    for(int index = 0; index < selectedTypes!.length; index++) {
       listTiles.add(
         Container(
-          key: Key((key++).toString()),
+          key: Key(index.toString()),
           padding: EdgeInsets.all(8.0),
           // margin: EdgeInsets.all(4.0),
           decoration: BoxDecoration(
@@ -84,14 +83,14 @@ class _QuestionsSettingPage extends State<QuestionsSettingPage> {
           height: mediaQuery.size.height * 0.08,
           child: Row(
             children: [
-              Expanded(child: Text(castMap[x] ?? "未知类型")),
+              Expanded(child: Text(castMap[selectedTypes![index]] ?? "未知类型")),
               IconButton(
                 onPressed: (){
                   if(selectedTypes!.length == 1) {
                     alart(context, "至少保留一项");
                   } else {
                     setState(() {
-                      selectedTypes!.removeAt(key);
+                      selectedTypes!.removeAt(index.toInt());
                     });
                   }
                 }, 
@@ -112,7 +111,6 @@ class _QuestionsSettingPage extends State<QuestionsSettingPage> {
         children: [
           Expanded(
             child: ReorderableListView(
-              
               onReorder: (oldIndex, newIndex) {
                 setState(() {
                   if(oldIndex < newIndex) newIndex--; // 修正索引

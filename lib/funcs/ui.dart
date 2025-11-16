@@ -774,3 +774,99 @@ class WordCardQuestion extends StatelessWidget {
     );
   }
 }
+
+/// 拼写题目页面
+class SpellQuestion extends StatefulWidget {
+  final Map<String, dynamic> word;
+  final bool Function(String text) onCheck;
+  final String? hint;
+  final Widget? bottomWidget;
+  const SpellQuestion({super.key, required this.word, required this.onCheck, this.hint, this.bottomWidget});
+
+  @override
+  State<StatefulWidget> createState() => _SpellQuestion();
+}
+class _SpellQuestion extends State<SpellQuestion> {
+  TextEditingController controller = TextEditingController();
+  bool isChecked = false;
+  late Color cl;
+
+  void check(String value) {
+    setState(() {
+      isChecked = true;
+      if(widget.onCheck(value)) {
+        cl = Colors.greenAccent;
+      } else {
+        cl = Colors.redAccent;
+      }
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    MediaQueryData mediaQuery = MediaQuery.of(context);
+    return Material(
+      child: Column(
+        children: [
+          if(widget.hint != null) TextContainer(text: widget.hint!),
+          TextContainer(
+            text: widget.word["chinese"],
+            size: Size(mediaQuery.size.width * 0.8, mediaQuery.size.height * 0.2),
+            style: Theme.of(context).textTheme.displayLarge,
+            textAlign: TextAlign.center,
+          ),
+          SizedBox(height: mediaQuery.size.height * 0.02),
+          SizedBox(
+            width: mediaQuery.size.width * 0.6,
+            child: TweenAnimationBuilder(
+              tween: ColorTween(
+                begin: Theme.of(context).colorScheme.onPrimaryFixed,
+                end: isChecked ? cl.withAlpha(180) : Theme.of(context).colorScheme.onPrimaryFixed
+              ),
+              duration: Duration(milliseconds: 500),
+              curve: StaticsVar.curve,
+              builder: (context, value, child) {
+                return TextField(
+                  textDirection: TextDirection.rtl,
+                  autocorrect: false,
+                  controller: controller,
+                  expands: false,
+                  maxLines: 1,
+                  style: TextStyle(fontFamily: context.read<Global>().arFont, fontSize: 28),
+                  keyboardType: TextInputType.name,
+                  readOnly: isChecked,
+                  decoration: InputDecoration(
+                    labelText: "阿拉伯语单词",
+                    border: OutlineInputBorder(
+                      borderRadius: StaticsVar.br,
+                      borderSide: BorderSide(color: Theme.of(context).colorScheme.outline),
+                    ),
+                    filled: true,
+                    fillColor: value
+                  ),
+                  onSubmitted: (text) {
+                    check(text);
+                  },
+                );
+              }
+            ),
+          ),
+          SizedBox(height: mediaQuery.size.height * 0.05),
+          ElevatedButton(
+            onPressed: () {
+              check(controller.text);
+            }, 
+            style: ElevatedButton.styleFrom(
+              fixedSize: Size(mediaQuery.size.width * 0.4, mediaQuery.size.height * 0.1),
+              shape: RoundedRectangleBorder(borderRadius: StaticsVar.br)
+            ),
+            child: Text("提交"),
+          ),
+          Expanded(child: SizedBox()),
+          if(widget.bottomWidget != null) widget.bottomWidget!,
+          SizedBox(height: mediaQuery.size.height * 0.05)
+        ],
+      ),
+    );
+  }
+}
