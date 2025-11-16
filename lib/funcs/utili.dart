@@ -11,6 +11,13 @@ import 'package:flutter/material.dart';
 import 'package:just_audio/just_audio.dart';
 import 'package:provider/provider.dart';
 
+/// 下载文件到指定的目录
+/// 
+/// [url] :文件网址
+/// 
+/// [savePath] :保存地址
+/// 
+/// [onDownloading] :下载进程中的回调，传入两个参数(int count, int total)，可用于进度展示
 Future<void> downloadFile(String url, String savePath, {ProgressCallback? onDownloading}) async {
   final dio = Dio();
   await dio.download(
@@ -43,10 +50,9 @@ List<Map<String, dynamic>> getSelectedWords(BuildContext context , {List<List<St
   return ans;
 }
 
-
 void viewAnswer(MediaQueryData mediaQuery, 
                 BuildContext context, 
-                List<String> data // data: [arabic, chinese, exp, subClass]
+                Map<String, dynamic> wordData
                 ) async {
   showBottomSheet(
     context: context, 
@@ -68,10 +74,10 @@ void viewAnswer(MediaQueryData mediaQuery,
                   child: Column(
                     crossAxisAlignment: context.read<Global>().isWideScreen ? CrossAxisAlignment.center : CrossAxisAlignment.start,
                     children: [
-                      Text(data[0], style: TextStyle(fontSize: 36.0, fontFamily: data[0].isArabic() ? context.read<Global>().arFont : null)),
-                      Text(data[1], style: TextStyle(fontSize: 36.0, fontFamily: data[1].isArabic() ? context.read<Global>().arFont : null)),
-                      Text("例句:\t${data[2]}", style: TextStyle(fontSize: 20.0),),
-                      Text("所属课程:\t${data[3]}", style: TextStyle(fontSize: 20.0),),
+                      Text(wordData["arabic"], style: TextStyle(fontSize: 36.0, fontFamily: context.read<Global>().arFont)),
+                      Text(wordData["chinese"], style: TextStyle(fontSize: 36.0)),
+                      Text("例句:\t${wordData["explanation"]}", style: TextStyle(fontSize: 20.0),),
+                      Text("所属课程:\t${wordData["subClass"]}", style: TextStyle(fontSize: 20.0),),
                     ]
                   ),
                 ),

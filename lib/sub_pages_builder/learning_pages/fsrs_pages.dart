@@ -498,7 +498,7 @@ class _FSRSLearningPageState extends State<FSRSLearningPage> {
                             shape: RoundedRectangleBorder(borderRadius: StaticsVar.br),
                           ),
                           onPressed: (){
-                            viewAnswer(mediaQuery, context, [widget.words[index]["arabic"], widget.words[index]["chinese"], widget.words[index]["explanation"], widget.words[index]["subClass"]]);
+                            viewAnswer(mediaQuery, context, widget.words[index]);
                           }, 
                           icon: Icon(Icons.tips_and_updates),
                           label: Text(value == 0.0 ? "提示" : "查看详解"),
@@ -538,48 +538,6 @@ class _FSRSLearningPageState extends State<FSRSLearningPage> {
                 )
               ],
             )
-          )
-        ],
-      )
-    );
-  }
-}
-
-class WordCard extends StatelessWidget {
-  final Map<String, dynamic> word;
-  const WordCard({super.key, required this.word});
-
-  @override
-  Widget build(BuildContext context) {
-    MediaQueryData mediaQuery = MediaQuery.of(context);
-    return Container(
-      margin: const EdgeInsets.all(16.0),
-      //padding: const EdgeInsets.all(16.0),
-      width: mediaQuery.size.width * 0.9,
-      height: mediaQuery.size.height * 0.5,
-      decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.onInverseSurface,
-        borderRadius: StaticsVar.br,
-      ),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.start,
-        children: [
-          ElevatedButton.icon(
-            style: ElevatedButton.styleFrom(
-              fixedSize: Size(mediaQuery.size.width * 0.9, mediaQuery.size.height * 0.2),
-              backgroundColor: Theme.of(context).colorScheme.onPrimary,
-              shape: RoundedRectangleBorder(borderRadius: StaticsVar.br),
-              padding: const EdgeInsets.all(16.0),
-            ),
-            icon: const Icon(Icons.volume_up, size: 24.0),
-            label: FittedBox(child: Text(word["arabic"], style: TextStyle(fontSize: 64.0))),
-            onPressed: (){
-              playTextToSpeech(word["arabic"], context);
-            },
-          ),
-          Text(
-            ' 中文：${word["chinese"]}\n 示例：${word["explanation"]}\n 归属课程：${word["subClass"]}',
-            style: TextStyle(fontSize: mediaQuery.size.height * 0.025),
           )
         ],
       )
