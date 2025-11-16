@@ -294,7 +294,7 @@ class _InLearningPageState extends State<InLearningPage> {
                   setState(() {
                     clicked = true;
                   });
-                  if(text == testItem[0]["chinese"]) {
+                  if(text == testItem[0]["arabic"]) {
                     correctCount++;
                     return true;
                   } else {
