@@ -20,7 +20,7 @@ class AboutPage extends StatelessWidget {
         children: [
           TextContainer(text: "关于"),
           TextContainer(text: "该软件仅供学习使用，请勿用于商业用途。\n该软件基于GNU AFFERO GENERAL PUBLIC LICENSE (Version 3)协议开源，协议原文详见页面底部。", style: TextStyle(color: Colors.redAccent, fontWeight: FontWeight.bold)),
-          TextContainer(text: "目前该软件仅由 OctagonalStar(别问为什么写网名) 一人开发（其实主要是为了学flutter框架写的），如果有什么问题或者提议都欢迎提issue（或者线下真实？）。\n该软件 <Ar 学>，主要是为了帮助大家掌握阿语词汇（毕竟上课词汇都要听晕了）"),
+          TextContainer(text: "目前该软件主要由 OctagonalStar(别问为什么写网名) 开发，如果有什么问题或者提议都欢迎提issue（或者线下真实？）。\n该软件 <Ar 学>，主要是为了帮助大家掌握阿语词汇"),
           TextContainer(text: "免责声明"),
           Container(
             margin: EdgeInsets.all(8.0),
