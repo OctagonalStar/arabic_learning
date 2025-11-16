@@ -12,7 +12,14 @@ import 'package:provider/provider.dart';
 
 // 学习主入口页面
 class InLearningPage extends StatefulWidget {
-  final int studyType; // 0:Mix 1: 中译阿 2: 阿译中
+  final int studyType;
+  /*
+  题型说明 
+    0: 单词卡片
+    1: 中译阿 选择题
+    2: 阿译中 选择题
+    3: 中译阿 拼写题
+  */
   final List<Map<String, dynamic>> words;
   const InLearningPage({super.key, required this.studyType, required this.words});
   @override
@@ -177,7 +184,21 @@ class _InLearningPageState extends State<InLearningPage> {
             // testItem 0:MainWord; 1:TestType; 2: (extra)[0:CorrectIndex; 1:strList]
             if(testItem[1] == 0) {
               // wordCard
-              return InDevelopingPage();
+              return WordCardQuestion(
+                word: testItem[0],
+                hint: "尝试自行回忆以下单词",
+                bottomWidget: ElevatedButton.icon(
+                  style: ElevatedButton.styleFrom(
+                    fixedSize: Size(mediaQuery.size.width * 0.8, mediaQuery.size.height * 0.1),
+                    shape: RoundedRectangleBorder(borderRadius: StaticsVar.br)
+                  ),
+                  onPressed: (){
+                    controller.animateToPage(currentPage + 1, duration: Duration(milliseconds: 500), curve: StaticsVar.curve);
+                  },
+                  icon: Icon(Icons.arrow_forward),
+                  label: Text("下一题"),
+                ),
+              );
             } else if(testItem[1] == 1 || testItem[1] == 2) {
               // ar-zh choose questions
               return ChoiceQuestions(
@@ -187,7 +208,7 @@ class _InLearningPageState extends State<InLearningPage> {
                 onSelected: (value) {
                   bool ans = value == testItem[2][0];
                   if(!ans) {
-                    Future.delayed(Duration(seconds: 1), (){if(context.mounted) viewAnswer(mediaQuery, context, [testItem[0]['arabic'], testItem[0]['chinese'], testItem[0]["explanation"], testItem[0]['subClass']]);});
+                    Future.delayed(Duration(seconds: 1), (){if(context.mounted) viewAnswer(mediaQuery, context, testItem[0]);});
                   } else {
                     conrrects.add(testItem[0]['id']);
                   }
@@ -220,7 +241,7 @@ class _InLearningPageState extends State<InLearningPage> {
                             ),
                           ),
                           onPressed: () {
-                            viewAnswer(mediaQuery, context, [testItem[0]['arabic'], testItem[0]['chinese'], testItem[0]["explanation"], testItem[0]['subClass']]);
+                            viewAnswer(mediaQuery, context, testItem[0]);
                           }, 
                           child: FittedBox(
                             fit: BoxFit.contain,

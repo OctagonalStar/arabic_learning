@@ -1,10 +1,38 @@
 import 'dart:convert';
+import 'dart:ui';
 import 'package:arabic_learning/vars/global.dart';
 import 'package:arabic_learning/vars/statics_var.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'utili.dart';
 
+// 该文件主要包含了对于UI有关的函数及多次在不同地方使用的Widget类或者函数
+
+// UI Functions UI相关的函数调用
+
+/// 弹出课程选择（ClassSelectPage）
+/// 
+/// [context] :Widget树上的context
+/// 
+/// [withCache] :是否使用缓存，若启用则会
+/// 1.从缓存中加载已选择的课程 
+/// 2.将此次课程选择加入持久化的缓存中方便下次直接开始。 
+/// 
+/// 返回值: [[词库键, 课程键]] 对应了[Global.wordData]中的数据结构
+/// 
+/// 可以通过以下方式使用返回值，得到该课单词的ID
+/// 
+/// ``` dart
+/// List<List<String>> value = await popSelectClasses(context);
+/// List<int> wordsId = context.read<Global>().wordData["Classes"][value[0]][value[1]]
+/// ```
+/// 
+/// 但是以上方案不常用，常用的方案是通过utili中的getSelectedWords直接获取单词数据(Map)
+/// 
+/// ``` dart
+/// List<List<String>> value = await popSelectClasses(context);
+/// List<Map<String, dynamic>> words = getSelectedWords(context , forceSelectClasses: value);
+/// ```
 Future<List<List<String>>> popSelectClasses(BuildContext context, {bool withCache = false}) async {
   late final List<List<String>> beforeSelectedClasses;
   if(withCache) {
@@ -24,7 +52,7 @@ Future<List<List<String>>> popSelectClasses(BuildContext context, {bool withCach
     isScrollControlled: context.read<Global>().isWideScreen,
     enableDrag: true,
     builder: (BuildContext context) {
-      return ClassSelector(beforeSelectedClasses: beforeSelectedClasses);
+      return ClassSelectPage(beforeSelectedClasses: beforeSelectedClasses);
     }
   );
   if(withCache && selectedClasses != null && context.mounted) {
@@ -36,65 +64,18 @@ Future<List<List<String>>> popSelectClasses(BuildContext context, {bool withCach
   return selectedClasses ?? [];
 }
 
-class ClassSelector extends StatelessWidget { 
-  final List<List<String>> beforeSelectedClasses;
-  const ClassSelector({super.key, this.beforeSelectedClasses = const []});
-  @override
-  Widget build(BuildContext context) {
-    final mediaQuery = MediaQuery.of(context);
-    List<List<String>> selectedClass = beforeSelectedClasses.toList();
-    void addClass(List<String> classInfo) {
-      selectedClass.add(classInfo);
-    }
-    void removeClass(List<String> classInfo) {
-      selectedClass.removeWhere((e) => e[0] == classInfo[0] && e[1] == classInfo[1]);
-    }
-    bool isClassSelected(List<String> classInfo) {
-      return selectedClass.any((e) => e[0] == classInfo[0] && e[1] == classInfo[1]);
-    }
-    void onClassChanged(List<String> classInfo) {
-      if(isClassSelected(classInfo)) {
-        removeClass(classInfo);
-      } else {
-        addClass(classInfo);
-      }
-    }
-    // 和监听器脱钩...
-    // if(!context.watch<ClassSelectModel>().initialized) {
-    //   return Scaffold(
-    //     body: Center(
-    //       child: CircularProgressIndicator(),
-    //     ),
-    //   );
-    // }
 
-    return Scaffold(
-      appBar: AppBar(
-        title: Text('选择特定课程单词'),
-      ),
-      body: Column(
-        children: [
-          Expanded(
-            child: ListView(
-              children: classesSelectionList(context, mediaQuery, onClassChanged, isClassSelected)
-            ),
-          ),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(
-              fixedSize: Size(mediaQuery.size.width, mediaQuery.size.height * 0.08),
-              shape: ContinuousRectangleBorder(borderRadius: StaticsVar.br),
-            ),
-            child: Text('确认'),
-            onPressed: () {
-              Navigator.pop(context, selectedClass);
-            },
-          ),
-        ],
-      ),
-    );
-  }
-}
-
+/// 获取课程组件列表
+/// 
+/// [context] :Widget树上的context
+/// 
+/// [mediaQuery] :`MediaQuery.of(context)` 用于自适应组件大小
+/// 
+/// [onChanged] :当一个课程选项被勾选或取消时触发的操作，会传入一个[词库键, 课程键]的参数
+/// 
+/// [isClassSelected] :需要一个函数判断该课程是否被选中
+/// 
+/// 一般情况下该函数只会在 [ClassSelectPage] 中被使用，若非必要你不应该使用此函数
 List<Widget> classesSelectionList(BuildContext context, MediaQueryData mediaQuery, Function (List<String>) onChanged, bool Function (List<String>) isClassSelected) {
   Map<String, dynamic> wordData = context.read<Global>().wordData;
   List<Widget> widgetList = [];
@@ -151,6 +132,23 @@ List<Widget> classesSelectionList(BuildContext context, MediaQueryData mediaQuer
   return widgetList;
 }
 
+/// 弹出窗口
+/// 
+/// [context] :Widget树上的context
+/// 
+/// [e] :需要在窗口中显示的内容（文字）
+/// 
+/// [onConfirmed] :在被确认后运行的函数
+/// 
+/// [delayConfirm] :要求等待多久后可以关闭弹窗
+/// 
+/// 示例(可能在某个按钮中)：
+/// 
+/// ``` dart
+/// onPressed: () {
+///   alart(context, "你点击了按钮"，onConfirmed: (){i++}, delayConfirm: Duration(seconds: 1));
+/// }
+/// ```
 void alart(context, String e, {Function? onConfirmed, Duration delayConfirm = const Duration(milliseconds: 0)}) {
   showDialog(
     context: context, 
@@ -181,10 +179,25 @@ void alart(context, String e, {Function? onConfirmed, Duration delayConfirm = co
   );
 }
 
+// Base Widgets 较为基础的Widget
+
+/// 文本框容器
+/// 
+/// 显示一个带文本的容器，有背景色
+/// 
+/// [text] :显示的文本 必须
+/// 
+/// [style] :自定义文本的属性TextStyle 默认为null
+/// 
+/// [selectable] :控制文本能否被选中（复制等操作需要） 默认为false
+/// 
+/// [size] :文本容器的大小 默认为null（自适应）
+/// 
+/// [textAlign] :控制文本排布方向 默认为null（自适应）
 class TextContainer extends StatelessWidget {
   final String text;
   final TextStyle? style;
-  final bool? selectable;
+  final bool selectable;
   final Size? size;
   final TextAlign? textAlign;
   const TextContainer({super.key, 
@@ -213,100 +226,52 @@ class TextContainer extends StatelessWidget {
           color: Theme.of(context).colorScheme.onPrimary.withAlpha(150),
           borderRadius: StaticsVar.br,
         ),
-        child: (selectable??false) 
+        child: (selectable) 
                 ? SelectableText(text,style: actualStyle, textAlign: textAlign,) 
                 : Text(text,style: actualStyle, textAlign: textAlign),
     );
   }
 }
 
-class InDevelopingPage extends StatelessWidget {
-  const InDevelopingPage({super.key});
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text("开发中"),
-      ),
-      body: Center(
-        child: FittedBox(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(
-                Icons.build,
-                size: 100.0,
-              ),
-              Text(
-                "该页面还在开发中...",
-                style: TextStyle(
-                  fontSize: 40.0,
-                ),
-              ),
-              Text(
-                "日子要一天一天过，单词要一个一个背...\n高数要一课一课学，阿语要一句一句记...\n牙膏要一点一点挤，代码要一行一行敲...",
-                style: TextStyle(
-                  fontSize: 18.0,
-                  fontStyle: FontStyle.italic,
-                  color: Colors.grey,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
+/// 选择题按钮组
+/// 
+/// 为选择题生成4个按钮
+/// 
+/// [options] :选项文本 列表，长度必须为4
+/// 
+/// [onSelected] :某个选项被选中时的回调，会传入一个int类型数据指示被选择的按钮的索引号[0~3]
+/// 
+/// [isShowAnimation] :是否显示动画，即变黄后变红/绿的动画
+/// 若为false则会立即变红/绿
+/// 默认为true
+/// 
+/// [settingShowingMode] :显示选项的模式
+/// 为适应不同屏幕选项可以多行显示，
+/// 允许值：0：1行；1：2行；2：4行
+/// 
+/// 该组件在 [ChoiceQuestions] 被调用，若非必要，你不应使用此组件
 class ChooseButtons extends StatelessWidget {
   final List<String> options;
   final bool? Function(int) onSelected;
   final bool isShowAnimation;
-  final bool allowMutipleSelect;
-  final int settingShowingMode; // -1: Auto, 0: 1 Row, 1: 2 Rows, 2: 4 Rows
+  final int settingShowingMode; // 0: 1 Row, 1: 2 Rows, 2: 4 Rows
 
   const ChooseButtons({super.key, 
                       required this.options, 
                       required this.onSelected, 
-                      this.allowMutipleSelect = false,
                       this.isShowAnimation = false, 
                       this.settingShowingMode = -1});
   @override
   Widget build(BuildContext context) {
     MediaQueryData mediaQuery = MediaQuery.of(context);
-    int showingMode = settingShowingMode;
-    // showingMode 0: 1 Row, 1: 2 Rows, 2: 4 Rows
-    if(showingMode == -1) {
-      bool overFlowPossible = false;
-      for(int i = 1; i < 4; i++) {
-        if(options[i].length * 16 > mediaQuery.size.width * (context.read<Global>().isWideScreen ? 0.21 : 0.8)){
-          overFlowPossible = true;
-          break;
-        }
-      }
-      if (context.read<Global>().isWideScreen) {
-        if(overFlowPossible){
-          showingMode = 1;
-        } else {
-          showingMode = 0;
-        }
-      } else {
-        if(overFlowPossible){
-          showingMode = 2;
-        } else {
-          showingMode = 1;
-        }
-      }
-    }
     List<Widget> buttonWidgets = [];
     for(int i = 0; i < options.length; i++) {
       buttonWidgets.add(
         ChooseButtonBox(
           index: i,
           chose: onSelected,
-          width: showingMode == 0 ? mediaQuery.size.width * 0.2 : showingMode == 1 ? mediaQuery.size.width * 0.45 : mediaQuery.size.width * 0.85,
-          height: showingMode == 0 ? mediaQuery.size.height * 0.15 : showingMode == 1 ? mediaQuery.size.height * 0.12 : mediaQuery.size.height * 0.11,
+          width: settingShowingMode == 0 ? mediaQuery.size.width * 0.2 : settingShowingMode == 1 ? mediaQuery.size.width * 0.45 : mediaQuery.size.width * 0.85,
+          height: settingShowingMode == 0 ? mediaQuery.size.height * 0.15 : settingShowingMode == 1 ? mediaQuery.size.height * 0.12 : mediaQuery.size.height * 0.09,
           isAnimated: isShowAnimation,
           child: FittedBox(
             child: Text(
@@ -319,11 +284,11 @@ class ChooseButtons extends StatelessWidget {
     }
     return Column(
       children: [
-        if(showingMode == 0) Row(
+        if(settingShowingMode == 0) Row(
           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
           children: buttonWidgets,
         ),
-        if(showingMode == 1) Column(
+        if(settingShowingMode == 1) Column(
           children: [
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
@@ -336,12 +301,27 @@ class ChooseButtons extends StatelessWidget {
             ),
           ],
         ),
-        if(showingMode == 2) ...buttonWidgets,
+        if(settingShowingMode == 2) ...buttonWidgets,
       ],
     );
   }
 }
 
+/// 选择题按钮（单个）
+/// 
+/// [index] :这个按钮的索引号
+/// 
+/// [chose] :回调参数，被选择时触发，会传入该按钮索引号
+/// 
+/// [child] :按钮的子组件（内容）
+/// 
+/// [cl] :该按钮的颜色（初始颜色）
+/// 
+/// [width] :宽
+/// 
+/// [height] :高
+/// 
+/// [isAnimated] :是否显示动画，即变黄后变红
 class ChooseButtonBox extends StatefulWidget {
   final int index;
   final bool? Function(int) chose;
@@ -363,7 +343,6 @@ class ChooseButtonBox extends StatefulWidget {
   @override
   State<ChooseButtonBox> createState() => _ChooseButtonBoxState();
 }
-
 class _ChooseButtonBoxState extends State<ChooseButtonBox> {
   Color? color;
   @override
@@ -661,14 +640,13 @@ class ChoiceQuestions extends StatefulWidget {
                         this.hint, 
                         this.bottomWidget, 
                         this.onDisAllowMutipleSelect,
-                        this.bottonLayout = 0,
+                        this.bottonLayout = -1,
                         this.allowMutipleSelect = true,
                         this.allowAnitmation = true});
 
   @override
   State<StatefulWidget> createState() => _ChoiceQuestions();
 }
-
 class _ChoiceQuestions extends State<ChoiceQuestions> {
   bool choosed = false;
   bool playing = false;
@@ -676,11 +654,11 @@ class _ChoiceQuestions extends State<ChoiceQuestions> {
   @override
   Widget build(BuildContext context) {
     MediaQueryData mediaQuery = MediaQuery.of(context);
-    late final bool overFlowPossible;
     int showingMode = widget.bottonLayout;
     // showingMode 0: 1 Row, 1: 2 Rows, 2: 4 Rows
     if(showingMode == -1){
-      for(int i = 1; i < 5; i++) {
+      bool overFlowPossible = false;
+      for(int i = 1; i < 4; i++) {
         if(widget.choices[i].length * 16 > mediaQuery.size.width * (context.read<Global>().isWideScreen ? 0.21 : 0.8)){
           overFlowPossible = true;
           break;
@@ -739,6 +717,7 @@ class _ChoiceQuestions extends State<ChoiceQuestions> {
             SizedBox(height: mediaQuery.size.height *0.01),
             ChooseButtons(
               options: widget.choices, 
+              settingShowingMode: showingMode,
               onSelected: (value) {
                 if(widget.allowMutipleSelect) return widget.onSelected(value);
                 if(choosed) {
@@ -755,7 +734,6 @@ class _ChoiceQuestions extends State<ChoiceQuestions> {
                   return widget.onSelected(value);
                 }
               }, 
-              allowMutipleSelect: widget.allowMutipleSelect, 
               isShowAnimation: widget.allowAnitmation
             ),
             SizedBox(height: mediaQuery.size.height *0.01),
@@ -768,46 +746,31 @@ class _ChoiceQuestions extends State<ChoiceQuestions> {
   }
 }
 
-class WordCard extends StatelessWidget {
+/// 卡片题目页面
+/// 
+/// [word] :单词数据
+/// 
+/// [bottomWidget] :题目下方的组件，可用于翻页之类的其他功能，自行设置
+class WordCardQuestion extends StatelessWidget {
   final Map<String, dynamic> word;
-  final double? width;
-  final double? height;
-  const WordCard({super.key, required this.word, this.width, this.height});
+  final String? hint;
+  final Widget? bottomWidget;
+  const WordCardQuestion({super.key, required this.word, this.hint, this.bottomWidget});
 
   @override
   Widget build(BuildContext context) {
     MediaQueryData mediaQuery = MediaQuery.of(context);
-    return Container(
-      margin: const EdgeInsets.all(16.0),
-      //padding: const EdgeInsets.all(16.0),
-      width: mediaQuery.size.width * 0.9,
-      height: mediaQuery.size.height * 0.5,
-      decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.onInverseSurface.withAlpha(150),
-        borderRadius: StaticsVar.br,
-      ),
+    return Material(
       child: Column(
-        mainAxisAlignment: MainAxisAlignment.start,
         children: [
-          ElevatedButton.icon(
-            style: ElevatedButton.styleFrom(
-              fixedSize: Size(mediaQuery.size.width * 0.9, mediaQuery.size.height * 0.2),
-              backgroundColor: Theme.of(context).colorScheme.onPrimary.withAlpha(150),
-              shape: RoundedRectangleBorder(borderRadius: StaticsVar.br),
-              padding: const EdgeInsets.all(16.0),
-            ),
-            icon: const Icon(Icons.volume_up, size: 24.0),
-            label: FittedBox(child: Text(word["arabic"], style: TextStyle(fontSize: 64.0, fontFamily: context.read<Global>().arFont))),
-            onPressed: (){
-              playTextToSpeech(word["arabic"], context);
-            },
-          ),
-          Text(
-            ' 中文：${word["chinese"]}\n 示例：${word["explanation"]}\n 归属课程：${word["subClass"]}',
-            style: TextStyle(fontSize: mediaQuery.size.height * 0.025),
-          )
+          if(hint != null) TextContainer(text: hint!),
+          SizedBox(height: mediaQuery.size.height * 0.01),
+          WordCard(word: word),
+          Expanded(child: SizedBox()),
+          if(bottomWidget != null) bottomWidget!,
+          SizedBox(height: mediaQuery.size.height * 0.05),
         ],
-      )
+      ),
     );
   }
 }
