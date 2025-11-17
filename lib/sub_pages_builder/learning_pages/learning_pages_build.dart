@@ -73,7 +73,6 @@ class _InLearningPageState extends State<InLearningPage> {
           }
           extra = [correctIndex, strList];
         } else if(testType == 3) {
-          // 拼写题 （还没做）
           extra = [];
         }
         questionsInSections[sectionIndex].add([wordData, testType, extra]);
@@ -168,7 +167,9 @@ class _InLearningPageState extends State<InLearningPage> {
           // itemCount: total,
           controller: controller,
           onPageChanged: (index) {
-            currentPage++;
+            setState(() {
+              currentPage++;
+            });
           },
           itemBuilder: (context, index) {
             if(index >= testList.length) {
