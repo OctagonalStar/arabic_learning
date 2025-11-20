@@ -29,7 +29,7 @@ class EnterSpecificQuestionSettingButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final bool isAllowModify = context.read<Global>().settingData['quiz'][sectionKey][2];
+    final bool isAllowModify = context.read<Global>().settingData['quiz'][sectionKey]["modifyAllowed"];
     return ElevatedButton(
       style: ElevatedButton.styleFrom(
         fixedSize: Size.fromHeight(MediaQuery.of(context).size.height * 0.08),
@@ -67,7 +67,7 @@ class _QuestionsSettingPage extends State<QuestionsSettingPage> {
   @override
   Widget build(BuildContext context) {
     MediaQueryData mediaQuery = MediaQuery.of(context);
-    selectedTypes ??= context.read<Global>().settingData['quiz'][widget.sectionKey][0];
+    selectedTypes ??= context.read<Global>().settingData['quiz'][widget.sectionKey]["questionSections"];
     List<Widget> listTiles = [];
     bool isEven = true;
     for(int index = 0; index < selectedTypes!.length; index++) {

@@ -17,25 +17,27 @@ class Global with ChangeNotifier {
   late final SharedPreferences prefs; // 储存实例
 
   late bool modelTTSDownloaded = false;
+
+  /// the setting data
   Map<String, dynamic> _settingData = {
-    'User': "",
-    'LastVersion': StaticsVar.appVersion,
-    'regular': {
+    "User": "",
+    "LastVersion": StaticsVar.appVersion,
+    "regular": {
       "theme": 9,
       "font": 0, //0: normal, 1: backup for ar, 2:backup for ar&zh
       "darkMode": false,
       "hideAppDownloadButton": false,
     },
-    'audio': {
+    "audio": {
       "useBackupSource": 0, // 0: Normal, 1: OnlineBackup, 2: LocalVITS
       "playRate": 1.0,
     },
-    'learning': {
+    "learning": {
       "startDate": 0, // YYYYMMDD;int
       "lastDate": 0, // YYYYMMDD;int
       "KnownWords": [],
     },
-    'quiz': {
+    "quiz": {
       /*
       题型说明 
       0: 单词卡片
@@ -43,24 +45,40 @@ class Global with ChangeNotifier {
       2: 阿译中 选择题
       3: 中译阿 拼写题
       
-      结构：
-      [[int], bool, bool]
-      [[the questions], doShuffleInternaly?, doShuffleGlobally? ,isAllowModify?]
-      Internaly: do shuffle only in only each type of question. The order of questionType was not changed.
-      Globally: shuffle everything
+      Internaly: shuffle only in only each type of question. 
+                The order of questionType was not changed.
+      Externaly: shuff the order of questionType, but do not change its inside order.
+      Globally: shuffle everything.
       */
-
       // 中阿混合学习
-      'zh_ar': [[1, 2], true, true, true],
+      "zh_ar": {
+        "questionSections": [1, 2],
+        "shuffleGlobally": true,
+        "shuffleInternaly": true,
+        "shuffleExternaly": true,
+        "modifyAllowed": true,
+      },
 
       // 阿译中学习
-      'ar': [[2], true, true, false],
+      "ar": {
+        "questionSections": [2],
+        "shuffleGlobally": true,
+        "shuffleInternaly": true,
+        "shuffleExternaly": true,
+        "modifyAllowed": true,
+      },
 
       // 中译阿学习
-      'zh': [[1], true, true, false]
+      "zh": {
+        "questionSections": [1],
+        "shuffleGlobally": true,
+        "shuffleInternaly": true,
+        "shuffleExternaly": true,
+        "modifyAllowed": true,
+      },
     },
-    'eggs': {
-      'stella': false
+    "eggs": {
+      "stella": false
     },
     // fsrs 独立设置
     // 'fsrs': {
@@ -102,6 +120,70 @@ class Global with ChangeNotifier {
   String? arFont;
   String? zhFont;
   ThemeData get themeData => _themeData;
+
+  /// 默认配置文件
+  ///
+  /// ``` json
+  /// {
+  ///  "User": "",
+  ///  "LastVersion": StaticsVar.appVersion,
+  ///  "regular": {
+  ///    "theme": 9,
+  ///    "font": 0, //0: normal, 1: backup for ar, 2:backup for ar&zh
+  ///    "darkMode": false,
+  ///    "hideAppDownloadButton": false,
+  ///  },
+  ///  "audio": {
+  ///    "useBackupSource": 0, // 0: Normal, 1: OnlineBackup, 2: LocalVITS
+  ///    "playRate": 1.0,
+  ///  },
+  ///  "learning": {
+  ///    "startDate": 0, // YYYYMMDD;int
+  ///    "lastDate": 0, // YYYYMMDD;int
+  ///    "KnownWords": [],
+  ///  },
+  ///  "quiz": {
+  ///    /*
+  ///    题型说明 
+  ///    0: 单词卡片
+  ///    1: 中译阿 选择题
+  ///    2: 阿译中 选择题
+  ///    3: 中译阿 拼写题
+  ///    
+  ///    Internaly: shuffle only in only each type of question. 
+  ///              The order of questionType was not changed.
+  ///    Externaly: shuff the order of questionType, but do not change its inside order.
+  ///    Globally: shuffle everything.
+  ///    */
+  ///    // 中阿混合学习
+  ///    "zh_ar": {
+  ///      "questionSections": [1, 2],
+  ///      "shuffleGlobally": true,
+  ///      "shuffleInternaly": true,
+  ///      "shuffleExternaly": true,
+  ///      "modifyAllowed": true,
+  ///    },
+  ///    // 阿译中学习
+  ///    "ar": {
+  ///      "questionSections": [2],
+  ///      "shuffleGlobally": true,
+  ///      "shuffleInternaly": true,
+  ///      "shuffleExternaly": true,
+  ///      "modifyAllowed": true,
+  ///    },
+  ///    // 中译阿学习
+  ///    "zh": {
+  ///      "questionSections": [1],
+  ///      "shuffleGlobally": true,
+  ///      "shuffleInternaly": true,
+  ///      "shuffleExternaly": true,
+  ///      "modifyAllowed": true,
+  ///    },
+  ///  },
+  ///  "eggs": {
+  ///    "stella": false
+  ///  }
+  /// ```
   Map<String, dynamic> get settingData => _settingData;
   int get wordCount => wordData["Words"]!.length;
 
@@ -131,6 +213,12 @@ class Global with ChangeNotifier {
     } else {
       updateLogRequire = false;
     }
+
+    // 000109 题型设置更新 List => Map
+    if(oldSetting["quiz"]["ar"].runtimeType == List) {
+      oldSetting["quiz"] = _settingData["quiz"];
+    }
+
     _settingData = deepMerge(_settingData, oldSetting);
     await updateSetting();
   }
