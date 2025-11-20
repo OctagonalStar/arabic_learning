@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:math';
 import 'package:archive/archive.dart';
 import 'package:flutter_tts/flutter_tts.dart';
 import 'package:path_provider/path_provider.dart' as path_provider;
@@ -253,4 +254,218 @@ Map<K, V> deepMerge<K, V>(Map<K, V> base, Map<K, V> overlay) {
     }
   });
   return result;
+}
+class AnalysisResult {
+  /// 提取出的三字母词根。
+  final String root;
+  /// 匹配到的构词法模式名称。
+  final String patternName;
+  AnalysisResult(this.root, this.patternName);
+}
+
+/// 内部辅助类，用于定义一个构词法模式。
+class _RootPattern {
+  /// 模式的名称，如 "Form X (Past)"。
+  final String name; 
+  /// 用于匹配的正则表达式。
+  final RegExp regex;
+  /// 捕获组索引，定义了词根字母 (R1, R2, R3) 在正则匹配中的位置。
+  final List<int> groups; 
+
+  _RootPattern(this.name, String pattern, {this.groups = const [1, 2, 3]}) 
+      : regex = RegExp(pattern);
+}
+
+/// 一个基于构词法模式的阿拉伯语词根提取器 (Stemmer)。
+///
+/// 该类通过一个预定义的模式库来识别单词的构词形式，并从中提取出标准的三字母词根。
+/// 这对于判断不同派生词之间的相似性至关重要。
+class ArabicStemmer {
+  // 1. 元音范围
+  static final _diacritics = RegExp(r'[\u064B-\u065F\u0640\u0670\u06D6-\u06ED]');
+  
+  // 2. 定义模式库 (优先级：长/特异性 -> 短/通用性)
+  static final List<_RootPattern> _patterns = [
+    // --- Form X (استفعل) ---
+    _RootPattern("Form X (Past)", r'^است(.)(.)(.)$'), 
+    _RootPattern("Form X (Present)", r'^يست(.)(.)(.)$'), 
+    _RootPattern("Form X (Participle)", r'^مست(.)(.)(.)$'),
+    
+    // --- [新增] Instrumental (Mif'aal - مفعال) ---
+    // e.g., Miftah (مفتاح) -> F-T-H
+    // 正则：Meem + R1 + R2 + Alef + R3
+    _RootPattern("Instrumental (Mif'aal)", r'^م(.)(.)ا(.)$'),
+
+    // --- Form I Passive (مفعول) ---
+    // e.g., Maktub (مكتوب)
+    // 正则：Meem + R1 + R2 + Waw + R3
+    _RootPattern("Form I (Passive)", r'^م(.)(.)و(.)$'), 
+
+    // --- Form VII (انفعل) ---
+    _RootPattern("Form VII (Past)", r'^ان(.)(.)(.)$'), 
+    _RootPattern("Form VII (Present)", r'^ين(.)(.)(.)$'),
+    _RootPattern("Form VII (Participle)", r'^من(.)(.)(.)$'), 
+
+    // --- Form VIII (افتعل) ---
+    _RootPattern("Form VIII (Past)", r'^ا(.)ت(.)(.)$'), 
+    _RootPattern("Form VIII (Present)", r'^ي(.)ت(.)(.)$'), 
+    _RootPattern("Form VIII (Participle)", r'^م(.)ت(.)(.)$'), 
+
+    // --- Form VI (تفاعل) ---
+    _RootPattern("Form VI (Past)", r'^ت(.)ا(.)(.)$'), 
+    _RootPattern("Form VI (Present)", r'^يت(.)ا(.)(.)$'), 
+    _RootPattern("Form VI (Participle)", r'^مت(.)ا(.)(.)$'), 
+
+    // --- Form III (فاعل) ---
+    _RootPattern("Form III/I-Active", r'^(.)ا(.)(.)$'), 
+    _RootPattern("Form III (Present)", r'^ي(.)ا(.)(.)$'), 
+    _RootPattern("Form III (Participle)", r'^م(.)ا(.)(.)$'), 
+
+    // --- Form V (تفعّل) ---
+    _RootPattern("Form V (Past)", r'^ت(.)(.)(.)$'), 
+    _RootPattern("Form V (Present)", r'^يت(.)(.)(.)$'),
+    _RootPattern("Form V (Participle)", r'^مت(.)(.)(.)$'),
+
+    // --- Masdar Form II/V (Taf'aal) ---
+    _RootPattern("Masdar (Taf'aal)", r'^ت(.)(.)ا(.)$'), 
+
+    // --- [新增] Elative/Comparative (Af'al - أفعل) ---
+    // e.g., Akbar (أكبر) -> K-B-R
+    // 归一化后为: Alef + R1 + R2 + R3
+    // 注意：这也涵盖了 Form IV Past (Af'ala - أكرم)
+    _RootPattern("Comparative (Af'al)", r'^ا(.)(.)(.)$'), 
+
+    // --- [新增] Elative Fem (Fu'la - فعلى) ---
+    // e.g., Kubra (كبرى) -> K-B-R
+    // 归一化后：R1 + R2 + R3 + Alef (from Yaa/Alif Maqsura)
+    // 必须是4个字母，以Alef结尾
+    _RootPattern("Comparative Fem (Fu'la)", r'^(.)(.)(.)ا$'),
+
+    // --- Form IV (Participle) ---
+    _RootPattern("Form IV (Participle)", r'^م(.)(.)(.)$'), 
+    
+    // --- Default Form I Present (Yaf'alu) ---
+    _RootPattern("Form I (Present)", r'^ي(.)(.)(.)$'),
+  ];
+
+  /// 对输入的阿拉伯语单词进行预处理和规范化。
+  String normalize(String text) {
+    if (text.isEmpty) return "";
+    // 移除所有元音符号
+    String res = text.replaceAll(_diacritics, '');
+    // 统一不同形式的 Alef
+    res = res.replaceAll(RegExp(r'[أإآ]'), 'ا');
+    // 将 Alef Maqsura 统一为 Alef
+    res = res.replaceAll('ى', 'ا');
+    
+    // 忽略所有 "ة" (Ta Marbuta)，直接删除
+    // 之前是替换为 'ه'，现在按照需求删除，以便处理如 'مكتبة' -> 'مكتب'
+    res = res.replaceAll('ة', '');
+    
+    return res.trim();
+  }
+
+  /// 分析单词，返回其词根和匹配的模式。
+  AnalysisResult analyze(String word) {
+    String stem = normalize(word);
+    if (stem.length <= 2) return AnalysisResult(stem, "Too Short");
+
+    // 遍历模式库，找到第一个匹配的模式
+    for (final pattern in _patterns) {
+      final match = pattern.regex.firstMatch(stem);
+      if (match != null) {
+        String r1 = match.group(pattern.groups[0])!;
+        String r2 = match.group(pattern.groups[1])!;
+        String r3 = match.group(pattern.groups[2])!;
+        return AnalysisResult(r1 + r2 + r3, pattern.name);
+      }
+    }
+    
+    // 如果没有模式匹配成功，则使用后备的词缀剥离方法
+    String fallbackRoot = _fallbackStripping(stem);
+    return AnalysisResult(fallbackRoot, "Fallback/Form I");
+  }
+
+  /// 提取单词的词根（仅返回词根字符串）。
+  String extractRoot(String word) {
+    return analyze(word).root;
+  }
+
+  /// 后备方案：通过剥离常见的前后缀来简化单词。
+  String _fallbackStripping(String stem) {
+    String s = stem;
+    
+    if (s.startsWith('وال') || s.startsWith('فال')) s = s.substring(1);
+    if (s.startsWith('لل') || s.startsWith('ال')) s = s.substring(2);
+    if (s.length > 3 && (s.startsWith('و') || s.startsWith('ف'))) s = s.substring(1);
+
+    if (s.length > 4) {
+       if (s.endsWith('ات') || s.endsWith('ون') || s.endsWith('ين')) s = s.substring(0, s.length - 2);
+       else if (s.endsWith('ي')) s = s.substring(0, s.length - 1);
+       // 注意：这里去掉了对 'ه' (Ha) 的移除，因为我们不再把 'ة' 转为 'ه'
+       // 如果 'ه' 是原生字母或代词后缀，仍需小心
+    }
+
+    return s;
+  }
+}
+
+/// 计算两个字符串之间的 Levenshtein 编辑距离。
+///
+/// 编辑距离指从一个字符串转换成另一个所需的最少单字符编辑（插入、删除或替换）次数。
+int getLevenshtein(String s, String t) {
+  if (s == t) return 0;
+  if (s.isEmpty) return t.length;
+  if (t.isEmpty) return s.length;
+
+  List<int> v0 = List<int>.generate(t.length + 1, (i) => i);
+  List<int> v1 = List<int>.filled(t.length + 1, 0);
+
+  for (int i = 0; i < s.length; i++) {
+    v1[0] = i + 1;
+    for (int j = 0; j < t.length; j++) {
+      int cost = (s[i] == t[j]) ? 0 : 1;
+      v1[j + 1] = min(v1[j] + 1, min(v0[j + 1] + 1, v0[j] + cost));
+    }
+    for (int j = 0; j < t.length + 1; j++) {
+      v0[j] = v1[j];
+    }
+  }
+  return v1[t.length];
+}
+
+
+// ===================================================================
+//
+//                 Public API Handle (调用抓手)
+//
+// ===================================================================
+
+/// 检查两个阿拉伯语单词是否相似。
+///
+/// 这是一个供 App 其他部分调用的高级函数 ("抓手")。
+/// 它封装了词根提取和编辑距离计算的复杂逻辑。
+///
+/// [wordA] - 第一个单词。
+/// [wordB] - 第二个单词。
+///
+/// 如果两个单词的词根相同，或者词根之间的编辑距离小于等于1，则返回 `true`。
+/// 否则返回 `false`。
+bool areArabicWordsSimilar(String wordA, String wordB) {
+  final stemmer = ArabicStemmer();
+  final rootA = stemmer.extractRoot(wordA);
+  final rootB = stemmer.extractRoot(wordB);
+  
+  // 1. 词根完全相同 (最强匹配)
+  if (rootA == rootB) {
+    return true;
+  }
+  
+  // 2. 词根编辑距离小于等于1 (容错匹配)
+  // 这对于处理弱动词或书写变体很有用。
+  if (getLevenshtein(rootA, rootB) <= 1) {
+    return true;
+  }
+  
+  return false;
 }
