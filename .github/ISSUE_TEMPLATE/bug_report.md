@@ -33,9 +33,9 @@ assignees: ''
 
 **平台（必填）:**
 
- - 系统: [Android/iOS/Web/Windows/MacOS]
- - 浏览器（如果你在用Web端的话）: [chrome/safari/浏览器名称（如果你知道包名也可以填进来）]
- - 版本: [Release中的版本号(Release-v x.y.z)/Action中的构建号(Action-数字(不要带井号))/Web端]
+- 系统: [Android/iOS/Web/Windows/MacOS]
+- 浏览器（如果你在用Web端的话）: [chrome/safari/浏览器名称（如果你知道包名也可以填进来）]
+- 版本: [Release中的版本号(Release-v x.y.z)/Action中的构建号(Action-数字(不要带井号))/Web端]
 - 存储类型: 在软件"关于"页面底部的调试信息展开中的StorageType
 
 **其他你要说明的内容**
