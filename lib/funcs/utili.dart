@@ -434,6 +434,7 @@ int getLevenshtein(String s, String t) {
   return v1[t.length];
 }
 
+final _arabicStemmer = ArabicStemmer();
 
 // ===================================================================
 //
@@ -452,9 +453,8 @@ int getLevenshtein(String s, String t) {
 /// 如果两个单词的词根相同，或者词根之间的编辑距离小于等于1，则返回 `true`。
 /// 否则返回 `false`。
 bool areArabicWordsSimilar(String wordA, String wordB) {
-  final stemmer = ArabicStemmer();
-  final rootA = stemmer.extractRoot(wordA);
-  final rootB = stemmer.extractRoot(wordB);
+  final rootA = _arabicStemmer.extractRoot(wordA);
+  final rootB = _arabicStemmer.extractRoot(wordB);
   
   // 1. 词根完全相同 (最强匹配)
   if (rootA == rootB) {
