@@ -40,12 +40,12 @@ class _InLearningPageState extends State<InLearningPage> {
   @override
   void initState() {
     // 加载测试词
-    List<dynamic> questionsSetting = context.read<Global>().settingData["quiz"][widget.studyType == 0 ? "zh_ar" : widget.studyType == 1 ? "zh" : "ar"];
-    List<List<dynamic>> questionsInSections = List.filled(questionsSetting[0].length, []);
-    int sectionIndex = 0;
-    for(int testType in questionsSetting[0]) {
+    Map<String, dynamic> questionsSetting = context.read<Global>().settingData["quiz"][widget.studyType == 0 ? "zh_ar" : widget.studyType == 1 ? "zh" : "ar"];
+    List<List<List<dynamic>>> questionsInSections = List.generate(questionsSetting["questionSections"].length, (_) => []);
+    for(int sectionIndex = 0; sectionIndex < questionsSetting["questionSections"].length; sectionIndex++) {
       for(Map<String, dynamic> wordData in widget.words) {
         late List<dynamic> extra;
+        final int testType = questionsSetting["questionSections"][sectionIndex];
         if(testType == 0) {
           // 单词卡片 没有额外数据
           extra = [];
@@ -77,12 +77,15 @@ class _InLearningPageState extends State<InLearningPage> {
         }
         questionsInSections[sectionIndex].add([wordData, testType, extra]);
       }
-      // doShuffleInternaly
-      if(questionsSetting[1]) questionsInSections[sectionIndex].shuffle();
-      testList.addAll([...questionsInSections[sectionIndex]]);
-      sectionIndex++;
     }
-    if(questionsSetting[2]) testList.shuffle();
+
+    // shuffle part
+    if(questionsSetting["shuffleExternaly"]) questionsInSections.shuffle();
+    for(List<List<dynamic>> testItems in questionsInSections) {
+      if(questionsSetting["shuffleInternaly"]) testItems.shuffle();
+      testList.addAll(testItems);
+    }
+    if(questionsSetting["shuffleGlobally"]) testList.shuffle();
     total = testList.length;
     startTime  = DateTime.now().millisecondsSinceEpoch;
     super.initState();
