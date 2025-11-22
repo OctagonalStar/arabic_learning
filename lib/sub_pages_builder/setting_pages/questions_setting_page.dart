@@ -105,134 +105,127 @@ class _QuestionsSettingPage extends State<QuestionsSettingPage> {
     }
     
 
-    return Scaffold(
-      appBar: AppBar(title: Text("题型配置: ${widget.sectionKey}")),
-      body: Column(
-        children: [
-          Expanded(
-            child: ReorderableListView(
-              onReorder: (oldIndex, newIndex) {
-                setState(() {
-                  if(oldIndex < newIndex) newIndex--; // 修正索引
-                  int old = selectedTypes!.removeAt(oldIndex);
-                  selectedTypes!.insert(newIndex, old);
-                });
-              },
-              children: listTiles, 
+    return PopScope(
+      canPop: true,
+      onPopInvokedWithResult: (didPop, result) {
+        context.read<Global>().updateSetting(refresh: false);
+      },
+      child: Scaffold(
+        appBar: AppBar(title: Text("题型配置: ${widget.sectionKey}")),
+        body: Column(
+          children: [
+            Expanded(
+              child: ReorderableListView(
+                onReorder: (oldIndex, newIndex) {
+                  setState(() {
+                    if(oldIndex < newIndex) newIndex--; // 修正索引
+                    int old = selectedTypes!.removeAt(oldIndex);
+                    selectedTypes!.insert(newIndex, old);
+                  });
+                },
+                children: listTiles, 
+              ),
             ),
-          ),
-          ElevatedButton.icon(
-            onPressed: () {
-              context.read<Global>().updateSetting(refresh: false);
-              alart(context, "已保存配置");
-            }, 
-            style: ElevatedButton.styleFrom(
-              fixedSize: Size(mediaQuery.size.width, mediaQuery.size.height * 0.10),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(25.0)))
-            ),
-            icon: Icon(Icons.save),
-            label: Text("保存"),
-          )
-        ],
-      ),
-      floatingActionButton: TweenAnimationBuilder<double>(
-        tween: Tween(
-          begin: 0.0,
-          end: floatButtonFlod ? 0.0 : 1.0
-        ), 
-        duration: Duration(milliseconds: 500),
-        curve: Curves.bounceOut, 
-        builder: (context, value, child) {
-          return Container(
-            // width: mediaQuery.size.width * 0.07 + mediaQuery.size.width * 0.1 * value,
-            // height: mediaQuery.size.height * 0.1 + mediaQuery.size.height * 0.45 * value, //实际稍高一些 避免默认margin导致的溢出
-            decoration: BoxDecoration(
-              color: Colors.transparent,
-            ),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.end,
-              mainAxisSize: MainAxisSize.min,
+            Row(
               children: [
-                if(value > 0.3) ElevatedButton.icon(
-                  style: ElevatedButton.styleFrom(
-                    fixedSize: Size(70 + 150 * value, mediaQuery.size.height * 0.1 * value),
-                    backgroundColor: Theme.of(context).colorScheme.onPrimary,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadiusGeometry.vertical(top: Radius.circular(25.0)))
-                  ),
-                  onPressed: (){
+                Switch(
+                  value: context.read<Global>().settingData['quiz'][widget.sectionKey]["shuffleInternaly"], 
+                  onChanged: (value) {
                     setState(() {
-                      selectedTypes!.add(0);
+                      context.read<Global>().settingData['quiz'][widget.sectionKey]["shuffleInternaly"] = value;
                     });
-                  }, 
-                  icon: Icon(Icons.add),
-                  label: FittedBox(child: Text("添加 ${castMap[0]}")),
+                  }
                 ),
-                if(value > 0.3) ElevatedButton.icon(
-                  style: ElevatedButton.styleFrom(
-                    fixedSize: Size(70 + 150 * value, mediaQuery.size.height * 0.1 * value),
-                    backgroundColor: Theme.of(context).colorScheme.onPrimary,
-                    shape: BeveledRectangleBorder()
-                  ),
-                  onPressed: (){
-                    setState(() {
-                      selectedTypes!.add(1);
-                    });
-                  }, 
-                  icon: Icon(Icons.add),
-                  label: FittedBox(child: Text("添加 ${castMap[1]}")),
-                ),
-                if(value > 0.3) ElevatedButton.icon(
-                  style: ElevatedButton.styleFrom(
-                    fixedSize: Size(70 + 150 * value, mediaQuery.size.height * 0.1 * value),
-                    backgroundColor: Theme.of(context).colorScheme.onPrimary,
-                    shape: BeveledRectangleBorder()
-                  ),
-                  onPressed: (){
-                    setState(() {
-                      selectedTypes!.add(2);
-                    });
-                  }, 
-                  icon: Icon(Icons.add),
-                  label: FittedBox(child: Text("添加 ${castMap[2]}")),
-                ),
-                if(value > 0.3) ElevatedButton.icon(
-                  style: ElevatedButton.styleFrom(
-                    fixedSize: Size(70 + 150 * value, mediaQuery.size.height * 0.1 * value),
-                    backgroundColor: Theme.of(context).colorScheme.onPrimary,
-                    shape: BeveledRectangleBorder()
-                  ),
-                  onPressed: (){
-                    setState(() {
-                      selectedTypes!.add(3);
-                    });
-                  }, 
-                  icon: Icon(Icons.add),
-                  label: FittedBox(child: Text("添加 ${castMap[3]}")),
-                ),
-                ElevatedButton(
-                  style: ElevatedButton.styleFrom(
-                    fixedSize: Size(70 + 150 * value, 70),
-                    backgroundColor: Theme.of(context).colorScheme.onPrimary,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadiusGeometry.vertical(bottom: Radius.circular(25.0), top: value < 0.4 ? Radius.circular(25.0) : Radius.zero))
-                  ),
-                  onPressed: (){
-                    setState(() {
-                      floatButtonFlod = !floatButtonFlod;
-                    });
-                  }, 
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(value > 0.5 ?  Icons.deselect : Icons.add), 
-                      if(value > 0.5) FittedBox(child: Text("收起"))
-                    ],
-                  ),
-                )
+                Expanded(child: Text("题型内题目乱序")),
               ],
             ),
-          );
-        }
-      )
+            Row(
+              children: [
+                Switch(
+                  value: context.read<Global>().settingData['quiz'][widget.sectionKey]["shuffleExternaly"], 
+                  onChanged: (value) {
+                    setState(() {
+                      context.read<Global>().settingData['quiz'][widget.sectionKey]["shuffleExternaly"] = value;
+                    });
+                  }
+                ),
+                Expanded(child: Text("题型乱序")),
+              ],
+            ),
+            Row(
+              children: [
+                Switch(
+                  value: context.read<Global>().settingData['quiz'][widget.sectionKey]["shuffleGlobally"], 
+                  onChanged: (value) {
+                    setState(() {
+                      context.read<Global>().settingData['quiz'][widget.sectionKey]["shuffleGlobally"] = value;
+                    });
+                  }
+                ),
+                Expanded(child: Text("全局乱序")),
+              ],
+            )
+          ],
+        ),
+        floatingActionButton: TweenAnimationBuilder<double>(
+          tween: Tween(
+            begin: 0.0,
+            end: floatButtonFlod ? 0.0 : 1.0
+          ), 
+          duration: Duration(milliseconds: 500),
+          curve: Curves.bounceOut, 
+          builder: (context, value, child) {
+            return Container(
+              // width: mediaQuery.size.width * 0.07 + mediaQuery.size.width * 0.1 * value,
+              // height: mediaQuery.size.height * 0.1 + mediaQuery.size.height * 0.45 * value, //实际稍高一些 避免默认margin导致的溢出
+              decoration: BoxDecoration(
+                color: Colors.transparent,
+              ),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.end,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  if(value > 0.3) ...List.generate(4, (i) {
+                    return ElevatedButton.icon(
+                      style: ElevatedButton.styleFrom(
+                        fixedSize: Size(70 + 150 * value, mediaQuery.size.height * 0.1 * value),
+                        backgroundColor: Theme.of(context).colorScheme.onPrimary,
+                        shape: i == 0 ? RoundedRectangleBorder(borderRadius: BorderRadiusGeometry.vertical(top: Radius.circular(25.0))) : BeveledRectangleBorder()
+                      ),
+                      onPressed: (){
+                        setState(() {
+                          selectedTypes!.add(i);
+                        });
+                      }, 
+                      icon: Icon(Icons.add),
+                      label: FittedBox(child: Text("添加 ${castMap[i]}")),
+                    );
+                  }),
+                  ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      fixedSize: Size(70 + 150 * value, 70),
+                      backgroundColor: Theme.of(context).colorScheme.onPrimary,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadiusGeometry.vertical(bottom: Radius.circular(25.0), top: value < 0.4 ? Radius.circular(25.0) : Radius.zero))
+                    ),
+                    onPressed: (){
+                      setState(() {
+                        floatButtonFlod = !floatButtonFlod;
+                      });
+                    }, 
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(value > 0.5 ?  Icons.deselect : Icons.add), 
+                        if(value > 0.5) FittedBox(child: Text("收起"))
+                      ],
+                    ),
+                  )
+                ],
+              ),
+            );
+          }
+        )
+      ),
     );
   }
 }
