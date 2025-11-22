@@ -17,38 +17,62 @@ class LearningPage extends StatelessWidget {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.start,
         children: [
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Theme.of(context).colorScheme.onPrimary.withAlpha(150),
-              shadowColor: Colors.transparent,
-              fixedSize: Size(mediaQuery.size.width * 0.9, mediaQuery.size.height * 0.2),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadiusGeometry.vertical(bottom: Radius.circular(25.0)),
-              ),
-            ),
-            onPressed: () {
-              shiftToStudy(context, 0);
-            },
-            child: Container(
-              width: mediaQuery.size.width * 0.9,
-              height: mediaQuery.size.height * 0.2,
-              alignment: Alignment.center,
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(Icons.sync_alt, size: 24.0),
-                  Text(
-                    '中阿混合学习',
-                    style: TextStyle(fontSize: 40.0, fontWeight: FontWeight.bold),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+            children: [
+              ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Theme.of(context).colorScheme.onPrimary.withAlpha(150),
+                  shadowColor: Colors.transparent,
+                  fixedSize: Size(mediaQuery.size.width * 0.5, mediaQuery.size.height * 0.2),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadiusGeometry.vertical(bottom: Radius.circular(25.0)),
                   ),
-                  SizedBox(height: mediaQuery.size.height * 0.01),
-                  Text(
-                    '还有${(context.read<Global>().wordCount - context.read<Global>().settingData["learning"]["KnownWords"].length).toString()}个单词待学习~',
-                    style: TextStyle(fontSize: 12.0),
+                ),
+                onPressed: () {
+                  shiftToStudy(context, 0);
+                },
+                child: FittedBox(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(Icons.sync_alt, size: 24.0),
+                      Text(
+                        '中阿混合学习',
+                        style: TextStyle(fontSize: 40.0, fontWeight: FontWeight.bold),
+                      ),
+                    ],
                   ),
-                ],
+                ),
               ),
-            ),
+              ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Theme.of(context).colorScheme.onPrimary.withAlpha(150),
+                  shadowColor: Colors.transparent,
+                  fixedSize: Size(mediaQuery.size.width * 0.4, mediaQuery.size.height * 0.2),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadiusGeometry.vertical(bottom: Radius.circular(25.0)),
+                  ),
+                ),
+                onPressed: (){
+                  Navigator.push(
+                    context, 
+                    MaterialPageRoute(
+                      builder: (context) => WordCardOverViewPage()
+                    )
+                  );
+                },
+                child: FittedBox(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(Icons.abc, size: 24),
+                      Text("词汇总览", style: TextStyle(fontSize: 40.0, fontWeight: FontWeight.bold)),
+                    ],
+                  ),
+                ), 
+              )
+            ],
           ),
           SizedBox(height: mediaQuery.size.height * 0.01),
           Row(

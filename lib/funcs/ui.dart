@@ -464,6 +464,7 @@ class WordCard extends StatelessWidget {
                             style: ElevatedButton.styleFrom(
                               fixedSize: Size(width ?? (mediaQuery.size.width * 0.9), height == null ? (mediaQuery.size.height * 0.3) : height! * 0.6),
                               backgroundColor: Colors.transparent,
+                              shadowColor: Colors.transparent,
                               shape: RoundedRectangleBorder(borderRadius: BorderRadiusGeometry.vertical(bottom: Radius.circular(25.0)))
                             ),
                             onPressed: (){

@@ -560,3 +560,35 @@ class _ConcludePageState extends State<ConcludePage> {
     );
   }
 }
+
+class WordCardOverViewPage extends StatefulWidget {
+  const WordCardOverViewPage({super.key});
+
+  @override
+  State<StatefulWidget> createState() => _WordCardOverViewPage();
+}
+
+class _WordCardOverViewPage extends State<WordCardOverViewPage> {
+
+  @override
+  Widget build(BuildContext context) {
+    MediaQueryData mediaQuery = MediaQuery.of(context);
+    return Scaffold(
+      appBar: AppBar(
+        title: Text("单词总览"),
+      ),
+      body: GridView.builder(
+        itemCount: context.read<Global>().wordData["Words"].length,
+        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: 3), 
+        itemBuilder: (context, index) {
+          return WordCard(
+            word: context.read<Global>().wordData["Words"][index],
+            useMask: false,
+            height: mediaQuery.size.height * 0.4,
+          );
+        }
+      ),
+    );
+
+  }
+}
