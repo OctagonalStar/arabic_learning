@@ -436,36 +436,156 @@ int getLevenshtein(String s, String t) {
 
 final _arabicStemmer = ArabicStemmer();
 
-// ===================================================================
-//
-//                 Public API Handle (调用抓手)
-//
-// ===================================================================
-
-/// 检查两个阿拉伯语单词是否相似。
-///
-/// 这是一个供 App 其他部分调用的高级函数 ("抓手")。
-/// 它封装了词根提取和编辑距离计算的复杂逻辑。
-///
+/// 计算两个阿拉伯语单词的相似度（编辑距离）。
 /// [wordA] - 第一个单词。
 /// [wordB] - 第二个单词。
-///
-/// 如果两个单词的词根相同，或者词根之间的编辑距离小于等于1，则返回 `true`。
-/// 否则返回 `false`。
-bool areArabicWordsSimilar(String wordA, String wordB) {
+/// 返回两个单词词根之间的 Levenshtein 编辑距离。距离越小，单词越相似。
+int getArabicWordsSimilarity(String wordA, String wordB) {
   final rootA = _arabicStemmer.extractRoot(wordA);
   final rootB = _arabicStemmer.extractRoot(wordB);
   
-  // 1. 词根完全相同 (最强匹配)
-  if (rootA == rootB) {
-    return true;
+  return getLevenshtein(rootA, rootB);
+}
+
+//基于BK-tree实现快速相似词搜索
+
+class _BKTreeNode {
+  final String term;
+  final Map<int, _BKTreeNode> children = {};
+
+  _BKTreeNode(this.term);
+}
+
+class BKTree {
+  _BKTreeNode? _root;
+
+  void add(String term) {
+    if (_root == null) {
+      _root = _BKTreeNode(term);
+      return;
+    }
+
+    var currentNode = _root!;
+    while (true) {
+      final distance = getLevenshtein(currentNode.term, term);
+      if (distance == 0) return; // Term already in tree
+
+      if (currentNode.children.containsKey(distance)) {
+        currentNode = currentNode.children[distance]!;
+      } else {
+        currentNode.children[distance] = _BKTreeNode(term);
+        break;
+      }
+    }
   }
-  
-  // 2. 词根编辑距离小于等于1 (容错匹配)
-  // 这对于处理弱动词或书写变体很有用。
-  if (getLevenshtein(rootA, rootB) <= 1) {
-    return true;
+
+  List<String> search(String term, int maxDistance) {
+    if (_root == null) return [];
+    
+    final List<String> results = [];
+    final candidates = <_BKTreeNode>[_root!];
+
+    while (candidates.isNotEmpty) {
+      final node = candidates.removeLast();
+      final distance = getLevenshtein(node.term, term);
+
+      if (distance <= maxDistance) {
+        results.add(node.term);
+      }
+
+      final searchRangeStart = distance - maxDistance;
+      final searchRangeEnd = distance + maxDistance;
+
+      node.children.forEach((dist, child) {
+        if (dist >= searchRangeStart && dist <= searchRangeEnd) {
+          candidates.add(child);
+        }
+      });
+    }
+    return results;
   }
+}
+class VocabularyOptimizer {
+  final _stemmer = ArabicStemmer();
+  final _tree = BKTree();
+  final Map<String, Set<String>> _rootToWordsMap = {}; 
+
+  /// 初始化并构建优化器
+  void build(List<String> words) {
+    _rootToWordsMap.clear();
+    for (final word in words) {
+      addWord(word);
+    }
+  }
+
+  void addWord(String word) {
+    final root = _stemmer.extractRoot(word);
+    if (root.isEmpty) return;
+
+    if (_rootToWordsMap.containsKey(root)) {
+      _rootToWordsMap[root]!.add(word);
+    } else {
+      _rootToWordsMap[root] = {word};
+      _tree.add(root);
+    }
+  }
+
+  /// 查找与给定单词相似的所有单词
+  List<String> findSimilarWords(String word, {int maxDistance = 1}) {
+    final queryRoot = _stemmer.extractRoot(word);
+    if (queryRoot.isEmpty) return [];
+
+    // 在树中搜索相似的词根
+    final similarRoots = _tree.search(queryRoot, maxDistance);
+    
+    final results = <String>[];
+    for (final root in similarRoots) {
+      if (_rootToWordsMap.containsKey(root)) {
+        results.addAll(_rootToWordsMap[root]!);
+      }
+    }
+    return results;
+  }
+}
+/// 1. 初始化: BKSearch.init(['ktb', 'maktaba', ...]);
+/// 2. 搜索: var results = BKSearch.search('kitab');
+/// 3. 插入: BKSearch.insert('newWord');
+class BKSearch {
+  // 私有构造函数，防止外部实例化
+  BKSearch._();
   
-  return false;
+  // 单例实例
+  static final VocabularyOptimizer _optimizer = VocabularyOptimizer();
+  static bool _isInitialized = false;
+
+  /// [必须调用] 初始化搜索引擎
+  /// 通常在 App 启动或加载词库时调用
+  static void init(List<String> allWords) {
+    if (_isInitialized) return; // 避免重复初始化
+    print("正在构建 BK-Tree 搜索索引，词库大小: ${allWords.length}...");
+    final stopwatch = Stopwatch()..start();
+    
+    _optimizer.build(allWords);
+    
+    stopwatch.stop();
+    _isInitialized = true;
+    print("BK-Tree 索引构建完成，耗时: ${stopwatch.elapsedMilliseconds}ms");
+  }
+
+  /// [query] : 用户输入的单词
+  /// [threshold] : 容错阈值，默认 1 (允许 1 个字符的编辑距离差异)
+  static List<String> search(String query, {int threshold = 1}) {
+    if (!_isInitialized) {
+      debugPrint("警告: BKSearch 尚未初始化，请先调用 init()");
+      return [];
+    }
+    return _optimizer.findSimilarWords(query, maxDistance: threshold);
+  }
+
+  static void insert(String word) {
+    _optimizer.addWord(word);
+  }
+
+  /// 检查是否已经准备好
+  static bool get isReady => _isInitialized;
 }
