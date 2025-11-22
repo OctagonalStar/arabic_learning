@@ -419,7 +419,7 @@ int getLevenshtein(String s, String t) {
   if (t.isEmpty) return s.length;
 
   List<int> v0 = List<int>.generate(t.length + 1, (i) => i);
-  List<int> v1 = List<int>.filled(t.length + 1, 0);
+  List<int> v1 = List<int>.generate(t.length + 1, (index) => 0);
 
   for (int i = 0; i < s.length; i++) {
     v1[0] = i + 1;
