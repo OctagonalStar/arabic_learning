@@ -23,9 +23,9 @@ class HomePage extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Container(
-              width: mediaQuery.size.width * 0.32,
+              width: mediaQuery.size.width * 0.30,
               height: mediaQuery.size.height * 0.18,
-              margin: EdgeInsets.all(8.0),
+              margin: EdgeInsets.all(4.0),
               padding: EdgeInsets.all(16.0),
               decoration: BoxDecoration(
                 color: themeColor.secondaryContainer.withAlpha(150),
@@ -56,9 +56,9 @@ class HomePage extends StatelessWidget {
               ),
             ),
             Container(
-              width: mediaQuery.size.width * 0.56,
+              width: mediaQuery.size.width * 0.50,
               height: mediaQuery.size.height * 0.18,
-              margin: EdgeInsets.all(8.0),
+              margin: EdgeInsets.all(4.0),
               padding: EdgeInsets.all(16.0),
               decoration: BoxDecoration(
                 color: themeColor.secondaryContainer.withAlpha(150),
@@ -86,9 +86,9 @@ class HomePage extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Container(
-              width: mediaQuery.size.width * 0.54,
+              width: mediaQuery.size.width * 0.50,
               height: mediaQuery.size.height * 0.18,
-              margin: EdgeInsets.all(8.0),
+              margin: EdgeInsets.all(4.0),
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(25.0),
               ),
@@ -114,9 +114,9 @@ class HomePage extends StatelessWidget {
               ),
             ),
             Container(
-              width: mediaQuery.size.width * 0.34,
+              width: mediaQuery.size.width * 0.35,
               height: mediaQuery.size.height * 0.18,
-              margin: EdgeInsets.all(8.0),
+              margin: EdgeInsets.all(4.0),
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(25.0),
               ),

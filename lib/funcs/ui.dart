@@ -412,78 +412,78 @@ class WordCard extends StatelessWidget {
   Widget build(BuildContext context) {
     MediaQueryData mediaQuery = MediaQuery.of(context);
     bool hide = useMask;
-    return Container(
-      margin: const EdgeInsets.all(16.0),
-      //padding: const EdgeInsets.all(16.0),
-      width: width ?? (mediaQuery.size.width * 0.9),
-      height: height ?? (mediaQuery.size.height * 0.5),
-      decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.onInverseSurface.withAlpha(150),
-        borderRadius: StaticsVar.br,
-      ),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.start,
-        children: [
-          ElevatedButton.icon(
-            style: ElevatedButton.styleFrom(
-              fixedSize: Size(width ?? (mediaQuery.size.width * 0.9), height == null ? (mediaQuery.size.height * 0.2) : height! * 0.4),
-              backgroundColor: Theme.of(context).colorScheme.onPrimary.withAlpha(150),
-              shape: RoundedRectangleBorder(borderRadius: StaticsVar.br),
-              padding: const EdgeInsets.all(16.0),
-            ),
-            icon: const Icon(Icons.volume_up, size: 24.0),
-            label: FittedBox(child: Text(word["arabic"], style: TextStyle(fontSize: 64.0, fontFamily: context.read<Global>().arFont))),
-            onPressed: (){
-              playTextToSpeech(word["arabic"], context);
-            },
+    double useWidth = width ?? mediaQuery.size.width * 0.9;
+    double useHeight = height ?? mediaQuery.size.height * 0.5;
+    return Column(
+      mainAxisAlignment: MainAxisAlignment.start,
+      children: [
+        ElevatedButton.icon(
+          style: ElevatedButton.styleFrom(
+            fixedSize: Size(useWidth, useHeight * 0.3),
+            backgroundColor: Theme.of(context).colorScheme.onPrimary.withAlpha(150),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadiusGeometry.vertical(top: Radius.circular(25.0))),
+            padding: const EdgeInsets.all(16.0),
           ),
-          Stack(
-            children: [
-              Center(
+          icon: const Icon(Icons.volume_up, size: 24.0),
+          label: FittedBox(child: Text(word["arabic"], style: TextStyle(fontSize: 64.0, fontFamily: context.read<Global>().arFont))),
+          onPressed: (){
+            playTextToSpeech(word["arabic"], context);
+          },
+        ),
+        Stack(
+          children: [
+            Container(
+              width: useWidth,
+              height: useHeight * 0.6,
+              decoration: BoxDecoration(
+                color: Theme.of(context).colorScheme.onInverseSurface.withAlpha(150),
+                borderRadius: BorderRadius.vertical(bottom: Radius.circular(25.0)),
+              ),
+              child: Center(
                 child: Text(' 中文：${word["chinese"]}\n 示例：${word["explanation"]}\n 归属课程：${word["subClass"]}',
                   style: Theme.of(context).textTheme.bodyLarge,
                   textAlign: TextAlign.left,
                 ),
               ),
-              StatefulBuilder(
-                builder: (context, setLocalState) {
-                  return TweenAnimationBuilder<double>(
-                    tween: Tween(
-                      begin: 1.0,
-                      end: hide ? 1.0 : 0.0
-                    ),
-                    duration: Duration(milliseconds: 500),
-                    curve: StaticsVar.curve,
-                    builder: (context, value, child) {
-                      return ClipRRect(
-                        borderRadius: BorderRadiusGeometry.vertical(bottom: Radius.circular(25.0)),
-                        child: BackdropFilter(
-                          filter: ImageFilter.blur(sigmaX: 10.0 * value,sigmaY: 10.0 * value),
-                          enabled: true,
-                          child: value == 0.0 ? null : ElevatedButton(
-                            style: ElevatedButton.styleFrom(
-                              fixedSize: Size(width ?? (mediaQuery.size.width * 0.9), height == null ? (mediaQuery.size.height * 0.3) : height! * 0.6),
-                              backgroundColor: Colors.transparent,
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadiusGeometry.vertical(bottom: Radius.circular(25.0)))
-                            ),
-                            onPressed: (){
-                              setLocalState(() {
-                                hide = false;
-                              },);
-                            }, 
-                            child: hide ? Text("点此查看释义") : SizedBox()
+            ),
+            StatefulBuilder(
+              builder: (context, setLocalState) {
+                return TweenAnimationBuilder<double>(
+                  tween: Tween(
+                    begin: 1.0,
+                    end: hide ? 1.0 : 0.0
+                  ),
+                  duration: Duration(milliseconds: 500),
+                  curve: StaticsVar.curve,
+                  builder: (context, value, child) {
+                    return ClipRRect(
+                      borderRadius: BorderRadiusGeometry.vertical(bottom: Radius.circular(25.0)),
+                      child: BackdropFilter(
+                        filter: ImageFilter.blur(sigmaX: 10.0 * value,sigmaY: 10.0 * value),
+                        enabled: true,
+                        child: value == 0.0 ? null : ElevatedButton(
+                          style: ElevatedButton.styleFrom(
+                            fixedSize: Size(useWidth, useHeight * 0.6),
+                            backgroundColor: Colors.transparent,
+                            shadowColor: Colors.transparent,
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadiusGeometry.vertical(bottom: Radius.circular(25.0)))
                           ),
+                          onPressed: (){
+                            setLocalState(() {
+                              hide = false;
+                            },);
+                          }, 
+                          child: hide ? Text("点此查看释义") : SizedBox()
                         ),
-                      );
-                    },
-                  );
-                }
-              )
-            ],
-          )
-          
-        ],
-      )
+                      ),
+                    );
+                  },
+                );
+              }
+            )
+          ],
+        )
+      ],
     );
   }
 }
