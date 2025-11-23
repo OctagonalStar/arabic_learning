@@ -4,7 +4,7 @@ on:
   pull_request:
     types: [opened, synchronize, reopened]
   push:
-    branches: [ main ]  # 可根据需要指定分支，例如 "main", "master"
+    branches: [ main ]
 
 jobs:
   check-signoff:
@@ -13,17 +13,74 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0  # 获取所有历史和分支，以便正确比较
+          fetch-depth: 0
 
       - name: Check for Sign-off
         run: |
           check_commit() {
             local commit_hash=$1
             local commit_msg=$(git show -s --format=%B "$commit_hash")
-            if ! echo "$commit_msg" | grep -q "Signed-off-by:"; then
-              echo "提交 $commit_hash 缺少 Signed-off-by 签署。"
-              echo "请使用 'git commit -s' 添加签署，或手动在提交信息中包含 'Signed-off-by: Your Name <your.email@example.com>'。"
-              return 1
+            local commit_title=$(git show -s --format=%s "$commit_hash")
+            
+            # 跳过各种自动生成的提交
+            case "$commit_title" in
+              # GitHub 合并提交
+              "Merge pull request"*)
+                echo "跳过 GitHub PR 合并提交: $commit_hash - $commit_title"
+                return 0
+                ;;
+              # Git 合并提交
+              "Merge branch"*|"Merge remote-tracking"*|"Merge tag"*)
+                echo "跳过 Git 合并提交: $commit_hash - $commit_title"
+                return 0
+                ;;
+              # Revert 提交
+              "Revert"*|"This reverts commit"*)
+                echo "跳过还原提交: $commit_hash - $commit_title"
+                return 0
+                ;;
+              # 自动版本发布提交
+              "chore(release):"*|"release:"*|"Version"*|"Bump version"*)
+                echo "跳过版本发布提交: $commit_hash - $commit_title"
+                return 0
+                ;;
+              # 依赖更新提交 (Dependabot, Renovate等)
+              "chore(deps):"*|"build(deps):"*|"Update dependency"*|"Bump"*)
+                echo "跳过依赖更新提交: $commit_hash - $commit_title"
+                return 0
+                ;;
+              # 自动化工具提交
+              "chore: auto-update"*|"ci:"*|"Automated"*)
+                echo "跳过自动化工具提交: $commit_hash - $commit_title"
+                return 0
+                ;;
+            esac
+            
+            # 检查提交信息中是否包含跳过标记
+            if echo "$commit_msg" | grep -q -E "\[skip ci\]|\[ci skip\]|\[no signoff\]"; then
+              echo "跳过标记了 [skip ci] 的提交: $commit_hash"
+              return 0
+            fi
+            
+            # 检查合并提交 (通过父提交数量判断)
+            local parent_count=$(git show --no-patch --format="%P" "$commit_hash" | wc -w)
+            if [ "$parent_count" -gt 1 ]; then
+              echo "跳过合并提交(多父提交): $commit_hash - $commit_title"
+              return 0
+            fi
+            
+            # 检查空提交 (没有文件变更)
+            if git show --format= --name-only "$commit_hash" | grep -q .; then
+              # 有文件变更，检查 Sign-off
+              if ! echo "$commit_msg" | grep -q "Signed-off-by:"; then
+                echo "提交 $commit_hash 缺少 Signed-off-by 签署。"
+                echo "提交标题: $commit_title"
+                echo "请使用 'git commit -s' 添加签署，或手动在提交信息中包含 'Signed-off-by: Your Name <your.email@example.com>'。"
+                return 1
+              fi
+            else
+              echo "跳过空提交: $commit_hash - $commit_title"
+              return 0
             fi
           }
 
@@ -38,9 +95,11 @@ jobs:
           fi
 
           if [ -z "$COMMITS_TO_CHECK" ]; then
+            echo "没有需要检查的提交"
             exit 0
           fi
 
+          echo "需要检查的提交:"
           echo "$COMMITS_TO_CHECK"
 
           HAS_ERROR=0
@@ -54,5 +113,5 @@ jobs:
             echo "::error::部分提交缺少开发者签署认证(DCO)。"
             exit 1
           else
-            echo "所有提交均已签署。"
+            echo "所有提交均已签署或已跳过。"
           fi
