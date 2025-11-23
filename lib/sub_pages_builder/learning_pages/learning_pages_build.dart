@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:math';
 
 import 'package:arabic_learning/funcs/ui.dart';
@@ -558,5 +559,109 @@ class _ConcludePageState extends State<ConcludePage> {
         ],
       ),
     );
+  }
+}
+
+class WordCardOverViewPage extends StatefulWidget {
+  const WordCardOverViewPage({super.key});
+
+  @override
+  State<StatefulWidget> createState() => _WordCardOverViewPage();
+}
+
+class _WordCardOverViewPage extends State<WordCardOverViewPage> {
+  ScrollController jsonController = ScrollController();
+  ScrollController classController = ScrollController();
+  bool allowJsonScorll = true;
+  bool allowClassScorll = false;
+
+  @override
+  Widget build(BuildContext context) {
+    MediaQueryData mediaQuery = MediaQuery.of(context);
+    return Scaffold(
+      appBar: AppBar(
+        title: Text("单词总览"),
+      ),
+      body: ListView.builder(
+        physics: allowJsonScorll ? null : NeverScrollableScrollPhysics(),
+        controller: jsonController,
+        itemCount: context.read<Global>().wordData["Classes"].length + 1,
+        itemBuilder: (context, jsonIndex) {
+          if(jsonIndex == context.read<Global>().wordData["Classes"].length) {
+            return SizedBox(height: mediaQuery.size.height);
+          }
+
+          final String jsonName = context.read<Global>().wordData["Classes"].keys.elementAt(jsonIndex);
+          return ExpansionTile(
+            title: Text(jsonName.trim()),
+            minTileHeight: 64,
+            onExpansionChanged: (value) {
+              setState(() {
+                allowClassScorll = value;
+                allowJsonScorll = !value; // 展开json后锁定首个ListView，禁止滑动
+              });
+              jsonController.animateTo(
+                (66 * jsonIndex).toDouble(), 
+                duration: Duration(milliseconds: 200), 
+                curve: StaticsVar.curve
+              );
+            },
+            children: [
+              SizedBox(
+                height: mediaQuery.size.height * 0.9,
+                child: ListView.builder(
+                  physics: allowClassScorll ? null : NeverScrollableScrollPhysics(),
+                  controller: classController,
+                  itemCount: context.read<Global>().wordData["Classes"][jsonName].length + 1,
+                  itemBuilder: (context, classIndex) {
+                    if(classIndex == context.read<Global>().wordData["Classes"][jsonName].length) {
+                      return SizedBox(height: mediaQuery.size.height); // 避免0.9空间估计不足
+                    }
+
+                    final String className = context.read<Global>().wordData["Classes"][jsonName].keys.elementAt(classIndex);
+                    return ExpansionTile(
+                      title: Text(className.trim()),
+                      minTileHeight: 62,
+                      onExpansionChanged: (value) {
+                        setState(() {
+                          allowClassScorll = !value;
+                        });
+                        classController.animateTo(
+                          (64 * classIndex).toDouble(), 
+                          duration: Duration(milliseconds: 200), 
+                          curve: StaticsVar.curve
+                        );
+                      },
+                      children: [
+                        SizedBox(
+                          height: mediaQuery.size.height * 0.8,
+                          child: GridView.builder(
+                            itemCount: context.read<Global>().wordData["Classes"][jsonName][className].length,
+                            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: mediaQuery.size.width ~/ 300), 
+                            itemBuilder: (context, index) {
+                              return Container(
+                                margin: EdgeInsets.all(8.0),
+                                child: WordCard(
+                                  word: context.read<Global>().wordData["Words"][context.read<Global>().wordData["Classes"][jsonName][className][index]],
+                                  useMask: false,
+                                  width: mediaQuery.size.width / (mediaQuery.size.width ~/ 300),
+                                  height: mediaQuery.size.width / (mediaQuery.size.width ~/ 300),
+                                ),
+                              );
+                            }
+                          ),
+                        ),
+                        SizedBox(height: mediaQuery.size.height * 0.5)
+                      ],
+                    );
+                  }
+                ),
+              ),
+            ],
+          );
+        }
+      )
+    );
+
   }
 }
