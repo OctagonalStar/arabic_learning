@@ -102,6 +102,7 @@ class _MyHomePageState extends State<MyHomePage> {
       children: [
         // 侧边导航栏
         NavigationRail(
+          minWidth: MediaQuery.of(context).size.width * 0.05,
           selectedIndex: currentIndex,
           onDestinationSelected: (int index) {
             _onNavigationTapped(index);

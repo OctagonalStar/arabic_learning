@@ -54,7 +54,7 @@ class TestPage extends StatelessWidget {
             ),
             ElevatedButton.icon(
               icon: Icon(Icons.multitrack_audio, size: 36.0),
-              label: Text('自主\n听写', style: TextStyle(fontSize: 34.0)),
+              label: FittedBox(child: Text('自主\n听写', style: TextStyle(fontSize: 34.0))),
               style: ElevatedButton.styleFrom(
                 backgroundColor: Theme.of(context).colorScheme.onPrimary.withAlpha(150),
                 fixedSize: Size(mediaQuery.size.width * 0.42, mediaQuery.size.height * 0.45,),
@@ -78,9 +78,9 @@ class TestPage extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
           children: [
             Container(
-              width: mediaQuery.size.width * 0.58,
+              width: mediaQuery.size.width * 0.50,
               height: mediaQuery.size.height * 0.16,
-              margin: EdgeInsets.all(8.0),
+              margin: EdgeInsets.all(4.0),
               decoration: BoxDecoration(
                 borderRadius: StaticsVar.br,
               ),
@@ -111,9 +111,9 @@ class TestPage extends StatelessWidget {
               ),
             ),
             Container(
-              width: mediaQuery.size.width * 0.32,
+              width: mediaQuery.size.width * 0.30,
               height: mediaQuery.size.height * 0.16,
-              margin: EdgeInsets.all(8.0),
+              margin: EdgeInsets.all(4.0),
               decoration: BoxDecoration(
                 borderRadius: StaticsVar.br,
               ),

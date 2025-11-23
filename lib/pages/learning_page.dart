@@ -49,7 +49,7 @@ class LearningPage extends StatelessWidget {
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Theme.of(context).colorScheme.onPrimary.withAlpha(150),
                   shadowColor: Colors.transparent,
-                  fixedSize: Size(mediaQuery.size.width * 0.4, mediaQuery.size.height * 0.2),
+                  fixedSize: Size(mediaQuery.size.width * 0.35, mediaQuery.size.height * 0.2),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadiusGeometry.vertical(bottom: Radius.circular(25.0)),
                   ),
