@@ -80,13 +80,14 @@ class Global with ChangeNotifier {
     "eggs": {
       "stella": false
     },
-    // fsrs 独立设置
-    // 'fsrs': {
-    //   'enabled' : false,
-    //   'scheduler': {},
-    //   'cards': [],
-    //   'reviewLogs': [],
-    // }
+    "sync": {
+      "enabled": false,
+      "account": {
+        "uri": "",
+        "userName": "",
+        "passWord": ""
+      },
+    }
   };
   static const List<MaterialColor> _themeList = [
       Colors.pink,
@@ -182,7 +183,15 @@ class Global with ChangeNotifier {
   ///  },
   ///  "eggs": {
   ///    "stella": false
-  ///  }
+  ///  },
+  /// "sync": {
+  ///   "enabled": false,
+  ///   "account": {
+  ///     "uri": "",
+  ///     "userName": "",
+  ///     "passWord": ""
+  ///   },
+  /// }
   /// ```
   Map<String, dynamic> get settingData => _settingData;
   int get wordCount => wordData["Words"]!.length;

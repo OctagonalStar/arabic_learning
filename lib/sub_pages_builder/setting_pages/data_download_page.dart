@@ -12,7 +12,6 @@ class DownloadPage extends StatelessWidget {
   const DownloadPage({super.key});
   @override
   Widget build(BuildContext context) {
-    final mediaQuery = MediaQuery.of(context);
     return Scaffold(
       appBar: AppBar(
         title: Text("下载在线词库"),
@@ -27,7 +26,10 @@ class DownloadPage extends StatelessWidget {
           }
           return ListView(
             children: [
-              settingItem(context, mediaQuery, snapshot.data!, "来自 Github @${StaticsVar.onlineDictOwner} 学长的词库 (在此表示感谢)")
+              SettingItem(
+                title: "来自 Github @${StaticsVar.onlineDictOwner} 学长的词库 (在此表示感谢)",
+                children: snapshot.data!,
+              )
             ],
           );
         }
