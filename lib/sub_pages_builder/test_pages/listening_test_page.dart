@@ -3,17 +3,25 @@ import 'package:arabic_learning/funcs/utili.dart';
 import 'package:arabic_learning/vars/statics_var.dart';
 import 'package:flutter/material.dart';
 
-class ForeListeningSettingPage extends StatelessWidget {
+class ForeListeningSettingPage extends StatefulWidget {
   const ForeListeningSettingPage({super.key});
 
   @override
+  State<StatefulWidget> createState() => _ForeListeningSettingPage();
+}
+
+class _ForeListeningSettingPage extends State<ForeListeningSettingPage> {
+  double playRate = 1.0;
+  int playTimes = 3;
+  int interval = 5;
+  int intervalBetweenWords = 10;
+  List<List<String>> selectedClasses = [];
+  
+
+  @override
   Widget build(BuildContext context) {
-    double playRate = 1.0;
-    int playTimes = 3;
-    int interval = 5;
-    int intervalBetweenWords = 10;
-    List<List<String>>? selectedClasses;
     MediaQueryData mediaQuery = MediaQuery.of(context);
+    int wordCount = getSelectedWords(context, forceSelectClasses: selectedClasses).length;
     return Scaffold(
       appBar: AppBar(
         title: Text('自主听写预设置'),
@@ -35,12 +43,22 @@ class ForeListeningSettingPage extends StatelessWidget {
                   TextContainer(text: "1. 发音符号测试"),
                   IconButton(
                     onPressed: () {
-                      playTextToSpeech("َ", context);
+                      playTextToSpeech("وَ", context);
                     }, 
                     icon: Icon(Icons.volume_up, size: 100)
                   ),
-                  TextContainer(text: "点击以上按钮，等待约10秒。期间如果你能听到开口短音符音，则说明你当前音源支持发音符号。"),
-                  TextContainer(text: "如果你不能听到开口短音符音，请*逐个*尝试以下修复方案：\n1- 软件设置中的\"选择文本转语音接口\"不能选择\"请求TextReadTTS.com的语音\"\n2- 在设备系统设置中添加 阿拉伯语语言\n3. 查找设备设置中\"Text To Speech\"或\"文本转语音\"选项，检查是否有阿拉伯语(国际符号为ar-00或ar-SA)支持（由于手机厂商多样性，无法保证所有的手机都支持阿拉伯语）\n4. 如果你是Android系统手机，还可以尝试安装\"Google 语音识别和语音合成\"(包名为com.google.android.tts)\n5. 终极方案：使用APP版本，在软件内-设置 下载文本转语音神经网络模型并设置文本转语音为神经网络合成语音")
+                  TextContainer(text: "点击以上按钮，等待约10秒。期间如果你能听到u和开口短音符音(wa)，则说明你当前音源支持发音符号。"),
+                  ExpansionTile(
+                    title: Text("解决方案"),
+                    children: [
+                      TextContainer(text: "如果你不能听到开口短音符音，请*逐个*尝试以下修复方案："),
+                      TextContainer(text: "1. 软件设置中的\"选择文本转语音接口\"不能选择\"请求TextReadTTS.com的语音\""),
+                      TextContainer(text: "2. 查找设备设置中\"Text To Speech\"或\"文本转语音\"选项，检查是否有阿拉伯语(国际符号为ar-00或ar-SA)支持（由于手机厂商多样性，无法保证所有的手机都支持阿拉伯语）"),
+                      TextContainer(text: "3. 如果你是Android系统手机，还可以尝试安装\"Google 语音识别和语音合成\"(包名为com.google.android.tts)", selectable: true),
+                      TextContainer(text: "4. 终极方案：使用APP版本，在软件内-设置 下载文本转语音神经网络模型并设置文本转语音为神经网络合成语音")
+                    ],
+                  )
+                  
                 ],
               ),
             ),
@@ -54,6 +72,7 @@ class ForeListeningSettingPage extends StatelessWidget {
               ),
               onPressed: () async {
                 selectedClasses = await popSelectClasses(context, withCache: false);
+                setState(() {});
               }, 
               child: Column(
                 children: [
@@ -67,113 +86,109 @@ class ForeListeningSettingPage extends StatelessWidget {
                 ],
               )
             ),
-            StatefulBuilder(
-              builder: (context, setLocalState) {
-                return Container(
-                  margin: EdgeInsets.all(16.0),
-                  padding: EdgeInsets.all(8.0),
-                  decoration: BoxDecoration(
-                    color: Theme.of(context).colorScheme.surfaceContainer,
-                    borderRadius: StaticsVar.br,
-                  ),
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.start,
-                    crossAxisAlignment: CrossAxisAlignment.start,
+            Container(
+              margin: EdgeInsets.all(16.0),
+              padding: EdgeInsets.all(8.0),
+              decoration: BoxDecoration(
+                color: Theme.of(context).colorScheme.surfaceContainer,
+                borderRadius: StaticsVar.br,
+              ),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.start,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  TextContainer(text: "3. 听写设置"),
+                  Row(
                     children: [
-                      TextContainer(text: "3. 听写设置"),
-                      Row(
-                        children: [
-                          Expanded(child: Text("单词播放语速")),
-                          SizedBox(
-                            width: mediaQuery.size.width * 0.6,
-                            child: Slider(
-                              value: playRate,
-                              min: 0.5,
-                              max: 1.5,
-                              divisions: 10,
-                              label: playRate.toStringAsFixed(1),
-                              onChanged: (double value) {
-                                setLocalState(() {
-                                  playRate = value;
-                                });
-                              }
-                            ),
-                          ),
-                          Text("${playRate.toStringAsFixed(1)}倍"),
-                        ],
+                      Expanded(child: Text("单词播放语速")),
+                      SizedBox(
+                        width: mediaQuery.size.width * 0.6,
+                        child: Slider(
+                          value: playRate,
+                          min: 0.5,
+                          max: 1.5,
+                          divisions: 10,
+                          label: playRate.toStringAsFixed(1),
+                          onChanged: (double value) {
+                            setState(() {
+                              playRate = value;
+                            });
+                          }
+                        ),
                       ),
-                      Row(
-                        children: [
-                          Expanded(child: Text("单词播放次数")),
-                          SizedBox(
-                            width: mediaQuery.size.width * 0.6,
-                            child: Slider(
-                              value: playTimes.toDouble(),
-                              min: 1,
-                              max: 5,
-                              divisions: 4,
-                              label: playTimes.toString(),
-                              onChanged: (double value) {
-                                setLocalState(() {
-                                  playTimes = value.toInt();
-                                });
-                              }
-                            ),
-                          ),
-                          Text("${playTimes.toString()}次"),
-                        ]
-                      ),
-                      Row(
-                        children: [
-                          Expanded(child: Text("不同单词间隔时间(秒)")),
-                          SizedBox(
-                            width: mediaQuery.size.width * 0.6,
-                            child: Slider(
-                              value: intervalBetweenWords.toDouble(),
-                              min: 1,
-                              max: 20,
-                              divisions: 19,
-                              label: intervalBetweenWords.toString(),
-                              onChanged: (double value) {
-                                setLocalState(
-                                  () {
-                                    intervalBetweenWords = value.toInt();
-                                  }
-                                );
-                              }
-                            ),
-                          ),
-                          Text("${intervalBetweenWords.toString()}秒"),
-                        ]
-                      ),
-                      Row(
-                        children: [
-                          Expanded(child: Text("同一单词间隔时间(秒)")),
-                          SizedBox(
-                            width: mediaQuery.size.width * 0.6,
-                            child: Slider(
-                              value: interval.toDouble(),
-                              min: 1,
-                              max: 15,
-                              divisions: 14,
-                              label: interval.toString(),
-                              onChanged: (double value) {
-                                setLocalState(
-                                  () {
-                                    interval = value.toInt();
-                                  }
-                                );
-                              }
-                            ),
-                          ),
-                          Text("${interval.toString()}秒"),
-                        ]
-                      ),
-                      TextContainer(text: "已选择了 ${getSelectedWords(context, forceSelectClasses: selectedClasses).length} 个单词，大致需要${((getSelectedWords(context, forceSelectClasses: selectedClasses).length * playTimes * (interval + 1) + getSelectedWords(context, forceSelectClasses: selectedClasses).length * intervalBetweenWords)) ~/ 60}分钟 完成"),
+                      Text("${playRate.toStringAsFixed(1)}倍"),
                     ],
                   ),
-                );
-              }
+                  Row(
+                    children: [
+                      Expanded(child: Text("单词播放次数")),
+                      SizedBox(
+                        width: mediaQuery.size.width * 0.6,
+                        child: Slider(
+                          value: playTimes.toDouble(),
+                          min: 1,
+                          max: 5,
+                          divisions: 4,
+                          label: playTimes.toString(),
+                          onChanged: (double value) {
+                            setState(() {
+                              playTimes = value.toInt();
+                            });
+                          }
+                        ),
+                      ),
+                      Text("${playTimes.toString()}次"),
+                    ]
+                  ),
+                  Row(
+                    children: [
+                      Expanded(child: Text("不同单词间隔时间(秒)")),
+                      SizedBox(
+                        width: mediaQuery.size.width * 0.6,
+                        child: Slider(
+                          value: intervalBetweenWords.toDouble(),
+                          min: 1,
+                          max: 20,
+                          divisions: 19,
+                          label: intervalBetweenWords.toString(),
+                          onChanged: (double value) {
+                            setState(
+                              () {
+                                intervalBetweenWords = value.toInt();
+                              }
+                            );
+                          }
+                        ),
+                      ),
+                      Text("${intervalBetweenWords.toString()}秒"),
+                    ]
+                  ),
+                  Row(
+                    children: [
+                      Expanded(child: Text("同一单词间隔时间(秒)")),
+                      SizedBox(
+                        width: mediaQuery.size.width * 0.6,
+                        child: Slider(
+                          value: interval.toDouble(),
+                          min: 1,
+                          max: 15,
+                          divisions: 14,
+                          label: interval.toString(),
+                          onChanged: (double value) {
+                            setState(
+                              () {
+                                interval = value.toInt();
+                              }
+                            );
+                          }
+                        ),
+                      ),
+                      Text("${interval.toString()}秒"),
+                    ]
+                  ),
+                  TextContainer(text: "已选择了 $wordCount 个单词，大致需要${((wordCount * playTimes * (interval + 1) + wordCount * intervalBetweenWords)) ~/ 60}分钟 完成"),
+                ],
+              ),
             ),
             ElevatedButton.icon(
               style: ElevatedButton.styleFrom(
@@ -186,7 +201,7 @@ class ForeListeningSettingPage extends StatelessWidget {
               icon: Icon(Icons.rocket_launch, size: 32.0,),
               label: Text("听写，启动！", style: TextStyle(fontSize: 24.0),),
               onPressed: () {
-                if((selectedClasses ?? []).isEmpty) {
+                if(selectedClasses.isEmpty) {
                   alart(context, "是哪个小可爱没选课程就来听写了");
                   return;
                 }
@@ -228,7 +243,7 @@ class MainListeningPage extends StatefulWidget {
 class _MainListeningPageState extends State<MainListeningPage> {
   int index = 0;
   String state = "请点击开始按钮以开始听写";
-  String counter = "进入时间: ${DateTime.now().toString()}";
+  String counter = "";
   List<int> marks = [];
   int stage = 0;
   // 0: 播放前
