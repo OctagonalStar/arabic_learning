@@ -616,7 +616,6 @@ class _WordCardOverViewPage extends State<WordCardOverViewPage> {
                     if(classIndex == context.read<Global>().wordData["Classes"][jsonName].length) {
                       return SizedBox(height: mediaQuery.size.height); // 避免0.9空间估计不足
                     }
-
                     final String className = context.read<Global>().wordData["Classes"][jsonName].keys.elementAt(classIndex);
                     return ExpansionTile(
                       title: Text(className.trim()),
@@ -625,11 +624,24 @@ class _WordCardOverViewPage extends State<WordCardOverViewPage> {
                         setState(() {
                           allowClassScorll = !value;
                         });
-                        classController.animateTo(
-                          (64 * classIndex).toDouble(), 
-                          duration: Duration(milliseconds: 200), 
-                          curve: StaticsVar.curve
-                        );
+                        if(value) {
+                          classController.animateTo(
+                            (64 * classIndex).toDouble(), 
+                            duration: Duration(milliseconds: 200), 
+                            curve: StaticsVar.curve
+                          );
+                          jsonController.animateTo(
+                            (66 * (jsonIndex + 1)).toDouble(), 
+                            duration: Duration(milliseconds: 200), 
+                            curve: StaticsVar.curve
+                          );
+                        } else {
+                          jsonController.animateTo(
+                            (66 * jsonIndex).toDouble(), 
+                            duration: Duration(milliseconds: 200), 
+                            curve: StaticsVar.curve
+                          );
+                        }
                       },
                       children: [
                         SizedBox(
