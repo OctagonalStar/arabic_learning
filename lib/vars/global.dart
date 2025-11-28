@@ -206,7 +206,6 @@ class Global with ChangeNotifier {
       wordData = jsonDecode(jsonEncode({"Words": [], "Classes": {}})) as Map<String, dynamic>;
       await postInit();
     } else {
-      wordData = jsonDecode(prefs.getString("wordData")!) as Map<String, dynamic>;
       await conveySetting();
     }
     inited = true;
@@ -215,6 +214,7 @@ class Global with ChangeNotifier {
 
   // 预处理一些版本更新的配置文件兼容
   Future<void> conveySetting() async {
+    wordData = jsonDecode(prefs.getString("wordData")!) as Map<String, dynamic>;
     Map<String, dynamic> oldSetting = jsonDecode(prefs.getString("settingData")!) as Map<String, dynamic>;
     if(oldSetting["LastVersion"] != _settingData["LastVersion"]) {
       updateLogRequire = true;

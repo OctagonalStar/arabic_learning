@@ -28,6 +28,7 @@ class DownloadPage extends StatelessWidget {
             children: [
               SettingItem(
                 title: "来自 Github @${StaticsVar.onlineDictOwner} 学长的词库 (在此表示感谢)",
+                padding: EdgeInsets.all(8.0),
                 children: snapshot.data!,
               )
             ],

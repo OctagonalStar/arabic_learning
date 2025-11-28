@@ -5,7 +5,7 @@ class SettingItem extends StatelessWidget {
   final String title;
   final EdgeInsetsGeometry? padding;
   final List<Widget> children;
-  const SettingItem({super.key, required this.children, required this.title, this.padding});
+  const SettingItem({super.key, required this.title, required this.children, this.padding});
 
   @override
   Widget build(BuildContext context) {
