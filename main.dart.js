@@ -50792,7 +50792,7 @@ q.m(0,a,this.b.a(A.b86(A.oa(p.a(q.i(0,a)),s,r),A.oa(b,s,r),s,r)))}else q.m(0,a,b
 $S(){return this.c.h("@<0>").ak(this.b).h("~(1,2)")}}
 A.aVN.prototype={
 $1(a){var s="questionSections",r="shuffleInternaly",q="shuffleExternaly",p=t.N,o=t.K,n=t.Y
-p=new A.kp(A.ag(["User","","LastVersion",110,"regular",A.ag(["theme",9,"font",0,"darkMode",!1,"hideAppDownloadButton",!1],p,o),"audio",A.ag(["useBackupSource",0,"playRate",1],p,t.Ci),"learning",A.ag(["startDate",0,"lastDate",0,"KnownWords",[]],p,o),"quiz",A.ag(["zh_ar",A.ag([s,A.b([1,2],n),"shuffleGlobally",!0,r,!0,q,!0,"modifyAllowed",!0],p,o),"ar",A.ag([s,A.b([2],n),"shuffleGlobally",!0,r,!0,q,!0,"modifyAllowed",!0],p,o),"zh",A.ag([s,A.b([1],n),"shuffleGlobally",!0,r,!0,q,!0,"modifyAllowed",!0],p,o)],p,t.nf),"eggs",A.ag(["stella",!1],p,t.y),"sync",A.ag(["enabled",!1,"account",A.ag(["uri","","userName","","passWord",""],p,p)],p,o)],p,t.z),$.aQ())
+p=new A.kp(A.ag(["User","","LastVersion",111,"regular",A.ag(["theme",9,"font",0,"darkMode",!1,"hideAppDownloadButton",!1],p,o),"audio",A.ag(["useBackupSource",0,"playRate",1],p,t.Ci),"learning",A.ag(["startDate",0,"lastDate",0,"KnownWords",[]],p,o),"quiz",A.ag(["zh_ar",A.ag([s,A.b([1,2],n),"shuffleGlobally",!0,r,!0,q,!0,"modifyAllowed",!0],p,o),"ar",A.ag([s,A.b([2],n),"shuffleGlobally",!0,r,!0,q,!0,"modifyAllowed",!0],p,o),"zh",A.ag([s,A.b([1],n),"shuffleGlobally",!0,r,!0,q,!0,"modifyAllowed",!0],p,o)],p,t.nf),"eggs",A.ag(["stella",!1],p,t.y),"sync",A.ag(["enabled",!1,"account",A.ag(["uri","","userName","","passWord",""],p,p)],p,o)],p,t.z),$.aQ())
 p.jh()
 return p},
 $S:319}
@@ -50939,7 +50939,7 @@ case 1:return A.n(q,r)}})
 return A.o($async$$0,r)},
 $S:72}
 A.aMX.prototype={
-$1(a){var s=null,r=A.boG(110,6),q=t.w,p=A.b8(a,s,q).w
+$1(a){var s=null,r=A.boG(111,6),q=t.w,p=A.b8(a,s,q).w
 p=A.aC(new A.VF(this.a.aD(),!1,s,s,s,s,s,s,s,s,s,s,s,s,s,B.TR,B.TS,B.Uc,!1,s),p.a.b*0.8,s)
 q=A.ck(s,s,s,s,s,s,s,s,s,new A.B(1/0,A.b8(a,s,q).w.a.b*0.07),s,s,s,s,s,s,s,s,s,s,s)
 return A.fp(!1,B.K,!0,s,A.bG(A.b([new A.cu("\u66f4\u65b0\u5185\u5bb9 \u8f6f\u4ef6\u7248\u672c: "+r,s,!1,s,B.G,s),p,A.dc(!1,A.X("\u77e5\u9053\u4e86",s,s,s,s,s,s),s,s,s,s,s,s,new A.aMW(a),s,q)],t.p),B.j,B.o,B.k),B.r,s,0,s,s,s,s,s,B.b8)},

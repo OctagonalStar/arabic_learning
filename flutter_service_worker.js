@@ -11,7 +11,7 @@ const RESOURCES = {"flutter.js": "888483df48293866f9f41d3d9274a779",
 "manifest.json": "9d33e64c3a3473963600153e351fca76",
 "index.html": "cbb3c6b6ef21e3c974820dffb67e9437",
 "/": "cbb3c6b6ef21e3c974820dffb67e9437",
-"assets/CHANGELOG.md": "fd2fca3ef6aafed9b7b5a97773a29f8b",
+"assets/CHANGELOG.md": "7972da29cd035e3a6e6298c4c88448e9",
 "assets/shaders/ink_sparkle.frag": "ecc85a2e95f5e9f53123dcaf8cb9b6ce",
 "assets/AssetManifest.bin.json": "76ebf1ee6934b1be4e9682b9bcb613dd",
 "assets/assets/fonts/ar/Vazirmatn-VariableFont_wght.ttf": "65b9aca0838989aef194c9cc8c348778",
@@ -36,9 +36,9 @@ const RESOURCES = {"flutter.js": "888483df48293866f9f41d3d9274a779",
 "canvaskit/canvaskit.js.symbols": "58832fbed59e00d2190aa295c4d70360",
 "canvaskit/skwasm.js.symbols": "0088242d10d7e7d6d2649d1fe1bda7c1",
 "favicon.png": "c8380fed909876e72c277c2faf22083f",
-"flutter_bootstrap.js": "0a65bb48491438f7eb4c3c2d031d9d04",
-"version.json": "266292ae459fddbe79dec93fef70b82e",
-"main.dart.js": "aa42b5b9f4b39c096d42189de77fc734"};
+"flutter_bootstrap.js": "1e3e646d3ecf89f1f8b49f9584296836",
+"version.json": "26871c81d8843ebc51c6aab9674b1aed",
+"main.dart.js": "5b831a3480a648ccb73224be01329b68"};
 // The application shell files that are downloaded before a service worker can
 // start.
 const CORE = ["main.dart.js",
