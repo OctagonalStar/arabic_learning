@@ -580,6 +580,7 @@ class _WordCardOverViewPage extends State<WordCardOverViewPage> {
   ScrollController classController = ScrollController();
   bool allowJsonScorll = true;
   bool allowClassScorll = false;
+  int forceColumn = 0;
 
   @override
   Widget build(BuildContext context) {
@@ -587,6 +588,63 @@ class _WordCardOverViewPage extends State<WordCardOverViewPage> {
     return Scaffold(
       appBar: AppBar(
         title: Text("单词总览"),
+        actions: [
+          IconButton(
+            onPressed: () async {
+              await showDialog(
+                context: context, 
+                builder: (context) {
+                  return AlertDialog(
+                    content: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        StatefulBuilder(
+                          builder: (context, setLocalState) {
+                            return Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Text("设置固定列数"),
+                                Slider(
+                                  min: 0,
+                                  max: 5,
+                                  divisions: 5,
+                                  value: forceColumn.toDouble(), 
+                                  onChanged: (value){
+                                    setLocalState(() {
+                                      forceColumn = value.ceil();
+                                    });
+                                  }
+                                ),
+                                SizedBox(width: 60, child: Text(forceColumn == 0 ? "0(自动)" : forceColumn.toString()))
+                              ],
+                            );
+                          }
+                        ),
+                      ],
+                    ),
+                    actions: [
+                      ElevatedButton(
+                        onPressed: (){
+                          Navigator.pop(context);
+                          setState(() {}); // 刷新全局状态
+                        }, 
+                        child: Text("确认")
+                      ),
+                      ElevatedButton(
+                        onPressed: (){
+                          Navigator.pop(context);
+                        }, 
+                        child: Text("取消")
+                      )
+                    ],
+                  );
+                }
+              );
+              
+            }, 
+            icon: Icon(Icons.view_column)
+          )
+        ],
       ),
       body: ListView.builder(
         physics: allowJsonScorll ? null : NeverScrollableScrollPhysics(),
@@ -623,7 +681,6 @@ class _WordCardOverViewPage extends State<WordCardOverViewPage> {
                     if(classIndex == context.read<Global>().wordData["Classes"][jsonName].length) {
                       return SizedBox(height: mediaQuery.size.height); // 避免0.9空间估计不足
                     }
-
                     final String className = context.read<Global>().wordData["Classes"][jsonName].keys.elementAt(classIndex);
                     return ExpansionTile(
                       title: Text(className.trim()),
@@ -632,26 +689,39 @@ class _WordCardOverViewPage extends State<WordCardOverViewPage> {
                         setState(() {
                           allowClassScorll = !value;
                         });
-                        classController.animateTo(
-                          (64 * classIndex).toDouble(), 
-                          duration: Duration(milliseconds: 200), 
-                          curve: StaticsVar.curve
-                        );
+                        if(value) {
+                          classController.animateTo(
+                            (64 * classIndex).toDouble(), 
+                            duration: Duration(milliseconds: 200), 
+                            curve: StaticsVar.curve
+                          );
+                          jsonController.animateTo(
+                            (66 * (jsonIndex + 1)).toDouble(), 
+                            duration: Duration(milliseconds: 200), 
+                            curve: StaticsVar.curve
+                          );
+                        } else {
+                          jsonController.animateTo(
+                            (66 * jsonIndex).toDouble(), 
+                            duration: Duration(milliseconds: 200), 
+                            curve: StaticsVar.curve
+                          );
+                        }
                       },
                       children: [
                         SizedBox(
                           height: mediaQuery.size.height * 0.8,
                           child: GridView.builder(
                             itemCount: context.read<Global>().wordData["Classes"][jsonName][className].length,
-                            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: mediaQuery.size.width ~/ 300), 
+                            gridDelegate: forceColumn == 0 ? SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: mediaQuery.size.width ~/ 300) : SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: forceColumn), 
                             itemBuilder: (context, index) {
                               return Container(
                                 margin: EdgeInsets.all(8.0),
                                 child: WordCard(
                                   word: context.read<Global>().wordData["Words"][context.read<Global>().wordData["Classes"][jsonName][className][index]],
                                   useMask: false,
-                                  width: mediaQuery.size.width / (mediaQuery.size.width ~/ 300),
-                                  height: mediaQuery.size.width / (mediaQuery.size.width ~/ 300),
+                                  width: mediaQuery.size.width / (forceColumn == 0 ? (mediaQuery.size.width ~/ 300) : forceColumn),
+                                  height: mediaQuery.size.width / (forceColumn == 0 ? (mediaQuery.size.width ~/ 300) : forceColumn),
                                 ),
                               );
                             }
