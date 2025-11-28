@@ -87,7 +87,7 @@ class _MyHomePageState extends State<MyHomePage> {
   late List<Widget> _pageList;
   int currentIndex = 1;
   bool onSlip = false;
-  final PageController _pageController = PageController();
+  final PageController _pageController = PageController(initialPage: 1);
   static const Duration _duration = Duration(milliseconds: 500);
   bool disPlayedFirst = false;
 
