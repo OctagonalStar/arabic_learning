@@ -5,7 +5,6 @@ import 'package:arabic_learning/vars/license_storage.dart';
 import 'package:arabic_learning/vars/statics_var.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:convex_bottom_bar/convex_bottom_bar.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_markdown_plus/flutter_markdown_plus.dart';
 import 'package:window_manager/window_manager.dart';
@@ -172,20 +171,52 @@ class _MyHomePageState extends State<MyHomePage> {
           ),
         ),
         // 底部导航栏
-        ConvexAppBar(
-          key: ValueKey<int>(currentIndex),
-          curve: StaticsVar.curve,
-          style: TabStyle.flip,
-          backgroundColor: Theme.of(context).colorScheme.primary.withAlpha(150),
-          items: const [
-            TabItem(icon: Icons.home_outlined, title: '主页', activeIcon: Icons.home_filled),
-            TabItem(icon: Icons.book_outlined, title: '学习', activeIcon: Icons.book),
-            TabItem(icon: Icons.edit_outlined, title: '测试', activeIcon: Icons.edit),
-            TabItem(icon: Icons.settings_outlined, title: '设置', activeIcon: Icons.settings),
-          ],
-          initialActiveIndex: currentIndex,
-          onTap: _onNavigationTapped,
-        ),
+        NavigationBar(
+          selectedIndex: currentIndex,
+          onDestinationSelected: (int index) {
+            _onNavigationTapped(index);
+          },
+          height: MediaQuery.of(context).size.height * 0.1,
+          animationDuration: Duration(milliseconds: 500),
+          labelBehavior: NavigationDestinationLabelBehavior.onlyShowSelected,
+          backgroundColor: Theme.of(context).colorScheme.onPrimary.withAlpha(150),
+          destinations: const [
+            NavigationDestination(
+              icon: Icon(Icons.home_outlined),
+              selectedIcon: Icon(Icons.home),
+              label: '主页',
+            ),
+            NavigationDestination(
+              icon: Icon(Icons.book_outlined),
+              selectedIcon: Icon(Icons.book),
+              label: '学习',
+            ),
+            NavigationDestination(
+              icon: Icon(Icons.edit_outlined),
+              selectedIcon: Icon(Icons.edit),
+              label: '测试',
+            ),
+            NavigationDestination(
+              icon: Icon(Icons.settings_outlined),
+              selectedIcon: Icon(Icons.settings),
+              label: '设置',
+            ),
+          ]
+        )
+        // ConvexAppBar(
+        //   key: ValueKey<int>(currentIndex),
+        //   curve: StaticsVar.curve,
+        //   style: TabStyle.flip,
+        //   backgroundColor: Theme.of(context).colorScheme.primary.withAlpha(150),
+        //   items: const [
+        //     TabItem(icon: Icons.home_outlined, title: '主页', activeIcon: Icons.home_filled),
+        //     TabItem(icon: Icons.book_outlined, title: '学习', activeIcon: Icons.book),
+        //     TabItem(icon: Icons.edit_outlined, title: '测试', activeIcon: Icons.edit),
+        //     TabItem(icon: Icons.settings_outlined, title: '设置', activeIcon: Icons.settings),
+        //   ],
+        //   initialActiveIndex: currentIndex,
+        //   onTap: _onNavigationTapped,
+        // ),
       ],
     );
   }
