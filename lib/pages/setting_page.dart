@@ -271,7 +271,7 @@ class _SettingPage extends State<SettingPage> {
         style: ElevatedButton.styleFrom(
           minimumSize: Size.fromHeight(mediaQuery.size.height * 0.08),
           backgroundColor: Theme.of(context).colorScheme.onPrimary.withAlpha(150),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadiusGeometry.vertical(bottom: Radius.circular(25.0)))
+          shape: BeveledRectangleBorder()
         ),
         onPressed: (){
           Navigator.of(context).push(MaterialPageRoute(builder: (context) => QuestionsSettingLeadingPage()));
