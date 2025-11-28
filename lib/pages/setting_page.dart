@@ -23,31 +23,33 @@ class SettingPage extends StatefulWidget {
 class _SettingPage extends State<SettingPage> {
   @override
   Widget build(BuildContext context) {
-    return Consumer<Global>(
-      builder: (context, value, child) {
-        var setting = value.settingData;
-        return ListView(
-          children: [
-            SettingItem(
-              title: "常规设置",
-              padding: EdgeInsets.all(8.0),
-              children: regularSetting(context, setting),
-            ),
-            SettingItem(
-              title: "学习设置", 
-              children: dataSetting(context, setting), 
-            ),
-            SettingItem(
-              title: "音频设置", 
-              children: audioSetting(context, setting), 
-            ),
-            SettingItem(
-              title: "关于", 
-              children: aboutSetting(context, setting), 
-            ),
-          ],
-        );
-      },
+    return Scaffold(
+      appBar: AppBar(title: Text("设置")),
+      body: Consumer<Global>(
+        builder: (context, value, child) {
+          return ListView(
+            children: [
+              SettingItem(
+                title: "常规设置",
+                padding: EdgeInsets.all(8.0),
+                children: regularSetting(context, value.settingData),
+              ),
+              SettingItem(
+                title: "学习设置", 
+                children: dataSetting(context, value.settingData), 
+              ),
+              SettingItem(
+                title: "音频设置", 
+                children: audioSetting(context, value.settingData), 
+              ),
+              SettingItem(
+                title: "关于", 
+                children: aboutSetting(context, value.settingData), 
+              ),
+            ],
+          );
+        },
+      ),
     );
   }
 
@@ -271,7 +273,7 @@ class _SettingPage extends State<SettingPage> {
         style: ElevatedButton.styleFrom(
           minimumSize: Size.fromHeight(mediaQuery.size.height * 0.08),
           backgroundColor: Theme.of(context).colorScheme.onPrimary.withAlpha(150),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadiusGeometry.vertical(bottom: Radius.circular(25.0)))
+          shape: BeveledRectangleBorder()
         ),
         onPressed: (){
           Navigator.of(context).push(MaterialPageRoute(builder: (context) => QuestionsSettingLeadingPage()));

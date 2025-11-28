@@ -12,7 +12,7 @@ class FSRS {
 
   // index != cardId; cardId = wordId = the index of word in global.wordData[words]
 
-  Future<void> init() async {
+  Future<bool> init() async {
     prefs = await SharedPreferences.getInstance();
     if(!prefs.containsKey("fsrsData")) {
       settingData = {
@@ -23,7 +23,7 @@ class FSRS {
         'rater': {'scheme': 0},
       };
       prefs.setString("fsrsData", jsonEncode(settingData));
-      return;
+      return false;
     }
     settingData = jsonDecode(prefs.getString("fsrsData")!) as Map<String, dynamic>;
     if(isEnabled()){
@@ -33,7 +33,9 @@ class FSRS {
         reviewLogs.add(ReviewLog.fromMap(settingData['reviewLog'][i]));
       }
       rater = Rater(settingData['rater']['scheme']);
+      return true;
     }
+    return false;
   }
 
   void save() async {
