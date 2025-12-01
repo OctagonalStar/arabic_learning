@@ -7,8 +7,9 @@ class SharedPreferences {
   late bool type; // true: shpr ; false: indexDB
   late idb.IdbFactory idbFactory;
   late idb.Database db;
-  Map<String, dynamic> dbCache = {}; // 使用缓存避免异步加载
   late shpr.SharedPreferences prefs;
+  static const List<String> usedKeys = ["settingData", "wordData", "fsrsData"]; // ! change this whenever add new setting key !
+  Map<String, dynamic> dbCache = {}; // 使用缓存避免异步加载
   static Future<SharedPreferences> getInstance() async {
     SharedPreferences rt = SharedPreferences();
     if(kIsWeb) {
@@ -24,9 +25,9 @@ class SharedPreferences {
         );
         var txn = rt.db.transaction("data", "readonly");
         var store = txn.objectStore("data");
-        rt.dbCache["settingData"] = await store.getObject("settingData");
-        rt.dbCache["wordData"] = await store.getObject("wordData");
-        rt.dbCache["fsrsData"] = await store.getObject("fsrsData");
+        for(String keyName in usedKeys) {
+          rt.dbCache[keyName] = await store.getObject(keyName);
+        }
         rt.type = false;
       } catch (e) {
         // print("FallBack to shpr $e");
@@ -80,6 +81,25 @@ class SharedPreferences {
         }
       }
       return false;
+    }
+  }
+
+  Map<String, dynamic> export() {
+    if(type) {
+      Map<String, dynamic> overall = {};
+      for(String keyName in usedKeys){
+        overall[keyName] = prefs.getString(keyName);
+      }
+      return overall;
+    } else {
+      return dbCache;
+    }
+  }
+
+  void recovery(Map<String, dynamic> backup) {
+    if(!type) dbCache = {}; // create a new instance
+    for(String keyName in usedKeys) {
+      setString(keyName, backup[keyName]);
     }
   }
 }

@@ -5,6 +5,7 @@ import 'package:arabic_learning/sub_pages_builder/setting_pages/data_download_pa
 import 'package:arabic_learning/sub_pages_builder/setting_pages/item_widget.dart';
 import 'package:arabic_learning/sub_pages_builder/setting_pages/model_download_page.dart' show ModelDownload;
 import 'package:arabic_learning/sub_pages_builder/setting_pages/questions_setting_page.dart' show QuestionsSettingLeadingPage;
+import 'package:arabic_learning/sub_pages_builder/setting_pages/sync_page.dart' show DataSyncPage;
 import 'package:arabic_learning/vars/global.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:file_picker/file_picker.dart';
@@ -22,23 +23,38 @@ class SettingPage extends StatefulWidget {
 class _SettingPage extends State<SettingPage> {
   @override
   Widget build(BuildContext context) {
-    final mediaQuery = MediaQuery.of(context);
-    return Consumer<Global>(
-      builder: (context, value, child) {
-        var setting = value.settingData;
-        return ListView(
-          children: [
-            settingItem(context, mediaQuery, regularSetting(mediaQuery, context, setting), "常规设置"),
-            settingItem(context, mediaQuery, dataSetting(mediaQuery, context, setting), "学习设置", withPadding: false),
-            settingItem(context, mediaQuery, audioSetting(mediaQuery, context, setting), "音频设置", withPadding: false),
-            settingItem(context, mediaQuery, aboutSetting(mediaQuery, context, setting), "关于", withPadding: false),
-          ],
-        );
-      },
+    return Scaffold(
+      appBar: AppBar(title: Text("设置")),
+      body: Consumer<Global>(
+        builder: (context, value, child) {
+          return ListView(
+            children: [
+              SettingItem(
+                title: "常规设置",
+                padding: EdgeInsets.all(8.0),
+                children: regularSetting(context, value.settingData),
+              ),
+              SettingItem(
+                title: "学习设置", 
+                children: dataSetting(context, value.settingData), 
+              ),
+              SettingItem(
+                title: "音频设置", 
+                children: audioSetting(context, value.settingData), 
+              ),
+              SettingItem(
+                title: "关于", 
+                children: aboutSetting(context, value.settingData), 
+              ),
+            ],
+          );
+        },
+      ),
     );
   }
 
-  List<Widget> regularSetting(MediaQueryData mediaQuery, BuildContext context, Map<String, dynamic> setting) {
+  List<Widget> regularSetting(BuildContext context, Map<String, dynamic> setting) {
+    MediaQueryData mediaQuery = MediaQuery.of(context);
     return  [
       Row(
         children: [
@@ -117,7 +133,8 @@ class _SettingPage extends State<SettingPage> {
     ];
   }
   
-  List<Widget> dataSetting(MediaQueryData mediaQuery, BuildContext context, Map<String, dynamic> setting) {
+  List<Widget> dataSetting(BuildContext context, Map<String, dynamic> setting) {
+    MediaQueryData mediaQuery = MediaQuery.of(context);
     return [
       Column(
         children: [
@@ -256,7 +273,7 @@ class _SettingPage extends State<SettingPage> {
         style: ElevatedButton.styleFrom(
           minimumSize: Size.fromHeight(mediaQuery.size.height * 0.08),
           backgroundColor: Theme.of(context).colorScheme.onPrimary.withAlpha(150),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadiusGeometry.vertical(bottom: Radius.circular(25.0)))
+          shape: BeveledRectangleBorder()
         ),
         onPressed: (){
           Navigator.of(context).push(MaterialPageRoute(builder: (context) => QuestionsSettingLeadingPage()));
@@ -268,11 +285,29 @@ class _SettingPage extends State<SettingPage> {
             Icon(Icons.arrow_forward_ios)
           ],
         )
-      )
+      ),
+      ElevatedButton(
+        style: ElevatedButton.styleFrom(
+          minimumSize: Size.fromHeight(mediaQuery.size.height * 0.08),
+          backgroundColor: Theme.of(context).colorScheme.onPrimary.withAlpha(150),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadiusGeometry.vertical(bottom: Radius.circular(25.0)))
+        ),
+        onPressed: (){
+          Navigator.of(context).push(MaterialPageRoute(builder: (context) => DataSyncPage()));
+        }, 
+        child: Row(
+          children: [
+            Icon(Icons.sync),
+            Expanded(child: Text("数据备份及同步")),
+            Icon(Icons.arrow_forward_ios)
+          ],
+        )
+      ),
     ];
   }
 
-  List<Widget> audioSetting(MediaQueryData mediaQuery, BuildContext context, Map<String, dynamic> setting) {
+  List<Widget> audioSetting(BuildContext context, Map<String, dynamic> setting) {
+    MediaQueryData mediaQuery = MediaQuery.of(context);
     var set = context.read<Global>().settingData;
     return [
       Column(
@@ -374,7 +409,8 @@ class _SettingPage extends State<SettingPage> {
     ];
   }
 
-  List<Widget> aboutSetting(MediaQueryData mediaQuery, BuildContext context, Map<String, dynamic> setting) {
+  List<Widget> aboutSetting(BuildContext context, Map<String, dynamic> setting) {
+    MediaQueryData mediaQuery = MediaQuery.of(context);
     return [
       ElevatedButton(
         style: ElevatedButton.styleFrom(

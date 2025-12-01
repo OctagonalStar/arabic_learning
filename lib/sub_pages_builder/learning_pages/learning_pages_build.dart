@@ -1,9 +1,7 @@
-import 'dart:convert';
 import 'dart:math';
 
 import 'package:arabic_learning/funcs/ui.dart';
 import 'package:arabic_learning/funcs/utili.dart';
-import 'package:arabic_learning/vars/change_notifier_models.dart';
 import 'package:arabic_learning/vars/global.dart';
 import 'package:flutter/material.dart';
 import 'package:arabic_learning/vars/statics_var.dart';
@@ -95,291 +93,299 @@ class _InLearningPageState extends State<InLearningPage> {
   @override
   Widget build(BuildContext context) {
     final mediaQuery = MediaQuery.of(context);
-    return Scaffold(
-      appBar: AppBar(
-        automaticallyImplyLeading: false,
-        title: currentPage == total ? Center(child: Text("学习完成"))
-        : Row(
-          children: [
-            ElevatedButton(
-              onPressed: (){
-                showDialog(
-                  context: context, 
-                  builder: (context) {
-                    return AlertDialog(
-                      title: Text("提示"),
-                      content: Text("确定要结束学习吗？"),
-                      actions: [
-                        TextButton(
-                          onPressed: () {
-                            Navigator.pop(context);
-                          },
-                          child: Text("取消"),
-                        ),
-                        TextButton(
-                          onPressed: () {
-                            Navigator.pop(context);
-                            Navigator.pop(context);
-                          },
-                          child: Text("确定"),
-                        )
-                      ],
-                    );
-                  },
-                );
-              },
-              child: Icon(
-                Icons.close,
-                size: 24.0,
-                semanticLabel: 'Back',
-              )
-            ),
-            SizedBox(width: mediaQuery.size.width * 0.01),
-            Expanded(
-              child: TweenAnimationBuilder<double>(
-                tween: Tween<double>(
-                  begin: 0.00,
-                  end: currentPage / (total - 1),
-                ),
-                duration: const Duration(milliseconds: 500),
-                curve: StaticsVar.curve,
-                builder: (context, value, child) {
-                  return LinearProgressIndicator(
-                    value: 0.05 + value * 0.95,
-                    backgroundColor: Theme.of(context).colorScheme.secondaryContainer,
-                    color: Theme.of(context).colorScheme.secondary,
-                    minHeight: mediaQuery.size.height * 0.04,
-                    borderRadius: StaticsVar.br,
+    return PopScope(
+      canPop: true,
+      onPopInvokedWithResult: (didPop, result) {
+        if(!didPop) Navigator.pop(context, finished);
+        result = finished;
+      },
+      child: Scaffold(
+        appBar: AppBar(
+          automaticallyImplyLeading: false,
+          title: currentPage == total ? Center(child: Text("学习完成"))
+          : Row(
+            children: [
+              ElevatedButton(
+                onPressed: (){
+                  showDialog(
+                    context: context, 
+                    builder: (context) {
+                      return AlertDialog(
+                        title: Text("提示"),
+                        content: Text("确定要结束学习吗？"),
+                        actions: [
+                          TextButton(
+                            onPressed: () {
+                              Navigator.pop(context);
+                            },
+                            child: Text("取消"),
+                          ),
+                          TextButton(
+                            onPressed: () {
+                              Navigator.pop(context);
+                              Navigator.pop(context, finished);
+                            },
+                            child: Text("确定"),
+                          )
+                        ],
+                      );
+                    },
                   );
                 },
-              )
-            ),
-            SizedBox(
-              width: mediaQuery.size.width * 0.05,
-              child: FittedBox(
-                fit: BoxFit.scaleDown,
-                child: Text("${total - currentPage}"),
+                child: Icon(
+                  Icons.close,
+                  size: 24.0,
+                  semanticLabel: 'Back',
+                )
               ),
-            )
-          ],
-        ),
-      ),
-      body: Center(
-        child: PageView.builder(
-          scrollDirection: Provider.of<Global>(context).isWideScreen ? Axis.vertical : Axis.horizontal,
-          physics: NeverScrollableScrollPhysics(),
-          // itemCount: total,
-          controller: controller,
-          onPageChanged: (index) {
-            setState(() {
-              currentPage++;
-            });
-          },
-          itemBuilder: (context, index) {
-            if(index >= testList.length) {
-              Provider.of<AreYouFinishedModel>(context, listen: false).finished = true;
-              List<int> data = [
-                total, 
-                correctCount, 
-                ((DateTime.now().millisecondsSinceEpoch - startTime)/1000.0).toInt()
-              ];
-              return ConcludePage(data: data);
-            }
-            List<dynamic> testItem = testList[index];
-            // testItem 0:MainWord; 1:TestType; 2: (extra)[0:CorrectIndex; 1:strList]
-            if(testItem[1] == 0) {
-              // wordCard
-              return WordCardQuestion(
-                word: testItem[0],
-                hint: "尝试自行回忆以下单词",
-                bottomWidget: ElevatedButton.icon(
-                  style: ElevatedButton.styleFrom(
-                    fixedSize: Size(mediaQuery.size.width * 0.8, mediaQuery.size.height * 0.1),
-                    shape: RoundedRectangleBorder(borderRadius: StaticsVar.br)
+              SizedBox(width: mediaQuery.size.width * 0.01),
+              Expanded(
+                child: TweenAnimationBuilder<double>(
+                  tween: Tween<double>(
+                    begin: 0.00,
+                    end: currentPage / (total - 1),
                   ),
-                  onPressed: (){
-                    controller.animateToPage(currentPage + 1, duration: Duration(milliseconds: 500), curve: StaticsVar.curve);
+                  duration: const Duration(milliseconds: 500),
+                  curve: StaticsVar.curve,
+                  builder: (context, value, child) {
+                    return LinearProgressIndicator(
+                      value: 0.05 + value * 0.95,
+                      backgroundColor: Theme.of(context).colorScheme.secondaryContainer,
+                      color: Theme.of(context).colorScheme.secondary,
+                      minHeight: mediaQuery.size.height * 0.04,
+                      borderRadius: StaticsVar.br,
+                    );
                   },
-                  icon: Icon(Icons.arrow_forward),
-                  label: Text("下一题"),
+                )
+              ),
+              SizedBox(
+                width: mediaQuery.size.width * 0.05,
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  child: Text("${total - currentPage}"),
                 ),
-              );
-            } else if(testItem[1] == 1 || testItem[1] == 2) {
-              // ar-zh choose questions
-              return ChoiceQuestions(
-                mainWord: testItem[0][testItem[1] == 1 ? "chinese" : "arabic"], 
-                choices: testItem[2][1], 
-                allowAudio: testItem[1] == 2, 
-                onSelected: (value) {
-                  bool ans = value == testItem[2][0];
-                  if(!ans) {
-                    Future.delayed(Duration(seconds: 1), (){if(context.mounted) viewAnswer(mediaQuery, context, testItem[0]);});
-                  } else {
-                    correctCount++;
-                  }
-                  Future.delayed(Duration(milliseconds: 700) ,(){setState(() {
-                    clicked = true;
-                  });});
-                  return ans;
-                },
-                allowMutipleSelect: true,
-                hint: testItem[1] == 1 ? "通过中文选择阿拉伯语" : "通过阿拉伯语选择中文",
-                bottomWidget: TweenAnimationBuilder<double>(
-                  tween: Tween<double>(
-                    begin: 0.0,
-                    end: clicked ? 1.0 : 0.0,
+              )
+            ],
+          ),
+        ),
+        body: Center(
+          child: PageView.builder(
+            scrollDirection: Provider.of<Global>(context).isWideScreen ? Axis.vertical : Axis.horizontal,
+            physics: NeverScrollableScrollPhysics(),
+            // itemCount: total,
+            controller: controller,
+            onPageChanged: (index) {
+              setState(() {
+                currentPage++;
+              });
+            },
+            itemBuilder: (context, index) {
+              if(index >= testList.length) {
+                finished = true;
+                List<int> data = [
+                  total, 
+                  correctCount, 
+                  ((DateTime.now().millisecondsSinceEpoch - startTime)/1000.0).toInt()
+                ];
+                return ConcludePage(data: data);
+              }
+              List<dynamic> testItem = testList[index];
+              // testItem 0:MainWord; 1:TestType; 2: (extra)[0:CorrectIndex; 1:strList]
+              if(testItem[1] == 0) {
+                // wordCard
+                return WordCardQuestion(
+                  word: testItem[0],
+                  hint: "尝试自行回忆以下单词",
+                  bottomWidget: ElevatedButton.icon(
+                    style: ElevatedButton.styleFrom(
+                      fixedSize: Size(mediaQuery.size.width * 0.8, mediaQuery.size.height * 0.1),
+                      shape: RoundedRectangleBorder(borderRadius: StaticsVar.br)
+                    ),
+                    onPressed: (){
+                      correctCount++;
+                      controller.animateToPage(currentPage + 1, duration: Duration(milliseconds: 500), curve: StaticsVar.curve);
+                    },
+                    icon: Icon(Icons.arrow_forward),
+                    label: Text("下一题"),
                   ),
-                  duration: const Duration(milliseconds: 500),
-                  curve: StaticsVar.curve,
-                  builder: (context, value, child) {
-                    return Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        ElevatedButton(
-                          style: ElevatedButton.styleFrom(
-                            fixedSize: Size(mediaQuery.size.width * (0.8 - (0.45 * value)), mediaQuery.size.height * 0.1),
-                            backgroundColor: Theme.of(context).colorScheme.secondaryContainer,
-                            foregroundColor: Theme.of(context).colorScheme.onSurface,
-                            shadowColor: Colors.transparent,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: StaticsVar.br,
+                );
+              } else if(testItem[1] == 1 || testItem[1] == 2) {
+                // ar-zh choose questions
+                return ChoiceQuestions(
+                  mainWord: testItem[0][testItem[1] == 1 ? "chinese" : "arabic"], 
+                  choices: testItem[2][1], 
+                  allowAudio: testItem[1] == 2, 
+                  onSelected: (value) {
+                    bool ans = value == testItem[2][0];
+                    if(!ans) {
+                      Future.delayed(Duration(seconds: 1), (){if(context.mounted) viewAnswer(mediaQuery, context, testItem[0]);});
+                    } else {
+                      correctCount++;
+                    }
+                    Future.delayed(Duration(milliseconds: 700) ,(){setState(() {
+                      clicked = true;
+                    });});
+                    return ans;
+                  },
+                  allowMutipleSelect: true,
+                  hint: testItem[1] == 1 ? "通过中文选择阿拉伯语" : "通过阿拉伯语选择中文",
+                  bottomWidget: TweenAnimationBuilder<double>(
+                    tween: Tween<double>(
+                      begin: 0.0,
+                      end: clicked ? 1.0 : 0.0,
+                    ),
+                    duration: const Duration(milliseconds: 500),
+                    curve: StaticsVar.curve,
+                    builder: (context, value, child) {
+                      return Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          ElevatedButton(
+                            style: ElevatedButton.styleFrom(
+                              fixedSize: Size(mediaQuery.size.width * (0.8 - (0.45 * value)), mediaQuery.size.height * 0.1),
+                              backgroundColor: Theme.of(context).colorScheme.secondaryContainer,
+                              foregroundColor: Theme.of(context).colorScheme.onSurface,
+                              shadowColor: Colors.transparent,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: StaticsVar.br,
+                              ),
                             ),
+                            onPressed: () {
+                              viewAnswer(mediaQuery, context, testItem[0]);
+                            }, 
+                            child: FittedBox(
+                              fit: BoxFit.contain,
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(Icons.view_list, size: 16.0, semanticLabel: "查看详解"),
+                                  SizedBox(width: mediaQuery.size.width * 0.01),
+                                  Text("查看详解"),
+                                ],
+                              ),
+                            )
                           ),
-                          onPressed: () {
-                            viewAnswer(mediaQuery, context, testItem[0]);
-                          }, 
-                          child: FittedBox(
-                            fit: BoxFit.contain,
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Icon(Icons.view_list, size: 16.0, semanticLabel: "查看详解"),
-                                SizedBox(width: mediaQuery.size.width * 0.01),
-                                Text("查看详解"),
-                              ],
+                          SizedBox(width: mediaQuery.size.width * 0.05 * value),
+                          if(value != 0.0) ElevatedButton(
+                            style: ElevatedButton.styleFrom(
+                              fixedSize: Size(mediaQuery.size.width * (0.45 * value), mediaQuery.size.height * 0.1),
+                              backgroundColor: Theme.of(context).colorScheme.primaryContainer,
+                              foregroundColor: Theme.of(context).colorScheme.onSurface,
+                              shadowColor: Colors.transparent,
+                              shape: RoundedRectangleBorder(borderRadius: StaticsVar.br),
+                            ),
+                            onPressed: () {
+                              clicked = false; // 还原未点击状态
+                              controller.animateToPage(currentPage + 1, duration: Duration(milliseconds: 500), curve: StaticsVar.curve);
+                            },
+                            child: FittedBox(
+                              fit: BoxFit.contain,
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(currentPage == total-1 ? Icons.done : Icons.navigate_next, size: 16.0),
+                                  SizedBox(width: mediaQuery.size.width * 0.01),
+                                  Text(currentPage == total-1 ? "完成" : "下一个"),
+                                ],
+                              ),
                             ),
                           )
-                        ),
-                        SizedBox(width: mediaQuery.size.width * 0.05 * value),
-                        if(value != 0.0) ElevatedButton(
-                          style: ElevatedButton.styleFrom(
-                            fixedSize: Size(mediaQuery.size.width * (0.45 * value), mediaQuery.size.height * 0.1),
-                            backgroundColor: Theme.of(context).colorScheme.primaryContainer,
-                            foregroundColor: Theme.of(context).colorScheme.onSurface,
-                            shadowColor: Colors.transparent,
-                            shape: RoundedRectangleBorder(borderRadius: StaticsVar.br),
-                          ),
-                          onPressed: () {
-                            clicked = false; // 还原未点击状态
-                            controller.animateToPage(currentPage + 1, duration: Duration(milliseconds: 500), curve: StaticsVar.curve);
-                          },
-                          child: FittedBox(
-                            fit: BoxFit.contain,
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Icon(currentPage == total-1 ? Icons.done : Icons.navigate_next, size: 16.0),
-                                SizedBox(width: mediaQuery.size.width * 0.01),
-                                Text(currentPage == total-1 ? "完成" : "下一个"),
-                              ],
-                            ),
-                          ),
-                        )
-                      ],
-                    );
-                  }
-                ),
-              );
-            } else if(testItem[1] == 3) {
-              // spell question
-              return SpellQuestion(
-                word: testItem[0],
-                hint: "拼写以下单词",
-                onCheck: (text) {
-                  setState(() {
-                    clicked = true;
-                  });
-                  if(text == testItem[0]["arabic"]) {
-                    correctCount++;
-                    return true;
-                  } else {
-                    viewAnswer(mediaQuery, context, testItem[0]);
-                    return false;
-                  }
-                },
-                bottomWidget: TweenAnimationBuilder<double>(
-                  tween: Tween<double>(
-                    begin: 0.0,
-                    end: clicked ? 1.0 : 0.0,
+                        ],
+                      );
+                    }
                   ),
-                  duration: const Duration(milliseconds: 500),
-                  curve: StaticsVar.curve,
-                  builder: (context, value, child) {
-                    return Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        ElevatedButton(
-                          style: ElevatedButton.styleFrom(
-                            fixedSize: Size(mediaQuery.size.width * (0.8 - (0.45 * value)), mediaQuery.size.height * 0.1),
-                            backgroundColor: Theme.of(context).colorScheme.secondaryContainer,
-                            foregroundColor: Theme.of(context).colorScheme.onSurface,
-                            shadowColor: Colors.transparent,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: StaticsVar.br,
+                );
+              } else if(testItem[1] == 3) {
+                // spell question
+                return SpellQuestion(
+                  word: testItem[0],
+                  hint: "拼写以下单词",
+                  onCheck: (text) {
+                    setState(() {
+                      clicked = true;
+                    });
+                    if(text == testItem[0]["arabic"]) {
+                      correctCount++;
+                      return true;
+                    } else {
+                      viewAnswer(mediaQuery, context, testItem[0]);
+                      return false;
+                    }
+                  },
+                  bottomWidget: TweenAnimationBuilder<double>(
+                    tween: Tween<double>(
+                      begin: 0.0,
+                      end: clicked ? 1.0 : 0.0,
+                    ),
+                    duration: const Duration(milliseconds: 500),
+                    curve: StaticsVar.curve,
+                    builder: (context, value, child) {
+                      return Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          ElevatedButton(
+                            style: ElevatedButton.styleFrom(
+                              fixedSize: Size(mediaQuery.size.width * (0.8 - (0.45 * value)), mediaQuery.size.height * 0.1),
+                              backgroundColor: Theme.of(context).colorScheme.secondaryContainer,
+                              foregroundColor: Theme.of(context).colorScheme.onSurface,
+                              shadowColor: Colors.transparent,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: StaticsVar.br,
+                              ),
                             ),
+                            onPressed: () {
+                              viewAnswer(mediaQuery, context, testItem[0]);
+                            }, 
+                            child: FittedBox(
+                              fit: BoxFit.contain,
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(Icons.view_list, size: 16.0, semanticLabel: "查看详解"),
+                                  SizedBox(width: mediaQuery.size.width * 0.01),
+                                  Text("查看详解"),
+                                ],
+                              ),
+                            )
                           ),
-                          onPressed: () {
-                            viewAnswer(mediaQuery, context, testItem[0]);
-                          }, 
-                          child: FittedBox(
-                            fit: BoxFit.contain,
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Icon(Icons.view_list, size: 16.0, semanticLabel: "查看详解"),
-                                SizedBox(width: mediaQuery.size.width * 0.01),
-                                Text("查看详解"),
-                              ],
+                          SizedBox(width: mediaQuery.size.width * 0.05 * value),
+                          if(value != 0.0) ElevatedButton(
+                            style: ElevatedButton.styleFrom(
+                              fixedSize: Size(mediaQuery.size.width * (0.45 * value), mediaQuery.size.height * 0.1),
+                              backgroundColor: Theme.of(context).colorScheme.primaryContainer,
+                              foregroundColor: Theme.of(context).colorScheme.onSurface,
+                              shadowColor: Colors.transparent,
+                              shape: RoundedRectangleBorder(borderRadius: StaticsVar.br),
+                            ),
+                            onPressed: () {
+                              clicked = false; // 还原未点击状态
+                              controller.animateToPage(currentPage + 1, duration: Duration(milliseconds: 500), curve: StaticsVar.curve);
+                            },
+                            child: FittedBox(
+                              fit: BoxFit.contain,
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(currentPage == total-1 ? Icons.done : Icons.navigate_next, size: 16.0),
+                                  SizedBox(width: mediaQuery.size.width * 0.01),
+                                  Text(currentPage == total-1 ? "完成" : "下一个"),
+                                ],
+                              ),
                             ),
                           )
-                        ),
-                        SizedBox(width: mediaQuery.size.width * 0.05 * value),
-                        if(value != 0.0) ElevatedButton(
-                          style: ElevatedButton.styleFrom(
-                            fixedSize: Size(mediaQuery.size.width * (0.45 * value), mediaQuery.size.height * 0.1),
-                            backgroundColor: Theme.of(context).colorScheme.primaryContainer,
-                            foregroundColor: Theme.of(context).colorScheme.onSurface,
-                            shadowColor: Colors.transparent,
-                            shape: RoundedRectangleBorder(borderRadius: StaticsVar.br),
-                          ),
-                          onPressed: () {
-                            clicked = false; // 还原未点击状态
-                            controller.animateToPage(currentPage + 1, duration: Duration(milliseconds: 500), curve: StaticsVar.curve);
-                          },
-                          child: FittedBox(
-                            fit: BoxFit.contain,
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Icon(currentPage == total-1 ? Icons.done : Icons.navigate_next, size: 16.0),
-                                SizedBox(width: mediaQuery.size.width * 0.01),
-                                Text(currentPage == total-1 ? "完成" : "下一个"),
-                              ],
-                            ),
-                          ),
-                        )
-                      ],
-                    );
-                  }
-                ),
+                        ],
+                      );
+                    }
+                  ),
+                );
+              }
+              return Center(
+                child: TextContainer(text: "真奇怪，你不应该到这里来的，有时间给开发者反馈下吧..."),
               );
-            }
-            return Center(
-              child: TextContainer(text: "真奇怪，你不应该到这里来的，有时间给开发者反馈下吧"),
-            );
-          },
+            },
+          )
         )
-      )
+      ),
     );
   }
 }
@@ -552,7 +558,7 @@ class _ConcludePageState extends State<ConcludePage> {
               shape: RoundedRectangleBorder(borderRadius: StaticsVar.br)
             ),
             onPressed: (){
-              Navigator.popUntil(context, (route) => route.isFirst);
+              Navigator.pop(context, true);
             },
             child: Text("返回主页")
           ),
@@ -574,6 +580,7 @@ class _WordCardOverViewPage extends State<WordCardOverViewPage> {
   ScrollController classController = ScrollController();
   bool allowJsonScorll = true;
   bool allowClassScorll = false;
+  int forceColumn = 0;
 
   @override
   Widget build(BuildContext context) {
@@ -581,6 +588,63 @@ class _WordCardOverViewPage extends State<WordCardOverViewPage> {
     return Scaffold(
       appBar: AppBar(
         title: Text("单词总览"),
+        actions: [
+          IconButton(
+            onPressed: () async {
+              await showDialog(
+                context: context, 
+                builder: (context) {
+                  return AlertDialog(
+                    content: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        StatefulBuilder(
+                          builder: (context, setLocalState) {
+                            return Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Text("设置固定列数"),
+                                Slider(
+                                  min: 0,
+                                  max: 5,
+                                  divisions: 5,
+                                  value: forceColumn.toDouble(), 
+                                  onChanged: (value){
+                                    setLocalState(() {
+                                      forceColumn = value.ceil();
+                                    });
+                                  }
+                                ),
+                                SizedBox(width: 60, child: Text(forceColumn == 0 ? "0(自动)" : forceColumn.toString()))
+                              ],
+                            );
+                          }
+                        ),
+                      ],
+                    ),
+                    actions: [
+                      ElevatedButton(
+                        onPressed: (){
+                          Navigator.pop(context);
+                          setState(() {}); // 刷新全局状态
+                        }, 
+                        child: Text("确认")
+                      ),
+                      ElevatedButton(
+                        onPressed: (){
+                          Navigator.pop(context);
+                        }, 
+                        child: Text("取消")
+                      )
+                    ],
+                  );
+                }
+              );
+              
+            }, 
+            icon: Icon(Icons.view_column)
+          )
+        ],
       ),
       body: ListView.builder(
         physics: allowJsonScorll ? null : NeverScrollableScrollPhysics(),
@@ -617,7 +681,6 @@ class _WordCardOverViewPage extends State<WordCardOverViewPage> {
                     if(classIndex == context.read<Global>().wordData["Classes"][jsonName].length) {
                       return SizedBox(height: mediaQuery.size.height); // 避免0.9空间估计不足
                     }
-
                     final String className = context.read<Global>().wordData["Classes"][jsonName].keys.elementAt(classIndex);
                     return ExpansionTile(
                       title: Text(className.trim()),
@@ -626,26 +689,39 @@ class _WordCardOverViewPage extends State<WordCardOverViewPage> {
                         setState(() {
                           allowClassScorll = !value;
                         });
-                        classController.animateTo(
-                          (64 * classIndex).toDouble(), 
-                          duration: Duration(milliseconds: 200), 
-                          curve: StaticsVar.curve
-                        );
+                        if(value) {
+                          classController.animateTo(
+                            (64 * classIndex).toDouble(), 
+                            duration: Duration(milliseconds: 200), 
+                            curve: StaticsVar.curve
+                          );
+                          jsonController.animateTo(
+                            (66 * (jsonIndex + 1)).toDouble(), 
+                            duration: Duration(milliseconds: 200), 
+                            curve: StaticsVar.curve
+                          );
+                        } else {
+                          jsonController.animateTo(
+                            (66 * jsonIndex).toDouble(), 
+                            duration: Duration(milliseconds: 200), 
+                            curve: StaticsVar.curve
+                          );
+                        }
                       },
                       children: [
                         SizedBox(
                           height: mediaQuery.size.height * 0.8,
                           child: GridView.builder(
                             itemCount: context.read<Global>().wordData["Classes"][jsonName][className].length,
-                            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: mediaQuery.size.width ~/ 300), 
+                            gridDelegate: forceColumn == 0 ? SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: mediaQuery.size.width ~/ 300) : SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: forceColumn), 
                             itemBuilder: (context, index) {
                               return Container(
                                 margin: EdgeInsets.all(8.0),
                                 child: WordCard(
                                   word: context.read<Global>().wordData["Words"][context.read<Global>().wordData["Classes"][jsonName][className][index]],
                                   useMask: false,
-                                  width: mediaQuery.size.width / (mediaQuery.size.width ~/ 300),
-                                  height: mediaQuery.size.width / (mediaQuery.size.width ~/ 300),
+                                  width: mediaQuery.size.width / (forceColumn == 0 ? (mediaQuery.size.width ~/ 300) : forceColumn),
+                                  height: mediaQuery.size.width / (forceColumn == 0 ? (mediaQuery.size.width ~/ 300) : forceColumn),
                                 ),
                               );
                             }

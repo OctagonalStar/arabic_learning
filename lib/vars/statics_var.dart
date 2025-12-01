@@ -6,13 +6,11 @@ import 'package:just_audio/just_audio.dart';
 
 class StaticsVar {
   static const String appName = 'Ar 学';
-  static const int appVersion = 000109;
+  static const int appVersion = 000111;
   static const String modelPath = 'arabicLearning/tts/model/vits-piper-ar_JO-kareem-medium';
   static const Map<String, dynamic> tempConfig = {"SelectedClasses": []};
-  static const String onlineDictOwner = 'JYinherit';
-  static const String onlineDictRepo = 'Arabiclearning';
-  static const String onlineDictPath = '词库';
   static const Curve curve = Curves.easeInOut;
+  static const String onlineDictOwner = 'JYinherit';
   static const String arBackupFont = "Vazirmatn";
   static const String zhBackupFont = "NotoSansSC";
   static final isDesktop = kIsWeb ? false : (Platform.isWindows || Platform.isLinux || Platform.isMacOS);

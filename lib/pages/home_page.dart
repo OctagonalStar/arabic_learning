@@ -2,155 +2,152 @@ import 'dart:math';
 
 import 'package:arabic_learning/funcs/ui.dart';
 import 'package:arabic_learning/funcs/utili.dart';
+import 'package:arabic_learning/pages/setting_page.dart';
 import 'package:arabic_learning/vars/global.dart';
 import 'package:arabic_learning/vars/statics_var.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:arabic_learning/funcs/fsrs_func.dart';
 
 class HomePage extends StatelessWidget {
-  final void Function(int) toPage;
-  const HomePage({super.key, required this.toPage});
+  const HomePage({super.key});
   @override
   Widget build(BuildContext context) {
     final themeColor = Theme.of(context).colorScheme;
     final mediaQuery = MediaQuery.of(context);
+    final FSRS fsrs = FSRS();
     
-    return Column(
-      children: [
-        DailyWord(toPage: toPage),
-        SizedBox(height: mediaQuery.size.height * 0.01),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.center,
+    return FutureBuilder(
+      future: fsrs.init(),
+      builder: (context, asyncSnapshot) {
+        return Column(
           children: [
-            Container(
-              width: mediaQuery.size.width * 0.30,
-              height: mediaQuery.size.height * 0.18,
-              margin: EdgeInsets.all(4.0),
-              padding: EdgeInsets.all(16.0),
-              decoration: BoxDecoration(
-                color: themeColor.secondaryContainer.withAlpha(150),
-                boxShadow: [
-                  BoxShadow(
-                    color: themeColor.surfaceBright.withAlpha(150),
-                    offset: Offset(2, 4),
-                    blurRadius: 8.0,
+            DailyWord(),
+            SizedBox(height: mediaQuery.size.height * 0.01),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children: [
+                Container(
+                  width: mediaQuery.size.width * 0.30,
+                  height: mediaQuery.size.height * 0.18,
+                  margin: EdgeInsets.all(4.0),
+                  padding: EdgeInsets.all(16.0),
+                  decoration: BoxDecoration(
+                    color: themeColor.secondaryContainer.withAlpha(150),
+                    boxShadow: [
+                      BoxShadow(
+                        color: themeColor.surfaceBright.withAlpha(150),
+                        offset: Offset(2, 4),
+                        blurRadius: 8.0,
+                      ),
+                    ],
+                    borderRadius: StaticsVar.br,
                   ),
-                ],
-                borderRadius: StaticsVar.br,
-              ),
-              child: Column(
-                children: [
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    mainAxisAlignment: MainAxisAlignment.center,
+                  child: Column(
                     children: [
-                      Text('连胜天数', style: TextStyle(fontSize: 12.0)),
-                      context.read<Global>().settingData["learning"]["lastDate"] == DateTime.now().difference(DateTime(2025, 11, 1)).inDays
-                        ? Icon(Icons.done, size: 15.0, color: Colors.tealAccent)
-                        : Icon(Icons.error_outline, size: 15.0, color: Colors.amber, semanticLabel: "今天还没学习~"),
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Text('连胜天数', style: TextStyle(fontSize: 12.0)),
+                          context.read<Global>().settingData["learning"]["lastDate"] == DateTime.now().difference(DateTime(2025, 11, 1)).inDays
+                            ? Icon(Icons.done, size: 15.0, color: Colors.tealAccent)
+                            : Icon(Icons.error_outline, size: 15.0, color: Colors.amber, semanticLabel: "今天还没学习~"),
+                        ],
+                      ),
+                      SizedBox(height: mediaQuery.size.height * 0.03),
+                      Text(getStrokeDays(context.read<Global>().settingData).toString(), style: TextStyle(fontSize: 24.0, fontWeight: FontWeight.bold)),
                     ],
                   ),
-                  SizedBox(height: mediaQuery.size.height * 0.03),
-                  Text(getStrokeDays(context.read<Global>().settingData).toString(), style: TextStyle(fontSize: 24.0, fontWeight: FontWeight.bold)),
-                ],
-              ),
-            ),
-            Container(
-              width: mediaQuery.size.width * 0.50,
-              height: mediaQuery.size.height * 0.18,
-              margin: EdgeInsets.all(4.0),
-              padding: EdgeInsets.all(16.0),
-              decoration: BoxDecoration(
-                color: themeColor.secondaryContainer.withAlpha(150),
-                boxShadow: [
-                  BoxShadow(
-                    color: themeColor.surfaceBright.withAlpha(150),
-                    offset: Offset(2, 4),
-                    blurRadius: 8.0,
-                  ),
-                ],
-                borderRadius: BorderRadius.circular(25.0),
-              ),
-              child: Column(
-                children: [
-                  Text('已学词汇', style: TextStyle(fontSize: 12.0)),
-                  SizedBox(height: mediaQuery.size.height * 0.03),
-                  Text(context.read<Global>().settingData["learning"]["KnownWords"].length.toString(), style: TextStyle(fontSize: 24.0, fontWeight: FontWeight.bold)),
-                ],
-              ),
-            ),
-          ],
-        ),
-        SizedBox(height: mediaQuery.size.height * 0.01),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Container(
-              width: mediaQuery.size.width * 0.50,
-              height: mediaQuery.size.height * 0.18,
-              margin: EdgeInsets.all(4.0),
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(25.0),
-              ),
-              child: ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: themeColor.onPrimary.withAlpha(150),
-                  shadowColor: themeColor.surfaceBright.withAlpha(150),
+                ),
+                Container(
+                  width: mediaQuery.size.width * 0.50,
+                  height: mediaQuery.size.height * 0.18,
+                  margin: EdgeInsets.all(4.0),
                   padding: EdgeInsets.all(16.0),
-                  shape: RoundedRectangleBorder(
+                  decoration: BoxDecoration(
+                    color: themeColor.secondaryContainer.withAlpha(150),
+                    boxShadow: [
+                      BoxShadow(
+                        color: themeColor.surfaceBright.withAlpha(150),
+                        offset: Offset(2, 4),
+                        blurRadius: 8.0,
+                      ),
+                    ],
                     borderRadius: BorderRadius.circular(25.0),
                   ),
-                ),
-                onPressed: () {
-                  toPage(1);
-                },
-                child: Column(
-                children: [
-                  Text("准备好学习了?", style: TextStyle(fontSize: 12.0)),
-                  SizedBox(height: mediaQuery.size.height * 0.015),
-                  Text('开始学习\n→', style: TextStyle(fontSize: 24.0, fontWeight: FontWeight.bold)),
-                  ],
-                ),
-              ),
-            ),
-            Container(
-              width: mediaQuery.size.width * 0.35,
-              height: mediaQuery.size.height * 0.18,
-              margin: EdgeInsets.all(4.0),
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(25.0),
-              ),
-              child: ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: themeColor.onSecondary.withAlpha(150),
-                  shadowColor: themeColor.surfaceBright.withAlpha(150),
-                  padding: EdgeInsets.all(16.0),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(25.0),
+                  child: Column(
+                    children: [
+                      Text('已学词汇', style: TextStyle(fontSize: 12.0)),
+                      SizedBox(height: mediaQuery.size.height * 0.03),
+                      Text(context.read<Global>().settingData["learning"]["KnownWords"].length.toString(), style: TextStyle(fontSize: 24.0, fontWeight: FontWeight.bold)),
+                    ],
                   ),
                 ),
-                onPressed: () {
-                  toPage(2);
-                },
-                child: Column(
-                children: [
-                  Text("感觉不错?", style: TextStyle(fontSize: 12.0)),
-                  SizedBox(height: mediaQuery.size.height * 0.015),
-                  Text('开始测试\n→', style: TextStyle(fontSize: 22.0, fontWeight: FontWeight.bold)),
-                  ],
+              ],
+            ),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children: [
+                Container(
+                  width: mediaQuery.size.width * 0.50,
+                  height: mediaQuery.size.height * 0.18,
+                  margin: EdgeInsets.all(4.0),
+                  padding: EdgeInsets.all(16.0),
+                  decoration: BoxDecoration(
+                    color: themeColor.secondaryContainer.withAlpha(150),
+                    boxShadow: [
+                      BoxShadow(
+                        color: themeColor.surfaceBright.withAlpha(150),
+                        offset: Offset(2, 4),
+                        blurRadius: 8.0,
+                      ),
+                    ],
+                    borderRadius: BorderRadius.circular(25.0),
+                  ),
+                  child: Column(
+                    children: [
+                      Text('规律性学习', style: TextStyle(fontSize: 12.0)),
+                      SizedBox(height: mediaQuery.size.height * 0.03),
+                      asyncSnapshot.hasData ? Text(asyncSnapshot.data??false ? "${fsrs.getWillDueCount().toString()}个待复习" : "未启用", style: TextStyle(fontSize: 24.0, fontWeight: FontWeight.bold)) : CircularProgressIndicator(),
+                    ],
+                  ),
                 ),
-              ),
+                Container(
+                  width: mediaQuery.size.width * 0.30,
+                  height: mediaQuery.size.height * 0.18,
+                  margin: EdgeInsets.all(4.0),
+                  padding: EdgeInsets.all(16.0),
+                  decoration: BoxDecoration(
+                    color: themeColor.secondaryContainer.withAlpha(150),
+                    boxShadow: [
+                      BoxShadow(
+                        color: themeColor.surfaceBright.withAlpha(150),
+                        offset: Offset(2, 4),
+                        blurRadius: 8.0,
+                      ),
+                    ],
+                    borderRadius: StaticsVar.br,
+                  ),
+                  child: Column(
+                    children: [
+                      Text('单词总数', style: TextStyle(fontSize: 12.0)),
+                      SizedBox(height: mediaQuery.size.height * 0.03),
+                      Text(context.read<Global>().wordCount.toString(), style: TextStyle(fontSize: 24.0, fontWeight: FontWeight.bold))
+                    ],
+                  ),
+                ),
+              ]
             )
           ],
-        ),
-      ],
+        );
+      }
     );
   }
 }
 
 class DailyWord extends StatefulWidget {
-  final Function(int) toPage;
-  const DailyWord({super.key, required this.toPage});
+  const DailyWord({super.key});
 
   @override
   State<StatefulWidget> createState() => _DailyWord();
@@ -184,7 +181,9 @@ class _DailyWord extends State<DailyWord> {
             alart(context, temp[1]);
           }
           playing = false;
-        } else {widget.toPage(3);}
+        } else {
+          Navigator.of(context).push(MaterialPageRoute(builder: (context) => SettingPage()));
+        }
       },
       style: ElevatedButton.styleFrom(
         backgroundColor: Theme.of(context).colorScheme.onPrimary.withAlpha(150),
