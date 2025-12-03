@@ -11,6 +11,7 @@ import 'package:flutter/material.dart';
 import 'package:just_audio/just_audio.dart';
 import 'package:provider/provider.dart';
 import 'dart:math';
+import 'package:bk_tree/bk_tree.dart';
 
 /// 下载文件到指定的目录
 /// 
@@ -272,7 +273,7 @@ class _RootPattern {
   /// 捕获组索引，定义了词根字母 (R1, R2, R3) 在正则匹配中的位置。
   final List<int> groups; 
 
-  _RootPattern(this.name, String pattern, {this.groups = const [1, 2, 3]}) 
+  _RootPattern(this.name, String pattern, {this.groups = const [1, 2, 3]})
       : regex = RegExp(pattern);
 }
 
@@ -449,76 +450,25 @@ int getArabicWordsSimilarity(String wordA, String wordB) {
 
 //基于BK-tree实现快速相似词搜索
 
-class _BKTreeNode {
-  final String term;
-  final Map<int, _BKTreeNode> children = {};
-
-  _BKTreeNode(this.term);
-}
-
-class BKTree {
-  _BKTreeNode? _root;
-
-  void add(String term) {
-    if (_root == null) {
-      _root = _BKTreeNode(term);
-      return;
-    }
-
-    var currentNode = _root!;
-    while (true) {
-      final distance = getLevenshtein(currentNode.term, term);
-      if (distance == 0) return; // Term already in tree
-
-      if (currentNode.children.containsKey(distance)) {
-        currentNode = currentNode.children[distance]!;
-      } else {
-        currentNode.children[distance] = _BKTreeNode(term);
-        break;
-      }
-    }
-  }
-
-  List<String> search(String term, int maxDistance) {
-    if (_root == null) return [];
-    
-    final List<String> results = [];
-    final candidates = <_BKTreeNode>[_root!];
-
-    while (candidates.isNotEmpty) {
-      final node = candidates.removeLast();
-      final distance = getLevenshtein(node.term, term);
-
-      if (distance <= maxDistance) {
-        results.add(node.term);
-      }
-
-      final searchRangeStart = distance - maxDistance;
-      final searchRangeEnd = distance + maxDistance;
-
-      node.children.forEach((dist, child) {
-        if (dist >= searchRangeStart && dist <= searchRangeEnd) {
-          candidates.add(child);
-        }
-      });
-    }
-    return results;
-  }
-}
 class VocabularyOptimizer {
   final _stemmer = ArabicStemmer();
-  final _tree = BKTree();
+  BKTree? _bkTree;
   final Map<String, Set<String>> _rootToWordsMap = {}; 
 
   /// 初始化并构建优化器
   void build(List<String> words) {
     _rootToWordsMap.clear();
     for (final word in words) {
-      addWord(word);
+      _addWordToMap(word);
+    }
+    
+    final rootMap = {for (var r in _rootToWordsMap.keys) r: r};
+    if (rootMap.isNotEmpty) {
+      _bkTree = BKTree(rootMap, getLevenshtein);
     }
   }
 
-  void addWord(String word) {
+  void _addWordToMap(String word) {
     final root = _stemmer.extractRoot(word);
     if (root.isEmpty) return;
 
@@ -526,30 +476,32 @@ class VocabularyOptimizer {
       _rootToWordsMap[root]!.add(word);
     } else {
       _rootToWordsMap[root] = {word};
-      _tree.add(root);
     }
   }
 
   /// 查找与给定单词相似的所有单词
   List<String> findSimilarWords(String word, {int maxDistance = 1}) {
+    if (_bkTree == null) return [];
     final queryRoot = _stemmer.extractRoot(word);
     if (queryRoot.isEmpty) return [];
 
-    // 在树中搜索相似的词根
-    final similarRoots = _tree.search(queryRoot, maxDistance);
+    final results = _bkTree!.search(queryHash: queryRoot, tolerance: maxDistance);
     
-    final results = <String>[];
-    for (final root in similarRoots) {
-      if (_rootToWordsMap.containsKey(root)) {
-        results.addAll(_rootToWordsMap[root]!);
+    final resultWords = <String>[];
+    for (final match in results) {
+      if (match is Map && match.isNotEmpty) {
+          final root = match.keys.first as String;
+          if (_rootToWordsMap.containsKey(root)) {
+            resultWords.addAll(_rootToWordsMap[root]!);
+          }
       }
     }
-    return results;
+    return resultWords;
   }
 }
+
 /// 1. 初始化: BKSearch.init(['ktb', 'maktaba', ...]);
 /// 2. 搜索: var results = BKSearch.search('kitab');
-/// 3. 插入: BKSearch.insert('newWord');
 class BKSearch {
   // 私有构造函数，防止外部实例化
   BKSearch._();
@@ -580,10 +532,6 @@ class BKSearch {
       return [];
     }
     return _optimizer.findSimilarWords(query, maxDistance: threshold);
-  }
-
-  static void insert(String word) {
-    _optimizer.addWord(word);
   }
 
   /// 检查是否已经准备好
