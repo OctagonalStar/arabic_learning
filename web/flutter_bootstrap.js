@@ -5,6 +5,9 @@ const loading = document.createElement('div');
 document.body.appendChild(loading);
 loading.textContent = "正在加载中(Step 1)...\n若长时间无响应请尝试更换网络";
 _flutter.loader.load({
+    config: {
+        'canvasKitBaseUrl': '/canvaskit/',
+    },
     serviceWorkerSettings: {
         serviceWorkerVersion: {{flutter_service_worker_version}},
     },
