@@ -3,7 +3,7 @@ import 'package:arabic_learning/vars/statics_var.dart';
 import 'package:flutter/foundation.dart';
 import 'package:logger/logger.dart' show Logger;
 import 'package:path_provider/path_provider.dart' as path_provider;
-import 'package:flutter/services.dart' show rootBundle;
+import 'package:flutter/services.dart' show rootBundle, FontLoader;
 import 'package:arabic_learning/package_replacement/storage.dart';
 import 'dart:convert';
 import 'package:flutter/material.dart';
@@ -18,6 +18,7 @@ class Global with ChangeNotifier {
   late bool updateLogRequire; //是否需要显示更新日志
   late bool isWideScreen; // 设备是否是宽屏幕
   late final SharedPreferences prefs; // 储存实例
+  bool backupFontLoaded = false;
   late bool modelTTSDownloaded = false;
 
   /// the setting data
@@ -251,6 +252,19 @@ class Global with ChangeNotifier {
     if(refresh) await postInit();
   }
 
+  void loadFont() async {
+    if(backupFontLoaded) return;
+    backupFontLoaded = true;
+    try{
+      final ByteData bundle = await rootBundle.load("assets/fonts/zh/NotoSansSC-Medium.ttf");
+      final FontLoader loader = FontLoader(StaticsVar.zhBackupFont)..addFont(Future.value(bundle));
+      loader.load();
+    } catch (e) {
+      backupFontLoaded = false;
+    }
+    notifyListeners();
+  }
+
   Future<void> postInit() async {
     logger.i("Global: 应用设置中");
     await loadTTS();
@@ -302,17 +316,10 @@ class Global with ChangeNotifier {
 
   void updateTheme() {
     logger.i("Global: 更新主题中");
-    _themeData = ThemeData(
-      useMaterial3: true,
-      colorScheme: ColorScheme.fromSeed(
-        seedColor: _themeList[settingData["regular"]["theme"]],
-        brightness: settingData["regular"]["darkMode"] ? Brightness.dark : Brightness.light,
-      ),
-      fontFamily: settingData["regular"]["font"] == 2 ? "NotoSansSC" : null,
-    );
     if(settingData["regular"]["font"] == 2) {
       arFont = StaticsVar.arBackupFont;
       zhFont = StaticsVar.zhBackupFont;
+      loadFont();
     } else if(settingData["regular"]["font"] == 1) {
       arFont = StaticsVar.arBackupFont;
       zhFont = null;
@@ -320,6 +327,14 @@ class Global with ChangeNotifier {
       arFont = null;
       zhFont = null;
     }
+    _themeData = ThemeData(
+      useMaterial3: true,
+      colorScheme: ColorScheme.fromSeed(
+        seedColor: _themeList[settingData["regular"]["theme"]],
+        brightness: settingData["regular"]["darkMode"] ? Brightness.dark : Brightness.light,
+      ),
+      fontFamily: zhFont,
+    );
   }
 
   void acceptAggrement(String name) {
