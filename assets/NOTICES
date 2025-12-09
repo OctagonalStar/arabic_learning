@@ -3484,6 +3484,7 @@ cross_file
 flutter_plugin_android_lifecycle
 path_provider_android
 path_provider_foundation
+shared_preferences
 shared_preferences_android
 shared_preferences_foundation
 url_launcher_android
@@ -6546,7 +6547,6 @@ path_provider_linux
 path_provider_platform_interface
 path_provider_windows
 plugin_platform_interface
-shared_preferences
 shared_preferences_linux
 shared_preferences_platform_interface
 shared_preferences_web
