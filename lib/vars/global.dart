@@ -315,7 +315,7 @@ class Global with ChangeNotifier {
         seedColor: _themeList[settingData["regular"]["theme"]],
         brightness: settingData["regular"]["darkMode"] ? Brightness.dark : Brightness.light,
       ),
-      fontFamily: settingData["regular"]["font"] == 2 ? "NotoSansSC" : null,
+      fontFamily: zhFont,
     );
   }
 
