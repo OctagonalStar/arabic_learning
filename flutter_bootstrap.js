@@ -36,8 +36,24 @@ if (!window._flutter) {
 }
 _flutter.buildConfig = {"engineRevision":"d3d45dcf251823c1769909cd43698d126db38deb","builds":[{"compileTarget":"dart2js","renderer":"canvaskit","mainJsPath":"main.dart.js"},{}]};
 
+
+const loading = document.createElement('div');
+document.body.appendChild(loading);
+loading.textContent = "正在加载中(Step 1)...\n若长时间无响应请尝试更换网络";
 _flutter.loader.load({
-  serviceWorkerSettings: {
-    serviceWorkerVersion: "1917715973"
-  }
+    config: {
+        'canvasKitBaseUrl': '/canvaskit/',
+    },
+    serviceWorkerSettings: {
+        serviceWorkerVersion: "580272555",
+    },
+    onEntrypointLoaded: async function (engineInitializer) {
+        loading.textContent = "正在加载中(Step 2)...长时间无响应请尝试删除缓存或更换浏览器";
+        const appRunner = await engineInitializer.initializeEngine({
+            'fontFallbackBaseUrl': 'https://fonts.gstatic.cn/s/',
+        });
+
+        loading.textContent = "加载完成正在进入...";
+        await appRunner.runApp();
+    },
 });
