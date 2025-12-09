@@ -82,13 +82,14 @@ flutter:
   assets:
     - CHANGELOG.md
     - assets/eggs/s.txt
+    - assets/fonts/zh/NotoSansSC-Medium.ttf
   fonts:
     - family: Vazirmatn
       fonts:
         - asset: assets/fonts/ar/Vazirmatn-VariableFont_wght.ttf
     - family: NotoSansSC
-      fonts:
-        - asset: assets/fonts/zh/NotoSansSC-Medium.ttf
+    #   fonts:
+    #     - asset: assets/fonts/zh/NotoSansSC-Medium.ttf
 flutter_launcher_icons:
   android: "launcher_icon"
   ios: true
