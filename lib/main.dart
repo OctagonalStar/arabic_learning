@@ -5,7 +5,7 @@ import 'package:flutter_markdown_plus/flutter_markdown_plus.dart';
 import 'package:window_manager/window_manager.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
-import 'package:logger/logger.dart';
+import 'package:logging/logging.dart';
 
 import 'package:arabic_learning/funcs/ui.dart';
 import 'package:arabic_learning/funcs/utili.dart';
@@ -18,14 +18,18 @@ import 'package:arabic_learning/pages/setting_page.dart';
 import 'package:arabic_learning/pages/test_page.dart';
 
 void main() async {
-  final Logger logger = Logger(
-    level: Level.all
-  );
-  logger.i("日志加载成功");
+  Logger.root.level = Level.WARNING;
+  Logger.root.onRecord.listen((record) {
+    if (kDebugMode) {
+      debugPrint('${record.time}-[${record.loggerName}][${record.level.name}]: ${record.message}');
+    }
+  });
+  final Logger logger = Logger("enter");
+  logger.info("日志加载成功");
   WidgetsFlutterBinding.ensureInitialized();
   if (StaticsVar.isDesktop) {
     await windowManager.ensureInitialized();
-    logger.i("检测到当前为桌面端，正在加载窗口配置");
+    logger.info("检测到当前为桌面端，正在加载窗口配置");
     WindowOptions windowOptions = WindowOptions(
       size: Size(1300, 800),
       center: true,
@@ -39,13 +43,13 @@ void main() async {
       await windowManager.show();
       await windowManager.focus();
     });
-    logger.i("窗口配置加载完成");
+    logger.info("窗口配置加载完成");
   }
   // final global = Global();
   // await global.init();
   runApp(
     ChangeNotifierProvider(
-      create: (context) => Global(logger: logger)..init(),
+      create: (context) => Global()..init(),
       child: MyApp(),
     ),
   );
@@ -55,7 +59,7 @@ class MyApp extends StatelessWidget {
   const MyApp({super.key});
   @override
   Widget build(BuildContext context) {
-    context.read<Global>().logger.d("收到应用层构建请求");
+    context.read<Global>().logger.fine("收到应用层构建请求");
     return context.watch<Global>().inited? 
       MaterialApp(
         title: StaticsVar.appName,
@@ -105,7 +109,7 @@ class _MyHomePageState extends State<MyHomePage> {
 
   // 构建桌面端布局（侧边导航）
   Widget _buildDesktopLayout(BuildContext context) {
-    context.read<Global>().logger.i("构建桌面端布局");
+    context.read<Global>().logger.fine("构建桌面端布局");
     return Row(
       children: [
         // 侧边导航栏
@@ -158,7 +162,7 @@ class _MyHomePageState extends State<MyHomePage> {
 
   // 构建移动端布局（底部导航）
   Widget _buildMobileLayout(BuildContext context) {
-    context.read<Global>().logger.i("构建移动端布局");
+    context.read<Global>().logger.fine("构建移动端布局");
     return Column(
       children: [
         // 主要内容区域
@@ -226,10 +230,10 @@ class _MyHomePageState extends State<MyHomePage> {
   final TextEditingController controller = TextEditingController();
   @override
   Widget build(BuildContext context) {
-    context.read<Global>().logger.d("收到 MyHomePage 构建请求");
+    context.read<Global>().logger.fine("收到 MyHomePage 构建请求");
     final gob = context.watch<Global>();
     if(gob.firstStart) {
-      context.read<Global>().logger.i("构建首次启动页面");
+      context.read<Global>().logger.info("构建首次启动页面");
       return Scaffold(
         body: PopScope(
           child: Column(
@@ -275,10 +279,10 @@ class _MyHomePageState extends State<MyHomePage> {
                     ),
                     onPressed: () async {
                       if(controller.text.isNotEmpty){
-                        context.read<Global>().logger.i("用户同意协议，签署名：${controller.text}");
+                        context.read<Global>().logger.info("用户同意协议，签署名：${controller.text}");
                         context.read<Global>().acceptAggrement(controller.text);
                       } else {
-                        context.read<Global>().logger.d("用户未填写名称");
+                        context.read<Global>().logger.info("用户未填写名称");
                         ScaffoldMessenger.of(context).showSnackBar(
                           const SnackBar(
                             content: Text('使用该软件前你应当仔细阅读并理解条款'),
@@ -300,7 +304,7 @@ class _MyHomePageState extends State<MyHomePage> {
 
     // 更新日志通知
     if(gob.updateLogRequire) {
-      context.read<Global>().logger.i("预定更新日志通知");
+      context.read<Global>().logger.info("预定更新日志通知");
       gob.updateLogRequire = false;
       Future.delayed(Duration(seconds: 1), () async {
         late final String changeLog;
@@ -313,7 +317,7 @@ class _MyHomePageState extends State<MyHomePage> {
           isDismissible: false,
           isScrollControlled: true,
           builder: (context) {
-            context.read<Global>().logger.i("构建更新日志通知");
+            context.read<Global>().logger.info("构建更新日志通知");
             return Material(
               child: Column(
                 children: [
@@ -338,13 +342,13 @@ class _MyHomePageState extends State<MyHomePage> {
         );
       });
     }
-    context.read<Global>().logger.i("构建子页面");
+    context.read<Global>().logger.fine("构建子页面");
     _pageList = [
       LearningPage(),
       HomePage(),
       TestPage()
     ];
-    context.read<Global>().logger.i("构建主页面");
+    context.read<Global>().logger.fine("构建主页面");
     return Scaffold(
       backgroundColor: context.read<Global>().settingData["eggs"]["stella"] ? Colors.transparent : null,
       appBar: AppBar(
