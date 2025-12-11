@@ -110,6 +110,11 @@ class _SettingPage extends State<SettingPage> {
               DropdownMenuItem(value: 2, child: Text('中阿均使用备用字体')),
             ],
             onChanged: (value) {
+              if(value == 2 && kIsWeb) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text("网页版加载中文字体需要较长时间，请先耐心等待"), duration: Duration(seconds: 3),),
+                );
+              }
               setting['regular']['font'] = value;
               Provider.of<Global>(context, listen: false).updateSetting();
             },
