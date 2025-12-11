@@ -37,7 +37,7 @@ class SharedPreferences {
         rt.logger.fine("已完成数据库缓存读取");
         rt.type = false;
       } catch (e) {
-        rt.logger.warning("IndexDB实例获取失败[$e]，回退至SharedPreferences")
+        rt.logger.warning("IndexDB实例获取失败[$e]，回退至SharedPreferences");
         rt.prefs = await shpr.SharedPreferences.getInstance();
         rt.type = true;
       }

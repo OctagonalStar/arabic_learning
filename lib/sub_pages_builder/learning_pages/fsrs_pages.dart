@@ -25,7 +25,7 @@ class ForeFSRSSettingPage extends StatelessWidget {
     }
     FSRS fsrs = FSRS();
     return FutureBuilder(
-      future: fsrs.init(),
+      future: fsrs.init(context: context),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return Center(child: CircularProgressIndicator());
@@ -130,7 +130,7 @@ Widget difficultyButton(BuildContext context, String label, String subLabel, int
           if (getChosenScheme() == scheme) ElevatedButton.icon(
             icon: const Icon(Icons.arrow_forward, size: 24.0),
             onPressed: () async {
-              await FSRS().createScheduler(scheme);
+              await FSRS().createScheduler(scheme, context: context);
               if(!context.mounted) return;
               alart(context, "设置完成，重新进入规律学习页面即可开始", onConfirmed: (){Navigator.pop(context);});
             },

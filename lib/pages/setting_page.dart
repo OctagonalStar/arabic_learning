@@ -1,17 +1,19 @@
 import 'dart:convert';
-import 'package:arabic_learning/funcs/ui.dart';
-import 'package:arabic_learning/sub_pages_builder/setting_pages/about_page.dart' show AboutPage;
-import 'package:arabic_learning/sub_pages_builder/setting_pages/data_download_page.dart' show DownloadPage;
-import 'package:arabic_learning/sub_pages_builder/setting_pages/item_widget.dart';
-import 'package:arabic_learning/sub_pages_builder/setting_pages/model_download_page.dart' show ModelDownload;
-import 'package:arabic_learning/sub_pages_builder/setting_pages/questions_setting_page.dart' show QuestionsSettingLeadingPage;
-import 'package:arabic_learning/sub_pages_builder/setting_pages/sync_page.dart' show DataSyncPage;
-import 'package:arabic_learning/vars/global.dart';
+
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
+
+import 'package:arabic_learning/funcs/ui.dart';
+import 'package:arabic_learning/vars/global.dart';
+import 'package:arabic_learning/sub_pages_builder/setting_pages/item_widget.dart';
+import 'package:arabic_learning/sub_pages_builder/setting_pages/about_page.dart' show AboutPage;
+import 'package:arabic_learning/sub_pages_builder/setting_pages/data_download_page.dart' show DownloadPage;
+import 'package:arabic_learning/sub_pages_builder/setting_pages/model_download_page.dart' show ModelDownload;
+import 'package:arabic_learning/sub_pages_builder/setting_pages/questions_setting_page.dart' show QuestionsSettingLeadingPage;
+import 'package:arabic_learning/sub_pages_builder/setting_pages/sync_page.dart' show DataSyncPage;
 import 'package:arabic_learning/package_replacement/fake_dart_io.dart' if (dart.library.io) 'dart:io' as io;
 
 class SettingPage extends StatefulWidget { 
@@ -23,6 +25,7 @@ class SettingPage extends StatefulWidget {
 class _SettingPage extends State<SettingPage> {
   @override
   Widget build(BuildContext context) {
+    context.read<Global>().uiLogger.fine("构建 SettingPage");
     return Scaffold(
       appBar: AppBar(title: Text("设置")),
       body: Consumer<Global>(
@@ -77,8 +80,9 @@ class _SettingPage extends State<SettingPage> {
               DropdownMenuItem(value: 10, child: Text('星青'))
             ],
             onChanged: (value) async {
+              context.read<Global>().uiLogger.info("更新主题颜色: $value");
               setting['regular']['theme'] = value;
-              Provider.of<Global>(context, listen: false).updateSetting();
+              context.read<Global>().updateSetting();
             },
           ),
         ],
@@ -91,6 +95,7 @@ class _SettingPage extends State<SettingPage> {
           Switch(
             value: setting['regular']['darkMode'] ?? false,
             onChanged: (value) {
+              context.read<Global>().uiLogger.info("更新深色模式设置: $value");
               setting['regular']['darkMode'] = value;
               context.read<Global>().updateSetting();
             },
@@ -110,6 +115,7 @@ class _SettingPage extends State<SettingPage> {
               DropdownMenuItem(value: 2, child: Text('中阿均使用备用字体')),
             ],
             onChanged: (value) {
+              context.read<Global>().uiLogger.info("更新字体设置: $value");
               if(value == 2 && kIsWeb) {
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(content: Text("网页版加载中文字体需要较长时间，请先耐心等待"), duration: Duration(seconds: 3),),
@@ -129,6 +135,7 @@ class _SettingPage extends State<SettingPage> {
           Switch(
             value: setting['regular']['hideAppDownloadButton'] ?? false,
             onChanged: (value) {
+              context.read<Global>().uiLogger.info("更新网页端APP下载按钮隐藏设置: $value");
               setting['regular']['hideAppDownloadButton'] = value;
               context.read<Global>().updateSetting();
             },
@@ -162,6 +169,7 @@ class _SettingPage extends State<SettingPage> {
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.horizontal(left: Radius.circular(25.0)))
                 ),
                 onPressed: () {
+                  context.read<Global>().uiLogger.info("跳转: SettingPage => DownloadPage");
                   Navigator.of(context).push(MaterialPageRoute(builder: (context) => DownloadPage()));
                 },
                 icon: Icon(Icons.cloud_download),
@@ -173,12 +181,12 @@ class _SettingPage extends State<SettingPage> {
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.horizontal(right: Radius.circular(25.0)))
                 ),
                 onPressed: () async {
+                  context.read<Global>().uiLogger.info("选择手动导入单词");
                   FilePickerResult? result = await FilePicker.platform.pickFiles(
                     allowMultiple: false,
                     type: FileType.custom,
                     allowedExtensions: ['json'],
                   );
-              
                   if (result != null) {
                     String jsonString;
                     PlatformFile platformFile = result.files.first;
@@ -188,83 +196,21 @@ class _SettingPage extends State<SettingPage> {
                       jsonString = await io.File(platformFile.path!).readAsString();
                     } else {
                       if (!context.mounted) return;
-                      showDialog(
-                      context: context,
-                      builder: (BuildContext context) {
-                        return AlertDialog(
-                          title: Text('错误'),
-                          content: Text("文件 \"${platformFile.name}\" \n无法读取：bytes和path均为null。"),
-                          actions: <Widget>[
-                            TextButton(
-                              child: Text('好吧'),
-                              onPressed: () {
-                                Navigator.of(context).pop();
-                              },
-                            ),
-                            TextButton(
-                              child: Text('行吧'),
-                              onPressed: () {
-                                Navigator.of(context).pop();
-                              },
-                            ),
-                          ],
-                        );
-                      },
-                      );
+                      context.read<Global>().uiLogger.warning("文件导入错误: bytes和path均为null");
+                      alart(context, "文件 \"${platformFile.name}\" \n无法读取：bytes和path均为null。");
                       return;
                     }
+                    if (!context.mounted) return;
                     try{
-                      if (!context.mounted) return;
+                      context.read<Global>().uiLogger.fine("文件读取完成，开始解析");
                       Map<String, dynamic> jsonData = json.decode(jsonString);
                       Provider.of<Global>(context, listen: false).importData(jsonData, platformFile.name);
-                      showDialog(
-                      context: context,
-                      builder: (BuildContext context) {
-                        return AlertDialog(
-                          title: Text('完成'),
-                          content: Column(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Text("文件 \"${platformFile.name}\" \n已导入。"),
-                              Text("少数情况下无法即时刷新词汇总量，可稍后再到设置页面查看~", style: TextStyle(fontSize: 8.0, color: Colors.grey))
-                            ],
-                          ),
-                          actions: <Widget>[
-                            TextButton(
-                              child: Text('好的'),
-                              onPressed: () {
-                                Navigator.of(context).pop();
-                              },
-                            ),
-                          ],
-                        );
-                      },
-                      );
+                      alart(context, "文件 \"${platformFile.name}\" \n已导入。");
+                      context.read<Global>().uiLogger.info("文件解析成功");
                     } catch (e) {
                       if (!context.mounted) return;
-                      showDialog(
-                        context: context,
-                        builder: (BuildContext context) {
-                          return AlertDialog(
-                            title: Text('错误'),
-                            content: Text('文件 ${platformFile.name} 无效：\n$e'),
-                            actions: <Widget>[
-                              TextButton(
-                                child: Text('好吧'),
-                                onPressed: () {
-                                  Navigator.of(context).pop();
-                                },
-                              ),
-                              TextButton(
-                                child: Text('行吧'),
-                                onPressed: () {
-                                  Navigator.of(context).pop();
-                                },
-                              ),
-                            ],
-                          );
-                        }
-                      );
+                      context.read<Global>().uiLogger.severe("文件 ${platformFile.name} 无效: $e");
+                      alart(context, '文件 ${platformFile.name} 无效：\n$e');
                     }
                   }
                 },
@@ -281,6 +227,7 @@ class _SettingPage extends State<SettingPage> {
           shape: BeveledRectangleBorder()
         ),
         onPressed: (){
+          context.read<Global>().uiLogger.info("跳转: SettingPage => QuestionsSettingLeadingPage");
           Navigator.of(context).push(MaterialPageRoute(builder: (context) => QuestionsSettingLeadingPage()));
         }, 
         child: Row(
@@ -298,6 +245,7 @@ class _SettingPage extends State<SettingPage> {
           shape: RoundedRectangleBorder(borderRadius: BorderRadiusGeometry.vertical(bottom: Radius.circular(25.0)))
         ),
         onPressed: (){
+          context.read<Global>().uiLogger.info("跳转: SettingPage => DataSyncPage");
           Navigator.of(context).push(MaterialPageRoute(builder: (context) => DataSyncPage()));
         }, 
         child: Row(
@@ -340,6 +288,7 @@ class _SettingPage extends State<SettingPage> {
           DropdownButton(
             value: set["audio"]["useBackupSource"], 
             onChanged: (value) {
+              context.read<Global>().uiLogger.info("更新音频接口: $value");
               if(value == 1) alart(context, "警告: \n来自\"TextReadTTS.com\"的音频不支持发音符号，且只能合成40字以内的文本。\n开启此功能请知悉。");
               set["audio"]["useBackupSource"] = value;
               context.read<Global>().updateSetting();
@@ -381,6 +330,7 @@ class _SettingPage extends State<SettingPage> {
               });
             },
             onChangeEnd: (value) {
+              context.read<Global>().uiLogger.info("更新音频速度设置: $value");
               context.read<Global>().updateSetting();
             },
           ),
@@ -424,6 +374,7 @@ class _SettingPage extends State<SettingPage> {
           shape: RoundedRectangleBorder(borderRadius: BorderRadiusGeometry.vertical(top: Radius.circular(25.0))),
         ),
         onPressed: () {
+          context.read<Global>().uiLogger.info("打开Github项目网站");
           launchUrl(Uri.parse("https://github.com/OctagonalStar/arabic_learning/"));
         }, 
         child: Row(
@@ -452,6 +403,7 @@ class _SettingPage extends State<SettingPage> {
           shape: RoundedRectangleBorder(borderRadius: BorderRadiusGeometry.vertical(bottom: Radius.circular(25.0))),
         ),
         onPressed: () {
+          context.read<Global>().uiLogger.info("跳转: SettingPage => AboutPage");
           Navigator.of(context).push(MaterialPageRoute(builder: (context) => AboutPage(setting: setting,)));
         },
         child: Row(
