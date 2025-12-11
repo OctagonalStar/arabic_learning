@@ -1,10 +1,12 @@
 import 'dart:convert';
 import 'dart:ui';
-import 'package:arabic_learning/vars/global.dart';
-import 'package:arabic_learning/vars/statics_var.dart';
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'utili.dart';
+
+import 'package:arabic_learning/vars/global.dart';
+import 'package:arabic_learning/vars/statics_var.dart';
+import 'package:arabic_learning/funcs/utili.dart';
 
 // 该文件主要包含了对于UI有关的函数及多次在不同地方使用的Widget类或者函数
 
@@ -34,6 +36,7 @@ import 'utili.dart';
 /// List<Map<String, dynamic>> words = getSelectedWords(context , forceSelectClasses: value);
 /// ```
 Future<List<List<String>>> popSelectClasses(BuildContext context, {bool withCache = false}) async {
+  context.read<Global>().uiLogger.info("弹出课程选择（ClassSelectPage），withCache: $withCache");
   late final List<List<String>> beforeSelectedClasses;
   if(withCache) {
     final String tpcPrefs = context.read<Global>().prefs.getString("tempConfig") ?? jsonEncode(StaticsVar.tempConfig);
@@ -41,13 +44,14 @@ Future<List<List<String>>> popSelectClasses(BuildContext context, {bool withCach
         .cast<List>()
         .map((e) => e.cast<String>().toList())
         .toList();
+    context.read<Global>().uiLogger.fine("已缓存课程选择: $beforeSelectedClasses");
   } else {
     beforeSelectedClasses = [];
   }
   List<List<String>>? selectedClasses = await showModalBottomSheet<List<List<String>>>(
     context: context,
     // 假装圆角... :)
-    shape: RoundedSuperellipseBorder(side: BorderSide(width: 1.0, color: Theme.of(context).colorScheme.onSurface.withAlpha(150)), borderRadius: StaticsVar.br),
+    shape: RoundedRectangleBorder(side: BorderSide(width: 1.0, color: Theme.of(context).colorScheme.onSurface.withAlpha(150)), borderRadius: StaticsVar.br),
     isDismissible: false,
     isScrollControlled: context.read<Global>().isWideScreen,
     enableDrag: true,
@@ -60,7 +64,9 @@ Future<List<List<String>>> popSelectClasses(BuildContext context, {bool withCach
     Map<String, dynamic> tpcMap = jsonDecode(tpcPrefs);
     tpcMap["SelectedClasses"] = selectedClasses;
     context.read<Global>().prefs.setString("tempConfig", jsonEncode(tpcMap));
+    context.read<Global>().uiLogger.info("课程选择缓存完成");
   }
+  if(context.mounted) context.read<Global>().uiLogger.fine("选择的课程: $selectedClasses");
   return selectedClasses ?? [];
 }
 
@@ -76,7 +82,8 @@ Future<List<List<String>>> popSelectClasses(BuildContext context, {bool withCach
 /// [isClassSelected] :需要一个函数判断该课程是否被选中
 /// 
 /// 一般情况下该函数只会在 [ClassSelectPage] 中被使用，若非必要你不应该使用此函数
-List<Widget> classesSelectionList(BuildContext context, MediaQueryData mediaQuery, Function (List<String>) onChanged, bool Function (List<String>) isClassSelected) {
+List<Widget> classesSelectionList(BuildContext context, Function (List<String>) onChanged, bool Function (List<String>) isClassSelected) {
+  context.read<Global>().uiLogger.fine("构建课程选择列表");
   Map<String, dynamic> wordData = context.read<Global>().wordData;
   List<Widget> widgetList = [];
   for (String sourceName in wordData["Classes"].keys) {
@@ -125,10 +132,12 @@ List<Widget> classesSelectionList(BuildContext context, MediaQueryData mediaQuer
     }
   }
   if(widgetList.isEmpty) {
+    context.read<Global>().uiLogger.warning("用户未导入可用词库");
     widgetList.add(
       Center(child: Text('啥啥词库都没导入，你学个啥呢？\n自己去 设置 -> 数据设置 -> 导入词库', style: TextStyle(fontSize: 24.0, color: Colors.redAccent),))
     );
   }
+  context.read<Global>().uiLogger.info("课程选择列表构建完成");
   return widgetList;
 }
 
@@ -149,7 +158,8 @@ List<Widget> classesSelectionList(BuildContext context, MediaQueryData mediaQuer
 ///   alart(context, "你点击了按钮"，onConfirmed: (){i++}, delayConfirm: Duration(seconds: 1));
 /// }
 /// ```
-void alart(context, String e, {Function? onConfirmed, Duration delayConfirm = const Duration(milliseconds: 0)}) {
+void alart(BuildContext context, String e, {Function? onConfirmed, Duration delayConfirm = const Duration(milliseconds: 0)}) {
+  context.read<Global>().uiLogger.info("构建弹出窗口: 携带信息: $e ;确认参数: ${onConfirmed != null}; 延迟: ${delayConfirm.inMilliseconds}");
   showDialog(
     context: context, 
     builder: (BuildContext context) {
@@ -176,6 +186,39 @@ void alart(context, String e, {Function? onConfirmed, Duration delayConfirm = co
         ],
       );
     }
+  );
+}
+
+/// 弹出详解页面
+void viewAnswer(BuildContext context, Map<String, dynamic> wordData) async {
+  context.read<Global>().uiLogger.info("弹出详解页面");
+  MediaQueryData mediaQuery = MediaQuery.of(context);
+  showBottomSheet(
+    context: context, 
+    shape: RoundedSuperellipseBorder(side: BorderSide(width: 1.0, color: Theme.of(context).colorScheme.onSurface), borderRadius: StaticsVar.br),
+    enableDrag: true,
+    builder: (context) {
+      return Container(
+        padding: EdgeInsets.only(top: mediaQuery.size.height * 0.05),
+        decoration: BoxDecoration(
+          color: Theme.of(context).colorScheme.onPrimary,
+          borderRadius: StaticsVar.br,
+        ),
+        child: Column(
+          children: [
+            Expanded(child: WordCard(word: wordData)),
+            ElevatedButton(
+              onPressed: () {Navigator.pop(context);}, 
+              style: ElevatedButton.styleFrom(
+                fixedSize: Size(mediaQuery.size.width * 0.8, mediaQuery.size.height * 0.1),
+                shape: RoundedRectangleBorder(borderRadius: StaticsVar.br)
+              ),
+              child: Text("我知道了"),
+            )
+          ],
+        ),
+      );
+    },
   );
 }
 
@@ -537,7 +580,7 @@ class ClassSelectPage extends StatelessWidget {
         children: [
           Expanded(
             child: ListView(
-              children: classesSelectionList(context, mediaQuery, onClassChanged, isClassSelected)
+              children: classesSelectionList(context, onClassChanged, isClassSelected)
             ),
           ),
           ElevatedButton(
@@ -653,13 +696,16 @@ class _ChoiceQuestions extends State<ChoiceQuestions> {
 
   @override
   Widget build(BuildContext context) {
+    context.read<Global>().uiLogger.info("构建选择题页面: 主单词: ${widget.mainWord};选项: ${widget.choices}");
     MediaQueryData mediaQuery = MediaQuery.of(context);
     int showingMode = widget.bottonLayout;
     // showingMode 0: 1 Row, 1: 2 Rows, 2: 4 Rows
     if(showingMode == -1){
+      context.read<Global>().uiLogger.fine("未指定布局，开始计算");
       bool overFlowPossible = false;
       for(int i = 1; i < 4; i++) {
         if(widget.choices[i].length * 16 > mediaQuery.size.width * (context.read<Global>().isWideScreen ? 0.21 : 0.8)){
+          context.read<Global>().uiLogger.fine("在 [${widget.choices[i]}] 可能溢出，采用密集布局");
           overFlowPossible = true;
           break;
         }
@@ -678,6 +724,7 @@ class _ChoiceQuestions extends State<ChoiceQuestions> {
           showingMode = 1;
         }
       }
+      context.read<Global>().uiLogger.info("最终采用布局方案: $showingMode");
     }
     return Material(
       child: Center(
@@ -696,6 +743,7 @@ class _ChoiceQuestions extends State<ChoiceQuestions> {
                     ),
                     onPressed: () async {
                       if (playing || !widget.allowAudio) {
+                        context.read<Global>().uiLogger.warning("${playing ? "正在播放" : "不准许音频"}，中断TTS");
                         return;
                       }
                       setLocalState(() {
@@ -759,6 +807,7 @@ class WordCardQuestion extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    context.read<Global>().uiLogger.info("构建单词卡片页面，主单词: ${word["arabic"]}");
     MediaQueryData mediaQuery = MediaQuery.of(context);
     return Material(
       child: Column(
@@ -804,6 +853,7 @@ class _SpellQuestion extends State<SpellQuestion> {
 
   @override
   Widget build(BuildContext context) {
+    context.read<Global>().uiLogger.info("构建拼写题页面，主单词: ${widget.word["arabic"]}");
     MediaQueryData mediaQuery = MediaQuery.of(context);
     return Material(
       child: Column(
@@ -854,6 +904,7 @@ class _SpellQuestion extends State<SpellQuestion> {
           SizedBox(height: mediaQuery.size.height * 0.05),
           ElevatedButton(
             onPressed: () {
+              context.read<Global>().uiLogger.info("提交单词检查: [${controller.text}]");
               check(controller.text);
             }, 
             style: ElevatedButton.styleFrom(

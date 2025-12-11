@@ -1,7 +1,6 @@
 import 'dart:math';
 
 import 'package:arabic_learning/funcs/ui.dart';
-import 'package:arabic_learning/funcs/utili.dart';
 import 'package:arabic_learning/vars/global.dart';
 import 'package:flutter/material.dart';
 import 'package:arabic_learning/vars/statics_var.dart';
@@ -218,7 +217,7 @@ class _InLearningPageState extends State<InLearningPage> {
                   onSelected: (value) {
                     bool ans = value == testItem[2][0];
                     if(!ans) {
-                      Future.delayed(Duration(seconds: 1), (){if(context.mounted) viewAnswer(mediaQuery, context, testItem[0]);});
+                      Future.delayed(Duration(seconds: 1), (){if(context.mounted) viewAnswer(context, testItem[0]);});
                     } else {
                       correctCount++;
                     }
@@ -251,7 +250,7 @@ class _InLearningPageState extends State<InLearningPage> {
                               ),
                             ),
                             onPressed: () {
-                              viewAnswer(mediaQuery, context, testItem[0]);
+                              viewAnswer(context, testItem[0]);
                             }, 
                             child: FittedBox(
                               fit: BoxFit.contain,
@@ -308,7 +307,7 @@ class _InLearningPageState extends State<InLearningPage> {
                       correctCount++;
                       return true;
                     } else {
-                      viewAnswer(mediaQuery, context, testItem[0]);
+                      viewAnswer(context, testItem[0]);
                       return false;
                     }
                   },
@@ -334,7 +333,7 @@ class _InLearningPageState extends State<InLearningPage> {
                               ),
                             ),
                             onPressed: () {
-                              viewAnswer(mediaQuery, context, testItem[0]);
+                              viewAnswer(context, testItem[0]);
                             }, 
                             child: FittedBox(
                               fit: BoxFit.contain,

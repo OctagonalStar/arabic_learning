@@ -12,6 +12,7 @@ import 'package:arabic_learning/package_replacement/fake_sherpa_onnx.dart' if (d
 
 class Global with ChangeNotifier {
   final Logger logger = Logger("Global");
+  final Logger uiLogger = Logger("UI");
   Global();
   late bool firstStart; // 是否为第一次使用
   bool inited = false; //是否初始化完成
@@ -270,7 +271,7 @@ class Global with ChangeNotifier {
     Logger.root.clearListeners();
     Logger.root.onRecord.listen((record) async {
       if (kDebugMode || settingData["Debug"]) {
-        debugPrint('${record.time}-[${record.level.name}]: ${record.message}');
+        debugPrint('${record.time}-[${record.loggerName}][${record.level.name}]: ${record.message}');
       }
     });
   }

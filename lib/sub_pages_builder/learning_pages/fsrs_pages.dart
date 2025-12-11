@@ -280,7 +280,7 @@ class _FSRSReviewCardPageState extends State<FSRSReviewCardPage> {
                     shape: RoundedRectangleBorder(borderRadius: StaticsVar.br)
                   ),
                   onPressed: (){
-                    viewAnswer(mediaQuery, context, wordData[widget.wordID]);
+                    viewAnswer(context, wordData[widget.wordID]);
                     setState(() {
                       choosed = true;
                     });
@@ -498,7 +498,7 @@ class _FSRSLearningPageState extends State<FSRSLearningPage> {
                             shape: RoundedRectangleBorder(borderRadius: StaticsVar.br),
                           ),
                           onPressed: (){
-                            viewAnswer(mediaQuery, context, widget.words[index]);
+                            viewAnswer(context, widget.words[index]);
                           }, 
                           icon: Icon(Icons.tips_and_updates),
                           label: Text(value == 0.0 ? "提示" : "查看详解"),

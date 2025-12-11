@@ -122,14 +122,14 @@ class _DataSyncPage extends State<DataSyncPage> {
                               try{
                                 if(!webdav.isReachable) await webdav.connect();
                                 if(context.mounted) await webdav.upload(context.read<Global>().prefs);
-                                if(!context.mounted) return;
                               } catch (e) {
+                                if(!context.mounted) return;
                                 alart(context, e.toString());
+                                setLocalState(() {isUploading = false;});
                                 return;
                               } 
-                              setLocalState(() {
-                                isUploading = false;
-                              });
+                              setLocalState(() {isUploading = false;});
+                              if(!context.mounted) return;
                               alart(context, "已上传");
                             },
                             child: Text("上传")
@@ -156,15 +156,16 @@ class _DataSyncPage extends State<DataSyncPage> {
                               });
                               try{
                                 if(!webdav.isReachable) await webdav.connect();
-                                if(context.mounted) if(await webdav.download(context.read<Global>().prefs) && context.mounted) context.read<Global>().conveySetting();
-                                if(!context.mounted) return;
+                                if(context.mounted) await webdav.download(context.read<Global>().prefs);
+                                if(context.mounted) context.read<Global>().conveySetting();
                               } catch (e) {
+                                if(!context.mounted) return;
                                 alart(context, e.toString());
+                                setLocalState(() {isDownloading = false;});
                                 return;
                               } 
-                              setLocalState(() {
-                                isDownloading = false;
-                              });
+                              if(!context.mounted) return;
+                              setLocalState(() {isDownloading = false;});
                               alart(context, "已恢复\n部分设置可能需要软件重启后才能生效");
                             },
                             child: Text("恢复")
