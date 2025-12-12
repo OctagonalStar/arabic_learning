@@ -80,7 +80,7 @@ class FSRS {
   }
 
   int willDueIn(int index) {
-    return cards[index].due.difference(DateTime.now()).inDays;
+    return cards[index].due.toLocal().difference(DateTime.now()).inDays;
   }
 
   void reviewCard(int wordId, int duration, bool isCorrect) {
@@ -88,16 +88,16 @@ class FSRS {
     int index = cards.indexWhere((Card card) => card.cardId == wordId); // 避免有时候cardId != wordId
     logger.fine("定位复习卡片地址: $index, 目前阶段: ${cards[index].step}, 难度: ${cards[index].difficulty}, 稳定: ${cards[index].stability}, 过期时间(+8): ${cards[index].due.toLocal()}");
     final (:card, :reviewLog) = scheduler.reviewCard(cards[index], rater.calculate(duration, isCorrect), reviewDateTime: DateTime.now().toUtc(), reviewDuration: duration);
-    logger.fine("卡片 $index 复习后: 目前阶段: ${cards[index].step}, 难度: ${cards[index].difficulty}, 稳定: ${cards[index].stability}, 过期时间(+8): ${cards[index].due.toLocal()}");
     cards[index] = card;
     reviewLogs[index] = reviewLog;
+    logger.fine("卡片 $index 复习后: 目前阶段: ${cards[index].step}, 难度: ${cards[index].difficulty}, 稳定: ${cards[index].stability}, 过期时间(+8): ${cards[index].due.toLocal()}");
     save();
   }
 
   int getWillDueCount() {
     int dueCards = 0;
     for(int i = 0; i < cards.length; i++) {
-      if(willDueIn(i) == 0) {
+      if(willDueIn(i) < 1) {
         dueCards++;
       }
     }
@@ -107,7 +107,7 @@ class FSRS {
   int getLeastDueCard() {
     int leastDueIndex = 0;
     for(int i = 1; i < cards.length; i++) {
-      if(cards[i].due.isBefore(cards[leastDueIndex].due) && cards[i].due.difference(DateTime.now()) < Duration(days: 1)) {
+      if(cards[i].due.toLocal().isBefore(cards[leastDueIndex].due.toLocal()) && cards[i].due.toLocal().difference(DateTime.now()) < Duration(days: 1)) {
         leastDueIndex = i;
       }
     }

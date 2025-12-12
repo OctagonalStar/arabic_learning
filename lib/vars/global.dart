@@ -27,7 +27,10 @@ class Global with ChangeNotifier {
   /// the setting data
   Map<String, dynamic> _settingData = {
     "User": "",
-    "Debug": false,
+    "Debug": {
+      "internalLog": false,
+      "internalLevel": 0 //0:ALL ;1:finest ;2:finer ;3:fine ;4:info ;5:warning ;6:severe ;7:shout ;8:off 
+    },
     "LastVersion": StaticsVar.appVersion,
     "regular": {
       "theme": 9,
@@ -244,6 +247,12 @@ class Global with ChangeNotifier {
       oldSetting["quiz"] = _settingData["quiz"];
     }
 
+    // 000111 调试更新
+    if(oldSetting["Debug"].runtimeType == bool){
+      logger.info("配置文件 000111 调试更新");
+      oldSetting["Debug"] = _settingData["Debug"];
+    }
+
     _settingData = deepMerge(_settingData, oldSetting);
     logger.info("配置文件合成完成");
     await updateSetting();
@@ -272,14 +281,18 @@ class Global with ChangeNotifier {
 
   void changeLoggerBehavior() {
     Logger.root.clearListeners();
-    Logger.root.onRecord.listen((record) async {
-      if (kDebugMode || settingData["Debug"]) {
+    if(kDebugMode){
+      Logger.root.onRecord.listen((record) async {
         debugPrint('${record.time}-[${record.loggerName}][${record.level.name}]: ${record.message}');
-      }
-      if(settingData["Debug"]){
+      });
+    }
+    if(settingData["Debug"]["internalLog"]){
+      const List<Level> levelList = [Level.ALL, Level.FINEST, Level.FINER, Level.FINE, Level.INFO, Level.WARNING, Level.SEVERE, Level.SHOUT, Level.OFF];
+      Logger.root.onRecord.listen((record) async {
+        if(record.level < levelList[settingData["Debug"]["internalLevel"]]) return;
         internalLogCapture.add('${record.time}-[${record.loggerName}][${record.level.name}]: ${record.message}');
-      }
-    });
+      });
+    }
   }
 
   Future<void> postInit() async {
