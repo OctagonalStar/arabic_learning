@@ -18,12 +18,13 @@ import 'package:arabic_learning/pages/setting_page.dart';
 import 'package:arabic_learning/pages/test_page.dart';
 
 void main() async {
-  Logger.root.level = kDebugMode ? Level.ALL : Level.WARNING;
-  Logger.root.onRecord.listen((record) {
-    if (kDebugMode) {
+  Logger.root.level = kDebugMode ? Level.ALL : Level.OFF;
+  if (kDebugMode){
+    Logger.root.onRecord.listen((record) {
       debugPrint('${record.time}-[${record.loggerName}][${record.level.name}]: ${record.message}');
-    }
-  });
+    });
+  }
+  
   final Logger logger = Logger("enter");
   logger.info("日志加载成功");
   WidgetsFlutterBinding.ensureInitialized();

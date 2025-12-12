@@ -287,6 +287,7 @@ class Global with ChangeNotifier {
       });
     }
     if(settingData["Debug"]["internalLog"]){
+      Logger.root.level = Level.ALL;
       const List<Level> levelList = [Level.ALL, Level.FINEST, Level.FINER, Level.FINE, Level.INFO, Level.WARNING, Level.SEVERE, Level.SHOUT, Level.OFF];
       Logger.root.onRecord.listen((record) async {
         if(record.level < levelList[settingData["Debug"]["internalLevel"]]) return;
