@@ -1,12 +1,15 @@
+import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
+import 'package:arabic_learning/vars/global.dart';
 import 'package:arabic_learning/vars/statics_var.dart';
 import 'package:arabic_learning/sub_pages_builder/test_pages/listening_test_page.dart';
-import 'package:flutter/material.dart';
 
 class TestPage extends StatelessWidget {
   const TestPage({super.key});
   @override
   Widget build(BuildContext context) {
+    context.read<Global>().uiLogger.info("构建 TestPage");
     final mediaQuery = MediaQuery.of(context);
     return Column(
       mainAxisAlignment: MainAxisAlignment.start,
@@ -23,6 +26,7 @@ class TestPage extends StatelessWidget {
             ),
           ),
           onPressed: () {
+            context.read<Global>().uiLogger.info("跳转: TestPage => ForeListeningSettingPage");
             Navigator.push(
               context, 
               MaterialPageRoute(

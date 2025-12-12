@@ -2,6 +2,11 @@
 
 ## v?.?.?? - ????-??-?? - (??????)
 
+### Added
+
+- 添加了日志捕获 [#23](https://github.com/OctagonalStar/arabic_learning/issues/23)
+- 添加了调试页面
+
 ### Improvement
 
 - 优化了网页端字体加载逻辑

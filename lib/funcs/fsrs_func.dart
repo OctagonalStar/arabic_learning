@@ -1,6 +1,12 @@
 import 'dart:convert';
-import 'package:arabic_learning/package_replacement/storage.dart';
+
+import 'package:arabic_learning/vars/global.dart';
+import 'package:flutter/material.dart' show BuildContext;
 import 'package:fsrs/fsrs.dart';
+import 'package:logging/logging.dart';
+
+import 'package:arabic_learning/package_replacement/storage.dart';
+import 'package:provider/provider.dart';
 
 class FSRS { 
   List<Card> cards = [];
@@ -9,12 +15,15 @@ class FSRS {
   late SharedPreferences prefs;
   late Rater rater;
   late Map<String, dynamic> settingData;
-
+  late final Logger logger;
   // index != cardId; cardId = wordId = the index of word in global.wordData[words]
 
-  Future<bool> init() async {
-    prefs = await SharedPreferences.getInstance();
+  Future<bool> init({BuildContext? context}) async {
+    logger = Logger('FSRS');
+    logger.fine("构建FSRS模块");
+    prefs = context==null ? await SharedPreferences.getInstance() : context.read<Global>().prefs;
     if(!prefs.containsKey("fsrsData")) {
+      logger.info("未发现FSRS配置，加载默认配置");
       settingData = {
         'enabled': false,
         'scheduler': {},
@@ -33,12 +42,15 @@ class FSRS {
         reviewLogs.add(ReviewLog.fromMap(settingData['reviewLog'][i]));
       }
       rater = Rater(settingData['rater']['scheme']);
+      logger.info("FSRS配置加载完成");
       return true;
     }
+    logger.info("FSRS未启用");
     return false;
   }
 
   void save() async {
+    logger.info("正在保存FSRS配置");
     settingData['scheduler'] = scheduler.toMap();
     List cardsCache = [];
     List logCache = [];
@@ -55,8 +67,9 @@ class FSRS {
     return settingData['enabled'];
   }
 
-  Future<void> createScheduler(int scheme) async {
-    await init();
+  Future<void> createScheduler(int scheme, {BuildContext? context}) async {
+    await init(context: context);
+    logger.info("初始化scheduler，选择方案 $scheme");
     List<double> desiredRetention = [0.85, 0.9, 0.95, 0.95, 0.99];
     scheduler = Scheduler(desiredRetention: desiredRetention[scheme]);
     settingData['rater']['scheme'] = scheme;
@@ -71,8 +84,11 @@ class FSRS {
   }
 
   void reviewCard(int wordId, int duration, bool isCorrect) {
+    logger.fine("记录复习卡片: Id: $wordId; duration: $duration; isCorrect: $isCorrect");
     int index = cards.indexWhere((Card card) => card.cardId == wordId); // 避免有时候cardId != wordId
-    final (:card, :reviewLog) = scheduler.reviewCard(cards[index], rater.calculate(duration, isCorrect));
+    logger.fine("定位复习卡片地址: $index, 目前阶段: ${cards[index].step}, 难度: ${cards[index].difficulty}, 稳定: ${cards[index].stability}, 过期时间(+8): ${cards[index].due.toLocal()}");
+    final (:card, :reviewLog) = scheduler.reviewCard(cards[index], rater.calculate(duration, isCorrect), reviewDateTime: DateTime.now().toUtc(), reviewDuration: duration);
+    logger.fine("卡片 $index 复习后: 目前阶段: ${cards[index].step}, 难度: ${cards[index].difficulty}, 稳定: ${cards[index].stability}, 过期时间(+8): ${cards[index].due.toLocal()}");
     cards[index] = card;
     reviewLogs[index] = reviewLog;
     save();

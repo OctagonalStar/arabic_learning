@@ -1,7 +1,10 @@
+import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+
+import 'package:arabic_learning/vars/statics_var.dart';
+import 'package:arabic_learning/vars/global.dart';
 import 'package:arabic_learning/funcs/ui.dart';
 import 'package:arabic_learning/funcs/utili.dart';
-import 'package:arabic_learning/vars/statics_var.dart';
-import 'package:flutter/material.dart';
 
 class ForeListeningSettingPage extends StatefulWidget {
   const ForeListeningSettingPage({super.key});
@@ -20,6 +23,7 @@ class _ForeListeningSettingPage extends State<ForeListeningSettingPage> {
 
   @override
   Widget build(BuildContext context) {
+    context.read<Global>().uiLogger.info("构建 ForeListeningSettingPage");
     MediaQueryData mediaQuery = MediaQuery.of(context);
     int wordCount = getSelectedWords(context, forceSelectClasses: selectedClasses).length;
     return Scaffold(
@@ -43,6 +47,7 @@ class _ForeListeningSettingPage extends State<ForeListeningSettingPage> {
                   TextContainer(text: "1. 发音符号测试"),
                   IconButton(
                     onPressed: () {
+                      context.read<Global>().uiLogger.info("进行听写发音测试");
                       playTextToSpeech("وَ", context);
                     }, 
                     icon: Icon(Icons.volume_up, size: 100)
@@ -205,6 +210,8 @@ class _ForeListeningSettingPage extends State<ForeListeningSettingPage> {
                   alart(context, "是哪个小可爱没选课程就来听写了");
                   return;
                 }
+                context.read<Global>().uiLogger.info("准备开始进行听写: 播放速度: $playRate;播放次数: $playTimes;播放间隔: $interval;词间隔: $intervalBetweenWords");
+                context.read<Global>().uiLogger.info("跳转 ForeListeningSettingPage => MainListeningPage");
                 Navigator.push(
                   context, 
                   MaterialPageRoute(
@@ -252,8 +259,10 @@ class _MainListeningPageState extends State<MainListeningPage> {
   // 3: 答案页面
   @override
   Widget build(BuildContext context) {
+    context.read<Global>().uiLogger.info("构建 MainListeningPage");
     MediaQueryData mediaQuery = MediaQuery.of(context);
     if(stage == 3) {
+      context.read<Global>().uiLogger.info("构建 MainListeningPage:答案页面");
       // 答案页面
       // creat list view:
       List<Widget> list = [
