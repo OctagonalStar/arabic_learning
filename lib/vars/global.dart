@@ -14,6 +14,7 @@ class Global with ChangeNotifier {
   final Logger logger = Logger("Global");
   final Logger uiLogger = Logger("UI");
   Global();
+
   late bool firstStart; // 是否为第一次使用
   bool inited = false; //是否初始化完成
   late bool updateLogRequire; //是否需要显示更新日志
@@ -21,6 +22,7 @@ class Global with ChangeNotifier {
   late final SharedPreferences prefs; // 储存实例
   bool backupFontLoaded = false;
   late bool modelTTSDownloaded = false;
+  List<String> internalLogCapture = [];
 
   /// the setting data
   Map<String, dynamic> _settingData = {
@@ -132,6 +134,7 @@ class Global with ChangeNotifier {
   /// ``` json
   /// {
   ///  "User": "",
+  ///  "Debug": false,
   ///  "LastVersion": StaticsVar.appVersion,
   ///  "regular": {
   ///    "theme": 9,
@@ -272,6 +275,9 @@ class Global with ChangeNotifier {
     Logger.root.onRecord.listen((record) async {
       if (kDebugMode || settingData["Debug"]) {
         debugPrint('${record.time}-[${record.loggerName}][${record.level.name}]: ${record.message}');
+      }
+      if(settingData["Debug"]){
+        internalLogCapture.add('${record.time}-[${record.loggerName}][${record.level.name}]: ${record.message}');
       }
     });
   }

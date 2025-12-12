@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:arabic_learning/sub_pages_builder/setting_pages/debug_page.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
@@ -373,6 +374,28 @@ class _SettingPage extends State<SettingPage> {
           backgroundColor: Theme.of(context).colorScheme.onPrimary.withAlpha(150),
           minimumSize: Size.fromHeight(mediaQuery.size.height * 0.08),
           shape: RoundedRectangleBorder(borderRadius: BorderRadiusGeometry.vertical(top: Radius.circular(25.0))),
+        ),
+        onPressed: (){
+          context.read<Global>().uiLogger.info("跳转: SettingPage => DebugPage");
+          Navigator.push(context, MaterialPageRoute(builder: (context)=>DebugPage()));
+        }, 
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.start,
+          children: [
+            Icon(Icons.bug_report, size: 24.0),
+            SizedBox(width: mediaQuery.size.width * 0.01),
+            Expanded(
+              child: Text("调试信息")
+            ),
+            Icon(Icons.arrow_forward_ios)
+          ],
+        )
+      ),
+      ElevatedButton(
+        style: ElevatedButton.styleFrom(
+          backgroundColor: Theme.of(context).colorScheme.onPrimary.withAlpha(150),
+          minimumSize: Size.fromHeight(mediaQuery.size.height * 0.08),
+          shape: BeveledRectangleBorder(),
         ),
         onPressed: () {
           context.read<Global>().uiLogger.info("打开Github项目网站");
