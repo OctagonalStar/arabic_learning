@@ -9,7 +9,7 @@ class TestPage extends StatelessWidget {
   const TestPage({super.key});
   @override
   Widget build(BuildContext context) {
-    context.read<Global>().uiLogger.info("构建TestPage");
+    context.read<Global>().uiLogger.info("构建 TestPage");
     final mediaQuery = MediaQuery.of(context);
     return Column(
       mainAxisAlignment: MainAxisAlignment.start,

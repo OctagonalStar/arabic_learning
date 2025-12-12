@@ -13,7 +13,7 @@ class HomePage extends StatelessWidget {
   const HomePage({super.key});
   @override
   Widget build(BuildContext context) {
-    context.read<Global>().uiLogger.fine("构建HomePage");
+    context.read<Global>().uiLogger.fine("构建 HomePage");
     final themeColor = Theme.of(context).colorScheme;
     final mediaQuery = MediaQuery.of(context);
     final FSRS fsrs = FSRS();
@@ -160,7 +160,7 @@ class _DailyWord extends State<DailyWord> {
 
   @override
   Widget build(BuildContext context) {
-    context.read<Global>().uiLogger.fine("构建DailyWord组件");
+    context.read<Global>().uiLogger.fine("构建 DailyWord组件");
     MediaQueryData mediaQuery = MediaQuery.of(context);
     final now = DateTime.now();
     final seed = now.year * 10000 + now.month * 100 + now.day;

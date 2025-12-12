@@ -1,10 +1,11 @@
-import 'package:arabic_learning/funcs/ui.dart';
-import 'package:arabic_learning/sub_pages_builder/setting_pages/open_source_licenses.dart';
-import 'package:arabic_learning/vars/global.dart';
-import 'package:arabic_learning/vars/license_storage.dart';
-import 'package:arabic_learning/vars/statics_var.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+
+import 'package:arabic_learning/vars/statics_var.dart';
+import 'package:arabic_learning/vars/license_storage.dart';
+import 'package:arabic_learning/vars/global.dart';
+import 'package:arabic_learning/funcs/ui.dart';
+import 'package:arabic_learning/sub_pages_builder/setting_pages/open_source_licenses.dart';
 
 class AboutPage extends StatelessWidget {
   final Map<String, dynamic> setting;
@@ -12,6 +13,7 @@ class AboutPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    context.read<Global>().uiLogger.info("构建 AboutPage");
     return Scaffold(
       appBar: AppBar(
         title: Center(child: Text("关于")),
@@ -44,6 +46,7 @@ class AboutPage extends StatelessWidget {
               fixedSize: Size.fromHeight(MediaQuery.of(context).size.height * 0.1)
             ),
             onPressed: () {
+              context.read<Global>().uiLogger.info("跳转: AboutPage => OpenSourceLicensePage");
               Navigator.push(
                 context,
                 MaterialPageRoute(

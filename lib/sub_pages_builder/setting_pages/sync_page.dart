@@ -20,7 +20,9 @@ class _DataSyncPage extends State<DataSyncPage> {
 
   @override
   Widget build(BuildContext context) {
+    context.read<Global>().uiLogger.info("构建 DataSyncPage");
     enabled ??= context.read<Global>().settingData["sync"]["enabled"];
+    context.read<Global>().uiLogger.fine("获取WebDAV实例");
     final WebDAV webdav = WebDAV(
       uri: context.read<Global>().settingData["sync"]["account"]["uri"], 
       user: context.read<Global>().settingData["sync"]["account"]["userName"],
@@ -116,6 +118,7 @@ class _DataSyncPage extends State<DataSyncPage> {
                           ? CircularProgressIndicator()
                           :ElevatedButton(
                             onPressed: () async {
+                              context.read<Global>().uiLogger.info("用户上传数据");
                               setLocalState(() {
                                 isUploading = true;
                               });
@@ -151,7 +154,8 @@ class _DataSyncPage extends State<DataSyncPage> {
                           ? CircularProgressIndicator()
                           : ElevatedButton(
                             onPressed: () async {
-                            setLocalState(() {
+                              context.read<Global>().uiLogger.info("用户恢复数据");
+                              setLocalState(() {
                                 isDownloading = true;
                               });
                               try{

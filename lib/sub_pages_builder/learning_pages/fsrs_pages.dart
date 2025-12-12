@@ -1,12 +1,13 @@
 import 'dart:math';
-import 'package:arabic_learning/funcs/fsrs_func.dart';
-import 'package:arabic_learning/funcs/ui.dart';
-import 'package:arabic_learning/funcs/utili.dart';
-import 'package:arabic_learning/vars/global.dart';
-import 'package:arabic_learning/vars/statics_var.dart';
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-// import 'package:fl_chart/fl_chart.dart';
+
+import 'package:arabic_learning/vars/statics_var.dart';
+import 'package:arabic_learning/vars/global.dart';
+import 'package:arabic_learning/funcs/ui.dart';
+import 'package:arabic_learning/funcs/utili.dart';
+import 'package:arabic_learning/funcs/fsrs_func.dart';
 
 class ForeFSRSSettingPage extends StatelessWidget {
   final bool forceChoosing;
@@ -14,6 +15,7 @@ class ForeFSRSSettingPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    context.read<Global>().uiLogger.info("构建 ForeFSRSSettingPage");
     MediaQueryData mediaQuery = MediaQuery.of(context);
     int choosedScheme = 5;
     int getChosenScheme([int? scheme]) {
@@ -153,6 +155,7 @@ class MainFSRSPage extends StatelessWidget {
   
   @override
   Widget build(BuildContext context) {
+    context.read<Global>().uiLogger.info("构建 MainFSRSPage");
     bool isAnyDue = fsrs.getWillDueCount() != 0;
     MediaQueryData mediaQuery = MediaQuery.of(context);
     final PageController controller = PageController();
@@ -214,15 +217,16 @@ class FSRSReviewCardPage extends StatefulWidget {
   const FSRSReviewCardPage({super.key, required this.wordID, required this.fsrs, required this.rnd, required this.controller});
 
   @override
-  State<FSRSReviewCardPage> createState() => _FSRSReviewCardPageState();
+  State<FSRSReviewCardPage> createState() => _FSRSReviewCardPage();
 }
 
-class _FSRSReviewCardPageState extends State<FSRSReviewCardPage> {
+class _FSRSReviewCardPage extends State<FSRSReviewCardPage> {
   List<String>? options;
   bool choosed = false;
   final DateTime start = DateTime.now();
   @override
   Widget build(BuildContext context) {
+    context.read<Global>().uiLogger.info("构建 FSRSReviewCardPage");
     MediaQueryData mediaQuery = MediaQuery.of(context);
     final List<dynamic> wordData = context.read<Global>().wordData["Words"];
 
@@ -356,9 +360,13 @@ class _FSRSOverViewPageState extends State<FSRSOverViewPage> {
               words = getSelectedWords(context, forceSelectClasses: selectedClasses, doShuffle: true, doDouble: false);
               // 去除已经学习的项目
               words.removeWhere((Map<String, dynamic> item) => widget.fsrs.isContained(item['id']));
-              Navigator.push(context, MaterialPageRoute(
-                builder: (context) => FSRSLearningPage(words: words, fsrs: widget.fsrs,),
-              ));
+              context.read<Global>().uiLogger.info("跳转: FSRSOverViewPage => FSRSLearningPage");
+              Navigator.push(
+                context, 
+                MaterialPageRoute(
+                  builder: (context) => FSRSLearningPage(words: words, fsrs: widget.fsrs,),
+                )
+              );
             },
           ),
         // TextContainer(text: "统计数据")

@@ -109,7 +109,7 @@ class _MyHomePageState extends State<MyHomePage> {
 
   // 构建桌面端布局（侧边导航）
   Widget _buildDesktopLayout(BuildContext context) {
-    context.read<Global>().uiLogger.fine("构建桌面端布局");
+    context.read<Global>().uiLogger.fine("构建 DesktopLayout");
     return Row(
       children: [
         // 侧边导航栏
@@ -162,7 +162,7 @@ class _MyHomePageState extends State<MyHomePage> {
 
   // 构建移动端布局（底部导航）
   Widget _buildMobileLayout(BuildContext context) {
-    context.read<Global>().uiLogger.fine("构建移动端布局");
+    context.read<Global>().uiLogger.fine("构建 MobileLayout");
     return Column(
       children: [
         // 主要内容区域
@@ -230,7 +230,7 @@ class _MyHomePageState extends State<MyHomePage> {
   final TextEditingController controller = TextEditingController();
   @override
   Widget build(BuildContext context) {
-    context.read<Global>().uiLogger.fine("收到 MyHomePage 构建请求");
+    context.read<Global>().uiLogger.fine("构建 MyHomePage");
     final gob = context.watch<Global>();
     if(gob.firstStart) {
       context.read<Global>().uiLogger.info("构建首次启动页面");
@@ -342,13 +342,11 @@ class _MyHomePageState extends State<MyHomePage> {
         );
       });
     }
-    context.read<Global>().uiLogger.fine("构建子页面");
     _pageList = [
       LearningPage(),
       HomePage(),
       TestPage()
     ];
-    context.read<Global>().uiLogger.fine("构建主页面");
     return Scaffold(
       backgroundColor: context.read<Global>().settingData["eggs"]["stella"] ? Colors.transparent : null,
       appBar: AppBar(
@@ -365,6 +363,7 @@ class _MyHomePageState extends State<MyHomePage> {
           ),
           IconButton(
             onPressed: () {
+              context.read<Global>().uiLogger.info("跳转: MyHomePage => SettingPage");
               Navigator.of(context).push(MaterialPageRoute(builder: (context) => SettingPage()));
             }, 
             icon: Icon(Icons.settings)

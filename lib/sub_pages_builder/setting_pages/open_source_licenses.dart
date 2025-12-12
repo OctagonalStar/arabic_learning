@@ -11,6 +11,7 @@ class OpenSourceLicensePage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    context.read<Global>().uiLogger.info("构建 OpenSourceLicensePage");
     List<oss.Package> licenses = [...oss.allDependencies];
     List<Widget> widgets = [];
 
@@ -80,6 +81,7 @@ class OpenSourceLicensePage extends StatelessWidget {
               TextContainer(text: app.license??""),
               if(context.read<Global>().settingData['regular']['theme'] == 10) ElevatedButton.icon(
                 onPressed: () {
+                  context.read<Global>().uiLogger.warning("触发彩蛋 #00s");
                   alart(context, "荏苒的时光足以使沧海化为桑田...", delayConfirm: Duration(seconds: 3),
                   onConfirmed: (){
                     alart(context, "往昔英雄的伟名也已深埋于尘土之下...", delayConfirm: Duration(seconds: 3),

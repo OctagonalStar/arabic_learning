@@ -347,6 +347,7 @@ class _SettingPage extends State<SettingPage> {
           if(kIsWeb) {
             alart(context, "此功能仅支持APP端。\n要是你是果儿的话...那我没招了，抱歉");
           } else {
+            context.read<Global>().uiLogger.info("跳转: SettingPage => ModelDownload");
             Navigator.of(context).push(MaterialPageRoute(builder: (context) => ModelDownload()));
           }
         },

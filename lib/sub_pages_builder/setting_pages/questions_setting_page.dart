@@ -9,6 +9,7 @@ class QuestionsSettingLeadingPage extends StatelessWidget{
 
   @override
   Widget build(BuildContext context) {
+    context.read<Global>().uiLogger.info("构建: QuestionsSettingLeadingPage");
     return Scaffold(
       appBar: AppBar(title: Text("题型设置")),
       body: ListView(
@@ -36,6 +37,7 @@ class EnterSpecificQuestionSettingButton extends StatelessWidget {
         shape: RoundedRectangleBorder(borderRadius: StaticsVar.br)
       ),
       onPressed: (){
+        context.read<Global>().uiLogger.info("跳转: QuestionsSettingLeadingPage => QuestionsSettingPage");
         Navigator.of(context).push(MaterialPageRoute(builder: (context) => QuestionsSettingPage(sectionKey: sectionKey, allowTypes: allowTypes, isAllowModify: isAllowModify)));
       }, 
       child: Row(
@@ -66,6 +68,7 @@ class _QuestionsSettingPage extends State<QuestionsSettingPage> {
 
   @override
   Widget build(BuildContext context) {
+    context.read<Global>().uiLogger.info("构建 QuestionsSettingPage:$selectedTypes");
     MediaQueryData mediaQuery = MediaQuery.of(context);
     selectedTypes ??= context.read<Global>().settingData['quiz'][widget.sectionKey]["questionSections"];
     List<Widget> listTiles = [];
@@ -89,6 +92,7 @@ class _QuestionsSettingPage extends State<QuestionsSettingPage> {
                   if(selectedTypes!.length == 1) {
                     alart(context, "至少保留一项");
                   } else {
+                    context.read<Global>().uiLogger.fine("移除题型项目: $index");
                     setState(() {
                       selectedTypes!.removeAt(index.toInt());
                     });
@@ -117,6 +121,7 @@ class _QuestionsSettingPage extends State<QuestionsSettingPage> {
             Expanded(
               child: ReorderableListView(
                 onReorder: (oldIndex, newIndex) {
+                  context.read<Global>().uiLogger.info("重排题型项目: $oldIndex => $newIndex");
                   setState(() {
                     if(oldIndex < newIndex) newIndex--; // 修正索引
                     int old = selectedTypes!.removeAt(oldIndex);
@@ -131,6 +136,7 @@ class _QuestionsSettingPage extends State<QuestionsSettingPage> {
                 Switch(
                   value: context.read<Global>().settingData['quiz'][widget.sectionKey]["shuffleInternaly"], 
                   onChanged: (value) {
+                    context.read<Global>().uiLogger.info("题型内题目乱序: $value");
                     setState(() {
                       context.read<Global>().settingData['quiz'][widget.sectionKey]["shuffleInternaly"] = value;
                     });
@@ -144,6 +150,7 @@ class _QuestionsSettingPage extends State<QuestionsSettingPage> {
                 Switch(
                   value: context.read<Global>().settingData['quiz'][widget.sectionKey]["shuffleExternaly"], 
                   onChanged: (value) {
+                    context.read<Global>().uiLogger.info("题型乱序: $value");
                     setState(() {
                       context.read<Global>().settingData['quiz'][widget.sectionKey]["shuffleExternaly"] = value;
                     });
@@ -157,6 +164,7 @@ class _QuestionsSettingPage extends State<QuestionsSettingPage> {
                 Switch(
                   value: context.read<Global>().settingData['quiz'][widget.sectionKey]["shuffleGlobally"], 
                   onChanged: (value) {
+                    context.read<Global>().uiLogger.info("全局乱序: $value");
                     setState(() {
                       context.read<Global>().settingData['quiz'][widget.sectionKey]["shuffleGlobally"] = value;
                     });
@@ -193,6 +201,7 @@ class _QuestionsSettingPage extends State<QuestionsSettingPage> {
                         shape: i == 0 ? RoundedRectangleBorder(borderRadius: BorderRadiusGeometry.vertical(top: Radius.circular(25.0))) : BeveledRectangleBorder()
                       ),
                       onPressed: (){
+                        context.read<Global>().uiLogger.info("添加题型类型: $i");
                         setState(() {
                           selectedTypes!.add(i);
                         });
@@ -208,6 +217,7 @@ class _QuestionsSettingPage extends State<QuestionsSettingPage> {
                       shape: RoundedRectangleBorder(borderRadius: BorderRadiusGeometry.vertical(bottom: Radius.circular(25.0), top: value < 0.4 ? Radius.circular(25.0) : Radius.zero))
                     ),
                     onPressed: (){
+                      context.read<Global>().uiLogger.fine("切换题型悬浮按钮状态");
                       setState(() {
                         floatButtonFlod = !floatButtonFlod;
                       });
