@@ -17,136 +17,136 @@ class ForeFSRSSettingPage extends StatelessWidget {
   Widget build(BuildContext context) {
     context.read<Global>().uiLogger.info("构建 ForeFSRSSettingPage");
     MediaQueryData mediaQuery = MediaQuery.of(context);
-    int choosedScheme = 5;
-    int getChosenScheme([int? scheme]) {
-      if (scheme != null) {
-        choosedScheme = scheme;
-        return choosedScheme;
-      }
-      return choosedScheme;
+    FSRS fsrs = FSRS()..init(outerPrefs: context.read<Global>().prefs);
+    if(fsrs.isEnabled() && !forceChoosing) {
+      return MainFSRSPage(fsrs: fsrs);
     }
-    FSRS fsrs = FSRS();
-    return FutureBuilder(
-      future: fsrs.init(context: context),
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return Center(child: CircularProgressIndicator());
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text("FSRS-抗遗忘学习 预设置"),
+      ),
+      body: StatefulBuilder(
+        builder: (context, setState) {
+          return ListView(
+            children: [
+              TextContainer(text: "本软件通过FSRS（Forgetting Spaced Repetition System）遗忘曲线的间隔重复学习算法，帮助用户更有效地记忆单词。\n你可以通过调整以下参数来个性化学习方案："),
+              SizedBox(height: mediaQuery.size.height * 0.02),
+              TextContainer(text: "参数配置", textAlign: TextAlign.center),
+              Container(
+                decoration: BoxDecoration(
+                  borderRadius: StaticsVar.br,
+                  color: Theme.of(context).colorScheme.onPrimary
+                ),
+                margin: EdgeInsets.all(8.0),
+                padding: EdgeInsets.all(8.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Expanded(child: Text("期望提取率", style: Theme.of(context).textTheme.bodyLarge)),
+                        Slider(
+                          value: fsrs.settingData['rater']["desiredRetention"], 
+                          max: 0.99,
+                          min: 0.75,
+                          divisions: 24,
+                          onChanged: (value){
+                            setState(() {
+                              fsrs.settingData['rater']["desiredRetention"] = ((value*100).floorToDouble()/100);
+                            });
+                          }
+                        ),
+                        Text((fsrs.settingData['rater']["desiredRetention"] as num).toStringAsFixed(2))
+                      ],
+                    ),
+                    Text("期望提取率 是指期望你有多大概率能回忆起某个单词。通常设置值越大，要求的学习间隔越短。"),
+                    Text("允许设置范围 0.75-0.99; 建议不低于0.8，不高于0.95")
+                  ],
+                ),
+              ),
+              Container(
+                decoration: BoxDecoration(
+                  borderRadius: StaticsVar.br,
+                  color: Theme.of(context).colorScheme.onSecondary
+                ),
+                margin: EdgeInsets.all(8.0),
+                padding: EdgeInsets.all(8.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Expanded(child: Text("优秀评分限时", style: Theme.of(context).textTheme.bodyLarge)),
+                        Slider(
+                          value: (fsrs.settingData['rater']["easyDuration"] as int).toDouble(), 
+                          max: 5000.0,
+                          min: 1000.0,
+                          divisions: 40,
+                          onChanged: (value){
+                            setState(() {
+                              fsrs.settingData['rater']["easyDuration"] = value.toInt();
+                            });
+                          }
+                        ),
+                        Text(fsrs.settingData['rater']["easyDuration"].toString())
+                      ],
+                    ),
+                    Text("优秀评分限时 是指在你回答问题时，回答正确耗时小于多少时评分为优秀(Easy)，单位为毫秒"),
+                    Text("允许设置范围 1000-5000; 建议不要设置过高，否则会导致算法认为单词简单而规划间隔过长")
+                  ],
+                ),
+              ),
+              Container(
+                decoration: BoxDecoration(
+                  borderRadius: StaticsVar.br,
+                  color: Theme.of(context).colorScheme.onPrimary
+                ),
+                margin: EdgeInsets.all(8.0),
+                padding: EdgeInsets.all(8.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Expanded(child: Text("良好评分限时", style: Theme.of(context).textTheme.bodyLarge)),
+                        Slider(
+                          value: (fsrs.settingData['rater']["goodDuration"] as int).toDouble(), 
+                          max: 10000.0,
+                          min: 2000.0,
+                          divisions: 80,
+                          onChanged: (value){
+                            setState(() {
+                              fsrs.settingData['rater']["goodDuration"] = value.toInt();
+                            });
+                          }
+                        ),
+                        Text(fsrs.settingData['rater']["goodDuration"].toString())
+                      ],
+                    ),
+                    Text("良好评分限时 是指在你回答问题时，回答正确耗时小于多少时评分为良好(Good)，单位为毫秒"),
+                    Text("允许设置范围 2000-10000; 建议不要设置过低，否则会导致学习阶段单词难以毕业（导致某单词一直被规划为当天内学习），如果你遇到此类情况，将此值适当调高即可。"),
+                    Text("请勿设置一个低于优秀评分的数值")
+                  ],
+                ),
+              ),
+              ElevatedButton.icon(
+                style: ElevatedButton.styleFrom(
+                  fixedSize: Size.fromHeight(100),
+                  shape: RoundedRectangleBorder(borderRadius: StaticsVar.br)
+                ),
+                onPressed: (){
+                  fsrs.createScheduler(prefs: context.read<Global>().prefs);
+                  alart(context, "设置完成，重新进入规律学习页面即可开始", onConfirmed: (){Navigator.popUntil(context, (route) => route.isFirst);});
+                }, 
+                icon: Icon(Icons.done),
+                label: Text("确认"),
+              )
+            ]
+          );
         }
-        if (snapshot.hasError) {
-          return Center(child: Text("Error: ${snapshot.error}"));
-        }
-        if(fsrs.isEnabled() && !forceChoosing) {
-          return MainFSRSPage(fsrs: fsrs);
-        }
-        return Scaffold(
-          appBar: AppBar(
-            title: const Text("FSRS-抗遗忘学习 预设置"),
-          ),
-          body: StatefulBuilder(
-            builder: (context, setState) {
-              return ListView(
-                children: [
-                  TextContainer(text: "该功能仍处于实验中，存在较多不稳定因素且可能随时被移除", style: TextStyle(color: Colors.redAccent, fontSize: 24)),
-                  TextContainer(text: "FSRS（Forgetting Spaced Repetition System）是一种基于遗忘曲线的间隔重复学习系统，旨在帮助用户更有效地记忆信息。通过调整复习间隔，FSRS能够最大限度地提高记忆的持久性，减少遗忘的发生。\n为了让您更个性化地学习，之后可在页面右上角更改："),
-                  SizedBox(height: mediaQuery.size.height * 0.02),
-                  difficultyButton(
-                    context,
-                    "简单 (Easy)",
-                    "标准: \n- 期望提取率为 85%\n- 3秒内答对为优秀\n- 8秒内答对为良好",
-                    0,
-                    getChosenScheme,
-                    setState,
-                  ),
-                  difficultyButton(
-                    context,
-                    "良好 (Fine)",
-                    "标准: \n- 期望提取率为 90%\n- 2秒内答对为优秀\n- 6秒内答对为良好",
-                    1,
-                    getChosenScheme,
-                    setState,
-                  ),
-                  difficultyButton(
-                    context,
-                    "一般 (OK~)",
-                    "标准: \n- 期望提取率为 95%\n- 1.5秒内答对为优秀\n- 4秒内答对为良好",
-                    2,
-                    getChosenScheme,
-                    setState,
-                  ),
-                  difficultyButton(
-                    context,
-                    "困难 (Emm...)",
-                    "标准: \n- 期望提取率为 95%\n- 1秒内答对为优秀\n- 2秒内答对为良好",
-                    3,
-                    getChosenScheme,
-                    setState,
-                  ),
-                  difficultyButton(
-                    context,
-                    "地狱 (Impossible)",
-                    "标准: \n- 期望提取率为 99%\n- 1秒内答对为优秀\n- 1.5秒内答对为良好",
-                    4,
-                    getChosenScheme,
-                    setState,
-                  ),
-                ]
-              );
-            }
-          ),
-        );
-      },
+      ),
     );
   }
-}
-
-Widget difficultyButton(BuildContext context, String label, String subLabel, int scheme, Function getChosenScheme, Function setLocalState) {
-  return AnimatedContainer(
-    margin: const EdgeInsets.all(16.0),
-    duration: const Duration(milliseconds: 500),
-    curve: StaticsVar.curve,
-    decoration: BoxDecoration(
-      color: getChosenScheme() == scheme ? Theme.of(context).colorScheme.onPrimary : Theme.of(context).colorScheme.onInverseSurface,
-      borderRadius: StaticsVar.br,
-    ),
-    child: ElevatedButton(
-      style: ElevatedButton.styleFrom(
-        padding: const EdgeInsets.all(16.0),
-        //fixedSize: Size.fromHeight(50.0),
-        backgroundColor: Colors.transparent,
-        shape: RoundedRectangleBorder(
-          borderRadius: StaticsVar.br,
-        ),
-      ),
-      child: Row(
-        children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(label),
-                Text(subLabel, style: TextStyle(fontSize: 12.0, color: Colors.grey)),
-              ],
-            )
-          ),
-          if (getChosenScheme() == scheme) const Icon(Icons.check, size: 24.0),
-          if (getChosenScheme() == scheme) ElevatedButton.icon(
-            icon: const Icon(Icons.arrow_forward, size: 24.0),
-            onPressed: () async {
-              await FSRS().createScheduler(scheme, context: context);
-              if(!context.mounted) return;
-              alart(context, "设置完成，重新进入规律学习页面即可开始", onConfirmed: (){Navigator.pop(context);});
-            },
-            label: const Text("确认"),
-          )
-        ],
-      ),
-      onPressed: () {
-        setLocalState(() {
-          getChosenScheme(scheme);
-        });
-      },
-    )
-  );
 }
 
 class MainFSRSPage extends StatelessWidget {
@@ -173,6 +173,7 @@ class MainFSRSPage extends StatelessWidget {
               showModalBottomSheet(
                 context: context, 
                 isScrollControlled: true,
+                enableDrag: false,
                 builder: (context) => ForeFSRSSettingPage(forceChoosing: true)
               );
             },

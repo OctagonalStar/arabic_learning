@@ -16,133 +16,127 @@ class HomePage extends StatelessWidget {
     context.read<Global>().uiLogger.fine("构建 HomePage");
     final themeColor = Theme.of(context).colorScheme;
     final mediaQuery = MediaQuery.of(context);
-    final FSRS fsrs = FSRS();
-    
-    return FutureBuilder(
-      future: fsrs.init(context: context),
-      builder: (context, asyncSnapshot) {
-        return Column(
+    final FSRS fsrs = FSRS()..init(outerPrefs: context.read<Global>().prefs);
+    return Column(
+      children: [
+        DailyWord(),
+        SizedBox(height: mediaQuery.size.height * 0.01),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
           children: [
-            DailyWord(),
-            SizedBox(height: mediaQuery.size.height * 0.01),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-              children: [
-                Container(
-                  width: mediaQuery.size.width * 0.30,
-                  height: mediaQuery.size.height * 0.18,
-                  margin: EdgeInsets.all(4.0),
-                  padding: EdgeInsets.all(16.0),
-                  decoration: BoxDecoration(
-                    color: themeColor.secondaryContainer.withAlpha(150),
-                    boxShadow: [
-                      BoxShadow(
-                        color: themeColor.surfaceBright.withAlpha(150),
-                        offset: Offset(2, 4),
-                        blurRadius: 8.0,
-                      ),
-                    ],
-                    borderRadius: StaticsVar.br,
+            Container(
+              width: mediaQuery.size.width * 0.30,
+              height: mediaQuery.size.height * 0.18,
+              margin: EdgeInsets.all(4.0),
+              padding: EdgeInsets.all(16.0),
+              decoration: BoxDecoration(
+                color: themeColor.secondaryContainer.withAlpha(150),
+                boxShadow: [
+                  BoxShadow(
+                    color: themeColor.surfaceBright.withAlpha(150),
+                    offset: Offset(2, 4),
+                    blurRadius: 8.0,
                   ),
-                  child: Column(
+                ],
+                borderRadius: StaticsVar.br,
+              ),
+              child: Column(
+                children: [
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Row(
-                        crossAxisAlignment: CrossAxisAlignment.center,
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Text('连胜天数', style: TextStyle(fontSize: 12.0)),
-                          context.read<Global>().settingData["learning"]["lastDate"] == DateTime.now().difference(DateTime(2025, 11, 1)).inDays
-                            ? Icon(Icons.done, size: 15.0, color: Colors.tealAccent)
-                            : Icon(Icons.error_outline, size: 15.0, color: Colors.amber, semanticLabel: "今天还没学习~"),
-                        ],
-                      ),
-                      SizedBox(height: mediaQuery.size.height * 0.03),
-                      Text(getStrokeDays(context.read<Global>().settingData).toString(), style: TextStyle(fontSize: 24.0, fontWeight: FontWeight.bold)),
+                      Text('连胜天数', style: TextStyle(fontSize: 12.0)),
+                      context.read<Global>().settingData["learning"]["lastDate"] == DateTime.now().difference(DateTime(2025, 11, 1)).inDays
+                        ? Icon(Icons.done, size: 15.0, color: Colors.tealAccent)
+                        : Icon(Icons.error_outline, size: 15.0, color: Colors.amber, semanticLabel: "今天还没学习~"),
                     ],
                   ),
-                ),
-                Container(
-                  width: mediaQuery.size.width * 0.50,
-                  height: mediaQuery.size.height * 0.18,
-                  margin: EdgeInsets.all(4.0),
-                  padding: EdgeInsets.all(16.0),
-                  decoration: BoxDecoration(
-                    color: themeColor.secondaryContainer.withAlpha(150),
-                    boxShadow: [
-                      BoxShadow(
-                        color: themeColor.surfaceBright.withAlpha(150),
-                        offset: Offset(2, 4),
-                        blurRadius: 8.0,
-                      ),
-                    ],
-                    borderRadius: BorderRadius.circular(25.0),
-                  ),
-                  child: Column(
-                    children: [
-                      Text('已学词汇', style: TextStyle(fontSize: 12.0)),
-                      SizedBox(height: mediaQuery.size.height * 0.03),
-                      Text(context.read<Global>().settingData["learning"]["KnownWords"].length.toString(), style: TextStyle(fontSize: 24.0, fontWeight: FontWeight.bold)),
-                    ],
-                  ),
-                ),
-              ],
+                  SizedBox(height: mediaQuery.size.height * 0.03),
+                  Text(getStrokeDays(context.read<Global>().settingData).toString(), style: TextStyle(fontSize: 24.0, fontWeight: FontWeight.bold)),
+                ],
+              ),
             ),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-              children: [
-                Container(
-                  width: mediaQuery.size.width * 0.50,
-                  height: mediaQuery.size.height * 0.18,
-                  margin: EdgeInsets.all(4.0),
-                  padding: EdgeInsets.all(16.0),
-                  decoration: BoxDecoration(
-                    color: themeColor.secondaryContainer.withAlpha(150),
-                    boxShadow: [
-                      BoxShadow(
-                        color: themeColor.surfaceBright.withAlpha(150),
-                        offset: Offset(2, 4),
-                        blurRadius: 8.0,
-                      ),
-                    ],
-                    borderRadius: BorderRadius.circular(25.0),
+            Container(
+              width: mediaQuery.size.width * 0.50,
+              height: mediaQuery.size.height * 0.18,
+              margin: EdgeInsets.all(4.0),
+              padding: EdgeInsets.all(16.0),
+              decoration: BoxDecoration(
+                color: themeColor.secondaryContainer.withAlpha(150),
+                boxShadow: [
+                  BoxShadow(
+                    color: themeColor.surfaceBright.withAlpha(150),
+                    offset: Offset(2, 4),
+                    blurRadius: 8.0,
                   ),
-                  child: Column(
-                    children: [
-                      Text('规律性学习', style: TextStyle(fontSize: 12.0)),
-                      SizedBox(height: mediaQuery.size.height * 0.03),
-                      asyncSnapshot.hasData ? Text(asyncSnapshot.data??false ? "${fsrs.getWillDueCount().toString()}个待复习" : "未启用", style: TextStyle(fontSize: 24.0, fontWeight: FontWeight.bold)) : CircularProgressIndicator(),
-                    ],
-                  ),
-                ),
-                Container(
-                  width: mediaQuery.size.width * 0.30,
-                  height: mediaQuery.size.height * 0.18,
-                  margin: EdgeInsets.all(4.0),
-                  padding: EdgeInsets.all(16.0),
-                  decoration: BoxDecoration(
-                    color: themeColor.secondaryContainer.withAlpha(150),
-                    boxShadow: [
-                      BoxShadow(
-                        color: themeColor.surfaceBright.withAlpha(150),
-                        offset: Offset(2, 4),
-                        blurRadius: 8.0,
-                      ),
-                    ],
-                    borderRadius: StaticsVar.br,
-                  ),
-                  child: Column(
-                    children: [
-                      Text('单词总数', style: TextStyle(fontSize: 12.0)),
-                      SizedBox(height: mediaQuery.size.height * 0.03),
-                      Text(context.read<Global>().wordCount.toString(), style: TextStyle(fontSize: 24.0, fontWeight: FontWeight.bold))
-                    ],
-                  ),
-                ),
-              ]
-            )
+                ],
+                borderRadius: BorderRadius.circular(25.0),
+              ),
+              child: Column(
+                children: [
+                  Text('已学词汇', style: TextStyle(fontSize: 12.0)),
+                  SizedBox(height: mediaQuery.size.height * 0.03),
+                  Text(context.read<Global>().settingData["learning"]["KnownWords"].length.toString(), style: TextStyle(fontSize: 24.0, fontWeight: FontWeight.bold)),
+                ],
+              ),
+            ),
           ],
-        );
-      }
+        ),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+          children: [
+            Container(
+              width: mediaQuery.size.width * 0.50,
+              height: mediaQuery.size.height * 0.18,
+              margin: EdgeInsets.all(4.0),
+              padding: EdgeInsets.all(16.0),
+              decoration: BoxDecoration(
+                color: themeColor.secondaryContainer.withAlpha(150),
+                boxShadow: [
+                  BoxShadow(
+                    color: themeColor.surfaceBright.withAlpha(150),
+                    offset: Offset(2, 4),
+                    blurRadius: 8.0,
+                  ),
+                ],
+                borderRadius: BorderRadius.circular(25.0),
+              ),
+              child: Column(
+                children: [
+                  Text('规律性学习', style: TextStyle(fontSize: 12.0)),
+                  SizedBox(height: mediaQuery.size.height * 0.03),
+                  Text(fsrs.isEnabled() ? "${fsrs.getWillDueCount().toString()}个待复习" : "未启用", style: TextStyle(fontSize: 24.0, fontWeight: FontWeight.bold)),
+                ],
+              ),
+            ),
+            Container(
+              width: mediaQuery.size.width * 0.30,
+              height: mediaQuery.size.height * 0.18,
+              margin: EdgeInsets.all(4.0),
+              padding: EdgeInsets.all(16.0),
+              decoration: BoxDecoration(
+                color: themeColor.secondaryContainer.withAlpha(150),
+                boxShadow: [
+                  BoxShadow(
+                    color: themeColor.surfaceBright.withAlpha(150),
+                    offset: Offset(2, 4),
+                    blurRadius: 8.0,
+                  ),
+                ],
+                borderRadius: StaticsVar.br,
+              ),
+              child: Column(
+                children: [
+                  Text('单词总数', style: TextStyle(fontSize: 12.0)),
+                  SizedBox(height: mediaQuery.size.height * 0.03),
+                  Text(context.read<Global>().wordCount.toString(), style: TextStyle(fontSize: 24.0, fontWeight: FontWeight.bold))
+                ],
+              ),
+            ),
+          ]
+        )
+      ],
     );
   }
 }
