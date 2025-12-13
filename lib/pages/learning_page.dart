@@ -1,16 +1,18 @@
+import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+
 import 'package:arabic_learning/funcs/ui.dart';
 import 'package:arabic_learning/funcs/utili.dart';
-import 'package:arabic_learning/sub_pages_builder/learning_pages/fsrs_pages.dart';
 import 'package:arabic_learning/vars/global.dart';
-import 'package:arabic_learning/sub_pages_builder/learning_pages/learning_pages_build.dart';
-import 'package:flutter/material.dart';
 import 'package:arabic_learning/vars/statics_var.dart';
-import 'package:provider/provider.dart';
+import 'package:arabic_learning/sub_pages_builder/learning_pages/fsrs_pages.dart' show ForeFSRSSettingPage;
+import 'package:arabic_learning/sub_pages_builder/learning_pages/learning_pages_build.dart';
 
 class LearningPage extends StatelessWidget {
   const LearningPage({super.key});
   @override
   Widget build(BuildContext context) {
+    context.read<Global>().uiLogger.fine("构建 LearningPage");
     final mediaQuery = MediaQuery.of(context);
     return Center(
       child: Column(
@@ -94,6 +96,7 @@ class LearningPage extends StatelessWidget {
                   ),
                 ),
                 onPressed: (){
+                  context.read<Global>().uiLogger.info("跳转: LearningPage => ForeFSRSSettingPage");
                   Navigator.push(
                     context, 
                     MaterialPageRoute(
@@ -112,6 +115,7 @@ class LearningPage extends StatelessWidget {
                   shape: RoundedRectangleBorder(borderRadius: StaticsVar.br),
                 ),
                 onPressed: (){
+                  context.read<Global>().uiLogger.info("跳转: LearningPage => WordCardOverViewPage");
                   Navigator.push(
                     context, 
                     MaterialPageRoute(
@@ -139,17 +143,22 @@ class LearningPage extends StatelessWidget {
 
 
 Future<void> shiftToStudy(BuildContext context, int studyType) async {
-  await popSelectClasses(context, withCache: true);
-  if(!context.mounted) return;
-  final List<Map<String, dynamic>> words = getSelectedWords(context, doShuffle: false, doDouble: false);
+  context.read<Global>().uiLogger.info("准备转向学习页面: studyType: $studyType");
+  final List<List<String>> selectedClasses = await popSelectClasses(context, withCache: false);
+  if(selectedClasses.isEmpty || !context.mounted) return;
+  final List<Map<String, dynamic>> words = getSelectedWords(context, doShuffle: false, doDouble: false, forceSelectClasses: selectedClasses);
+  context.read<Global>().uiLogger.info("完成单词挑拣，共${words.length}个");
   if(words.isEmpty) return;
+  context.read<Global>().uiLogger.info("跳转: LearningPage => InLearningPage");
   final bool? finished = await Navigator.push(
     context,
     MaterialPageRoute(
       builder: (context) => InLearningPage(studyType: studyType, words: words),
     ),
   );
-  if((finished??false) && context.mounted) {
+  if(!context.mounted) return;
+  context.read<Global>().uiLogger.info("返回完成情况: $finished");
+  if(finished??false) {
     context.read<Global>().saveLearningProgress(words);
   }
 }

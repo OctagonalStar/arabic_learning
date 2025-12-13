@@ -1,44 +1,59 @@
 import 'dart:convert';
-import 'package:arabic_learning/package_replacement/storage.dart';
+
+import 'package:arabic_learning/funcs/utili.dart';
 import 'package:fsrs/fsrs.dart';
+import 'package:logging/logging.dart';
+
+import 'package:arabic_learning/package_replacement/storage.dart';
 
 class FSRS { 
   List<Card> cards = [];
   List<ReviewLog> reviewLogs = [];
   late Scheduler scheduler;
-  late SharedPreferences prefs;
-  late Rater rater;
+  late final SharedPreferences prefs;
   late Map<String, dynamic> settingData;
-
+  late final Logger logger;
   // index != cardId; cardId = wordId = the index of word in global.wordData[words]
 
-  Future<bool> init() async {
-    prefs = await SharedPreferences.getInstance();
+  bool init({required SharedPreferences outerPrefs}) {
+    prefs = outerPrefs;
+    logger = Logger('FSRS');
+    logger.fine("构建FSRS模块");
+    settingData = {
+      'enabled': false,
+      'scheduler': {},
+      'cards': [],
+      'reviewLog': [],
+      'rater': {
+        "desiredRetention": 0.9,
+        "easyDuration": 3000,
+        "goodDuration": 6000
+      },
+    };
+
     if(!prefs.containsKey("fsrsData")) {
-      settingData = {
-        'enabled': false,
-        'scheduler': {},
-        'cards': [],
-        'reviewLog': [],
-        'rater': {'scheme': 0},
-      };
+      logger.info("未发现FSRS配置，加载默认配置");
       prefs.setString("fsrsData", jsonEncode(settingData));
       return false;
+    } else {
+      settingData = deepMerge(settingData, jsonDecode(prefs.getString("fsrsData")!));
     }
-    settingData = jsonDecode(prefs.getString("fsrsData")!) as Map<String, dynamic>;
+    
     if(isEnabled()){
       scheduler = Scheduler.fromMap(settingData['scheduler']);
       for(int i = 0; i < settingData['cards'].length; i++) {
         cards.add(Card.fromMap(settingData['cards'][i]));
         reviewLogs.add(ReviewLog.fromMap(settingData['reviewLog'][i]));
       }
-      rater = Rater(settingData['rater']['scheme']);
+      logger.info("FSRS配置加载完成");
       return true;
     }
+    logger.info("FSRS未启用");
     return false;
   }
 
   void save() async {
+    logger.info("正在保存FSRS配置");
     settingData['scheduler'] = scheduler.toMap();
     List cardsCache = [];
     List logCache = [];
@@ -55,33 +70,33 @@ class FSRS {
     return settingData['enabled'];
   }
 
-  Future<void> createScheduler(int scheme) async {
-    await init();
-    List<double> desiredRetention = [0.85, 0.9, 0.95, 0.95, 0.99];
-    scheduler = Scheduler(desiredRetention: desiredRetention[scheme]);
-    settingData['rater']['scheme'] = scheme;
+  void createScheduler({required SharedPreferences prefs}) {
+    logger.info("初始化scheduler，选择相关配置 ${settingData["rater"].toString()}");
+    scheduler = Scheduler(desiredRetention: settingData["rater"]["desiredRetention"]);
     settingData['enabled'] = true;
     settingData['scheduler'] = scheduler.toMap();
-    rater = Rater(scheme);
     save();
   }
 
   int willDueIn(int index) {
-    return cards[index].due.difference(DateTime.now()).inDays;
+    return cards[index].due.toLocal().difference(DateTime.now()).inDays;
   }
 
   void reviewCard(int wordId, int duration, bool isCorrect) {
+    logger.fine("记录复习卡片: Id: $wordId; duration: $duration; isCorrect: $isCorrect");
     int index = cards.indexWhere((Card card) => card.cardId == wordId); // 避免有时候cardId != wordId
-    final (:card, :reviewLog) = scheduler.reviewCard(cards[index], rater.calculate(duration, isCorrect));
+    logger.fine("定位复习卡片地址: $index, 目前阶段: ${cards[index].step}, 难度: ${cards[index].difficulty}, 稳定: ${cards[index].stability}, 过期时间(+8): ${cards[index].due.toLocal()}");
+    final (:card, :reviewLog) = scheduler.reviewCard(cards[index], calculate(duration, isCorrect), reviewDateTime: DateTime.now().toUtc(), reviewDuration: duration);
     cards[index] = card;
     reviewLogs[index] = reviewLog;
+    logger.fine("卡片 $index 复习后: 目前阶段: ${cards[index].step}, 难度: ${cards[index].difficulty}, 稳定: ${cards[index].stability}, 过期时间(+8): ${cards[index].due.toLocal()}");
     save();
   }
 
   int getWillDueCount() {
     int dueCards = 0;
     for(int i = 0; i < cards.length; i++) {
-      if(willDueIn(i) == 0) {
+      if(willDueIn(i) < 1) {
         dueCards++;
       }
     }
@@ -91,7 +106,7 @@ class FSRS {
   int getLeastDueCard() {
     int leastDueIndex = 0;
     for(int i = 1; i < cards.length; i++) {
-      if(cards[i].due.isBefore(cards[leastDueIndex].due) && cards[i].due.difference(DateTime.now()) < Duration(days: 1)) {
+      if(cards[i].due.toLocal().isBefore(cards[leastDueIndex].due.toLocal()) && cards[i].due.toLocal().difference(DateTime.now()) < Duration(days: 1)) {
         leastDueIndex = i;
       }
     }
@@ -112,31 +127,22 @@ class FSRS {
     reviewLogs.add(ReviewLog(cardId: wordId, rating: Rating.good, reviewDateTime: DateTime.now()));
     save();
   }
-}
-
-class Rater {
-  Rating get easy => Rating.easy;
-  Rating get good => Rating.good;
-  Rating get hard => Rating.hard;
-  Rating get forget => Rating.again;
-
-  late int scheme;
-
-  Rater(this.scheme);
-
-  static const List<List<int>> _difficultyScheme = [
-    [3000, 8000], // Easy
-    [2000, 6000], // Fine
-    [1500, 4000], // OK~
-    [1000, 2000], // Emm...
-    [1000, 1500], // Impossible
-  ];
 
   Rating calculate(int duration, bool isCorrect) {
     // duration in milliseconds
-    if (!isCorrect) return Rating.again;
-    if (duration < _difficultyScheme[scheme][0]) return Rating.easy;
-    if (duration < _difficultyScheme[scheme][1]) return Rating.good;
+    if (!isCorrect) {
+      logger.fine("计算得分: again");
+      return Rating.again;
+    }
+    if (duration < settingData['rater']['easyDuration']) {
+      logger.fine("计算得分: easy");
+      return Rating.easy;
+    }
+    if (duration < settingData['rater']['goodDuration']) {
+      logger.fine("计算得分: good");
+      return Rating.good;
+    }
+    logger.fine("计算得分: hard");
     return Rating.hard;
   }
 }

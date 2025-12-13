@@ -1,6 +1,7 @@
 import 'package:arabic_learning/funcs/utili.dart';
 import 'package:arabic_learning/vars/statics_var.dart';
 import 'package:flutter/foundation.dart';
+import 'package:logging/logging.dart';
 import 'package:path_provider/path_provider.dart' as path_provider;
 import 'package:flutter/services.dart' show rootBundle, FontLoader;
 import 'package:arabic_learning/package_replacement/storage.dart';
@@ -10,6 +11,10 @@ import 'package:arabic_learning/package_replacement/fake_dart_io.dart' if (dart.
 import 'package:arabic_learning/package_replacement/fake_sherpa_onnx.dart' if (dart.library.io) 'package:sherpa_onnx/sherpa_onnx.dart' as sherpa_onnx;
 
 class Global with ChangeNotifier {
+  final Logger logger = Logger("Global");
+  final Logger uiLogger = Logger("UI");
+  Global();
+
   late bool firstStart; // 是否为第一次使用
   bool inited = false; //是否初始化完成
   late bool updateLogRequire; //是否需要显示更新日志
@@ -17,10 +22,15 @@ class Global with ChangeNotifier {
   late final SharedPreferences prefs; // 储存实例
   bool backupFontLoaded = false;
   late bool modelTTSDownloaded = false;
+  List<String> internalLogCapture = [];
 
   /// the setting data
   Map<String, dynamic> _settingData = {
     "User": "",
+    "Debug": {
+      "internalLog": false,
+      "internalLevel": 0 //0:ALL ;1:finest ;2:finer ;3:fine ;4:info ;5:warning ;6:severe ;7:shout ;8:off 
+    },
     "LastVersion": StaticsVar.appVersion,
     "regular": {
       "theme": 9,
@@ -127,6 +137,7 @@ class Global with ChangeNotifier {
   /// ``` json
   /// {
   ///  "User": "",
+  ///  "Debug": false,
   ///  "LastVersion": StaticsVar.appVersion,
   ///  "regular": {
   ///    "theme": 9,
@@ -197,26 +208,33 @@ class Global with ChangeNotifier {
   int get wordCount => wordData["Words"]!.length;
 
   Future<bool> init() async {
+    logger.info("类收到初始化请求，当前初始化状态为 $inited");
     if(inited) return false;
+    logger.info("类开始初始化");
     prefs = await SharedPreferences.getInstance();
     firstStart = prefs.getString("settingData") == null;
     if(firstStart) {
+      logger.info("首次启动检测为真");
       updateLogRequire = false;
       await prefs.setString("wordData", jsonEncode({"Words": [], "Classes": {}}));
       wordData = jsonDecode(jsonEncode({"Words": [], "Classes": {}})) as Map<String, dynamic>;
+      logger.info("首次启动: 配置表初始化完成");
       await postInit();
     } else {
       await conveySetting();
     }
     inited = true;
+    logger.info("初始化完成");
     return true;
   }
 
   // 预处理一些版本更新的配置文件兼容
   Future<void> conveySetting() async {
+    logger.info("处理配置文件");
     wordData = jsonDecode(prefs.getString("wordData")!) as Map<String, dynamic>;
     Map<String, dynamic> oldSetting = jsonDecode(prefs.getString("settingData")!) as Map<String, dynamic>;
     if(oldSetting["LastVersion"] != _settingData["LastVersion"]) {
+      logger.info("检测到当前版本与上次启动版本不同");
       updateLogRequire = true;
       oldSetting["LastVersion"] = _settingData["LastVersion"];
     } else {
@@ -225,15 +243,24 @@ class Global with ChangeNotifier {
 
     // 000109 题型设置更新 List => Map
     if(oldSetting["quiz"]["ar"].runtimeType == List) {
+      logger.info("配置文件 000109 结构更新");
       oldSetting["quiz"] = _settingData["quiz"];
     }
 
+    // 000111 调试更新
+    if(oldSetting["Debug"].runtimeType == bool){
+      logger.info("配置文件 000111 调试更新");
+      oldSetting["Debug"] = _settingData["Debug"];
+    }
+
     _settingData = deepMerge(_settingData, oldSetting);
+    logger.info("配置文件合成完成");
     await updateSetting();
   }
 
   // 更新配置到存储中
   Future<void> updateSetting({Map<String, dynamic>? settingData, bool refresh = true}) async {
+    logger.info("保存配置文件中");
     if(settingData != null) _settingData = settingData;
     prefs.setString("settingData", jsonEncode(_settingData));
     if(refresh) await postInit();
@@ -252,16 +279,37 @@ class Global with ChangeNotifier {
     notifyListeners();
   }
 
+  void changeLoggerBehavior() {
+    Logger.root.clearListeners();
+    if(kDebugMode){
+      Logger.root.onRecord.listen((record) async {
+        debugPrint('${record.time}-[${record.loggerName}][${record.level.name}]: ${record.message}');
+      });
+    }
+    if(settingData["Debug"]["internalLog"]){
+      Logger.root.level = Level.ALL;
+      const List<Level> levelList = [Level.ALL, Level.FINEST, Level.FINER, Level.FINE, Level.INFO, Level.WARNING, Level.SEVERE, Level.SHOUT, Level.OFF];
+      Logger.root.onRecord.listen((record) async {
+        if(record.level < levelList[settingData["Debug"]["internalLevel"]]) return;
+        internalLogCapture.add('${record.time}-[${record.loggerName}][${record.level.name}]: ${record.message}');
+      });
+    }
+  }
+
   Future<void> postInit() async {
+    logger.info("应用设置中");
+    changeLoggerBehavior();
     await loadTTS();
     await loadEggs();
     updateTheme();
     notifyListeners();
+    logger.info("应用设置完成");
   }
 
   // load TTS model if any
   Future<void> loadTTS() async {
-    if(kIsWeb || vitsTTS != null) return;
+    if(kIsWeb || vitsTTS != null || settingData["audio"]["useBackupSource"] != 2) return;
+    logger.info("TTS: 加载本地TTS中");
     final basePath = await path_provider.getApplicationDocumentsDirectory();
     if(io.File("${basePath.path}/${StaticsVar.modelPath}/ar_JO-kareem-medium.onnx").existsSync()){
       modelTTSDownloaded = true;
@@ -287,6 +335,7 @@ class Global with ChangeNotifier {
       );
 
       vitsTTS = sherpa_onnx.OfflineTts(config);
+      logger.info("TTS: 本地TTS加载完成");
     }
   }
 
@@ -298,6 +347,7 @@ class Global with ChangeNotifier {
   }
 
   void updateTheme() {
+    logger.info("更新主题中");
     if(settingData["regular"]["font"] == 2) {
       arFont = StaticsVar.arBackupFont;
       zhFont = StaticsVar.zhBackupFont;
@@ -356,6 +406,7 @@ class Global with ChangeNotifier {
   //    }
   // }
   Map<String, dynamic> dataFormater(Map<String, dynamic> data, Map<String, dynamic> exData, String sourceName) {
+    logger.info("开始词汇格式化");
     List<String> wordList = [];
     for(var x in exData["Words"]!) {
       wordList.add(x["arabic"]);
@@ -387,12 +438,15 @@ class Global with ChangeNotifier {
   }
 
   void importData(Map<String, dynamic> data, String source) {
+    logger.info("收到词汇导入请求");
     wordData = dataFormater(data, wordData, source);
     prefs.setString("wordData", jsonEncode(wordData));
+    logger.info("词汇导入完成");
     notifyListeners();
   }
   
   void saveLearningProgress(List<Map<String, dynamic>> words){
+    logger.info("保存学习进度中");
     List<int> wordIndexs = [];
     for (Map<String, dynamic> word in words){
       wordIndexs.add(word['id']);
@@ -411,6 +465,7 @@ class Global with ChangeNotifier {
       _settingData["learning"]["startDate"] = nowDate;
     }
     _settingData["learning"]["lastDate"] = nowDate;
-    prefs.setString("settingData", jsonEncode(settingData));
+    updateSetting(refresh: false);
+    logger.info("学习进度保存完成");
   }
 }

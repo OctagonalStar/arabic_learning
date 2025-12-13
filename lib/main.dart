@@ -1,8 +1,3 @@
-import 'package:arabic_learning/funcs/ui.dart';
-import 'package:arabic_learning/funcs/utili.dart';
-import 'package:arabic_learning/vars/global.dart';
-import 'package:arabic_learning/vars/license_storage.dart';
-import 'package:arabic_learning/vars/statics_var.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -10,16 +5,32 @@ import 'package:flutter_markdown_plus/flutter_markdown_plus.dart';
 import 'package:window_manager/window_manager.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:logging/logging.dart';
+
+import 'package:arabic_learning/funcs/ui.dart';
+import 'package:arabic_learning/funcs/utili.dart';
+import 'package:arabic_learning/vars/global.dart';
+import 'package:arabic_learning/vars/license_storage.dart';
+import 'package:arabic_learning/vars/statics_var.dart';
 import 'package:arabic_learning/pages/home_page.dart';
 import 'package:arabic_learning/pages/learning_page.dart';
 import 'package:arabic_learning/pages/setting_page.dart';
 import 'package:arabic_learning/pages/test_page.dart';
 
 void main() async {
+  Logger.root.level = kDebugMode ? Level.ALL : Level.OFF;
+  if (kDebugMode){
+    Logger.root.onRecord.listen((record) {
+      debugPrint('${record.time}-[${record.loggerName}][${record.level.name}]: ${record.message}');
+    });
+  }
+  
+  final Logger logger = Logger("enter");
+  logger.info("日志加载成功");
   WidgetsFlutterBinding.ensureInitialized();
   if (StaticsVar.isDesktop) {
     await windowManager.ensureInitialized();
-
+    logger.info("检测到当前为桌面端，正在加载窗口配置");
     WindowOptions windowOptions = WindowOptions(
       size: Size(1300, 800),
       center: true,
@@ -33,6 +44,7 @@ void main() async {
       await windowManager.show();
       await windowManager.focus();
     });
+    logger.info("窗口配置加载完成");
   }
   // final global = Global();
   // await global.init();
@@ -48,6 +60,7 @@ class MyApp extends StatelessWidget {
   const MyApp({super.key});
   @override
   Widget build(BuildContext context) {
+    context.read<Global>().uiLogger.fine("收到应用层构建请求");
     return context.watch<Global>().inited? 
       MaterialApp(
         title: StaticsVar.appName,
@@ -97,6 +110,7 @@ class _MyHomePageState extends State<MyHomePage> {
 
   // 构建桌面端布局（侧边导航）
   Widget _buildDesktopLayout(BuildContext context) {
+    context.read<Global>().uiLogger.fine("构建 DesktopLayout");
     return Row(
       children: [
         // 侧边导航栏
@@ -149,6 +163,7 @@ class _MyHomePageState extends State<MyHomePage> {
 
   // 构建移动端布局（底部导航）
   Widget _buildMobileLayout(BuildContext context) {
+    context.read<Global>().uiLogger.fine("构建 MobileLayout");
     return Column(
       children: [
         // 主要内容区域
@@ -216,8 +231,10 @@ class _MyHomePageState extends State<MyHomePage> {
   final TextEditingController controller = TextEditingController();
   @override
   Widget build(BuildContext context) {
+    context.read<Global>().uiLogger.fine("构建 MyHomePage");
     final gob = context.watch<Global>();
     if(gob.firstStart) {
+      context.read<Global>().uiLogger.info("构建首次启动页面");
       return Scaffold(
         body: PopScope(
           child: Column(
@@ -263,8 +280,10 @@ class _MyHomePageState extends State<MyHomePage> {
                     ),
                     onPressed: () async {
                       if(controller.text.isNotEmpty){
+                        context.read<Global>().uiLogger.info("用户同意协议，签署名：${controller.text}");
                         context.read<Global>().acceptAggrement(controller.text);
                       } else {
+                        context.read<Global>().uiLogger.info("用户未填写名称");
                         ScaffoldMessenger.of(context).showSnackBar(
                           const SnackBar(
                             content: Text('使用该软件前你应当仔细阅读并理解条款'),
@@ -282,6 +301,47 @@ class _MyHomePageState extends State<MyHomePage> {
           ),
         ),
       );
+    }
+
+    // 更新日志通知
+    if(gob.updateLogRequire) {
+      context.read<Global>().uiLogger.info("预定更新日志通知");
+      gob.updateLogRequire = false;
+      Future.delayed(Duration(seconds: 1), () async {
+        late final String changeLog;
+        changeLog = await rootBundle.loadString('CHANGELOG.md');
+        if(!context.mounted) return;
+        showModalBottomSheet(
+          context: context,
+          shape: RoundedSuperellipseBorder(side: BorderSide(width: 1.0, color: Theme.of(context).colorScheme.onSurface), borderRadius: StaticsVar.br),
+          enableDrag: true,
+          isDismissible: false,
+          isScrollControlled: true,
+          builder: (context) {
+            context.read<Global>().uiLogger.info("构建更新日志通知");
+            return Material(
+              child: Column(
+                children: [
+                  TextContainer(text: "更新内容 软件版本: ${StaticsVar.appVersion.zfill(6)}"),
+                  SizedBox(
+                    height: MediaQuery.of(context).size.height * 0.8,
+                    child: Markdown(data: changeLog)
+                  ),
+                  ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      fixedSize: Size(double.infinity, MediaQuery.of(context).size.height * 0.07)
+                    ),
+                    onPressed: () {
+                      Navigator.pop(context);
+                    }, 
+                    child: Text("知道了")
+                  )
+                ],
+              )
+            );
+          },
+        );
+      });
     }
     _pageList = [
       LearningPage(),
@@ -304,6 +364,7 @@ class _MyHomePageState extends State<MyHomePage> {
           ),
           IconButton(
             onPressed: () {
+              context.read<Global>().uiLogger.info("跳转: MyHomePage => SettingPage");
               Navigator.of(context).push(MaterialPageRoute(builder: (context) => SettingPage()));
             }, 
             icon: Icon(Icons.settings)
@@ -312,43 +373,6 @@ class _MyHomePageState extends State<MyHomePage> {
       ),
       body: LayoutBuilder(
         builder: (context, constraints) {
-          if(gob.updateLogRequire) {
-            gob.updateLogRequire = false;
-            Future.delayed(Duration(seconds: 2), () async {
-              late final String changeLog;
-              changeLog = await rootBundle.loadString('CHANGELOG.md');
-              if(!context.mounted) return;
-              showModalBottomSheet(
-                context: context,
-                shape: RoundedSuperellipseBorder(side: BorderSide(width: 1.0, color: Theme.of(context).colorScheme.onSurface), borderRadius: StaticsVar.br),
-                enableDrag: true,
-                isDismissible: false,
-                isScrollControlled: true,
-                builder: (context) {
-                  return Material(
-                    child: Column(
-                      children: [
-                        TextContainer(text: "更新内容 软件版本: ${StaticsVar.appVersion.zfill(6)}"),
-                        SizedBox(
-                          height: MediaQuery.of(context).size.height * 0.8,
-                          child: Markdown(data: changeLog)
-                        ),
-                        ElevatedButton(
-                          style: ElevatedButton.styleFrom(
-                            fixedSize: Size(double.infinity, MediaQuery.of(context).size.height * 0.07)
-                          ),
-                          onPressed: () {
-                            Navigator.pop(context);
-                          }, 
-                          child: Text("知道了")
-                        )
-                      ],
-                    )
-                  );
-                },
-              );
-            });
-          }
           // 根据屏幕宽度决定使用哪种布局
           if (constraints.maxWidth > _desktopBreakpoint) {
             Provider.of<Global>(context, listen: false).isWideScreen = true;

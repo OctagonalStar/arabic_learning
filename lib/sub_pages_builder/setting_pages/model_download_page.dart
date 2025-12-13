@@ -26,6 +26,7 @@ class _ModelDownload extends State<ModelDownload> {
 
   @override
   Widget build(BuildContext context) {
+    context.read<Global>().uiLogger.info("构建 ModelDownload");
     return Scaffold(
       appBar: AppBar(
         title: const Text('模型下载'),
@@ -44,6 +45,7 @@ class _ModelDownload extends State<ModelDownload> {
             onPressed: () async{
               var basePath = await getApplicationDocumentsDirectory();
               if(io.File("${basePath.path}/${StaticsVar.modelPath}/ar_JO-kareem-medium.onnx").existsSync() && context.mounted){
+                context.read<Global>().uiLogger.warning("检测到模型文件存在");
                 alart(context, "模型已存在");
                 return;
               }
@@ -63,6 +65,7 @@ class _ModelDownload extends State<ModelDownload> {
                   });
               } catch (e) {
                 if(!context.mounted) return;
+                context.read<Global>().uiLogger.severe("模型下载错误: $e");
                 alart(context, "下载失败\n${e.toString()}");
                 setState(() {
                   progress = 0;
@@ -76,6 +79,7 @@ class _ModelDownload extends State<ModelDownload> {
               await extractTarBz2('${basePath.path}/arabicLearning/tts/temp.tar.bz2', "${basePath.path}/arabicLearning/tts/model/");
               if(!context.mounted) return;
               context.read<Global>().loadTTS();
+              context.read<Global>().uiLogger.info("模型下载完成");
               ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("下载完成")));
               setState(() {
                 progress = 4;

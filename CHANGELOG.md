@@ -2,9 +2,20 @@
 
 ## v?.?.?? - ????-??-?? - (??????)
 
+### Added
+
+- 添加了日志捕获 [#23](https://github.com/OctagonalStar/arabic_learning/issues/23)
+- 添加了调试页面
+- 添加了个性化FSRS预设页面 [#26](https://github.com/OctagonalStar/arabic_learning/issues/26)
+
 ### Improvement
 
 - 优化了网页端字体加载逻辑
+
+### Fix
+
+- 修复了FSRS算法对已经过期的单词无法计数的问题
+- 修复了日志中FSRS信息输出错误的问题
 
 ## v0.1.11 - 2025-11-28 - (000111)
 

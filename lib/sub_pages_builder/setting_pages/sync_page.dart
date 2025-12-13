@@ -20,7 +20,9 @@ class _DataSyncPage extends State<DataSyncPage> {
 
   @override
   Widget build(BuildContext context) {
+    context.read<Global>().uiLogger.info("构建 DataSyncPage");
     enabled ??= context.read<Global>().settingData["sync"]["enabled"];
+    context.read<Global>().uiLogger.fine("获取WebDAV实例");
     final WebDAV webdav = WebDAV(
       uri: context.read<Global>().settingData["sync"]["account"]["uri"], 
       user: context.read<Global>().settingData["sync"]["account"]["userName"],
@@ -116,20 +118,21 @@ class _DataSyncPage extends State<DataSyncPage> {
                           ? CircularProgressIndicator()
                           :ElevatedButton(
                             onPressed: () async {
+                              context.read<Global>().uiLogger.info("用户上传数据");
                               setLocalState(() {
                                 isUploading = true;
                               });
                               try{
                                 if(!webdav.isReachable) await webdav.connect();
                                 if(context.mounted) await webdav.upload(context.read<Global>().prefs);
-                                if(!context.mounted) return;
                               } catch (e) {
+                                if(!context.mounted) return;
                                 alart(context, e.toString());
+                                setLocalState(() {isUploading = false;});
                                 return;
                               } 
-                              setLocalState(() {
-                                isUploading = false;
-                              });
+                              setLocalState(() {isUploading = false;});
+                              if(!context.mounted) return;
                               alart(context, "已上传");
                             },
                             child: Text("上传")
@@ -151,20 +154,22 @@ class _DataSyncPage extends State<DataSyncPage> {
                           ? CircularProgressIndicator()
                           : ElevatedButton(
                             onPressed: () async {
-                            setLocalState(() {
+                              context.read<Global>().uiLogger.info("用户恢复数据");
+                              setLocalState(() {
                                 isDownloading = true;
                               });
                               try{
                                 if(!webdav.isReachable) await webdav.connect();
-                                if(context.mounted) if(await webdav.download(context.read<Global>().prefs) && context.mounted) context.read<Global>().conveySetting();
-                                if(!context.mounted) return;
+                                if(context.mounted) await webdav.download(context.read<Global>().prefs);
+                                if(context.mounted) context.read<Global>().conveySetting();
                               } catch (e) {
+                                if(!context.mounted) return;
                                 alart(context, e.toString());
+                                setLocalState(() {isDownloading = false;});
                                 return;
                               } 
-                              setLocalState(() {
-                                isDownloading = false;
-                              });
+                              if(!context.mounted) return;
+                              setLocalState(() {isDownloading = false;});
                               alart(context, "已恢复\n部分设置可能需要软件重启后才能生效");
                             },
                             child: Text("恢复")

@@ -1,5 +1,8 @@
-import 'package:arabic_learning/funcs/ui.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+
+import 'package:arabic_learning/vars/global.dart';
+import 'package:arabic_learning/funcs/ui.dart';
 
 class SettingItem extends StatelessWidget {
   final String title;
@@ -9,6 +12,7 @@ class SettingItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    context.read<Global>().uiLogger.info("构建 SettingItem: $title");
     MediaQueryData mediaQuery = MediaQuery.of(context);
     List<Container> decoratedContainers = children.map((widget) {
       return Container(

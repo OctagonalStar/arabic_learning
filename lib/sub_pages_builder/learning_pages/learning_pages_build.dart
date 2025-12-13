@@ -1,11 +1,11 @@
 import 'dart:math';
 
-import 'package:arabic_learning/funcs/ui.dart';
-import 'package:arabic_learning/funcs/utili.dart';
-import 'package:arabic_learning/vars/global.dart';
 import 'package:flutter/material.dart';
-import 'package:arabic_learning/vars/statics_var.dart';
 import 'package:provider/provider.dart';
+
+import 'package:arabic_learning/vars/statics_var.dart';
+import 'package:arabic_learning/vars/global.dart';
+import 'package:arabic_learning/funcs/ui.dart';
 
 
 
@@ -92,6 +92,7 @@ class _InLearningPageState extends State<InLearningPage> {
 
   @override
   Widget build(BuildContext context) {
+    context.read<Global>().uiLogger.info("构建 InLearningPage");
     final mediaQuery = MediaQuery.of(context);
     return PopScope(
       canPop: true,
@@ -122,6 +123,7 @@ class _InLearningPageState extends State<InLearningPage> {
                           ),
                           TextButton(
                             onPressed: () {
+                              context.read<Global>().uiLogger.info("用户取消学习");
                               Navigator.pop(context);
                               Navigator.pop(context, finished);
                             },
@@ -218,7 +220,7 @@ class _InLearningPageState extends State<InLearningPage> {
                   onSelected: (value) {
                     bool ans = value == testItem[2][0];
                     if(!ans) {
-                      Future.delayed(Duration(seconds: 1), (){if(context.mounted) viewAnswer(mediaQuery, context, testItem[0]);});
+                      Future.delayed(Duration(seconds: 1), (){if(context.mounted) viewAnswer(context, testItem[0]);});
                     } else {
                       correctCount++;
                     }
@@ -251,7 +253,7 @@ class _InLearningPageState extends State<InLearningPage> {
                               ),
                             ),
                             onPressed: () {
-                              viewAnswer(mediaQuery, context, testItem[0]);
+                              viewAnswer(context, testItem[0]);
                             }, 
                             child: FittedBox(
                               fit: BoxFit.contain,
@@ -308,7 +310,7 @@ class _InLearningPageState extends State<InLearningPage> {
                       correctCount++;
                       return true;
                     } else {
-                      viewAnswer(mediaQuery, context, testItem[0]);
+                      viewAnswer(context, testItem[0]);
                       return false;
                     }
                   },
@@ -334,7 +336,7 @@ class _InLearningPageState extends State<InLearningPage> {
                               ),
                             ),
                             onPressed: () {
-                              viewAnswer(mediaQuery, context, testItem[0]);
+                              viewAnswer(context, testItem[0]);
                             }, 
                             child: FittedBox(
                               fit: BoxFit.contain,
@@ -427,6 +429,7 @@ class _ConcludePageState extends State<ConcludePage> {
 
   @override
   Widget build(BuildContext context) {
+    context.read<Global>().uiLogger.info("构建 ConcludePage");
     MediaQueryData mediaQuery = MediaQuery.of(context);
     return Center(
       child: Column(
@@ -584,6 +587,7 @@ class _WordCardOverViewPage extends State<WordCardOverViewPage> {
 
   @override
   Widget build(BuildContext context) {
+    context.read<Global>().uiLogger.info("构建 WordCardOverViewPage");
     MediaQueryData mediaQuery = MediaQuery.of(context);
     return Scaffold(
       appBar: AppBar(
@@ -613,7 +617,10 @@ class _WordCardOverViewPage extends State<WordCardOverViewPage> {
                                     setLocalState(() {
                                       forceColumn = value.ceil();
                                     });
-                                  }
+                                  },
+                                  onChangeEnd: (value) {
+                                    context.read<Global>().uiLogger.info("设置固定列数为$value");
+                                  },
                                 ),
                                 SizedBox(width: 60, child: Text(forceColumn == 0 ? "0(自动)" : forceColumn.toString()))
                               ],
@@ -738,6 +745,5 @@ class _WordCardOverViewPage extends State<WordCardOverViewPage> {
         }
       )
     );
-
   }
 }

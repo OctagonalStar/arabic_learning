@@ -52,94 +52,58 @@ List<Map<String, dynamic>> getSelectedWords(BuildContext context , {List<List<St
   return ans;
 }
 
-void viewAnswer(MediaQueryData mediaQuery, 
-                BuildContext context, 
-                Map<String, dynamic> wordData
-                ) async {
-  showBottomSheet(
-    context: context, 
-    shape: RoundedSuperellipseBorder(side: BorderSide(width: 1.0, color: Theme.of(context).colorScheme.onSurface), borderRadius: StaticsVar.br),
-    enableDrag: true,
-    builder: (context) {
-      return Container(
-        padding: EdgeInsets.only(top: mediaQuery.size.height * 0.05),
-        decoration: BoxDecoration(
-          color: Theme.of(context).colorScheme.onPrimary,
-          borderRadius: StaticsVar.br,
-        ),
-        child: Column(
-          children: [
-            Row(
-              children: [
-                SizedBox(width: mediaQuery.size.width * 0.05),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: context.read<Global>().isWideScreen ? CrossAxisAlignment.center : CrossAxisAlignment.start,
-                    children: [
-                      Text(wordData["arabic"], style: TextStyle(fontSize: 36.0, fontFamily: context.read<Global>().arFont)),
-                      Text(wordData["chinese"], style: TextStyle(fontSize: 36.0)),
-                      Text("例句:\t${wordData["explanation"]}", style: TextStyle(fontSize: 20.0),),
-                      Text("所属课程:\t${wordData["subClass"]}", style: TextStyle(fontSize: 20.0),),
-                    ]
-                  ),
-                ),
-                SizedBox(width: mediaQuery.size.width * 0.05),
-              ],
-            ),
-            Expanded(child: SizedBox()),
-            ElevatedButton(
-              onPressed: () {Navigator.pop(context);}, 
-              style: ElevatedButton.styleFrom(
-                fixedSize: Size(mediaQuery.size.width * 0.8, mediaQuery.size.height * 0.1),
-                shape: RoundedRectangleBorder(borderRadius: StaticsVar.br)
-              ),
-              child: Text("我知道了"),
-            )
-          ],
-        ),
-      );
-    },
-  );
-}
-
 Future<List<dynamic>> playTextToSpeech(String text, BuildContext context, {double? speed}) async { 
   // return [bool isSuccessed?, String errorInfo];
   speed ??= context.read<Global>().settingData["audio"]["playRate"];
+  context.read<Global>().logger.info("[TTS]请求: 文本: [$text]");
 
   // 0: System TTS
   if (context.read<Global>().settingData["audio"]["useBackupSource"] == 0) {
+    context.read<Global>().logger.info("[TTS]配置使用系统TTS");
     FlutterTts flutterTts = FlutterTts();
-    if(!(await flutterTts.getLanguages).toString().contains("ar")) return [false, "你的设备似乎未安装阿拉伯语语言或不支持阿拉伯语文本转语音功能，语音可能无法正常播放。\n你可以尝试在 设置 - 系统语言 - 添加语言 中添加阿拉伯语。\n实在无法使用可在设置页面启用备用音频源(需要网络)"];
+    if(!(await flutterTts.getLanguages).toString().contains("ar") && context.mounted) {
+      context.read<Global>().logger.warning("[TTS]用户设备不支持AR语言TTS");
+      return [false, "你的设备似乎未安装阿拉伯语语言或不支持阿拉伯语文本转语音功能，语音可能无法正常播放。\n你可以尝试在 设置 - 系统语言 - 添加语言 中添加阿拉伯语。\n实在无法使用可在设置页面启用备用音频源(需要网络)"];
+    }
     await flutterTts.setLanguage("ar");
     await flutterTts.setPitch(1.0);
-    if(!context.mounted) return [false, "神经网络音频合成失败\n中途退出context"];
+    if(!context.mounted) return [false, ""];
     await flutterTts.setSpeechRate(speed! / 2);
     await flutterTts.speak(text);
     await Future.delayed(Duration(seconds: 2));
-
+    if(!context.mounted) return [false, ""];
+    context.read<Global>().logger.fine("[TTS]系统TTS阅读完成");
   // 1: TextReadTTS
   } else if (context.read<Global>().settingData["audio"]["useBackupSource"] == 1) {
+    context.read<Global>().logger.info("[TTS]配置使用API进行TTS");
     try {
+      context.read<Global>().logger.fine("[TTS]正在获取");
       final response = await Dio().getUri(Uri.parse("https://textreadtts.com/tts/convert?accessKey=FREE&language=arabic&speaker=speaker2&text=$text")).timeout(Duration(seconds: 8), onTimeout: () => throw Exception("请求超时"));
       if (response.statusCode == 200) {
-        if(response.data["code"] == 1) {
-          return [false, "备用音源请求失败:\n错误信息:文本长度超过API限制"];
+        if(response.data["code"] == 1 && context.mounted) {
+          context.read<Global>().logger.fine("[TTS]API音频获取失败，文本长度超过API限制");
+          return [false, "API音源请求失败:\n错误信息:文本长度超过API限制"];
         }
         await StaticsVar.player.setUrl(response.data["audio"]);
-        if(!context.mounted) return [false, "神经网络音频合成失败\n中途退出context"];
+        if(!context.mounted) return [false, ""];
         await StaticsVar.player.setSpeed(speed!);
         await StaticsVar.player.play();
         await Future.delayed(Duration(seconds: 2));
+        if(context.mounted) context.read<Global>().logger.fine("[TTS]API TTS阅读完成");
       } else {
-        return [false, "备用音源请求失败:\n错误码:${response.statusCode.toString()}"];
+        if(context.mounted) context.read<Global>().logger.severe("[TTS]网络获取错误 ${response.statusCode}");
+        return [false, "API音源请求失败:\n错误码:${response.statusCode.toString()}"];
       }
     } catch (e) {
-      return [false, "备用音源请求失败:\n错误信息:${e.toString()}"];
+      if(context.mounted) context.read<Global>().logger.severe("[TTS]API错误 $e");
+      return [false, "API音源请求失败:\n错误信息:${e.toString()}"];
     }
   
   // 2: sherpa-onnx
   } else if (context.read<Global>().settingData["audio"]["useBackupSource"] == 2) {
+    context.read<Global>().logger.info("[TTS]配置使用 sherpa_onnx TTS");
     if(context.read<Global>().vitsTTS == null) {
+      context.read<Global>().logger.warning("[TTS]sherpa_onnx 未加载");
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('神经网络音频模型尚未就绪，请等待...'),
@@ -151,7 +115,7 @@ Future<List<dynamic>> playTextToSpeech(String text, BuildContext context, {doubl
       final basePath = await path_provider.getApplicationCacheDirectory();
       final cacheFile = io.File("${basePath.path}/temp.wav");
       if(cacheFile.existsSync()) cacheFile.deleteSync();
-      if(!context.mounted) return [false, "神经网络音频合成失败\n中途退出context"];
+      if(!context.mounted) return [false, ""];
       final audio = context.read<Global>().vitsTTS!.generate(text: text, speed: speed!);
       final ok = sherpa_onnx.writeWave(
                           filename: cacheFile.path,
@@ -162,14 +126,16 @@ Future<List<dynamic>> playTextToSpeech(String text, BuildContext context, {doubl
       if(ok) {
         await StaticsVar.player.setAudioSource(AudioSource.uri(Uri.file(cacheFile.path)));
         // await StaticsVar.player.setSpeed(playRate);
-
         StaticsVar.player.play();
         await Future.delayed(duration);
         if(cacheFile.existsSync()) cacheFile.deleteSync();
-      }else {
+        if(context.mounted) context.read<Global>().logger.fine("[TTS]sherpa_onnx TTS阅读完成");
+      } else {
+        context.read<Global>().logger.severe("[TTS]sherpa_onnx 无法将音频写入文件");
         return [false, "神经网络音频合成失败\n错误信息:无法将音频写入文件"];
       }
     } catch (e) {
+      if(context.mounted) context.read<Global>().logger.severe("[TTS]sherpa_onnx 错误: $e");
       return [false, "神经网络音频合成失败\n错误信息:${e.toString()}"];
     }
   }
