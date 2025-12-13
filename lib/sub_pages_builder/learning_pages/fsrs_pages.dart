@@ -281,7 +281,7 @@ class _FSRSReviewCardPage extends State<FSRSReviewCardPage> {
               children: [
                 ElevatedButton.icon(
                   style: ElevatedButton.styleFrom(
-                    fixedSize: Size(mediaQuery.size.width * 0.9 - mediaQuery.size.width * 0.2 * value, mediaQuery.size.height * 0.1),
+                    fixedSize: Size(mediaQuery.size.width * 0.9 - mediaQuery.size.width * 0.5 * value, mediaQuery.size.height * 0.1),
                     shape: RoundedRectangleBorder(borderRadius: StaticsVar.br)
                   ),
                   onPressed: (){
@@ -291,12 +291,12 @@ class _FSRSReviewCardPage extends State<FSRSReviewCardPage> {
                     });
                   }, 
                   icon: Icon(Icons.tips_and_updates),
-                  label: Text(value == 0.0 ? "忘了？" : "查看详解"),
+                  label: Text(value == 0.0 ? "忘了？" : "详解"),
                 ),
                 SizedBox(width: mediaQuery.size.width*0.02*value),
-                if(value != 0.0) ElevatedButton.icon(
+                if(value > 0.3) ElevatedButton.icon(
                   style: ElevatedButton.styleFrom(
-                    fixedSize: Size(mediaQuery.size.width * 0.2 * value, mediaQuery.size.height * 0.1),
+                    fixedSize: Size(mediaQuery.size.width * 0.5 * value, mediaQuery.size.height * 0.1),
                     shape: RoundedRectangleBorder(borderRadius: StaticsVar.br)
                   ),
                   onPressed: () {
@@ -441,12 +441,13 @@ class _FSRSLearningPageState extends State<FSRSLearningPage> {
                 children: [
                   WordCard(word: widget.words[index]),
                   Expanded(child: SizedBox()),
-                  ElevatedButton(
+                  ElevatedButton.icon(
                     style: ElevatedButton.styleFrom(
-                      fixedSize: Size.fromRadius(mediaQuery.size.height * 0.08),
-                      shape: CircleBorder()
+                      fixedSize: Size(mediaQuery.size.width * 0.8, mediaQuery.size.height * 0.2),
+                      shape: RoundedRectangleBorder(borderRadius: StaticsVar.br)
                     ),
-                    child: Icon(index == widget.words.length-1 ? Icons.arrow_forward : Icons.arrow_downward, size: 48),
+                    icon: Icon(index == widget.words.length-1 ? Icons.arrow_forward : Icons.arrow_downward),
+                    label: Text(index == widget.words.length-1 ? "开始答题" : "下一个"),
                     onPressed: (){
                       if(index == widget.words.length-1) {
                         controllerHor.nextPage(duration: Duration(milliseconds: 500), curve: StaticsVar.curve);
@@ -503,7 +504,7 @@ class _FSRSLearningPageState extends State<FSRSLearningPage> {
                       children: [
                         ElevatedButton.icon(
                           style: ElevatedButton.styleFrom(
-                            fixedSize: Size(mediaQuery.size.width * 0.9 - mediaQuery.size.width * 0.2 * value, mediaQuery.size.height * 0.1),
+                            fixedSize: Size(mediaQuery.size.width * 0.9 - mediaQuery.size.width * 0.5 * value, mediaQuery.size.height * 0.1),
                             shape: RoundedRectangleBorder(borderRadius: StaticsVar.br),
                           ),
                           onPressed: (){
@@ -515,7 +516,7 @@ class _FSRSLearningPageState extends State<FSRSLearningPage> {
                         SizedBox(width: mediaQuery.size.width * 0.02 * value),
                         if(value > 0.2) ElevatedButton.icon(
                           style: ElevatedButton.styleFrom(
-                            fixedSize: Size(mediaQuery.size.width * 0.2 * value, mediaQuery.size.height * 0.1),
+                            fixedSize: Size(mediaQuery.size.width * 0.5 * value, mediaQuery.size.height * 0.1),
                             shape: RoundedRectangleBorder(borderRadius: StaticsVar.br)
                           ),
                           onPressed: () {
