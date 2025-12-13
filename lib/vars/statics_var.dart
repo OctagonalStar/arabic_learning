@@ -4,6 +4,7 @@ import '../package_replacement/fake_dart_io.dart' if (dart.library.io) 'dart:io'
 import 'package:flutter/material.dart';
 import 'package:just_audio/just_audio.dart';
 
+@immutable
 class StaticsVar {
   static const String appName = 'Ar 学';
   static const int appVersion = 000111;
