@@ -79,7 +79,7 @@ class OpenSourceLicensePage extends StatelessWidget {
             ),
             children: [
               TextContainer(text: app.license??""),
-              if(context.read<Global>().settingData['regular']['theme'] == 10) ElevatedButton.icon(
+              if(context.read<Global>().globalConfig.regular.theme == 10) ElevatedButton.icon(
                 onPressed: () {
                   context.read<Global>().uiLogger.warning("触发彩蛋 #00s");
                   alart(context, "荏苒的时光足以使沧海化为桑田...", delayConfirm: Duration(seconds: 3),
@@ -98,8 +98,9 @@ class OpenSourceLicensePage extends StatelessWidget {
                               onConfirmed: (){
                                 alart(context, "注：你开启了一项彩蛋功能\n若要关闭请再次点击此按钮\n请*手动*重启软件以应用更改...", delayConfirm: Duration(seconds: 3),
                                 onConfirmed: (){
-                                  Map<String, dynamic> setting = context.read<Global>().settingData;
-                                  setting["eggs"]['stella'] = !setting["eggs"]['stella'];
+                                  context.read<Global>().globalConfig = context.read<Global>().globalConfig.copyWith(
+                                    egg: context.read<Global>().globalConfig.egg.copyWith(stella: !context.read<Global>().globalConfig.egg.stella)
+                                  );
                                   context.read<Global>().updateSetting();
                                   SystemNavigator.pop();
                                 });

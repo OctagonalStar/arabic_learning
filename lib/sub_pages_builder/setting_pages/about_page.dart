@@ -8,8 +8,7 @@ import 'package:arabic_learning/funcs/ui.dart';
 import 'package:arabic_learning/sub_pages_builder/setting_pages/open_source_licenses.dart';
 
 class AboutPage extends StatelessWidget {
-  final Map<String, dynamic> setting;
-  const AboutPage({super.key, required this.setting});
+  const AboutPage({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -40,7 +39,7 @@ class AboutPage extends StatelessWidget {
             ),
           ),
           TextContainer(text: "LICENSE"),
-          TextContainer(text: "Copyright (C) <2025>  <OctagonalStar>\n该软件通过GNU GENERAL PUBLIC LICENSE (Version 3)协议授权给 \"${setting["User"]}\"，协议内容详见开放源代码许可页面"),
+          TextContainer(text: "Copyright (C) <2025>  <OctagonalStar>\n该软件通过GNU GENERAL PUBLIC LICENSE (Version 3)协议授权给 \"${context.read<Global>().globalConfig.user}\"，协议内容详见开放源代码许可页面"),
           ElevatedButton.icon(
             style: ElevatedButton.styleFrom(
               fixedSize: Size.fromHeight(MediaQuery.of(context).size.height * 0.1)

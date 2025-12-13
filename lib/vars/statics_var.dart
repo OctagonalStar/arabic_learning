@@ -14,6 +14,31 @@ class StaticsVar {
   static const String onlineDictOwner = 'JYinherit';
   static const String arBackupFont = "Vazirmatn";
   static const String zhBackupFont = "NotoSansSC";
+  static const List<MaterialColor> themeList = [
+    Colors.pink,
+    Colors.blue,
+    Colors.green,
+    Colors.lime,
+    Colors.orange,
+    Colors.purple,
+    Colors.brown,
+    Colors.blueGrey,
+    Colors.teal,
+    Colors.cyan,
+    // 下面的是彩蛋颜色 :)
+    MaterialColor(0xFF97FFF6, <int, Color>{
+      50: Color(0xFFE0FFFF),
+      100: Color(0xFFB3FFFF),
+      200: Color(0xFF80FFFF),
+      300: Color(0xFF4DFFFF),
+      400: Color(0xFF1AFFFF),
+      500: Color(0xFF00E6D9),
+      600: Color(0xFF00BFB3),
+      700: Color(0xFF00998C),
+      800: Color(0xFF007366),
+      900: Color(0xFF004D40),
+    })
+  ];
   static final isDesktop = kIsWeb ? false : (Platform.isWindows || Platform.isLinux || Platform.isMacOS);
   static final player = AudioPlayer(); // load Player when app start
   static final BorderRadius br = BorderRadius.circular(25.0);

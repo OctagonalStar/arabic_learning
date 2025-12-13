@@ -1,5 +1,6 @@
 import 'dart:math';
 
+import 'package:arabic_learning/vars/config_structure.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -39,12 +40,14 @@ class _InLearningPageState extends State<InLearningPage> {
   @override
   void initState() {
     // 加载测试词
-    Map<String, dynamic> questionsSetting = context.read<Global>().settingData["quiz"][widget.studyType == 0 ? "zh_ar" : widget.studyType == 1 ? "zh" : "ar"];
-    List<List<List<dynamic>>> questionsInSections = List.generate(questionsSetting["questionSections"].length, (_) => []);
-    for(int sectionIndex = 0; sectionIndex < questionsSetting["questionSections"].length; sectionIndex++) {
+    final SubQuizConfig questionsSetting = widget.studyType == 0 ? context.read<Global>().globalConfig.quiz.zhar 
+                                        : widget.studyType == 1 ? context.read<Global>().globalConfig.quiz.zh 
+                                        : context.read<Global>().globalConfig.quiz.ar;
+    List<List<List<dynamic>>> questionsInSections = List.generate(questionsSetting.questionSections.length, (_) => []);
+    for(int sectionIndex = 0; sectionIndex < questionsSetting.questionSections.length; sectionIndex++) {
       for(Map<String, dynamic> wordData in widget.words) {
         late List<dynamic> extra;
-        final int testType = questionsSetting["questionSections"][sectionIndex];
+        final int testType = questionsSetting.questionSections[sectionIndex];
         if(testType == 0) {
           // 单词卡片 没有额外数据
           extra = [];
@@ -79,12 +82,12 @@ class _InLearningPageState extends State<InLearningPage> {
     }
 
     // shuffle part
-    if(questionsSetting["shuffleExternaly"]) questionsInSections.shuffle();
+    if(questionsSetting.shuffleExternaly) questionsInSections.shuffle();
     for(List<List<dynamic>> testItems in questionsInSections) {
-      if(questionsSetting["shuffleInternaly"]) testItems.shuffle();
+      if(questionsSetting.shuffleInternaly) testItems.shuffle();
       testList.addAll(testItems);
     }
-    if(questionsSetting["shuffleGlobally"]) testList.shuffle();
+    if(questionsSetting.shuffleGlobally) testList.shuffle();
     total = testList.length;
     startTime  = DateTime.now().millisecondsSinceEpoch;
     super.initState();

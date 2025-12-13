@@ -1,211 +1,39 @@
-import 'package:arabic_learning/funcs/utili.dart';
-import 'package:arabic_learning/vars/statics_var.dart';
-import 'package:flutter/foundation.dart';
-import 'package:logging/logging.dart';
-import 'package:path_provider/path_provider.dart' as path_provider;
-import 'package:flutter/services.dart' show rootBundle, FontLoader;
-import 'package:arabic_learning/package_replacement/storage.dart';
 import 'dart:convert';
+
+import 'package:logging/logging.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart' show rootBundle, FontLoader;
+import 'package:path_provider/path_provider.dart' as path_provider;
+
+import 'package:arabic_learning/vars/statics_var.dart';
+import 'package:arabic_learning/package_replacement/storage.dart';
+import 'package:arabic_learning/vars/config_structure.dart' show Config;
 import 'package:arabic_learning/package_replacement/fake_dart_io.dart' if (dart.library.io) 'dart:io' as io;
 import 'package:arabic_learning/package_replacement/fake_sherpa_onnx.dart' if (dart.library.io) 'package:sherpa_onnx/sherpa_onnx.dart' as sherpa_onnx;
 
 class Global with ChangeNotifier {
-  final Logger logger = Logger("Global");
   final Logger uiLogger = Logger("UI");
-  Global();
-
-  late bool firstStart; // 是否为第一次使用
+  final Logger logger = Logger("Global");
+  
+  bool backupFontLoaded = false;
   bool inited = false; //是否初始化完成
+  List<String> internalLogCapture = [];
+  Uint8List? stella;
+  String? arFont;
+  String? zhFont;
+  late final bool firstStart; // 是否为第一次使用
   late bool updateLogRequire; //是否需要显示更新日志
   late bool isWideScreen; // 设备是否是宽屏幕
   late final SharedPreferences prefs; // 储存实例
-  bool backupFontLoaded = false;
   late bool modelTTSDownloaded = false;
-  List<String> internalLogCapture = [];
-
-  /// the setting data
-  Map<String, dynamic> _settingData = {
-    "User": "",
-    "Debug": {
-      "internalLog": false,
-      "internalLevel": 0 //0:ALL ;1:finest ;2:finer ;3:fine ;4:info ;5:warning ;6:severe ;7:shout ;8:off 
-    },
-    "LastVersion": StaticsVar.appVersion,
-    "regular": {
-      "theme": 9,
-      "font": 0, //0: normal, 1: backup for ar, 2:backup for ar&zh
-      "darkMode": false,
-      "hideAppDownloadButton": false,
-    },
-    "audio": {
-      "useBackupSource": 0, // 0: Normal, 1: OnlineBackup, 2: LocalVITS
-      "playRate": 1.0,
-    },
-    "learning": {
-      "startDate": 0, // YYYYMMDD;int
-      "lastDate": 0, // YYYYMMDD;int
-      "KnownWords": [],
-    },
-    "quiz": {
-      /*
-      题型说明 
-      0: 单词卡片
-      1: 中译阿 选择题
-      2: 阿译中 选择题
-      3: 中译阿 拼写题
-      
-      Internaly: shuffle only in only each type of question. 
-                The order of questionType was not changed.
-      Externaly: shuff the order of questionType, but do not change its inside order.
-      Globally: shuffle everything.
-      */
-      // 中阿混合学习
-      "zh_ar": {
-        "questionSections": [1, 2],
-        "shuffleGlobally": true,
-        "shuffleInternaly": true,
-        "shuffleExternaly": true,
-        "modifyAllowed": true,
-      },
-
-      // 阿译中学习
-      "ar": {
-        "questionSections": [2],
-        "shuffleGlobally": true,
-        "shuffleInternaly": true,
-        "shuffleExternaly": true,
-        "modifyAllowed": true,
-      },
-
-      // 中译阿学习
-      "zh": {
-        "questionSections": [1],
-        "shuffleGlobally": true,
-        "shuffleInternaly": true,
-        "shuffleExternaly": true,
-        "modifyAllowed": true,
-      },
-    },
-    "eggs": {
-      "stella": false
-    },
-    "sync": {
-      "enabled": false,
-      "account": {
-        "uri": "",
-        "userName": "",
-        "passWord": ""
-      },
-    }
-  };
-  static const List<MaterialColor> _themeList = [
-      Colors.pink,
-      Colors.blue,
-      Colors.green,
-      Colors.lime,
-      Colors.orange,
-      Colors.purple,
-      Colors.brown,
-      Colors.blueGrey,
-      Colors.teal,
-      Colors.cyan,
-      // 下面的是彩蛋颜色 :)
-      MaterialColor(0xFF97FFF6, <int, Color>{
-        50: Color(0xFFE0FFFF),
-        100: Color(0xFFB3FFFF),
-        200: Color(0xFF80FFFF),
-        300: Color(0xFF4DFFFF),
-        400: Color(0xFF1AFFFF),
-        500: Color(0xFF00E6D9),
-        600: Color(0xFF00BFB3),
-        700: Color(0xFF00998C),
-        800: Color(0xFF007366),
-        900: Color(0xFF004D40),
-      })
-    ];
-  late ThemeData _themeData;
+  late ThemeData themeData;
   late Map<String, dynamic> wordData = {};
-  Uint8List? stella;
-  sherpa_onnx.OfflineTts? vitsTTS;
-  String? arFont;
-  String? zhFont;
-  ThemeData get themeData => _themeData;
-
-  /// 默认配置文件
-  ///
-  /// ``` json
-  /// {
-  ///  "User": "",
-  ///  "Debug": false,
-  ///  "LastVersion": StaticsVar.appVersion,
-  ///  "regular": {
-  ///    "theme": 9,
-  ///    "font": 0, //0: normal, 1: backup for ar, 2:backup for ar&zh
-  ///    "darkMode": false,
-  ///    "hideAppDownloadButton": false,
-  ///  },
-  ///  "audio": {
-  ///    "useBackupSource": 0, // 0: Normal, 1: OnlineBackup, 2: LocalVITS
-  ///    "playRate": 1.0,
-  ///  },
-  ///  "learning": {
-  ///    "startDate": 0, // YYYYMMDD;int
-  ///    "lastDate": 0, // YYYYMMDD;int
-  ///    "KnownWords": [],
-  ///  },
-  ///  "quiz": {
-  ///    /*
-  ///    题型说明 
-  ///    0: 单词卡片
-  ///    1: 中译阿 选择题
-  ///    2: 阿译中 选择题
-  ///    3: 中译阿 拼写题
-  ///    
-  ///    Internaly: shuffle only in only each type of question. 
-  ///              The order of questionType was not changed.
-  ///    Externaly: shuff the order of questionType, but do not change its inside order.
-  ///    Globally: shuffle everything.
-  ///    */
-  ///    // 中阿混合学习
-  ///    "zh_ar": {
-  ///      "questionSections": [1, 2],
-  ///      "shuffleGlobally": true,
-  ///      "shuffleInternaly": true,
-  ///      "shuffleExternaly": true,
-  ///      "modifyAllowed": true,
-  ///    },
-  ///    // 阿译中学习
-  ///    "ar": {
-  ///      "questionSections": [2],
-  ///      "shuffleGlobally": true,
-  ///      "shuffleInternaly": true,
-  ///      "shuffleExternaly": true,
-  ///      "modifyAllowed": true,
-  ///    },
-  ///    // 中译阿学习
-  ///    "zh": {
-  ///      "questionSections": [1],
-  ///      "shuffleGlobally": true,
-  ///      "shuffleInternaly": true,
-  ///      "shuffleExternaly": true,
-  ///      "modifyAllowed": true,
-  ///    },
-  ///  },
-  ///  "eggs": {
-  ///    "stella": false
-  ///  },
-  /// "sync": {
-  ///   "enabled": false,
-  ///   "account": {
-  ///     "uri": "",
-  ///     "userName": "",
-  ///     "passWord": ""
-  ///   },
-  /// }
-  /// ```
-  Map<String, dynamic> get settingData => _settingData;
   int get wordCount => wordData["Words"]!.length;
+  sherpa_onnx.OfflineTts? vitsTTS;
+
+  Config globalConfig = Config();
+
 
   Future<bool> init() async {
     logger.info("类收到初始化请求，当前初始化状态为 $inited");
@@ -232,28 +60,16 @@ class Global with ChangeNotifier {
   Future<void> conveySetting() async {
     logger.info("处理配置文件");
     wordData = jsonDecode(prefs.getString("wordData")!) as Map<String, dynamic>;
-    Map<String, dynamic> oldSetting = jsonDecode(prefs.getString("settingData")!) as Map<String, dynamic>;
-    if(oldSetting["LastVersion"] != _settingData["LastVersion"]) {
+    Config oldConfig = Config.buildFromMap(jsonDecode(prefs.getString("settingData")!) as Map<String, dynamic>);
+    if(oldConfig.lastVersion != globalConfig.lastVersion) {
       logger.info("检测到当前版本与上次启动版本不同");
       updateLogRequire = true;
-      oldSetting["LastVersion"] = _settingData["LastVersion"];
+      oldConfig=oldConfig.copyWith(lastVersion: globalConfig.lastVersion);
     } else {
       updateLogRequire = false;
     }
 
-    // 000109 题型设置更新 List => Map
-    if(oldSetting["quiz"]["ar"].runtimeType == List) {
-      logger.info("配置文件 000109 结构更新");
-      oldSetting["quiz"] = _settingData["quiz"];
-    }
-
-    // 000111 调试更新
-    if(oldSetting["Debug"].runtimeType == bool){
-      logger.info("配置文件 000111 调试更新");
-      oldSetting["Debug"] = _settingData["Debug"];
-    }
-
-    _settingData = deepMerge(_settingData, oldSetting);
+    globalConfig = oldConfig;
     logger.info("配置文件合成完成");
     await updateSetting();
   }
@@ -261,8 +77,8 @@ class Global with ChangeNotifier {
   // 更新配置到存储中
   Future<void> updateSetting({Map<String, dynamic>? settingData, bool refresh = true}) async {
     logger.info("保存配置文件中");
-    if(settingData != null) _settingData = settingData;
-    prefs.setString("settingData", jsonEncode(_settingData));
+    if(settingData != null) globalConfig = Config.buildFromMap(settingData);
+    prefs.setString("settingData", jsonEncode(globalConfig.toMap()));
     if(refresh) await postInit();
   }
 
@@ -286,11 +102,11 @@ class Global with ChangeNotifier {
         debugPrint('${record.time}-[${record.loggerName}][${record.level.name}]: ${record.message}');
       });
     }
-    if(settingData["Debug"]["internalLog"]){
+    if(globalConfig.debug.enableInternalLog){
       Logger.root.level = Level.ALL;
       const List<Level> levelList = [Level.ALL, Level.FINEST, Level.FINER, Level.FINE, Level.INFO, Level.WARNING, Level.SEVERE, Level.SHOUT, Level.OFF];
       Logger.root.onRecord.listen((record) async {
-        if(record.level < levelList[settingData["Debug"]["internalLevel"]]) return;
+        if(record.level < levelList[globalConfig.debug.internalLevel]) return;
         internalLogCapture.add('${record.time}-[${record.loggerName}][${record.level.name}]: ${record.message}');
       });
     }
@@ -308,7 +124,7 @@ class Global with ChangeNotifier {
 
   // load TTS model if any
   Future<void> loadTTS() async {
-    if(kIsWeb || vitsTTS != null || settingData["audio"]["useBackupSource"] != 2) return;
+    if(kIsWeb || vitsTTS != null || globalConfig.audio.audioSource != 2) return;
     logger.info("TTS: 加载本地TTS中");
     final basePath = await path_provider.getApplicationDocumentsDirectory();
     if(io.File("${basePath.path}/${StaticsVar.modelPath}/ar_JO-kareem-medium.onnx").existsSync()){
@@ -319,7 +135,7 @@ class Global with ChangeNotifier {
         // lexicon: '${basePath.path}/${StaticsVar.modelPath}/',
         dataDir: "${basePath.path}/${StaticsVar.modelPath}/espeak-ng-data",
         tokens: '${basePath.path}/${StaticsVar.modelPath}/tokens.txt',
-        lengthScale: 1 / _settingData["audio"]["playRate"],
+        lengthScale: 1 / globalConfig.audio.playRate,
       );
       // kokoro = sherpa_onnx.OfflineTtsKokoroModelConfig();
       final modelConfig = sherpa_onnx.OfflineTtsModelConfig(
@@ -340,7 +156,7 @@ class Global with ChangeNotifier {
   }
 
   Future<void> loadEggs() async {
-    if(settingData['eggs']['stella'] && stella == null){
+    if(globalConfig.egg.stella && stella == null){
       final rawString = await rootBundle.loadString("assets/eggs/s.txt");
       stella = base64Decode(rawString.replaceAll('\n', '').replaceAll('\r', '').trim());
     }
@@ -348,22 +164,22 @@ class Global with ChangeNotifier {
 
   void updateTheme() {
     logger.info("更新主题中");
-    if(settingData["regular"]["font"] == 2) {
+    if(globalConfig.regular.font == 2) {
       arFont = StaticsVar.arBackupFont;
       zhFont = StaticsVar.zhBackupFont;
       loadFont();
-    } else if(settingData["regular"]["font"] == 1) {
+    } else if(globalConfig.regular.font == 1) {
       arFont = StaticsVar.arBackupFont;
       zhFont = null;
     } else {
       arFont = null;
       zhFont = null;
     }
-    _themeData = ThemeData(
+    themeData = ThemeData(
       useMaterial3: true,
       colorScheme: ColorScheme.fromSeed(
-        seedColor: _themeList[settingData["regular"]["theme"]],
-        brightness: settingData["regular"]["darkMode"] ? Brightness.dark : Brightness.light,
+        seedColor: StaticsVar.themeList[globalConfig.regular.theme],
+        brightness: globalConfig.regular.darkMode ? Brightness.dark : Brightness.light,
       ),
       fontFamily: zhFont,
     );
@@ -371,8 +187,8 @@ class Global with ChangeNotifier {
 
   void acceptAggrement(String name) {
     firstStart = false;
-    _settingData["User"] = name;
-    prefs.setString("settingData", jsonEncode(settingData));
+    globalConfig = globalConfig.copyWith(user: name);
+    prefs.setString("settingData", jsonEncode(globalConfig.toMap()));
     notifyListeners();
   }
 
@@ -387,7 +203,6 @@ class Global with ChangeNotifier {
   //       }, ...
   //    ]
   // }
-
   // Format Data:
   // {
   //    "Words" : [
@@ -454,17 +269,17 @@ class Global with ChangeNotifier {
 
     for(int x in wordIndexs){
       wordData["Words"][x]["learningProgress"] += 1;
-      if(_settingData["learning"]["KnownWords"].contains(x)) continue;
-      if(wordData["Words"][x]["learningProgress"] >= 3) _settingData["learning"]["KnownWords"].add(x);
+      if(globalConfig.learning.knownWords.contains(x)) continue;
+      if(wordData["Words"][x]["learningProgress"] >= 3) globalConfig.learning.knownWords.add(x);
     }
     prefs.setString("wordData", jsonEncode(wordData));
     // 以 2025/11/1 为基准计算天数（因为这个bug是这天修的:} ）
     final int nowDate = DateTime.now().difference(DateTime(2025, 11, 1)).inDays;
-    if (nowDate == _settingData["learning"]["lastDate"]) return;
-    if (nowDate - _settingData["learning"]["lastDate"] > 1) {
-      _settingData["learning"]["startDate"] = nowDate;
+    if (nowDate == globalConfig.learning.lastDate) return;
+    if (nowDate - globalConfig.learning.lastDate > 1) {
+      globalConfig = globalConfig.copyWith(learning: globalConfig.learning.copyWith(startDate: nowDate));
     }
-    _settingData["learning"]["lastDate"] = nowDate;
+    globalConfig = globalConfig.copyWith(learning: globalConfig.learning.copyWith(lastDate: nowDate));
     updateSetting(refresh: false);
     logger.info("学习进度保存完成");
   }

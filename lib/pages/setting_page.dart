@@ -36,19 +36,19 @@ class _SettingPage extends State<SettingPage> {
               SettingItem(
                 title: "常规设置",
                 padding: EdgeInsets.all(8.0),
-                children: regularSetting(context, value.settingData),
+                children: regularSetting(context),
               ),
               SettingItem(
                 title: "学习设置", 
-                children: dataSetting(context, value.settingData), 
+                children: dataSetting(context), 
               ),
               SettingItem(
                 title: "音频设置", 
-                children: audioSetting(context, value.settingData), 
+                children: audioSetting(context), 
               ),
               SettingItem(
                 title: "关于", 
-                children: aboutSetting(context, value.settingData), 
+                children: aboutSetting(context), 
               ),
             ],
           );
@@ -57,7 +57,7 @@ class _SettingPage extends State<SettingPage> {
     );
   }
 
-  List<Widget> regularSetting(BuildContext context, Map<String, dynamic> setting) {
+  List<Widget> regularSetting(BuildContext context) {
     MediaQueryData mediaQuery = MediaQuery.of(context);
     return  [
       Row(
@@ -66,7 +66,7 @@ class _SettingPage extends State<SettingPage> {
           SizedBox(width: mediaQuery.size.width * 0.01),
           Expanded(child: Text("主题颜色:")),
           DropdownButton<int>(
-            value: setting['regular']['theme'] ?? 1,
+            value: context.watch<Global>().globalConfig.regular.theme,
             items: const [
               DropdownMenuItem(value: 0, child: Text('樱粉')),
               DropdownMenuItem(value: 1, child: Text('海蓝')),
@@ -82,7 +82,9 @@ class _SettingPage extends State<SettingPage> {
             ],
             onChanged: (value) async {
               context.read<Global>().uiLogger.info("更新主题颜色: $value");
-              setting['regular']['theme'] = value;
+              context.read<Global>().globalConfig = context.read<Global>().globalConfig.copyWith(
+                regular: context.read<Global>().globalConfig.regular.copyWith(theme: value)
+              );
               context.read<Global>().updateSetting();
             },
           ),
@@ -94,10 +96,12 @@ class _SettingPage extends State<SettingPage> {
           SizedBox(width: mediaQuery.size.width * 0.01),
           Expanded(child: Text("深色模式:")),
           Switch(
-            value: setting['regular']['darkMode'] ?? false,
+            value: context.watch<Global>().globalConfig.regular.darkMode,
             onChanged: (value) {
               context.read<Global>().uiLogger.info("更新深色模式设置: $value");
-              setting['regular']['darkMode'] = value;
+              context.read<Global>().globalConfig = context.read<Global>().globalConfig.copyWith(
+                regular: context.read<Global>().globalConfig.regular.copyWith(darkMode: value)
+              );
               context.read<Global>().updateSetting();
             },
           )
@@ -109,7 +113,7 @@ class _SettingPage extends State<SettingPage> {
           SizedBox(width: mediaQuery.size.width * 0.01),
           Expanded(child: Text("字体设置:")),
           DropdownButton<int>(
-            value: setting['regular']['font'] ?? 0,
+            value: context.watch<Global>().globalConfig.regular.font,
             items: [
               DropdownMenuItem(value: 0, child: Text('默认字体')),
               DropdownMenuItem(value: 1, child: Text('仅阿语使用备用字体')),
@@ -122,7 +126,9 @@ class _SettingPage extends State<SettingPage> {
                   SnackBar(content: Text("网页版加载中文字体需要较长时间，请先耐心等待"), duration: Duration(seconds: 3),),
                 );
               }
-              setting['regular']['font'] = value;
+              context.read<Global>().globalConfig = context.read<Global>().globalConfig.copyWith(
+                regular: context.read<Global>().globalConfig.regular.copyWith(font: value)
+              );
               Provider.of<Global>(context, listen: false).updateSetting();
             },
           )
@@ -134,10 +140,12 @@ class _SettingPage extends State<SettingPage> {
           SizedBox(width: mediaQuery.size.width * 0.01),
           Expanded(child: Text("隐藏网页版右上角APP下载按钮")),
           Switch(
-            value: setting['regular']['hideAppDownloadButton'] ?? false,
+            value: context.read<Global>().globalConfig.regular.hideAppDownloadButton,
             onChanged: (value) {
               context.read<Global>().uiLogger.info("更新网页端APP下载按钮隐藏设置: $value");
-              setting['regular']['hideAppDownloadButton'] = value;
+              context.read<Global>().globalConfig = context.read<Global>().globalConfig.copyWith(
+                regular: context.read<Global>().globalConfig.regular.copyWith(hideAppDownloadButton: value)
+              );
               context.read<Global>().updateSetting();
             },
           )
@@ -146,7 +154,7 @@ class _SettingPage extends State<SettingPage> {
     ];
   }
   
-  List<Widget> dataSetting(BuildContext context, Map<String, dynamic> setting) {
+  List<Widget> dataSetting(BuildContext context) {
     MediaQueryData mediaQuery = MediaQuery.of(context);
     return [
       Column(
@@ -260,9 +268,8 @@ class _SettingPage extends State<SettingPage> {
     ];
   }
 
-  List<Widget> audioSetting(BuildContext context, Map<String, dynamic> setting) {
+  List<Widget> audioSetting(BuildContext context) {
     MediaQueryData mediaQuery = MediaQuery.of(context);
-    var set = context.read<Global>().settingData;
     return [
       Column(
         children: [
@@ -287,11 +294,13 @@ class _SettingPage extends State<SettingPage> {
             ],
           ),
           DropdownButton(
-            value: set["audio"]["useBackupSource"], 
+            value: context.read<Global>().globalConfig.audio.audioSource, 
             onChanged: (value) {
               context.read<Global>().uiLogger.info("更新音频接口: $value");
               if(value == 1) alart(context, "警告: \n来自\"TextReadTTS.com\"的音频不支持发音符号，且只能合成40字以内的文本。\n开启此功能请知悉。");
-              set["audio"]["useBackupSource"] = value;
+              context.read<Global>().globalConfig = context.read<Global>().globalConfig.copyWith(
+                audio: context.read<Global>().globalConfig.audio.copyWith(audioSource: value)
+              );
               context.read<Global>().updateSetting();
             },
             items: [
@@ -320,14 +329,16 @@ class _SettingPage extends State<SettingPage> {
             )
           ),
           Slider(
-            value: set["audio"]["playRate"],
+            value: context.read<Global>().globalConfig.audio.playRate,
             min: 0.5,
             max: 1.5,
             divisions: 10,
-            label: "${set["audio"]["playRate"]}",
+            label: "${context.read<Global>().globalConfig.audio.playRate}",
             onChanged: (value) {
               setState(() {
-                set["audio"]["playRate"] = value;
+                context.read<Global>().globalConfig = context.read<Global>().globalConfig.copyWith(
+                  audio: context.read<Global>().globalConfig.audio.copyWith(playRate: value)
+                );
               });
             },
             onChangeEnd: (value) {
@@ -366,7 +377,7 @@ class _SettingPage extends State<SettingPage> {
     ];
   }
 
-  List<Widget> aboutSetting(BuildContext context, Map<String, dynamic> setting) {
+  List<Widget> aboutSetting(BuildContext context) {
     MediaQueryData mediaQuery = MediaQuery.of(context);
     return [
       ElevatedButton(
@@ -428,7 +439,7 @@ class _SettingPage extends State<SettingPage> {
         ),
         onPressed: () {
           context.read<Global>().uiLogger.info("跳转: SettingPage => AboutPage");
-          Navigator.of(context).push(MaterialPageRoute(builder: (context) => AboutPage(setting: setting,)));
+          Navigator.of(context).push(MaterialPageRoute(builder: (context) => AboutPage()));
         },
         child: Row(
           mainAxisAlignment: MainAxisAlignment.start,

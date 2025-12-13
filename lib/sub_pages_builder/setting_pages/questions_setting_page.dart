@@ -1,4 +1,5 @@
 import 'package:arabic_learning/funcs/ui.dart';
+import 'package:arabic_learning/vars/config_structure.dart';
 import 'package:arabic_learning/vars/global.dart';
 import 'package:arabic_learning/vars/statics_var.dart';
 import 'package:flutter/material.dart';
@@ -15,7 +16,7 @@ class QuestionsSettingLeadingPage extends StatelessWidget{
       body: ListView(
         children: [
           TextContainer(text: "你可以通过此设置较自由配置每次测试/学习应当测试的题目"),
-          EnterSpecificQuestionSettingButton(name: "中阿混合学习", sectionKey: "zh_ar")
+          EnterSpecificQuestionSettingButton(name: "综合学习", sectionKey: 0)
         ],
       ),
     );
@@ -24,13 +25,18 @@ class QuestionsSettingLeadingPage extends StatelessWidget{
 
 class EnterSpecificQuestionSettingButton extends StatelessWidget {
   final String name;
-  final String sectionKey;
+  final int sectionKey;
   final List<int> allowTypes;
   const EnterSpecificQuestionSettingButton({super.key, required this.name, required this.sectionKey, this.allowTypes = const [0, 1 ,2]});
 
   @override
   Widget build(BuildContext context) {
-    final bool isAllowModify = context.read<Global>().settingData['quiz'][sectionKey]["modifyAllowed"];
+    late final bool isAllowModify;
+    if(sectionKey == 0) {
+      isAllowModify = context.read<Global>().globalConfig.quiz.zhar.modifyAllowed;
+    } else {
+      throw Exception("未指定的类型");
+    }
     return ElevatedButton(
       style: ElevatedButton.styleFrom(
         fixedSize: Size.fromHeight(MediaQuery.of(context).size.height * 0.08),
@@ -51,7 +57,7 @@ class EnterSpecificQuestionSettingButton extends StatelessWidget {
 }
 
 class QuestionsSettingPage extends StatefulWidget {
-  final String sectionKey;
+  final int sectionKey;
   final List<int> allowTypes;
   final bool isAllowModify;
   const QuestionsSettingPage({super.key, required this.sectionKey, required this.allowTypes, required this.isAllowModify});
@@ -69,8 +75,15 @@ class _QuestionsSettingPage extends State<QuestionsSettingPage> {
   @override
   Widget build(BuildContext context) {
     context.read<Global>().uiLogger.info("构建 QuestionsSettingPage:$selectedTypes");
+    late final SubQuizConfig section;
+    if(widget.sectionKey == 0) {
+      section = context.read<Global>().globalConfig.quiz.zhar;
+    } else {
+      context.read<Global>().uiLogger.severe("出现未指定的题型配置");
+      throw Exception("未指定的类型");
+    }
     MediaQueryData mediaQuery = MediaQuery.of(context);
-    selectedTypes ??= context.read<Global>().settingData['quiz'][widget.sectionKey]["questionSections"];
+    selectedTypes ??= section.questionSections;
     List<Widget> listTiles = [];
     bool isEven = true;
     for(int index = 0; index < selectedTypes!.length; index++) {
@@ -134,11 +147,19 @@ class _QuestionsSettingPage extends State<QuestionsSettingPage> {
             Row(
               children: [
                 Switch(
-                  value: context.read<Global>().settingData['quiz'][widget.sectionKey]["shuffleInternaly"], 
+                  value: section.shuffleInternaly, 
                   onChanged: (value) {
                     context.read<Global>().uiLogger.info("题型内题目乱序: $value");
                     setState(() {
-                      context.read<Global>().settingData['quiz'][widget.sectionKey]["shuffleInternaly"] = value;
+                      if(widget.sectionKey == 0){
+                        context.read<Global>().globalConfig = context.read<Global>().globalConfig.copyWith(
+                          quiz: context.read<Global>().globalConfig.quiz.copyWith(
+                            zhar: context.read<Global>().globalConfig.quiz.zhar.copyWith(
+                              shuffleInternaly: value
+                            )
+                          )
+                        );
+                      }
                     });
                   }
                 ),
@@ -148,11 +169,19 @@ class _QuestionsSettingPage extends State<QuestionsSettingPage> {
             Row(
               children: [
                 Switch(
-                  value: context.read<Global>().settingData['quiz'][widget.sectionKey]["shuffleExternaly"], 
+                  value: section.shuffleExternaly, 
                   onChanged: (value) {
                     context.read<Global>().uiLogger.info("题型乱序: $value");
                     setState(() {
-                      context.read<Global>().settingData['quiz'][widget.sectionKey]["shuffleExternaly"] = value;
+                      if(widget.sectionKey == 0){
+                        context.read<Global>().globalConfig = context.read<Global>().globalConfig.copyWith(
+                          quiz: context.read<Global>().globalConfig.quiz.copyWith(
+                            zhar: context.read<Global>().globalConfig.quiz.zhar.copyWith(
+                              shuffleExternaly: value
+                            )
+                          )
+                        );
+                      }
                     });
                   }
                 ),
@@ -162,11 +191,19 @@ class _QuestionsSettingPage extends State<QuestionsSettingPage> {
             Row(
               children: [
                 Switch(
-                  value: context.read<Global>().settingData['quiz'][widget.sectionKey]["shuffleGlobally"], 
+                  value: section.shuffleGlobally, 
                   onChanged: (value) {
                     context.read<Global>().uiLogger.info("全局乱序: $value");
                     setState(() {
-                      context.read<Global>().settingData['quiz'][widget.sectionKey]["shuffleGlobally"] = value;
+                      if(widget.sectionKey == 0){
+                        context.read<Global>().globalConfig = context.read<Global>().globalConfig.copyWith(
+                          quiz: context.read<Global>().globalConfig.quiz.copyWith(
+                            zhar: context.read<Global>().globalConfig.quiz.zhar.copyWith(
+                              shuffleGlobally: value
+                            )
+                          )
+                        );
+                      }
                     });
                   }
                 ),

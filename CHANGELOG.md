@@ -11,6 +11,7 @@
 ### Improvement
 
 - 优化了网页端字体加载逻辑
+- 重构了Config数据结构
 
 ### Fix
 

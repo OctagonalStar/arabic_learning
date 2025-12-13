@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:arabic_learning/vars/config_structure.dart';
 import 'package:archive/archive.dart';
 import 'package:flutter_tts/flutter_tts.dart';
 import 'package:path_provider/path_provider.dart' as path_provider;
@@ -52,11 +53,11 @@ List<Map<String, dynamic>> getSelectedWords(BuildContext context , {List<List<St
 
 Future<List<dynamic>> playTextToSpeech(String text, BuildContext context, {double? speed}) async { 
   // return [bool isSuccessed?, String errorInfo];
-  speed ??= context.read<Global>().settingData["audio"]["playRate"];
+  speed ??= context.read<Global>().globalConfig.audio.playRate;
   context.read<Global>().logger.info("[TTS]请求: 文本: [$text]");
 
   // 0: System TTS
-  if (context.read<Global>().settingData["audio"]["useBackupSource"] == 0) {
+  if (context.read<Global>().globalConfig.audio.audioSource == 0) {
     context.read<Global>().logger.info("[TTS]配置使用系统TTS");
     FlutterTts flutterTts = FlutterTts();
     if(!(await flutterTts.getLanguages).toString().contains("ar") && context.mounted) {
@@ -66,13 +67,13 @@ Future<List<dynamic>> playTextToSpeech(String text, BuildContext context, {doubl
     await flutterTts.setLanguage("ar");
     await flutterTts.setPitch(1.0);
     if(!context.mounted) return [false, ""];
-    await flutterTts.setSpeechRate(speed! / 2);
+    await flutterTts.setSpeechRate(speed / 2);
     await flutterTts.speak(text);
     await Future.delayed(Duration(seconds: 2));
     if(!context.mounted) return [false, ""];
     context.read<Global>().logger.fine("[TTS]系统TTS阅读完成");
   // 1: TextReadTTS
-  } else if (context.read<Global>().settingData["audio"]["useBackupSource"] == 1) {
+  } else if (context.read<Global>().globalConfig.audio.audioSource == 1) {
     context.read<Global>().logger.info("[TTS]配置使用API进行TTS");
     try {
       context.read<Global>().logger.fine("[TTS]正在获取");
@@ -84,7 +85,7 @@ Future<List<dynamic>> playTextToSpeech(String text, BuildContext context, {doubl
         }
         await StaticsVar.player.setUrl(response.data["audio"]);
         if(!context.mounted) return [false, ""];
-        await StaticsVar.player.setSpeed(speed!);
+        await StaticsVar.player.setSpeed(speed);
         await StaticsVar.player.play();
         await Future.delayed(Duration(seconds: 2));
         if(context.mounted) context.read<Global>().logger.fine("[TTS]API TTS阅读完成");
@@ -98,7 +99,7 @@ Future<List<dynamic>> playTextToSpeech(String text, BuildContext context, {doubl
     }
   
   // 2: sherpa-onnx
-  } else if (context.read<Global>().settingData["audio"]["useBackupSource"] == 2) {
+  } else if (context.read<Global>().globalConfig.audio.audioSource == 2) {
     context.read<Global>().logger.info("[TTS]配置使用 sherpa_onnx TTS");
     if(context.read<Global>().vitsTTS == null) {
       context.read<Global>().logger.warning("[TTS]sherpa_onnx 未加载");
@@ -114,7 +115,7 @@ Future<List<dynamic>> playTextToSpeech(String text, BuildContext context, {doubl
       final cacheFile = io.File("${basePath.path}/temp.wav");
       if(cacheFile.existsSync()) cacheFile.deleteSync();
       if(!context.mounted) return [false, ""];
-      final audio = context.read<Global>().vitsTTS!.generate(text: text, speed: speed!);
+      final audio = context.read<Global>().vitsTTS!.generate(text: text, speed: speed);
       final ok = sherpa_onnx.writeWave(
                           filename: cacheFile.path,
                           samples: audio.samples,
@@ -184,8 +185,8 @@ extension ListExtensions on List {
   }
 }
 
-int getStrokeDays(Map<String, dynamic> settingData) {
-  return (DateTime.now().difference(DateTime(2025, 11, 1)).inDays - settingData["learning"]["lastDate"] > 1) ? 0 : (settingData["learning"]["lastDate"] - settingData["learning"]["startDate"] + 1);
+int getStrokeDays(LearningConfig config) {
+  return (DateTime.now().difference(DateTime(2025, 11, 1)).inDays - config.lastDate > 1) ? 0 : (config.lastDate - config.startDate + 1);
 }
 
 extension ZFillExtension on num {

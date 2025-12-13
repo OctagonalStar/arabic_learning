@@ -47,13 +47,13 @@ class HomePage extends StatelessWidget {
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       Text('连胜天数', style: TextStyle(fontSize: 12.0)),
-                      context.read<Global>().settingData["learning"]["lastDate"] == DateTime.now().difference(DateTime(2025, 11, 1)).inDays
+                      context.read<Global>().globalConfig.learning.lastDate == DateTime.now().difference(DateTime(2025, 11, 1)).inDays
                         ? Icon(Icons.done, size: 15.0, color: Colors.tealAccent)
                         : Icon(Icons.error_outline, size: 15.0, color: Colors.amber, semanticLabel: "今天还没学习~"),
                     ],
                   ),
                   SizedBox(height: mediaQuery.size.height * 0.03),
-                  Text(getStrokeDays(context.read<Global>().settingData).toString(), style: TextStyle(fontSize: 24.0, fontWeight: FontWeight.bold)),
+                  Text(getStrokeDays(context.read<Global>().globalConfig.learning).toString(), style: TextStyle(fontSize: 24.0, fontWeight: FontWeight.bold)),
                 ],
               ),
             ),
@@ -77,7 +77,7 @@ class HomePage extends StatelessWidget {
                 children: [
                   Text('已学词汇', style: TextStyle(fontSize: 12.0)),
                   SizedBox(height: mediaQuery.size.height * 0.03),
-                  Text(context.read<Global>().settingData["learning"]["KnownWords"].length.toString(), style: TextStyle(fontSize: 24.0, fontWeight: FontWeight.bold)),
+                  Text(context.read<Global>().globalConfig.learning.knownWords.length.toString(), style: TextStyle(fontSize: 24.0, fontWeight: FontWeight.bold)),
                 ],
               ),
             ),
