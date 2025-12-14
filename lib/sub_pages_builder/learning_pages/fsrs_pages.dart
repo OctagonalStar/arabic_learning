@@ -19,7 +19,7 @@ class ForeFSRSSettingPage extends StatelessWidget {
     context.read<Global>().uiLogger.info("构建 ForeFSRSSettingPage");
     MediaQueryData mediaQuery = MediaQuery.of(context);
     FSRS fsrs = FSRS()..init(outerPrefs: context.read<Global>().prefs);
-    if(fsrs.isEnabled() && !forceChoosing) {
+    if(fsrs.config.enabled && !forceChoosing) {
       return MainFSRSPage(fsrs: fsrs);
     }
     return Scaffold(
@@ -47,17 +47,19 @@ class ForeFSRSSettingPage extends StatelessWidget {
                       children: [
                         Expanded(child: Text("期望提取率", style: Theme.of(context).textTheme.bodyLarge)),
                         Slider(
-                          value: fsrs.settingData['rater']["desiredRetention"], 
+                          value: fsrs.config.desiredRetention, 
                           max: 0.99,
                           min: 0.75,
                           divisions: 24,
                           onChanged: (value){
                             setState(() {
-                              fsrs.settingData['rater']["desiredRetention"] = ((value*100).floorToDouble()/100);
+                              fsrs.config = fsrs.config.copyWith(
+                                desiredRetention: (value*100).floorToDouble()/100
+                              );
                             });
                           }
                         ),
-                        Text((fsrs.settingData['rater']["desiredRetention"] as num).toStringAsFixed(2))
+                        Text((fsrs.config.desiredRetention).toStringAsFixed(2))
                       ],
                     ),
                     Text("期望提取率 是指期望你有多大概率能回忆起某个单词。通常设置值越大，要求的学习间隔越短。"),
@@ -79,17 +81,19 @@ class ForeFSRSSettingPage extends StatelessWidget {
                       children: [
                         Expanded(child: Text("优秀评分限时", style: Theme.of(context).textTheme.bodyLarge)),
                         Slider(
-                          value: (fsrs.settingData['rater']["easyDuration"] as int).toDouble(), 
+                          value: fsrs.config.easyDuration.toDouble(), 
                           max: 5000.0,
                           min: 1000.0,
                           divisions: 40,
                           onChanged: (value){
                             setState(() {
-                              fsrs.settingData['rater']["easyDuration"] = value.toInt();
+                              fsrs.config = fsrs.config.copyWith(
+                                easyDuration: value.toInt()
+                              );
                             });
                           }
                         ),
-                        Text(fsrs.settingData['rater']["easyDuration"].toString())
+                        Text(fsrs.config.easyDuration.toString())
                       ],
                     ),
                     Text("优秀评分限时 是指在你回答问题时，回答正确耗时小于多少时评分为优秀(Easy)，单位为毫秒"),
@@ -111,17 +115,19 @@ class ForeFSRSSettingPage extends StatelessWidget {
                       children: [
                         Expanded(child: Text("良好评分限时", style: Theme.of(context).textTheme.bodyLarge)),
                         Slider(
-                          value: (fsrs.settingData['rater']["goodDuration"] as int).toDouble(), 
+                          value: fsrs.config.goodDuration.toDouble(), 
                           max: 10000.0,
                           min: 2000.0,
                           divisions: 80,
                           onChanged: (value){
                             setState(() {
-                              fsrs.settingData['rater']["goodDuration"] = value.toInt();
+                              fsrs.config = fsrs.config.copyWith(
+                                goodDuration: value.toInt()
+                              );
                             });
                           }
                         ),
-                        Text(fsrs.settingData['rater']["goodDuration"].toString())
+                        Text(fsrs.config.goodDuration.toString())
                       ],
                     ),
                     Text("良好评分限时 是指在你回答问题时，回答正确耗时小于多少时评分为良好(Good)，单位为毫秒"),

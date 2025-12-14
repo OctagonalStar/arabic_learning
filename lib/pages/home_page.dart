@@ -107,7 +107,7 @@ class HomePage extends StatelessWidget {
                 children: [
                   Text('规律性学习', style: TextStyle(fontSize: 12.0)),
                   SizedBox(height: mediaQuery.size.height * 0.03),
-                  Text(fsrs.isEnabled() ? "${fsrs.getWillDueCount().toString()}个待复习" : "未启用", style: TextStyle(fontSize: 24.0, fontWeight: FontWeight.bold)),
+                  Text(fsrs.config.enabled ? "${fsrs.getWillDueCount().toString()}个待复习" : "未启用", style: TextStyle(fontSize: 24.0, fontWeight: FontWeight.bold)),
                 ],
               ),
             ),
