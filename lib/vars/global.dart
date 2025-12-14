@@ -8,7 +8,7 @@ import 'package:path_provider/path_provider.dart' as path_provider;
 
 import 'package:arabic_learning/vars/statics_var.dart';
 import 'package:arabic_learning/package_replacement/storage.dart';
-import 'package:arabic_learning/vars/config_structure.dart' show Config;
+import 'package:arabic_learning/vars/config_structure.dart' show ClassItem, SourceItem, Config, DictData, WordItem;
 import 'package:arabic_learning/package_replacement/fake_dart_io.dart' if (dart.library.io) 'dart:io' as io;
 import 'package:arabic_learning/package_replacement/fake_sherpa_onnx.dart' if (dart.library.io) 'package:sherpa_onnx/sherpa_onnx.dart' as sherpa_onnx;
 
@@ -26,10 +26,10 @@ class Global with ChangeNotifier {
   late bool updateLogRequire; //是否需要显示更新日志
   late bool isWideScreen; // 设备是否是宽屏幕
   late final SharedPreferences prefs; // 储存实例
-  late bool modelTTSDownloaded = false;
   late ThemeData themeData;
-  late Map<String, dynamic> wordData = {};
-  int get wordCount => wordData["Words"]!.length;
+  bool modelTTSDownloaded = false;
+  late DictData wordData;
+  int get wordCount => wordData.words.length;
   sherpa_onnx.OfflineTts? vitsTTS;
 
   Config globalConfig = Config();
@@ -45,7 +45,6 @@ class Global with ChangeNotifier {
       logger.info("首次启动检测为真");
       updateLogRequire = false;
       await prefs.setString("wordData", jsonEncode({"Words": [], "Classes": {}}));
-      wordData = jsonDecode(jsonEncode({"Words": [], "Classes": {}})) as Map<String, dynamic>;
       logger.info("首次启动: 配置表初始化完成");
       await postInit();
     } else {
@@ -59,8 +58,8 @@ class Global with ChangeNotifier {
   // 预处理一些版本更新的配置文件兼容
   Future<void> conveySetting() async {
     logger.info("处理配置文件");
-    wordData = jsonDecode(prefs.getString("wordData")!) as Map<String, dynamic>;
-    Config oldConfig = Config.buildFromMap(jsonDecode(prefs.getString("settingData")!) as Map<String, dynamic>);
+    wordData = DictData.buildFromMap(jsonDecode(prefs.getString("wordData")!));
+    Config oldConfig = Config.buildFromMap(jsonDecode(prefs.getString("settingData")!));
     if(oldConfig.lastVersion != globalConfig.lastVersion) {
       logger.info("检测到当前版本与上次启动版本不同");
       updateLogRequire = true;
@@ -220,34 +219,44 @@ class Global with ChangeNotifier {
   //        }
   //    }
   // }
-  Map<String, dynamic> dataFormater(Map<String, dynamic> data, Map<String, dynamic> exData, String sourceName) {
+  DictData dataFormater(Map<String, dynamic> data, DictData exData, String sourceName) {
     logger.info("开始词汇格式化");
     List<String> wordList = [];
-    for(var x in exData["Words"]!) {
-      wordList.add(x["arabic"]);
+    for(WordItem x in exData.words) {
+      wordList.add(x.arabic);
     }
     int counter = wordList.length;
-    exData["Classes"][sourceName] = {};
-    for(var x in data.keys){
-      for(var y in data[x]){
-        if(wordList.contains(y["arabic"])){
+
+    SourceItem? exSource;
+    // 查找已有数据中是否有同名的源数据组
+    for(SourceItem x in exData.classes) {
+      if(x.sourceJsonFileName == sourceName) exSource = x;
+    }
+    if(exSource == null){
+      exData.classes.add(SourceItem(sourceJsonFileName: sourceName, subClasses: []));
+      exSource = exData.classes.last;
+    }
+
+    for(var className in data.keys){
+      ClassItem exClass = ClassItem(className: className, wordIndexs: []);
+      for(var word in data[className]){
+        if(wordList.contains(word["arabic"])){
           continue;
         }
-        if(exData["Classes"][sourceName]?.containsKey(x) ?? false){
-          exData["Classes"][sourceName][x].add(counter);
-        } else {
-          exData["Classes"][sourceName][x] = [counter];
-        }
-        exData["Words"]!.add({
-          "arabic": y["arabic"],
-          "chinese": y["chinese"],
-          "explanation": y["explanation"],
-          "subClass": x,
-          "learningProgress": 0
-        });
-        wordList.add(y["arabic"]);
+        exClass.wordIndexs.add(counter);
+        exData.words.add(
+          WordItem(
+            arabic: word["arabic"], 
+            chinese: word["chinese"], 
+            explanation: word["explanation"], 
+            className: className, 
+            id: counter
+          )
+        );
+        wordList.add(word["arabic"]);
         counter ++;
       }
+      exSource.subClasses.add(exClass);
     }
     return exData;
   }
@@ -255,24 +264,13 @@ class Global with ChangeNotifier {
   void importData(Map<String, dynamic> data, String source) {
     logger.info("收到词汇导入请求");
     wordData = dataFormater(data, wordData, source);
-    prefs.setString("wordData", jsonEncode(wordData));
+    prefs.setString("wordData", jsonEncode(wordData.toMap()));
     logger.info("词汇导入完成");
     notifyListeners();
   }
   
-  void saveLearningProgress(List<Map<String, dynamic>> words){
+  void saveLearningProgress(List<WordItem> words){
     logger.info("保存学习进度中");
-    List<int> wordIndexs = [];
-    for (Map<String, dynamic> word in words){
-      wordIndexs.add(word['id']);
-    }
-
-    for(int x in wordIndexs){
-      wordData["Words"][x]["learningProgress"] += 1;
-      if(globalConfig.learning.knownWords.contains(x)) continue;
-      if(wordData["Words"][x]["learningProgress"] >= 3) globalConfig.learning.knownWords.add(x);
-    }
-    prefs.setString("wordData", jsonEncode(wordData));
     // 以 2025/11/1 为基准计算天数（因为这个bug是这天修的:} ）
     final int nowDate = DateTime.now().difference(DateTime(2025, 11, 1)).inDays;
     if (nowDate == globalConfig.learning.lastDate) return;

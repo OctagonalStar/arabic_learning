@@ -30,22 +30,31 @@ Future<void> downloadFile(String url, String savePath, {ProgressCallback? onDown
   );
 }
 
-List<Map<String, dynamic>> getSelectedWords(BuildContext context , {List<List<String>>? forceSelectClasses, bool doShuffle = false, bool doDouble = false}) {
-  final wordData = context.read<Global>().wordData;
-  late final List<List<String>> courseList;
+List<WordItem> getSelectedWords(BuildContext context , {List<ClassItem>? forceSelectClasses, bool doShuffle = false, bool doDouble = false}) {
+  final List<ClassItem> courseList = forceSelectClasses??[];
   if(forceSelectClasses == null) {
     final tpcPrefs = context.read<Global>().prefs.getString("tempConfig") ?? jsonEncode(StaticsVar.tempConfig);
-    courseList = (jsonDecode(tpcPrefs)["SelectedClasses"] as List)
-      .cast<List>()
-      .map((e) => e.cast<String>().toList())
-      .toList();
-  } else {
-    courseList = forceSelectClasses;
+    final List<List<String>> cacheList = (jsonDecode(tpcPrefs)["SelectedClasses"] as List)
+        .cast<List>()
+        .map((e) => e.cast<String>().toList())
+        .toList();
+    for(List<String> cachedClass in cacheList) {
+      for(SourceItem sourceItem in context.read<Global>().wordData.classes){
+        if(sourceItem.sourceJsonFileName != cachedClass[0]){
+          continue;
+        }
+        if(sourceItem.subClasses.any((ClassItem classItem) => classItem.className == cachedClass[1])){
+          courseList.add(
+            sourceItem.subClasses.firstWhere((ClassItem classItem) => classItem.className == cachedClass[1])
+          );
+        }
+      }
+    }
   }
-  List<Map<String, dynamic>> ans = [];
-  for(List<String> c in courseList) {
-    for (int x in wordData["Classes"][c[0]][c[1]].cast<int>()){
-      ans.add({...wordData["Words"][x], "id": x}); // 保留id方便后面进度保存
+  List<WordItem> ans = [];
+  for(ClassItem c in courseList) {
+    for (int wordIndex in c.wordIndexs){
+      ans.add(context.read<Global>().wordData.words[wordIndex]); // 保留id方便后面进度保存
     }
   }
   if(doDouble) ans = [...ans, ...ans];

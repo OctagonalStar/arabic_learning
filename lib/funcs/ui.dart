@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:ui';
 
+import 'package:arabic_learning/vars/config_structure.dart' show ClassItem, SourceItem, WordItem;
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -35,20 +36,30 @@ import 'package:arabic_learning/funcs/utili.dart';
 /// List<List<String>> value = await popSelectClasses(context);
 /// List<Map<String, dynamic>> words = getSelectedWords(context , forceSelectClasses: value);
 /// ```
-Future<List<List<String>>> popSelectClasses(BuildContext context, {bool withCache = false}) async {
+Future<List<ClassItem>> popSelectClasses(BuildContext context, {bool withCache = false}) async {
   context.read<Global>().uiLogger.info("弹出课程选择（ClassSelectPage），withCache: $withCache");
-  late final List<List<String>> beforeSelectedClasses;
+  final List<ClassItem> beforeSelectedClasses = [];
   if(withCache) {
     final String tpcPrefs = context.read<Global>().prefs.getString("tempConfig") ?? jsonEncode(StaticsVar.tempConfig);
-    beforeSelectedClasses = (jsonDecode(tpcPrefs)["SelectedClasses"] as List)
+    final List<List<String>> cacheList = (jsonDecode(tpcPrefs)["SelectedClasses"] as List)
         .cast<List>()
         .map((e) => e.cast<String>().toList())
         .toList();
+    for(List<String> cachedClass in cacheList) {
+      for(SourceItem sourceItem in context.read<Global>().wordData.classes){
+        if(sourceItem.sourceJsonFileName != cachedClass[0]){
+          continue;
+        }
+        if(sourceItem.subClasses.any((ClassItem classItem) => classItem.className == cachedClass[1])){
+          beforeSelectedClasses.add(
+            sourceItem.subClasses.firstWhere((ClassItem classItem) => classItem.className == cachedClass[1])
+          );
+        }
+      }
+    }
     context.read<Global>().uiLogger.fine("已缓存课程选择: $beforeSelectedClasses");
-  } else {
-    beforeSelectedClasses = [];
   }
-  List<List<String>>? selectedClasses = await showModalBottomSheet<List<List<String>>>(
+  List<ClassItem>? selectedClasses = await showModalBottomSheet<List<ClassItem>>(
     context: context,
     // 假装圆角... :)
     shape: RoundedRectangleBorder(side: BorderSide(width: 1.0, color: Theme.of(context).colorScheme.onSurface.withAlpha(150)), borderRadius: StaticsVar.br),
@@ -67,7 +78,7 @@ Future<List<List<String>>> popSelectClasses(BuildContext context, {bool withCach
     context.read<Global>().uiLogger.info("课程选择缓存完成");
   }
   if(context.mounted) context.read<Global>().uiLogger.fine("选择的课程: $selectedClasses");
-  return selectedClasses ?? [];
+  return selectedClasses??[];
 }
 
 
@@ -82,11 +93,11 @@ Future<List<List<String>>> popSelectClasses(BuildContext context, {bool withCach
 /// [isClassSelected] :需要一个函数判断该课程是否被选中
 /// 
 /// 一般情况下该函数只会在 [ClassSelectPage] 中被使用，若非必要你不应该使用此函数
-List<Widget> classesSelectionList(BuildContext context, Function (List<String>) onChanged, bool Function (List<String>) isClassSelected) {
+List<Widget> classesSelectionList(BuildContext context, Function (ClassItem) onChanged, bool Function (ClassItem) isClassSelected) {
   context.read<Global>().uiLogger.fine("构建课程选择列表");
-  Map<String, dynamic> wordData = context.read<Global>().wordData;
+  List<SourceItem> sourcesList = context.read<Global>().wordData.classes;
   List<Widget> widgetList = [];
-  for (String sourceName in wordData["Classes"].keys) {
+  for (SourceItem source in sourcesList) {
     widgetList.add(
       Container(
         margin: EdgeInsets.all(16.0),
@@ -96,7 +107,7 @@ List<Widget> classesSelectionList(BuildContext context, Function (List<String>) 
           borderRadius: StaticsVar.br,
         ),
         child: Text(
-          sourceName,
+          source.sourceJsonFileName,
           style: TextStyle(
             fontSize: 16.0,
             fontWeight: FontWeight.bold,
@@ -105,7 +116,7 @@ List<Widget> classesSelectionList(BuildContext context, Function (List<String>) 
       ),
     );
     bool isEven = true;
-    for(String className in wordData["Classes"][sourceName].keys){
+    for(ClassItem classItem in source.subClasses){
       widgetList.add(
         Container(
           margin: EdgeInsets.all(2),
@@ -116,11 +127,11 @@ List<Widget> classesSelectionList(BuildContext context, Function (List<String>) 
           child: StatefulBuilder(
             builder: (context, setLocalState) {
               return CheckboxListTile(
-                title: Text(className),
-                value: isClassSelected([sourceName, className]),
+                title: Text(classItem.className),
+                value: isClassSelected(classItem),
                 onChanged: (value) {
                   setLocalState(() {
-                    onChanged([sourceName, className]);
+                    onChanged(classItem);
                   });
                 },
               );
@@ -190,7 +201,7 @@ void alart(BuildContext context, String e, {Function? onConfirmed, Duration dela
 }
 
 /// 弹出详解页面
-void viewAnswer(BuildContext context, Map<String, dynamic> wordData) async {
+void viewAnswer(BuildContext context, WordItem wordData) async {
   context.read<Global>().uiLogger.info("弹出详解页面");
   MediaQueryData mediaQuery = MediaQuery.of(context);
   showBottomSheet(
@@ -445,7 +456,7 @@ class _ChooseButtonBoxState extends State<ChooseButtonBox> {
 /// 
 /// [useMask] :是否显示高斯遮罩
 class WordCard extends StatelessWidget {
-  final Map<String, dynamic> word;
+  final WordItem word;
   final double? width;
   final double? height;
   final bool useMask;
@@ -468,9 +479,9 @@ class WordCard extends StatelessWidget {
             padding: const EdgeInsets.all(16.0),
           ),
           icon: const Icon(Icons.volume_up, size: 24.0),
-          label: FittedBox(child: Text(word["arabic"], style: TextStyle(fontSize: 64.0, fontFamily: context.read<Global>().arFont))),
+          label: FittedBox(child: Text(word.arabic, style: TextStyle(fontSize: 64.0, fontFamily: context.read<Global>().arFont))),
           onPressed: (){
-            playTextToSpeech(word["arabic"], context);
+            playTextToSpeech(word.arabic, context);
           },
         ),
         Stack(
@@ -483,7 +494,7 @@ class WordCard extends StatelessWidget {
                 borderRadius: BorderRadius.vertical(bottom: Radius.circular(25.0)),
               ),
               child: Center(
-                child: Text(' 中文：${word["chinese"]}\n 示例：${word["explanation"]}\n 归属课程：${word["subClass"]}',
+                child: Text(' 中文：${word.chinese}\n 示例：${word.explanation}\n 归属课程：${word.className}',
                   style: Theme.of(context).textTheme.bodyLarge,
                   textAlign: TextAlign.left,
                 ),
@@ -541,22 +552,22 @@ class WordCard extends StatelessWidget {
 /// 
 /// 注意：如果你要进行课程选择，请先考虑 [popSelectClasses] 函数，这是一个已经基本成熟的实现
 class ClassSelectPage extends StatelessWidget { 
-  final List<List<String>> beforeSelectedClasses;
+  final List<ClassItem> beforeSelectedClasses;
   const ClassSelectPage({super.key, this.beforeSelectedClasses = const []});
   @override
   Widget build(BuildContext context) {
-    final mediaQuery = MediaQuery.of(context);
-    List<List<String>> selectedClass = beforeSelectedClasses.toList();
-    void addClass(List<String> classInfo) {
+    final MediaQueryData mediaQuery = MediaQuery.of(context);
+    List<ClassItem> selectedClass = beforeSelectedClasses.toList();
+    void addClass(ClassItem classInfo) {
       selectedClass.add(classInfo);
     }
-    void removeClass(List<String> classInfo) {
-      selectedClass.removeWhere((e) => e[0] == classInfo[0] && e[1] == classInfo[1]);
+    void removeClass(ClassItem classInfo) {
+      selectedClass.remove(classInfo);
     }
-    bool isClassSelected(List<String> classInfo) {
-      return selectedClass.any((e) => e[0] == classInfo[0] && e[1] == classInfo[1]);
+    bool isClassSelected(ClassItem classInfo) {
+      return selectedClass.any((e) => e==classInfo);
     }
-    void onClassChanged(List<String> classInfo) {
+    void onClassChanged(ClassItem classInfo) {
       if(isClassSelected(classInfo)) {
         removeClass(classInfo);
       } else {
@@ -800,14 +811,14 @@ class _ChoiceQuestions extends State<ChoiceQuestions> {
 /// 
 /// [bottomWidget] :题目下方的组件，可用于翻页之类的其他功能，自行设置
 class WordCardQuestion extends StatelessWidget {
-  final Map<String, dynamic> word;
+  final WordItem word;
   final String? hint;
   final Widget? bottomWidget;
   const WordCardQuestion({super.key, required this.word, this.hint, this.bottomWidget});
 
   @override
   Widget build(BuildContext context) {
-    context.read<Global>().uiLogger.info("构建单词卡片页面，主单词: ${word["arabic"]}");
+    context.read<Global>().uiLogger.info("构建单词卡片页面，主单词: ${word.arabic}");
     MediaQueryData mediaQuery = MediaQuery.of(context);
     return Material(
       child: Column(

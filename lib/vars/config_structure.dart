@@ -610,3 +610,125 @@ class SyncAccountConfig {
     );
   }
 }
+
+@immutable
+class DictData {
+  final List<WordItem> words;
+  final List<SourceItem> classes;
+
+  const DictData({
+    required this.words,
+    required this.classes
+  });
+
+  static DictData buildFromMap(Map<String, dynamic> data) {
+    List<WordItem> wordsData = [];
+    for(Map<String, dynamic> x in data["Words"]) {
+      wordsData.add(WordItem.buildFromMap(x, wordsData.length));
+    }
+    List<SourceItem> classesData = [];
+    for(String sourceName in (data["Classes"] as Map<String, dynamic>).keys) {
+      classesData.add(SourceItem.buildFromMap(data["Classes"][sourceName], sourceName));
+    }
+    return DictData(words: wordsData, classes: classesData);
+  }
+  
+  Map<String, dynamic> toMap(){
+    List<Map<String, dynamic>> wordList = [];
+    for(WordItem word in words){
+      wordList.add(word.toMap());
+    }
+    Map<String, dynamic> classMap = {};
+    for(SourceItem source in classes){
+      classMap[source.sourceJsonFileName] = source.toMap();
+    }
+    return {
+      "Words": wordList,
+      "Classes": classMap
+    };
+  }
+}
+
+@immutable
+class SourceItem {
+  final String sourceJsonFileName;
+  final List<ClassItem> subClasses;
+
+  const SourceItem({
+    required this.sourceJsonFileName,
+    required this.subClasses
+  });
+
+  static SourceItem buildFromMap(Map<String, dynamic> data, String sourceJsonFileName) {
+    List<ClassItem> classes = [];
+    for(String className in data.keys) {
+      classes.add(ClassItem(className: className, wordIndexs: List<int>.from(data[className])));
+    }
+    return SourceItem(sourceJsonFileName: sourceJsonFileName, subClasses: classes);
+  }
+
+  Map<String, List<int>> toMap(){
+    Map<String, List<int>> classesMap = {};
+    for(ClassItem classItem in subClasses) {
+      classesMap[classItem.className] = classItem.wordIndexs;
+    }
+    return classesMap;
+  }
+}
+
+@immutable
+class ClassItem {
+  final String className;
+  final List<int> wordIndexs;
+
+  const ClassItem({
+    required this.className,
+    required this.wordIndexs
+  });
+
+  @override
+  String toString() {
+    return className;
+  }
+}
+
+@immutable
+class WordItem {
+  final String arabic;
+  final String chinese;
+  final String explanation;
+  final String className;
+  final int id;
+
+  const WordItem({
+    required this.arabic,
+    required this.chinese,
+    required this.explanation,
+    required this.className,
+    required this.id
+  });
+
+  Map<String, String> toMap(){
+    return {
+      "arabic": arabic,
+      "chinese": chinese,
+      "explanation": explanation,
+      "subClass": className
+    };
+  }
+
+  @override
+  String toString() {
+    return jsonEncode(toMap());
+  }
+  
+  static WordItem buildFromMap(Map<String, dynamic> word, int id){
+    return WordItem(
+      arabic: word["arabic"], 
+      chinese: word["chinese"], 
+      explanation: word["explanation"], 
+      className: word["subClass"],
+      id: id
+    );
+  }
+}

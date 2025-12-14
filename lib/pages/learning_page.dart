@@ -1,3 +1,4 @@
+import 'package:arabic_learning/vars/config_structure.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -144,9 +145,9 @@ class LearningPage extends StatelessWidget {
 
 Future<void> shiftToStudy(BuildContext context, int studyType) async {
   context.read<Global>().uiLogger.info("准备转向学习页面: studyType: $studyType");
-  final List<List<String>> selectedClasses = await popSelectClasses(context, withCache: false);
+  final List<ClassItem> selectedClasses = await popSelectClasses(context, withCache: false);
   if(selectedClasses.isEmpty || !context.mounted) return;
-  final List<Map<String, dynamic>> words = getSelectedWords(context, doShuffle: false, doDouble: false, forceSelectClasses: selectedClasses);
+  final List<WordItem> words = getSelectedWords(context, doShuffle: false, doDouble: false, forceSelectClasses: selectedClasses);
   context.read<Global>().uiLogger.info("完成单词挑拣，共${words.length}个");
   if(words.isEmpty) return;
   context.read<Global>().uiLogger.info("跳转: LearningPage => InLearningPage");

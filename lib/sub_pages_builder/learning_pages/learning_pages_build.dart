@@ -20,7 +20,7 @@ class InLearningPage extends StatefulWidget {
     2: 阿译中 选择题
     3: 中译阿 拼写题
   */
-  final List<Map<String, dynamic>> words;
+  final List<WordItem> words;
   const InLearningPage({super.key, required this.studyType, required this.words});
   @override
   State<InLearningPage> createState() => _InLearningPageState();
@@ -45,7 +45,7 @@ class _InLearningPageState extends State<InLearningPage> {
                                         : context.read<Global>().globalConfig.quiz.ar;
     List<List<List<dynamic>>> questionsInSections = List.generate(questionsSetting.questionSections.length, (_) => []);
     for(int sectionIndex = 0; sectionIndex < questionsSetting.questionSections.length; sectionIndex++) {
-      for(Map<String, dynamic> wordData in widget.words) {
+      for(WordItem wordItem in widget.words) {
         late List<dynamic> extra;
         final int testType = questionsSetting.questionSections[sectionIndex];
         if(testType == 0) {
@@ -55,29 +55,29 @@ class _InLearningPageState extends State<InLearningPage> {
           // 中译阿/阿译中 选择题
           List<String> strList = [];
           int correctIndex = rnd.nextInt(4); // 正确答案在选项中的索引
-          List<int> rndLst = [wordData['id']]; // 已抽取的 绝对索引
+          List<int> rndLst = [wordItem.id]; // 已抽取的 绝对索引
           for (int i = 0; i < correctIndex; i++) {
-            Map<String, dynamic> r = widget.words[rnd.nextInt(widget.words.length)];
-            while (rndLst.contains(r['id'])){
+            WordItem r = widget.words[rnd.nextInt(widget.words.length)];
+            while (rndLst.contains(r.id)){
               r = widget.words[rnd.nextInt(widget.words.length)];
             }
-            rndLst.add(r['id']);
-            strList.add(r[testType == 1 ? "arabic" : "chinese"]);
+            rndLst.add(r.id);
+            strList.add(testType == 1 ? r.arabic : r.chinese);
           }
-          strList.add(wordData[testType == 1 ? "arabic" : "chinese"]);
+          strList.add(testType == 1 ? wordItem.arabic : wordItem.chinese);
           for (int i = correctIndex + 1; i < 4; i++) {
-            Map<String, dynamic> r = widget.words[rnd.nextInt(widget.words.length)];
-            while (rndLst.contains(r['id'])){
+            WordItem r = widget.words[rnd.nextInt(widget.words.length)];
+            while (rndLst.contains(r.id)){
               r = widget.words[rnd.nextInt(widget.words.length)];
             }
-            rndLst.add(r['id']);
-            strList.add(r[testType == 1 ? "arabic" : "chinese"]);
+            rndLst.add(r.id);
+            strList.add(testType == 1 ? r.arabic : r.chinese);
           }
           extra = [correctIndex, strList];
         } else if(testType == 3) {
           extra = [];
         }
-        questionsInSections[sectionIndex].add([wordData, testType, extra]);
+        questionsInSections[sectionIndex].add([wordItem, testType, extra]);
       }
     }
 
@@ -217,7 +217,7 @@ class _InLearningPageState extends State<InLearningPage> {
               } else if(testItem[1] == 1 || testItem[1] == 2) {
                 // ar-zh choose questions
                 return ChoiceQuestions(
-                  mainWord: testItem[0][testItem[1] == 1 ? "chinese" : "arabic"], 
+                  mainWord: testItem[1] == 1 ? (testItem[0] as WordItem).chinese :  (testItem[0] as WordItem).arabic, 
                   choices: testItem[2][1], 
                   allowAudio: testItem[1] == 2, 
                   onSelected: (value) {
@@ -659,15 +659,15 @@ class _WordCardOverViewPage extends State<WordCardOverViewPage> {
       body: ListView.builder(
         physics: allowJsonScorll ? null : NeverScrollableScrollPhysics(),
         controller: jsonController,
-        itemCount: context.read<Global>().wordData["Classes"].length + 1,
+        itemCount: context.read<Global>().wordData.classes.length + 1,
         itemBuilder: (context, jsonIndex) {
-          if(jsonIndex == context.read<Global>().wordData["Classes"].length) {
+          if(jsonIndex == context.read<Global>().wordData.classes.length) {
             return SizedBox(height: mediaQuery.size.height);
           }
 
-          final String jsonName = context.read<Global>().wordData["Classes"].keys.elementAt(jsonIndex);
+          final SourceItem jsonSource = context.read<Global>().wordData.classes[jsonIndex];
           return ExpansionTile(
-            title: Text(jsonName.trim()),
+            title: Text(jsonSource.sourceJsonFileName.trim()),
             minTileHeight: 64,
             onExpansionChanged: (value) {
               setState(() {
@@ -686,14 +686,14 @@ class _WordCardOverViewPage extends State<WordCardOverViewPage> {
                 child: ListView.builder(
                   physics: allowClassScorll ? null : NeverScrollableScrollPhysics(),
                   controller: classController,
-                  itemCount: context.read<Global>().wordData["Classes"][jsonName].length + 1,
+                  itemCount: jsonSource.subClasses.length + 1,
                   itemBuilder: (context, classIndex) {
-                    if(classIndex == context.read<Global>().wordData["Classes"][jsonName].length) {
+                    if(classIndex == jsonSource.subClasses.length) {
                       return SizedBox(height: mediaQuery.size.height); // 避免0.9空间估计不足
                     }
-                    final String className = context.read<Global>().wordData["Classes"][jsonName].keys.elementAt(classIndex);
+                    final ClassItem classItem = jsonSource.subClasses[classIndex];
                     return ExpansionTile(
-                      title: Text(className.trim()),
+                      title: Text(classItem.className.trim()),
                       minTileHeight: 62,
                       onExpansionChanged: (value) {
                         setState(() {
@@ -722,13 +722,13 @@ class _WordCardOverViewPage extends State<WordCardOverViewPage> {
                         SizedBox(
                           height: mediaQuery.size.height * 0.8,
                           child: GridView.builder(
-                            itemCount: context.read<Global>().wordData["Classes"][jsonName][className].length,
+                            itemCount: classItem.wordIndexs.length,
                             gridDelegate: forceColumn == 0 ? SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: mediaQuery.size.width ~/ 300) : SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: forceColumn), 
                             itemBuilder: (context, index) {
                               return Container(
                                 margin: EdgeInsets.all(8.0),
                                 child: WordCard(
-                                  word: context.read<Global>().wordData["Words"][context.read<Global>().wordData["Classes"][jsonName][className][index]],
+                                  word: context.read<Global>().wordData.words[classItem.wordIndexs[index]],
                                   useMask: false,
                                   width: mediaQuery.size.width / (forceColumn == 0 ? (mediaQuery.size.width ~/ 300) : forceColumn),
                                   height: mediaQuery.size.width / (forceColumn == 0 ? (mediaQuery.size.width ~/ 300) : forceColumn),
