@@ -1,6 +1,7 @@
 
 import 'dart:convert';
 
+import 'package:arabic_learning/vars/config_structure.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:dio/dio.dart';
@@ -57,7 +58,7 @@ Future<List<Widget>> downloadList(BuildContext context) async{
   context.read<Global>().uiLogger.info("线上词库获取成功");
   for(var f in json) {
     if(f["type"] == "file") {
-      bool downloaded = context.read<Global>().wordData["Classes"].keys.contains(f["name"]);
+      bool downloaded = context.read<Global>().wordData.classes.any((SourceItem source) => source.sourceJsonFileName == f["name"]);
       bool inDownloading = false;
       list.add(StatefulBuilder(
         builder: (context, setLocalState) {

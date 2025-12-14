@@ -1,3 +1,4 @@
+import 'package:arabic_learning/vars/config_structure.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -18,7 +19,7 @@ class _ForeListeningSettingPage extends State<ForeListeningSettingPage> {
   int playTimes = 3;
   int interval = 5;
   int intervalBetweenWords = 10;
-  List<List<String>> selectedClasses = [];
+  List<ClassItem> selectedClasses = [];
   
 
   @override
@@ -238,7 +239,7 @@ class MainListeningPage extends StatefulWidget {
   final int playTimes;
   final int interval;
   final int intervalBetweenWords;
-  final List<Map<String, dynamic>> words;
+  final List<WordItem> words;
   const MainListeningPage({super.key, required this.playRate, required this.playTimes, required this.interval, required this.intervalBetweenWords, required this.words});
 
 
@@ -282,7 +283,7 @@ class _MainListeningPageState extends State<MainListeningPage> {
         )
       ];
       for(int i = 0; i < widget.words.length; i++) {
-        Map<String, dynamic> word = widget.words[i];
+        WordItem word = widget.words[i];
         list.add(
           Container(
             padding: EdgeInsets.all(16.0),
@@ -293,8 +294,8 @@ class _MainListeningPageState extends State<MainListeningPage> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text((i + 1).toString()),
-                Text(word["chinese"]),
-                Text(word["arabic"]),
+                Text(word.chinese),
+                Text(word.arabic),
               ],
             ),
           )
@@ -400,7 +401,7 @@ class _MainListeningPageState extends State<MainListeningPage> {
       // if(i == 100 && context.mounted) playTextToSpeech("سيبدأ الإملاء خلال 10 ثوانٍ. يرجى الاستعداد.", context);
       await Future.delayed(Duration(milliseconds: 100));
     }
-    for (Map<String, dynamic> x in widget.words) {
+    for (WordItem x in widget.words) {
       for(int t = 0; t < widget.playTimes; t++){ 
         index++;
         setState((){
@@ -408,7 +409,7 @@ class _MainListeningPageState extends State<MainListeningPage> {
           counter = "-";
         });
         if(!context.mounted) return;
-        await playTextToSpeech(x["arabic"], context, speed: widget.playRate);
+        await playTextToSpeech(x.arabic, context, speed: widget.playRate);
         // await Future.delayed(Duration(seconds: 1));
         setState((){
           state = "播放间隔中...";

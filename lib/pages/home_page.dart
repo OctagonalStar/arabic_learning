@@ -3,6 +3,7 @@ import 'dart:math';
 import 'package:arabic_learning/funcs/ui.dart';
 import 'package:arabic_learning/funcs/utili.dart';
 import 'package:arabic_learning/pages/setting_page.dart';
+import 'package:arabic_learning/vars/config_structure.dart';
 import 'package:arabic_learning/vars/global.dart';
 import 'package:arabic_learning/vars/statics_var.dart';
 import 'package:flutter/material.dart';
@@ -47,13 +48,13 @@ class HomePage extends StatelessWidget {
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       Text('连胜天数', style: TextStyle(fontSize: 12.0)),
-                      context.read<Global>().settingData["learning"]["lastDate"] == DateTime.now().difference(DateTime(2025, 11, 1)).inDays
+                      context.read<Global>().globalConfig.learning.lastDate == DateTime.now().difference(DateTime(2025, 11, 1)).inDays
                         ? Icon(Icons.done, size: 15.0, color: Colors.tealAccent)
                         : Icon(Icons.error_outline, size: 15.0, color: Colors.amber, semanticLabel: "今天还没学习~"),
                     ],
                   ),
                   SizedBox(height: mediaQuery.size.height * 0.03),
-                  Text(getStrokeDays(context.read<Global>().settingData).toString(), style: TextStyle(fontSize: 24.0, fontWeight: FontWeight.bold)),
+                  Text(getStrokeDays(context.read<Global>().globalConfig.learning).toString(), style: TextStyle(fontSize: 24.0, fontWeight: FontWeight.bold)),
                 ],
               ),
             ),
@@ -77,7 +78,7 @@ class HomePage extends StatelessWidget {
                 children: [
                   Text('已学词汇', style: TextStyle(fontSize: 12.0)),
                   SizedBox(height: mediaQuery.size.height * 0.03),
-                  Text(context.read<Global>().settingData["learning"]["KnownWords"].length.toString(), style: TextStyle(fontSize: 24.0, fontWeight: FontWeight.bold)),
+                  Text(context.read<Global>().globalConfig.learning.knownWords.length.toString(), style: TextStyle(fontSize: 24.0, fontWeight: FontWeight.bold)),
                 ],
               ),
             ),
@@ -106,7 +107,7 @@ class HomePage extends StatelessWidget {
                 children: [
                   Text('规律性学习', style: TextStyle(fontSize: 12.0)),
                   SizedBox(height: mediaQuery.size.height * 0.03),
-                  Text(fsrs.isEnabled() ? "${fsrs.getWillDueCount().toString()}个待复习" : "未启用", style: TextStyle(fontSize: 24.0, fontWeight: FontWeight.bold)),
+                  Text(fsrs.config.enabled ? "${fsrs.getWillDueCount().toString()}个待复习" : "未启用", style: TextStyle(fontSize: 24.0, fontWeight: FontWeight.bold)),
                 ],
               ),
             ),
@@ -159,11 +160,11 @@ class _DailyWord extends State<DailyWord> {
     final now = DateTime.now();
     final seed = now.year * 10000 + now.month * 100 + now.day;
     Random rnd = Random(seed);
-    late Map<String, dynamic> data;
+    late WordItem data;
     late String dailyWord;
     if(context.read<Global>().wordCount != 0) {
-      data = context.read<Global>().wordData["Words"][rnd.nextInt(context.read<Global>().wordCount)];
-      dailyWord = data["arabic"];
+      data = context.read<Global>().wordData.words[rnd.nextInt(context.read<Global>().wordCount)];
+      dailyWord = data.arabic;
     }
 
     return ElevatedButton(
@@ -203,12 +204,12 @@ class _DailyWord extends State<DailyWord> {
               children: context.read<Global>().wordCount == 0 ? [Text("当前未导入词库数据\n请点此以跳转设置页面导入")]
                 : [
                 Text(
-                  data["arabic"] ?? "读取出错 data:${data.toString()}",
+                  data.arabic,
                   style: TextStyle(fontSize: 52.0, fontFamily: context.read<Global>().arFont),
                 ),
                 SizedBox(height: mediaQuery.size.height * 0.005),
                 Text(
-                  data["chinese"] ?? "读取出错 data:${data.toString()}",
+                  data.chinese,
                   style: TextStyle(fontSize: 18.0),
                   textAlign: TextAlign.center,
                 ),

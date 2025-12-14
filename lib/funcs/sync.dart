@@ -1,5 +1,4 @@
 import 'dart:convert';
-import 'dart:typed_data' show Uint8List;
 
 import 'package:webdav_client/webdav_client.dart';
 import 'package:logging/logging.dart';
@@ -14,7 +13,6 @@ class WebDAV {
 
   bool isReachable = false;
   bool isReadable = false;
-  bool isWriteable = false;
 
   late Client client;
   final Logger logger = Logger("WebDAV");
@@ -57,14 +55,6 @@ class WebDAV {
       tempLogger.warning("PING: 可读性测试错误: $e");
       return [true, false, 'no read access: $e'];
     }
-    try{
-      await tempClient.write("TestFile", Uint8List(64)); // test for write
-      await tempClient.remove("TestFile");
-      tempLogger.fine("WRITE: 可写性测试成功");
-    } catch (e) {
-      tempLogger.warning("PING: 可写性测试错误: $e");
-      return [true, false, 'no write access: $e'];
-    }
     tempLogger.info("所有测试均通过");
     return [true, true, 'ok'];
   } 
@@ -85,24 +75,18 @@ class WebDAV {
       isReachable = true;
       await client.readDir(''); // test for read
       isReadable = true;
-      await client.write("TestFile", Uint8List(64)); // test for write
-      isWriteable = true;
-      await client.remove("TestFile");
     } catch (e) {
       logger.warning("链接中出现错误: $e");
       rethrow;
     }
   }
 
-  Future<void> upload(SharedPreferences pref,{bool force = false}) async {
-    logger.info("开始上传文件: 服务可写: $isWriteable; force: $force");
+  Future<void> upload(SharedPreferences pref) async {
+    logger.info("开始上传文件:");
     try {
-      if(isWriteable || force) {
         await client.write("arabic_learning.bak", utf8.encode(jsonEncode(pref.export())));
         logger.info("文件上传成功");
         return;
-      }
-      throw Exception("服务不可写，取消上传");
     } catch (e) {
       logger.warning("WebDAV上传失败: $e");
       rethrow;

@@ -49,6 +49,14 @@ packages:
       url: "https://pub.flutter-io.cn"
     source: hosted
     version: "0.2.2"
+  bk_tree:
+    dependency: "direct main"
+    description:
+      name: bk_tree
+      sha256: "25bc3ea0294d51759faa5575083658588dd7693a14b2a884b16061e10a98a102"
+      url: "https://pub.flutter-io.cn"
+    source: hosted
+    version: "0.1.2"
   boolean_selector:
     dependency: transitive
     description:

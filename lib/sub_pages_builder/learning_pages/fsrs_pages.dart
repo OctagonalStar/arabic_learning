@@ -1,5 +1,6 @@
 import 'dart:math';
 
+import 'package:arabic_learning/vars/config_structure.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -18,7 +19,7 @@ class ForeFSRSSettingPage extends StatelessWidget {
     context.read<Global>().uiLogger.info("构建 ForeFSRSSettingPage");
     MediaQueryData mediaQuery = MediaQuery.of(context);
     FSRS fsrs = FSRS()..init(outerPrefs: context.read<Global>().prefs);
-    if(fsrs.isEnabled() && !forceChoosing) {
+    if(fsrs.config.enabled && !forceChoosing) {
       return MainFSRSPage(fsrs: fsrs);
     }
     return Scaffold(
@@ -46,17 +47,19 @@ class ForeFSRSSettingPage extends StatelessWidget {
                       children: [
                         Expanded(child: Text("期望提取率", style: Theme.of(context).textTheme.bodyLarge)),
                         Slider(
-                          value: fsrs.settingData['rater']["desiredRetention"], 
+                          value: fsrs.config.desiredRetention, 
                           max: 0.99,
                           min: 0.75,
                           divisions: 24,
                           onChanged: (value){
                             setState(() {
-                              fsrs.settingData['rater']["desiredRetention"] = ((value*100).floorToDouble()/100);
+                              fsrs.config = fsrs.config.copyWith(
+                                desiredRetention: (value*100).floorToDouble()/100
+                              );
                             });
                           }
                         ),
-                        Text((fsrs.settingData['rater']["desiredRetention"] as num).toStringAsFixed(2))
+                        Text((fsrs.config.desiredRetention).toStringAsFixed(2))
                       ],
                     ),
                     Text("期望提取率 是指期望你有多大概率能回忆起某个单词。通常设置值越大，要求的学习间隔越短。"),
@@ -78,17 +81,19 @@ class ForeFSRSSettingPage extends StatelessWidget {
                       children: [
                         Expanded(child: Text("优秀评分限时", style: Theme.of(context).textTheme.bodyLarge)),
                         Slider(
-                          value: (fsrs.settingData['rater']["easyDuration"] as int).toDouble(), 
+                          value: fsrs.config.easyDuration.toDouble(), 
                           max: 5000.0,
                           min: 1000.0,
                           divisions: 40,
                           onChanged: (value){
                             setState(() {
-                              fsrs.settingData['rater']["easyDuration"] = value.toInt();
+                              fsrs.config = fsrs.config.copyWith(
+                                easyDuration: value.toInt()
+                              );
                             });
                           }
                         ),
-                        Text(fsrs.settingData['rater']["easyDuration"].toString())
+                        Text(fsrs.config.easyDuration.toString())
                       ],
                     ),
                     Text("优秀评分限时 是指在你回答问题时，回答正确耗时小于多少时评分为优秀(Easy)，单位为毫秒"),
@@ -110,17 +115,19 @@ class ForeFSRSSettingPage extends StatelessWidget {
                       children: [
                         Expanded(child: Text("良好评分限时", style: Theme.of(context).textTheme.bodyLarge)),
                         Slider(
-                          value: (fsrs.settingData['rater']["goodDuration"] as int).toDouble(), 
+                          value: fsrs.config.goodDuration.toDouble(), 
                           max: 10000.0,
                           min: 2000.0,
                           divisions: 80,
                           onChanged: (value){
                             setState(() {
-                              fsrs.settingData['rater']["goodDuration"] = value.toInt();
+                              fsrs.config = fsrs.config.copyWith(
+                                goodDuration: value.toInt()
+                              );
                             });
                           }
                         ),
-                        Text(fsrs.settingData['rater']["goodDuration"].toString())
+                        Text(fsrs.config.goodDuration.toString())
                       ],
                     ),
                     Text("良好评分限时 是指在你回答问题时，回答正确耗时小于多少时评分为良好(Good)，单位为毫秒"),
@@ -229,23 +236,23 @@ class _FSRSReviewCardPage extends State<FSRSReviewCardPage> {
   Widget build(BuildContext context) {
     context.read<Global>().uiLogger.info("构建 FSRSReviewCardPage");
     MediaQueryData mediaQuery = MediaQuery.of(context);
-    final List<dynamic> wordData = context.read<Global>().wordData["Words"];
+    final List<WordItem> wordData = context.read<Global>().wordData.words;
 
     // 防止重建后选项丢失
-    options ??= [context.read<Global>().wordData["Words"][widget.wordID]["chinese"] as String,
-                      context.read<Global>().wordData["Words"][widget.rnd.nextInt(context.read<Global>().wordCount)]["chinese"] as String,
-                      context.read<Global>().wordData["Words"][widget.rnd.nextInt(context.read<Global>().wordCount)]["chinese"] as String,
-                      context.read<Global>().wordData["Words"][widget.rnd.nextInt(context.read<Global>().wordCount)]["chinese"] as String]..shuffle();
+    options ??= [wordData[widget.wordID].chinese,
+                wordData[widget.rnd.nextInt(context.read<Global>().wordCount)].chinese,
+                wordData[widget.rnd.nextInt(context.read<Global>().wordCount)].chinese,
+                wordData[widget.rnd.nextInt(context.read<Global>().wordCount)].chinese]..shuffle();
     while(options!.hasDuplicate()) {
-      options = [context.read<Global>().wordData["Words"][widget.wordID]["chinese"] as String,
-                      context.read<Global>().wordData["Words"][widget.rnd.nextInt(context.read<Global>().wordCount)]["chinese"] as String,
-                      context.read<Global>().wordData["Words"][widget.rnd.nextInt(context.read<Global>().wordCount)]["chinese"] as String,
-                      context.read<Global>().wordData["Words"][widget.rnd.nextInt(context.read<Global>().wordCount)]["chinese"] as String]..shuffle();
+      options = [wordData[widget.wordID].chinese,
+                wordData[widget.rnd.nextInt(context.read<Global>().wordCount)].chinese,
+                wordData[widget.rnd.nextInt(context.read<Global>().wordCount)].chinese,
+                wordData[widget.rnd.nextInt(context.read<Global>().wordCount)].chinese]..shuffle();
     }
-    final int correct = options!.indexOf(context.read<Global>().wordData["Words"][widget.wordID]["chinese"] as String);
+    final int correct = options!.indexOf(context.read<Global>().wordData.words[widget.wordID].chinese);
     return Material(
       child: ChoiceQuestions(
-        mainWord: wordData[widget.wordID]["arabic"], 
+        mainWord: wordData[widget.wordID].arabic, 
         choices: options!, 
         allowAudio: true, 
         allowAnitmation: true,
@@ -354,13 +361,13 @@ class _FSRSOverViewPageState extends State<FSRSOverViewPage> {
             icon: const Icon(Icons.label_important, size: 24.0),
             label: const Text("去学习新单词"),
             onPressed: () async {
-              late List<List<String>> selectedClasses;
-              late List<Map<String, dynamic>> words;
+              late List<ClassItem> selectedClasses;
+              late List<WordItem> words;
               selectedClasses = await popSelectClasses(context, withCache: false);
               if(!context.mounted || selectedClasses.isEmpty) return;
               words = getSelectedWords(context, forceSelectClasses: selectedClasses, doShuffle: true, doDouble: false);
               // 去除已经学习的项目
-              words.removeWhere((Map<String, dynamic> item) => widget.fsrs.isContained(item['id']));
+              words.removeWhere((WordItem item) => widget.fsrs.isContained(item.id));
               context.read<Global>().uiLogger.info("跳转: FSRSOverViewPage => FSRSLearningPage");
               Navigator.push(
                 context, 
@@ -379,7 +386,7 @@ class _FSRSOverViewPageState extends State<FSRSOverViewPage> {
 
 // 学习新东西的页面： 展示释义 -> 选择题
 class FSRSLearningPage extends StatefulWidget {
-  final List<Map<String, dynamic>> words;
+  final List<WordItem> words;
   final FSRS fsrs;
   const FSRSLearningPage({super.key, required this.words, required this.fsrs});
 
@@ -396,16 +403,16 @@ class _FSRSLearningPageState extends State<FSRSLearningPage> {
   @override
   void initState() {
     final Random rnd = Random();
-    for(Map<String, dynamic> word in widget.words) {
-      List<String> option = [widget.words[rnd.nextInt(widget.words.length)]["chinese"],
-                            widget.words[rnd.nextInt(widget.words.length)]["chinese"],
-                            widget.words[rnd.nextInt(widget.words.length)]["chinese"],
-                            word["chinese"]];
+    for(WordItem word in widget.words) {
+      List<String> option = [widget.words[rnd.nextInt(widget.words.length)].chinese,
+                            widget.words[rnd.nextInt(widget.words.length)].chinese,
+                            widget.words[rnd.nextInt(widget.words.length)].chinese,
+                            word.chinese];
       while(option.hasDuplicate()) {
-        option = [widget.words[rnd.nextInt(widget.words.length)]["chinese"],
-                            widget.words[rnd.nextInt(widget.words.length)]["chinese"],
-                            widget.words[rnd.nextInt(widget.words.length)]["chinese"],
-                            word["chinese"]];
+        option = [widget.words[rnd.nextInt(widget.words.length)].chinese,
+                            widget.words[rnd.nextInt(widget.words.length)].chinese,
+                            widget.words[rnd.nextInt(widget.words.length)].chinese,
+                            word.chinese];
       }
       option.shuffle();
       options.add(option);
@@ -473,9 +480,9 @@ class _FSRSLearningPageState extends State<FSRSLearningPage> {
               });
             },
             itemBuilder: (context, index) {
-              final int correct = options[index].indexOf(widget.words[index]["chinese"]);
+              final int correct = options[index].indexOf(widget.words[index].chinese);
               return ChoiceQuestions(
-                mainWord: widget.words[index]["arabic"], 
+                mainWord: widget.words[index].arabic, 
                 choices: options[index], 
                 allowAudio: true, 
                 allowAnitmation: true,
@@ -485,7 +492,7 @@ class _FSRSLearningPageState extends State<FSRSLearningPage> {
                     setState(() {
                       corrected = true;
                     });
-                    widget.fsrs.addWordCard(widget.words[index]["id"]);
+                    widget.fsrs.addWordCard(widget.words[index].id);
                     return true;
                   } else {
                     return false;

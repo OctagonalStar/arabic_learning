@@ -1,6 +1,7 @@
 import 'package:arabic_learning/funcs/ui.dart';
 import 'package:arabic_learning/sub_pages_builder/setting_pages/item_widget.dart';
 import 'package:arabic_learning/funcs/sync.dart';
+import 'package:arabic_learning/vars/config_structure.dart';
 import 'package:arabic_learning/vars/global.dart';
 import 'package:arabic_learning/vars/statics_var.dart';
 import 'package:flutter/material.dart';
@@ -21,12 +22,12 @@ class _DataSyncPage extends State<DataSyncPage> {
   @override
   Widget build(BuildContext context) {
     context.read<Global>().uiLogger.info("构建 DataSyncPage");
-    enabled ??= context.read<Global>().settingData["sync"]["enabled"];
+    enabled ??= context.read<Global>().globalConfig.webSync.enabled;
     context.read<Global>().uiLogger.fine("获取WebDAV实例");
     final WebDAV webdav = WebDAV(
-      uri: context.read<Global>().settingData["sync"]["account"]["uri"], 
-      user: context.read<Global>().settingData["sync"]["account"]["userName"],
-      password: context.read<Global>().settingData["sync"]["account"]["passWord"]
+      uri: context.read<Global>().globalConfig.webSync.account.uri, 
+      user: context.read<Global>().globalConfig.webSync.account.userName,
+      password: context.read<Global>().globalConfig.webSync.account.passWord
     );
 
     return Scaffold(
@@ -64,12 +65,12 @@ class _DataSyncPage extends State<DataSyncPage> {
                   Row(
                     children: [
                       Text("联通性检查: "),
-                      if((context.read<Global>().settingData["sync"]["account"]["uri"] as String).isEmpty) Text("未绑定", style: Theme.of(context).textTheme.labelSmall),
+                      if(context.read<Global>().globalConfig.webSync.account.uri.isEmpty) Text("未绑定", style: Theme.of(context).textTheme.labelSmall),
                       FutureBuilder(
                         future: WebDAV.test(
-                          context.read<Global>().settingData["sync"]["account"]["uri"], 
-                          context.read<Global>().settingData["sync"]["account"]["userName"],
-                          password: context.read<Global>().settingData["sync"]["account"]["passWord"]
+                          context.read<Global>().globalConfig.webSync.account.uri, 
+                          context.read<Global>().globalConfig.webSync.account.userName,
+                          password: context.read<Global>().globalConfig.webSync.account.passWord
                         ), 
                         builder: (context, snapshot) {
                           if(snapshot.hasError) {
@@ -196,9 +197,9 @@ Future<void> popAccountSetting(BuildContext context) async {
   await showDialog<List<String>>(
     context: context,
     builder: (BuildContext context) {
-      uriController.text = context.read<Global>().settingData["sync"]["account"]["uri"];
-      accountController.text = context.read<Global>().settingData["sync"]["account"]["userName"];
-      passwdController.text = context.read<Global>().settingData["sync"]["account"]["passWord"];
+      uriController.text = context.read<Global>().globalConfig.webSync.account.uri;
+      accountController.text = context.read<Global>().globalConfig.webSync.account.userName;
+      passwdController.text = context.read<Global>().globalConfig.webSync.account.passWord;
       return AlertDialog(
         title: Text("设置WebDAV同步"),
         content: Column(
@@ -270,9 +271,15 @@ Future<void> popAccountSetting(BuildContext context) async {
                 alart(context, e.toString());
                 return;
               }
-              context.read<Global>().settingData["sync"]["account"]["uri"] = uriController.text;
-              context.read<Global>().settingData["sync"]["account"]["userName"] = accountController.text;
-              context.read<Global>().settingData["sync"]["account"]["passWord"] = passwdController.text;
+              context.read<Global>().globalConfig = context.read<Global>().globalConfig.copyWith(
+                webSync: context.read<Global>().globalConfig.webSync.copyWith(
+                  account: SyncAccountConfig(
+                    uri: uriController.text,
+                    userName: accountController.text,
+                    passWord: passwdController.text
+                  )
+                )
+              );
               context.read<Global>().updateSetting();
               Navigator.pop(context);
             }, 

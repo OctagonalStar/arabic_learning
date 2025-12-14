@@ -66,7 +66,7 @@ class MyApp extends StatelessWidget {
         title: StaticsVar.appName,
         themeMode: ThemeMode.system,
         theme: context.read<Global>().themeData,
-        home: context.read<Global>().settingData["eggs"]['stella'] 
+        home: context.read<Global>().globalConfig.egg.stella
           ? Scaffold(
             body: Stack(
               children: [
@@ -349,13 +349,13 @@ class _MyHomePageState extends State<MyHomePage> {
       TestPage()
     ];
     return Scaffold(
-      backgroundColor: context.read<Global>().settingData["eggs"]["stella"] ? Colors.transparent : null,
+      backgroundColor: context.read<Global>().globalConfig.egg.stella ? Colors.transparent : null,
       appBar: AppBar(
         centerTitle: true,
         backgroundColor: Theme.of(context).colorScheme.inversePrimary.withAlpha(150),
         title: Text(widget.title),
         actions: [
-          if(kIsWeb && !gob.settingData['regular']['hideAppDownloadButton']) ElevatedButton.icon(
+          if(kIsWeb && !gob.globalConfig.regular.hideAppDownloadButton) ElevatedButton.icon(
             icon: Icon(Icons.add_to_home_screen),
             label: Text('下载APP版本'),
             onPressed: () {
