@@ -14,12 +14,16 @@
 - 优化了网页端字体加载逻辑
 - 重构了Config数据结构 [#27](https://github.com/OctagonalStar/arabic_learning/issues/27)
 - 重构了软件运行时数据结构 [#16](https://github.com/OctagonalStar/arabic_learning/issues/16)
+- 优化连胜逻辑: FSRS复习也计算为连胜
+- 调整了部分按钮的UI设计
+- 去除了查看详解时，单词卡片的高斯模糊
 
 ### Fix
 
 - 修复了FSRS算法对已经过期的单词无法计数的问题
 - 修复了日志中FSRS信息输出错误的问题
 - 修复了新用户无法进入的问题
+- 修复了FSRS复习界面中，“下一题”动画期间文字溢出的问题
 
 ## v0.1.11 - 2025-11-28 - (000111)
 
