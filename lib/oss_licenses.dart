@@ -18,6 +18,7 @@ const allDependencies = <Package>[
   _args,
   _async,
   _audio_session,
+  _bk_tree,
   _boolean_selector,
   _change_app_package_name,
   _characters,
@@ -44,6 +45,10 @@ const allDependencies = <Package>[
   _flutter,
   _flutter_launcher_icons,
   _flutter_lints,
+  _flutter_local_notifications,
+  _flutter_local_notifications_linux,
+  _flutter_local_notifications_platform_interface,
+  _flutter_local_notifications_windows,
   _flutter_markdown_plus,
   _flutter_plugin_android_lifecycle,
   _flutter_tts,
@@ -68,7 +73,6 @@ const allDependencies = <Package>[
   _leak_tracker_flutter_testing,
   _leak_tracker_testing,
   _lints,
-  _logger,
   _logging,
   _markdown,
   _matcher,
@@ -133,6 +137,7 @@ const allDependencies = <Package>[
   _test,
   _test_api,
   _test_core,
+  _timezone,
   _typed_data,
   _url_launcher,
   _url_launcher_android,
@@ -153,6 +158,10 @@ const allDependencies = <Package>[
   _webkit_inspection_protocol,
   _win32,
   _window_manager,
+  _workmanager,
+  _workmanager_android,
+  _workmanager_apple,
+  _workmanager_platform_interface,
   _xdg_directories,
   _xml,
   _yaml
@@ -179,9 +188,12 @@ const dependencies = <Package>[
   _idb_shim,
   _flutter_markdown_plus,
   _webdav_client,
-  _logger,
+  _logging,
+  _flutter_local_notifications,
+  _workmanager,
   _cupertino_icons,
-  _dart_pubspec_licenses
+  _dart_pubspec_licenses,
+  _bk_tree
 ];
 
 /// Direct `dev_dependencies`.
@@ -473,6 +485,49 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.''',
+  );
+
+/// bk_tree 0.1.2
+const _bk_tree = Package(
+    name: 'bk_tree',
+    description: 'A Dart BK-Tree implementation for efficient nearest neighbor searches using Hamming distance, optimized for bulk file hash processing and duplicate detection.',
+    repository: 'https://github.com/RequieMa/bk_tree',
+    authors: [],
+    version: '0.1.2',
+    spdxIdentifiers: ['BSD-3-Clause'],
+    isMarkdown: false,
+    isSdk: false,
+    dependencies: [PackageRef('path'), PackageRef('logging'), PackageRef('meta')],
+    devDependencies: [PackageRef('lints'), PackageRef('test')],
+    license: '''BSD 3-Clause License
+
+Copyright (c) 2025, Bill Ma (GitHub: @RequieMa).
+All rights reserved.
+
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions are met:
+
+* Redistributions of source code must retain the above copyright notice, this
+  list of conditions and the following disclaimer.
+
+* Redistributions in binary form must reproduce the above copyright notice,
+  this list of conditions and the following disclaimer in the documentation
+  and/or other materials provided with the distribution.
+
+* Neither the name of the copyright holder nor the names of its
+  contributors may be used to endorse or promote products derived from
+  this software without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
+FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.''',
   );
 
 /// boolean_selector 2.1.2
@@ -2195,6 +2250,170 @@ ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.''',
   );
 
+/// flutter_local_notifications 19.5.0
+const _flutter_local_notifications = Package(
+    name: 'flutter_local_notifications',
+    description: 'A cross platform plugin for displaying and scheduling local notifications for Flutter applications with the ability to customise for each platform.',
+    homepage: 'https://github.com/MaikuB/flutter_local_notifications/tree/master/flutter_local_notifications',
+    authors: [],
+    version: '19.5.0',
+    spdxIdentifiers: ['BSD-3-Clause'],
+    isMarkdown: false,
+    isSdk: false,
+    dependencies: [PackageRef('clock'), PackageRef('flutter'), PackageRef('flutter_local_notifications_linux'), PackageRef('flutter_local_notifications_windows'), PackageRef('flutter_local_notifications_platform_interface'), PackageRef('timezone')],
+    devDependencies: [PackageRef('plugin_platform_interface')],
+    license: '''Copyright 2018 Michael Bui. All rights reserved.
+
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions are
+met:
+
+   * Redistributions of source code must retain the above copyright
+notice, this list of conditions and the following disclaimer.
+   * Redistributions in binary form must reproduce the above
+copyright notice, this list of conditions and the following disclaimer
+in the documentation and/or other materials provided with the
+distribution.
+   * Neither the name of the copyright holder nor the names of its
+contributors may be used to endorse or promote products derived from
+this software without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+"AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.''',
+  );
+
+/// flutter_local_notifications_linux 6.0.0
+const _flutter_local_notifications_linux = Package(
+    name: 'flutter_local_notifications_linux',
+    description: 'Linux implementation of the flutter_local_notifications plugin',
+    homepage: 'https://github.com/MaikuB/flutter_local_notifications/tree/master/flutter_local_notifications',
+    authors: [],
+    version: '6.0.0',
+    spdxIdentifiers: ['BSD-3-Clause'],
+    isMarkdown: false,
+    isSdk: false,
+    dependencies: [PackageRef('dbus'), PackageRef('ffi'), PackageRef('flutter'), PackageRef('flutter_local_notifications_platform_interface'), PackageRef('path'), PackageRef('xdg_directories')],
+    devDependencies: [],
+    license: '''Copyright 2018 Michael Bui. All rights reserved.
+
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions are
+met:
+
+   * Redistributions of source code must retain the above copyright
+notice, this list of conditions and the following disclaimer.
+   * Redistributions in binary form must reproduce the above
+copyright notice, this list of conditions and the following disclaimer
+in the documentation and/or other materials provided with the
+distribution.
+   * Neither the name of the copyright holder nor the names of its
+contributors may be used to endorse or promote products derived from
+this software without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+"AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.''',
+  );
+
+/// flutter_local_notifications_platform_interface 9.1.0
+const _flutter_local_notifications_platform_interface = Package(
+    name: 'flutter_local_notifications_platform_interface',
+    description: 'A common platform interface for the flutter_local_notifications plugin.',
+    homepage: 'https://github.com/MaikuB/flutter_local_notifications/tree/master/flutter_local_notifications_platform_interface',
+    authors: [],
+    version: '9.1.0',
+    spdxIdentifiers: ['BSD-3-Clause'],
+    isMarkdown: false,
+    isSdk: false,
+    dependencies: [PackageRef('plugin_platform_interface')],
+    devDependencies: [],
+    license: '''Copyright 2020 Michael Bui. All rights reserved.
+
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions are
+met:
+
+   * Redistributions of source code must retain the above copyright
+notice, this list of conditions and the following disclaimer.
+   * Redistributions in binary form must reproduce the above
+copyright notice, this list of conditions and the following disclaimer
+in the documentation and/or other materials provided with the
+distribution.
+   * Neither the name of the copyright holder nor the names of its
+contributors may be used to endorse or promote products derived from
+this software without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+"AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.''',
+  );
+
+/// flutter_local_notifications_windows 1.0.3
+const _flutter_local_notifications_windows = Package(
+    name: 'flutter_local_notifications_windows',
+    description: 'Windows implementation of the flutter_local_notifications plugin',
+    homepage: 'https://github.com/MaikuB/flutter_local_notifications/tree/master/flutter_local_notifications_windows',
+    authors: [],
+    version: '1.0.3',
+    spdxIdentifiers: ['BSD-3-Clause'],
+    isMarkdown: false,
+    isSdk: false,
+    dependencies: [PackageRef('flutter'), PackageRef('ffi'), PackageRef('flutter_local_notifications_platform_interface'), PackageRef('meta'), PackageRef('timezone'), PackageRef('xml')],
+    devDependencies: [PackageRef('test')],
+    license: '''Copyright 2024 Michael Bui. All rights reserved.
+
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions are
+met:
+
+   * Redistributions of source code must retain the above copyright
+notice, this list of conditions and the following disclaimer.
+   * Redistributions in binary form must reproduce the above
+copyright notice, this list of conditions and the following disclaimer
+in the documentation and/or other materials provided with the
+distribution.
+   * Neither the name of the copyright holder nor the names of its
+contributors may be used to endorse or promote products derived from
+this software without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+"AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.''',
+  );
+
 /// flutter_markdown_plus 1.0.5
 const _flutter_markdown_plus = Package(
     name: 'flutter_markdown_plus',
@@ -3308,43 +3527,6 @@ THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.''',
   );
 
-/// logger 2.6.2
-const _logger = Package(
-    name: 'logger',
-    description: 'Small, easy to use and extensible logger which prints beautiful logs.',
-    repository: 'https://github.com/SourceHorizon/logger',
-    authors: [],
-    version: '2.6.2',
-    spdxIdentifiers: ['MIT'],
-    isMarkdown: false,
-    isSdk: false,
-    dependencies: [PackageRef('meta')],
-    devDependencies: [PackageRef('test'), PackageRef('lints'), PackageRef('file')],
-    license: '''MIT License
-
-Copyright (c) 2019 Simon Leier
-Copyright (c) 2019 Harm Aarts
-Copyright (c) 2023 Severin Hamader
-
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.''',
-  );
-
 /// logging 1.3.0
 const _logging = Package(
     name: 'logging',
@@ -4387,7 +4569,7 @@ const _posix = Package(
     isMarkdown: false,
     isSdk: false,
     dependencies: [PackageRef('ffi'), PackageRef('meta'), PackageRef('path')],
-    devDependencies: [PackageRef('logger'), PackageRef('logging'), PackageRef('stack_trace'), PackageRef('test'), PackageRef('uuid')],
+    devDependencies: [PackageRef('logging'), PackageRef('stack_trace'), PackageRef('test'), PackageRef('uuid')],
     license: '''MIT License
 
 Copyright (c) 2020 Brett Sutton
@@ -7648,6 +7830,42 @@ THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.''',
   );
 
+/// timezone 0.10.1
+const _timezone = Package(
+    name: 'timezone',
+    description: 'Time zone database and time zone aware DateTime.',
+    repository: 'https://github.com/srawlins/timezone',
+    authors: [],
+    version: '0.10.1',
+    spdxIdentifiers: ['BSD-2-Clause'],
+    isMarkdown: false,
+    isSdk: false,
+    dependencies: [PackageRef('http'), PackageRef('path')],
+    devDependencies: [PackageRef('args'), PackageRef('file'), PackageRef('glob'), PackageRef('lints'), PackageRef('logging'), PackageRef('test')],
+    license: '''Copyright (c) 2014, timezone project authors.
+All rights reserved.
+
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions are met:
+
+    * Redistributions of source code must retain the above copyright
+      notice, this list of conditions and the following disclaimer.
+    * Redistributions in binary form must reproduce the above copyright
+      notice, this list of conditions and the following disclaimer in the
+      documentation and/or other materials provided with the distribution.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+DISCLAIMED. IN NO EVENT SHALL <COPYRIGHT HOLDER> BE LIABLE FOR ANY
+DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+(INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.''',
+  );
+
 /// typed_data 1.4.0
 const _typed_data = Package(
     name: 'typed_data',
@@ -8659,6 +8877,154 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.''',
   );
 
+/// workmanager 0.9.0+3
+const _workmanager = Package(
+    name: 'workmanager',
+    description: 'Flutter Workmanager. This plugin allows you to schedule background work on Android and iOS.',
+    homepage: 'https://github.com/fluttercommunity/flutter_workmanager',
+    repository: 'https://github.com/fluttercommunity/flutter_workmanager',
+    authors: [],
+    version: '0.9.0+3',
+    spdxIdentifiers: ['MIT'],
+    isMarkdown: false,
+    isSdk: false,
+    dependencies: [PackageRef('flutter'), PackageRef('workmanager_platform_interface'), PackageRef('workmanager_android'), PackageRef('workmanager_apple')],
+    devDependencies: [PackageRef('test'), PackageRef('flutter_lints')],
+    license: '''MIT License
+
+Copyright (c) 2019 vrtdev
+Copyright (c) 2023 Flutter Community
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.''',
+  );
+
+/// workmanager_android 0.9.0+2
+const _workmanager_android = Package(
+    name: 'workmanager_android',
+    description: 'Android implementation of the workmanager plugin.',
+    homepage: 'https://github.com/fluttercommunity/flutter_workmanager',
+    repository: 'https://github.com/fluttercommunity/flutter_workmanager',
+    authors: [],
+    version: '0.9.0+2',
+    spdxIdentifiers: ['MIT'],
+    isMarkdown: false,
+    isSdk: false,
+    dependencies: [PackageRef('flutter'), PackageRef('workmanager_platform_interface')],
+    devDependencies: [PackageRef('flutter_lints')],
+    license: '''MIT License
+
+Copyright (c) 2019 vrtdev
+Copyright (c) 2023 Flutter Community
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.''',
+  );
+
+/// workmanager_apple 0.9.1+2
+const _workmanager_apple = Package(
+    name: 'workmanager_apple',
+    description: 'Apple platform (iOS/macOS) implementation of the workmanager plugin.',
+    homepage: 'https://github.com/fluttercommunity/flutter_workmanager',
+    repository: 'https://github.com/fluttercommunity/flutter_workmanager',
+    authors: [],
+    version: '0.9.1+2',
+    spdxIdentifiers: ['MIT'],
+    isMarkdown: false,
+    isSdk: false,
+    dependencies: [PackageRef('flutter'), PackageRef('workmanager_platform_interface')],
+    devDependencies: [PackageRef('flutter_lints')],
+    license: '''MIT License
+
+Copyright (c) 2019 vrtdev
+Copyright (c) 2023 Flutter Community
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.''',
+  );
+
+/// workmanager_platform_interface 0.9.1+1
+const _workmanager_platform_interface = Package(
+    name: 'workmanager_platform_interface',
+    description: 'A common platform interface for the workmanager plugin.',
+    homepage: 'https://github.com/fluttercommunity/flutter_workmanager',
+    repository: 'https://github.com/fluttercommunity/flutter_workmanager',
+    authors: [],
+    version: '0.9.1+1',
+    spdxIdentifiers: ['MIT'],
+    isMarkdown: false,
+    isSdk: false,
+    dependencies: [PackageRef('flutter'), PackageRef('meta'), PackageRef('plugin_platform_interface')],
+    devDependencies: [PackageRef('flutter_lints')],
+    license: '''MIT License
+
+Copyright (c) 2019 vrtdev
+Copyright (c) 2023 Flutter Community
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.''',
+  );
+
 /// xdg_directories 1.1.0
 const _xdg_directories = Package(
     name: 'xdg_directories',
@@ -8777,7 +9143,7 @@ const _arabic_learning = Package(
     spdxIdentifiers: ['AGPL-3.0'],
     isMarkdown: false,
     isSdk: false,
-    dependencies: [PackageRef('flutter'), PackageRef('window_manager'), PackageRef('path_provider'), PackageRef('provider'), PackageRef('file_picker'), PackageRef('flutter_tts'), PackageRef('just_audio'), PackageRef('just_audio_windows'), PackageRef('flutter_launcher_icons'), PackageRef('change_app_package_name'), PackageRef('shared_preferences'), PackageRef('url_launcher'), PackageRef('sherpa_onnx'), PackageRef('archive'), PackageRef('dio'), PackageRef('fsrs'), PackageRef('idb_shim'), PackageRef('flutter_markdown_plus'), PackageRef('webdav_client'), PackageRef('logger'), PackageRef('cupertino_icons'), PackageRef('dart_pubspec_licenses')],
+    dependencies: [PackageRef('flutter'), PackageRef('window_manager'), PackageRef('path_provider'), PackageRef('provider'), PackageRef('file_picker'), PackageRef('flutter_tts'), PackageRef('just_audio'), PackageRef('just_audio_windows'), PackageRef('flutter_launcher_icons'), PackageRef('change_app_package_name'), PackageRef('shared_preferences'), PackageRef('url_launcher'), PackageRef('sherpa_onnx'), PackageRef('archive'), PackageRef('dio'), PackageRef('fsrs'), PackageRef('idb_shim'), PackageRef('flutter_markdown_plus'), PackageRef('webdav_client'), PackageRef('logging'), PackageRef('flutter_local_notifications'), PackageRef('workmanager'), PackageRef('cupertino_icons'), PackageRef('dart_pubspec_licenses'), PackageRef('bk_tree')],
     devDependencies: [PackageRef('flutter_lints')],
     license: '''GNU AFFERO GENERAL PUBLIC LICENSE
                        Version 3, 19 November 2007

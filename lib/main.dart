@@ -1,6 +1,9 @@
+import 'package:arabic_learning/funcs/noification.dart';
+import 'package:arabic_learning/package_replacement/fake_dart_io.dart' if (dart.library.io) 'dart:io' as io;
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter_markdown_plus/flutter_markdown_plus.dart';
 import 'package:window_manager/window_manager.dart';
 import 'package:provider/provider.dart';
@@ -13,9 +16,10 @@ import 'package:arabic_learning/vars/global.dart';
 import 'package:arabic_learning/vars/license_storage.dart';
 import 'package:arabic_learning/vars/statics_var.dart';
 import 'package:arabic_learning/pages/home_page.dart';
-import 'package:arabic_learning/pages/learning_page.dart';
-import 'package:arabic_learning/pages/setting_page.dart';
-import 'package:arabic_learning/pages/test_page.dart';
+import 'package:arabic_learning/pages/learning_page.dart'show LearningPage;
+import 'package:arabic_learning/pages/setting_page.dart'show SettingPage;
+import 'package:arabic_learning/pages/test_page.dart' show TestPage;
+import 'package:workmanager/workmanager.dart' show Workmanager, Constraints;
 
 void main() async {
   Logger.root.level = kDebugMode ? Level.ALL : Level.OFF;
@@ -28,6 +32,18 @@ void main() async {
   final Logger logger = Logger("enter");
   logger.info("日志加载成功");
   WidgetsFlutterBinding.ensureInitialized();
+
+  if(io.Platform.isAndroid) {
+    Workmanager().initialize(callbackDispatcher);
+    Workmanager().registerPeriodicTask(
+      "dynamic-notification-task",
+      "fetchAndShowNotification",
+      frequency: Duration(minutes: 15),
+      constraints: Constraints(),
+    );
+  }
+  
+
   if (StaticsVar.isDesktop) {
     await windowManager.ensureInitialized();
     logger.info("检测到当前为桌面端，正在加载窗口配置");
@@ -302,7 +318,11 @@ class _MyHomePageState extends State<MyHomePage> {
         ),
       );
     }
-
+    if(io.Platform.isAndroid) {
+      FlutterLocalNotificationsPlugin()
+        .resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>()
+        ?.requestNotificationsPermission();
+    }
     // 更新日志通知
     if(gob.updateLogRequire) {
       context.read<Global>().uiLogger.info("预定更新日志通知");
