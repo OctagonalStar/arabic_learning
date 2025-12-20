@@ -310,7 +310,7 @@ class _FSRSReviewCardPage extends State<FSRSReviewCardPage> {
                     widget.controller.nextPage(duration: Duration(milliseconds: 500), curve: StaticsVar.curve);
                   },
                   icon: Icon(Icons.arrow_downward),
-                  label: Text("下一题"),
+                  label: FittedBox(fit: BoxFit.contain, child: Text("下一题")),
                 )
               ],
             );
