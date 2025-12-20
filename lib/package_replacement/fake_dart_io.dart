@@ -34,6 +34,8 @@ class Platform{
   static bool get isLinux => false;
 
   static bool get isMacOS => false;
+
+  static bool get isAndroid => false;
 }
 
 class IdbFactory{

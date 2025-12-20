@@ -22,7 +22,7 @@ class Global with ChangeNotifier {
   Uint8List? stella;
   String? arFont;
   String? zhFont;
-  late final bool firstStart; // 是否为第一次使用
+  late bool firstStart; // 是否为第一次使用
   late bool updateLogRequire; //是否需要显示更新日志
   late bool isWideScreen; // 设备是否是宽屏幕
   late final SharedPreferences prefs; // 储存实例
@@ -45,6 +45,7 @@ class Global with ChangeNotifier {
       logger.info("首次启动检测为真");
       updateLogRequire = false;
       await prefs.setString("wordData", jsonEncode({"Words": [], "Classes": {}}));
+      wordData = DictData(words: [], classes: []);
       logger.info("首次启动: 配置表初始化完成");
       await postInit();
     } else {

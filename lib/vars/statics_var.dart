@@ -14,6 +14,15 @@ class StaticsVar {
   static const String onlineDictOwner = 'JYinherit';
   static const String arBackupFont = "Vazirmatn";
   static const String zhBackupFont = "NotoSansSC";
+  static const List<String> learningMessage = [
+    "⚠️ 警告：您积累的‘知识债’即将逾期。请立即支付5分钟学习时间以避免‘利息’。",
+    "友情提示：今日的学习KPI已完成 0%，是时候启动“填鸭”程序了！",
+    "你的阴性、阳性、单数、双数、复数... 你都记清楚了吗？",
+    "«هل تتذكر ما تعلمته بالأمس؟» ",
+    "«إن شاء الله» 你今天会完成学习任务的，对吧？"
+    "听说，在沙漠的另一边，有一课书在等你翻开..."
+    "..."
+  ];
   static const List<MaterialColor> themeList = [
     Colors.pink,
     Colors.blue,

@@ -20,7 +20,7 @@ class FSRS {
     if(!prefs.containsKey("fsrsData")) {
       logger.info("未发现FSRS配置，加载默认配置");
       config = FSRSConfig();
-      prefs.setString("fsrsData", jsonEncode(config));
+      prefs.setString("fsrsData", jsonEncode(config.toMap()));
       return false;
     } else {
       config = FSRSConfig.buildFromMap(jsonDecode(prefs.getString("fsrsData")!));
