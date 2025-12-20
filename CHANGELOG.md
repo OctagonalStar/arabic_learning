@@ -14,6 +14,7 @@
 - 优化了网页端字体加载逻辑
 - 重构了Config数据结构 [#27](https://github.com/OctagonalStar/arabic_learning/issues/27)
 - 重构了软件运行时数据结构 [#16](https://github.com/OctagonalStar/arabic_learning/issues/16)
+- 优化连胜逻辑: FSRS复习也计算为连胜
 
 ### Fix
 

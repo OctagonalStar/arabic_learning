@@ -160,7 +160,7 @@ Future<void> shiftToStudy(BuildContext context, int studyType) async {
   if(!context.mounted) return;
   context.read<Global>().uiLogger.info("返回完成情况: $finished");
   if(finished??false) {
-    context.read<Global>().saveLearningProgress(words);
+    context.read<Global>().updateLearningStreak();
   }
 }
 
