@@ -270,11 +270,11 @@ class Global with ChangeNotifier {
     notifyListeners();
   }
   
-  void saveLearningProgress(List<WordItem> words){
-    logger.info("保存学习进度中");
-    // 以 2025/11/1 为基准计算天数（因为这个bug是这天修的:} ）
+  void updateLearningStreak(){
     final int nowDate = DateTime.now().difference(DateTime(2025, 11, 1)).inDays;
     if (nowDate == globalConfig.learning.lastDate) return;
+    logger.info("保存学习进度中");
+    // 以 2025/11/1 为基准计算天数（因为这个bug是这天修的:} ）
     if (nowDate - globalConfig.learning.lastDate > 1) {
       globalConfig = globalConfig.copyWith(learning: globalConfig.learning.copyWith(startDate: nowDate));
     }

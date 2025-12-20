@@ -210,14 +210,14 @@ void viewAnswer(BuildContext context, WordItem wordData) async {
     enableDrag: true,
     builder: (context) {
       return Container(
-        padding: EdgeInsets.only(top: mediaQuery.size.height * 0.05),
         decoration: BoxDecoration(
           color: Theme.of(context).colorScheme.onPrimary,
           borderRadius: StaticsVar.br,
         ),
         child: Column(
+          mainAxisSize: MainAxisSize.min,
           children: [
-            Expanded(child: WordCard(word: wordData)),
+            WordCard(word: wordData, useMask: false),
             ElevatedButton(
               onPressed: () {Navigator.pop(context);}, 
               style: ElevatedButton.styleFrom(

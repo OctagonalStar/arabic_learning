@@ -269,6 +269,7 @@ class _FSRSReviewCardPage extends State<FSRSReviewCardPage> {
           });
           if(correct == value) {
             widget.fsrs.reviewCard(widget.wordID, DateTime.now().difference(start).inMilliseconds, true);
+            context.read<Global>().updateLearningStreak();
             return true;
           } else {
             widget.fsrs.reviewCard(widget.wordID, DateTime.now().difference(start).inMilliseconds, false);
@@ -310,7 +311,7 @@ class _FSRSReviewCardPage extends State<FSRSReviewCardPage> {
                     widget.controller.nextPage(duration: Duration(milliseconds: 500), curve: StaticsVar.curve);
                   },
                   icon: Icon(Icons.arrow_downward),
-                  label: Text("下一题"),
+                  label: FittedBox(fit: BoxFit.contain, child: Text("下一题")),
                 )
               ],
             );
