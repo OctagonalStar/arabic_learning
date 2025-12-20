@@ -50,7 +50,7 @@ class LearningPage extends StatelessWidget {
               ),
               Column(
                 children: [
-                  ElevatedButton.icon(
+                  ElevatedButton(
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Theme.of(context).colorScheme.secondaryContainer.withAlpha(150),
                       foregroundColor: Theme.of(context).colorScheme.onSurface.withAlpha(150),
@@ -61,11 +61,10 @@ class LearningPage extends StatelessWidget {
                     onPressed: () {
                       shiftToStudy(context, 2);
                     }, 
-                    icon: Icon(Icons.arrow_back, size: 24.0),
-                    label: FittedBox(fit: BoxFit.fitWidth ,child: Text("阿译中专项", style: TextStyle(fontSize: 32.0))),
+                    child: FittedBox(fit: BoxFit.fitWidth ,child: Text("阿译中专项", style: TextStyle(fontSize: 32.0))),
                   ),
                   SizedBox(height: mediaQuery.size.height * 0.005),
-                  ElevatedButton.icon(
+                  ElevatedButton(
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Theme.of(context).colorScheme.secondaryContainer.withAlpha(150),
                       foregroundColor: Theme.of(context).colorScheme.onSurface.withAlpha(150),
@@ -76,8 +75,7 @@ class LearningPage extends StatelessWidget {
                     onPressed: () {
                       shiftToStudy(context, 1);
                     }, 
-                    icon: Icon(Icons.arrow_forward, size: 24.0),
-                    label: FittedBox(fit: BoxFit.fitWidth ,child: Text("中译阿专项", style: TextStyle(fontSize: 32.0))),
+                    child: FittedBox(fit: BoxFit.fitWidth ,child: Text("中译阿专项", style: TextStyle(fontSize: 32.0))),
                   ),
                 ],
               ),
@@ -87,7 +85,7 @@ class LearningPage extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             children: [
-              ElevatedButton.icon(
+              ElevatedButton(
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Theme.of(context).colorScheme.onPrimary.withAlpha(150),
                   shadowColor: Colors.transparent,
@@ -105,8 +103,15 @@ class LearningPage extends StatelessWidget {
                     )
                   );
                 },
-                icon: Icon(Icons.history_edu, size: 24.0),
-                label: FittedBox(fit: BoxFit.fitWidth ,child: Text("规律性学习", style: TextStyle(fontSize: 32.0))),
+                child: FittedBox(
+                  fit: BoxFit.contain,
+                  child: Column(
+                    children: [
+                      Icon(Icons.history_edu, size: 24.0),
+                      Text("规律性学习", style: TextStyle(fontSize: 32.0)),
+                    ],
+                  )
+                ),
               ),
               ElevatedButton(
                 style: ElevatedButton.styleFrom(

@@ -15,6 +15,8 @@
 - 重构了Config数据结构 [#27](https://github.com/OctagonalStar/arabic_learning/issues/27)
 - 重构了软件运行时数据结构 [#16](https://github.com/OctagonalStar/arabic_learning/issues/16)
 - 优化连胜逻辑: FSRS复习也计算为连胜
+- 调整了部分按钮的UI设计
+- 去除了查看详解时，单词卡片的高斯模糊
 
 ### Fix
 
