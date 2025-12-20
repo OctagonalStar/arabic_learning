@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:arabic_learning/vars/config_structure.dart';
 import 'package:archive/archive.dart';
 import 'package:flutter_tts/flutter_tts.dart';
+import 'package:logging/logging.dart';
 import 'package:path_provider/path_provider.dart' as path_provider;
 import 'package:arabic_learning/package_replacement/fake_dart_io.dart' if (dart.library.io) 'dart:io' as io;
 import 'package:arabic_learning/package_replacement/fake_sherpa_onnx.dart' if (dart.library.io) 'package:sherpa_onnx/sherpa_onnx.dart' as sherpa_onnx;
@@ -263,6 +264,7 @@ class _RootPattern {
   /// 该模式对应的词性
   final ArabicPOS pos;
 
+  // ignore: unused_element_parameter
   _RootPattern(this.name, String pattern, this.pos, {this.groups = const [1, 2, 3]})
       : regex = RegExp(pattern);
 }
@@ -392,8 +394,11 @@ class ArabicStemmer {
     if (s.length > 3 && (s.startsWith('و') || s.startsWith('ف'))) s = s.substring(1);
 
     if (s.length > 4) {
-       if (s.endsWith('ات') || s.endsWith('ون') || s.endsWith('ين')) s = s.substring(0, s.length - 2);
-       else if (s.endsWith('ي')) s = s.substring(0, s.length - 1);
+      if (s.endsWith('ات') || s.endsWith('ون') || s.endsWith('ين')) {
+        s = s.substring(0, s.length - 2);
+      } else if (s.endsWith('ي')) {
+        s = s.substring(0, s.length - 1);
+      }
        // 注意：这里去掉了对 'ه' (Ha) 的移除，因为我们不再把 'ة' 转为 'ه'
        // 如果 'ه' 是原生字母或代词后缀，仍需小心
     }
@@ -520,26 +525,25 @@ class VocabularyOptimizer {
 
 /// 1. 初始化: BKSearch.init(['ktb', 'maktaba', ...]);
 /// 2. 搜索: var results = BKSearch.search('kitab');
+@immutable
 class BKSearch {
   // 私有构造函数，防止外部实例化
-  BKSearch._();
+  const BKSearch._();
   
   // 单例实例
   static final VocabularyOptimizer _optimizer = VocabularyOptimizer();
   static bool _isInitialized = false;
 
+  static final Logger logger = Logger("BKTree");
+
   /// [必须调用] 初始化搜索引擎
   /// 通常在 App 启动或加载词库时调用
   static void init(List<String> allWords) {
     if (_isInitialized) return; // 避免重复初始化
-    print("正在构建 BK-Tree 搜索索引，词库大小: ${allWords.length}...");
-    final stopwatch = Stopwatch()..start();
-    
+    logger.info("正在构建 BK-Tree 搜索索引，词库大小: ${allWords.length}...");
     _optimizer.build(allWords);
-    
-    stopwatch.stop();
     _isInitialized = true;
-    print("BK-Tree 索引构建完成，耗时: ${stopwatch.elapsedMilliseconds}ms");
+    logger.info("BK-Tree 索引构建完成");
   }
 
   /// 普通搜索: 返回所有相似词列表
