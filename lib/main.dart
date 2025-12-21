@@ -12,9 +12,9 @@ import 'package:logging/logging.dart';
 
 import 'package:arabic_learning/funcs/ui.dart';
 import 'package:arabic_learning/funcs/utili.dart';
-import 'package:arabic_learning/vars/global.dart';
-import 'package:arabic_learning/vars/license_storage.dart';
-import 'package:arabic_learning/vars/statics_var.dart';
+import 'package:arabic_learning/vars/global.dart' show Global;
+import 'package:arabic_learning/vars/license_storage.dart' show LicenseVars;
+import 'package:arabic_learning/vars/statics_var.dart' show StaticsVar;
 import 'package:arabic_learning/pages/home_page.dart';
 import 'package:arabic_learning/pages/learning_page.dart'show LearningPage;
 import 'package:arabic_learning/pages/setting_page.dart'show SettingPage;
