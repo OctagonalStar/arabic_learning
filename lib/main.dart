@@ -38,7 +38,7 @@ void main() async {
     Workmanager().registerPeriodicTask(
       "dynamic-notification-task",
       "fetchAndShowNotification",
-      frequency: Duration(minutes: 15),
+      frequency: Duration(minutes: 30),
       constraints: Constraints(),
     );
   }
