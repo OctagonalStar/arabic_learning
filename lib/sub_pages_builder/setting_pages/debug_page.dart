@@ -1,8 +1,8 @@
-import 'package:arabic_learning/funcs/ui.dart';
-import 'package:arabic_learning/vars/statics_var.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import 'package:arabic_learning/funcs/ui.dart';
+import 'package:arabic_learning/vars/statics_var.dart';
 import 'package:arabic_learning/vars/global.dart';
 
 class DebugPage extends StatefulWidget {
@@ -13,6 +13,8 @@ class DebugPage extends StatefulWidget {
 }
 
 class _DebugPage extends State<DebugPage> {
+  ScrollController controller = ScrollController();
+
   @override
   Widget build(BuildContext context) {
     context.read<Global>().uiLogger.info("构建 DebugPage");
@@ -20,7 +22,14 @@ class _DebugPage extends State<DebugPage> {
       appBar: AppBar(
         title: Text("调试设置"),
       ),
-      body: Column(
+      floatingActionButton: FloatingActionButton(
+        child: Icon(Icons.arrow_upward),
+        onPressed: (){
+          controller.animateTo(0, duration: Duration(milliseconds: 500), curve: StaticsVar.curve);
+        }
+      ),
+      body: ListView(
+        controller: controller,
         children: [
           TextContainer(text: "该页面为软件调试/测试和bug反馈使用，非必要请勿开启日志捕获，以免性能损耗", style: TextStyle(color: Colors.redAccent)),
           Container(
@@ -78,30 +87,28 @@ class _DebugPage extends State<DebugPage> {
               ],
             ),
           ),
-          SizedBox(
-            width: MediaQuery.of(context).size.width,
-            height: MediaQuery.of(context).size.height * 0.7,
-            child: ExpansionTile(
-              title: Text("日志捕获内容"),
-              children: [
-                SizedBox(
-                  height: MediaQuery.of(context).size.height * 0.6,
-                  child: ListView(
-                    children: List.generate(
-                      context.watch<Global>().internalLogCapture.length, 
-                      (index){
-                        final String logLine = context.read<Global>().internalLogCapture[context.read<Global>().internalLogCapture.length - index - 1];
-                        return TextContainer(
-                          text: logLine, 
-                          selectable: true, 
-                          style: TextStyle(color: logLine.contains("[SERVER]") ? Colors.redAccent : logLine.contains("WARNING") ? Colors.amberAccent : logLine.contains("FINE") ? Colors.grey : null)
-                        );
-                      }
-                    ),
-                  )
-                )
-              ],
-            ),
+          ExpansionTile(
+            title: Text("日志捕获内容"),
+            children: [
+              Column(
+                children: List.generate(
+                  context.watch<Global>().internalLogCapture.length, 
+                  (index){
+                    final String logLine = context.read<Global>().internalLogCapture[context.read<Global>().internalLogCapture.length - index - 1];
+                    return Container(
+                      width: MediaQuery.of(context).size.width * 0.9,
+                      decoration: BoxDecoration(
+                        color: Theme.of(context).colorScheme.onPrimary,
+                        borderRadius: index == 0 ? BorderRadius.vertical(top: Radius.circular(10.0)) : index == context.watch<Global>().internalLogCapture.length-1 ? BorderRadius.vertical(bottom: Radius.circular(10.0)) : BorderRadius.all(Radius.circular(5.0))
+                      ),
+                      margin: EdgeInsets.all(2.0),
+                      padding: EdgeInsets.all(4.0),
+                      child: SelectableText(logLine, style: TextStyle(color: logLine.contains("[SERVER]") ? Colors.redAccent : logLine.contains("WARNING") ? Colors.amberAccent : logLine.contains("FINE") ? Colors.grey : null)),
+                    );
+                  }
+                ),
+              )
+            ],
           )
         ],
       ),
