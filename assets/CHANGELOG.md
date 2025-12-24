@@ -8,6 +8,7 @@
 - 添加了调试页面
 - 添加了个性化FSRS预设页面 [#26](https://github.com/OctagonalStar/arabic_learning/issues/26)
 - 添加了安卓通知功能 [#24](https://github.com/OctagonalStar/arabic_learning/issues/24)
+- 添加了题型可拖动提示 [#43](https://github.com/OctagonalStar/arabic_learning/issues/43)
 
 ### Improvement
 
@@ -17,6 +18,7 @@
 - 优化连胜逻辑: FSRS复习也计算为连胜
 - 调整了部分按钮的UI设计
 - 去除了查看详解时，单词卡片的高斯模糊
+- 按照FSRS学习单词计算总学习单词[#45](https://github.com/OctagonalStar/arabic_learning/issues/45)
 
 ### Fix
 
@@ -24,6 +26,7 @@
 - 修复了日志中FSRS信息输出错误的问题
 - 修复了新用户无法进入的问题
 - 修复了FSRS复习界面中，“下一题”动画期间文字溢出的问题
+- 修复了固定列数文本溢出的问题[#44](https://github.com/OctagonalStar/arabic_learning/issues/44)
 
 ### Delete
 
