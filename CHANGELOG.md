@@ -18,7 +18,7 @@
 - 优化连胜逻辑: FSRS复习也计算为连胜
 - 调整了部分按钮的UI设计
 - 去除了查看详解时，单词卡片的高斯模糊
-- 按照FSRS学习单词计算总学习单词
+- 按照FSRS学习单词计算总学习单词[#45](https://github.com/OctagonalStar/arabic_learning/issues/45)
 
 ### Fix
 
