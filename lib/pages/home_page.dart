@@ -78,7 +78,7 @@ class HomePage extends StatelessWidget {
                 children: [
                   Text('已学词汇', style: TextStyle(fontSize: 12.0)),
                   SizedBox(height: mediaQuery.size.height * 0.03),
-                  Text(context.read<Global>().globalConfig.learning.knownWords.length.toString(), style: TextStyle(fontSize: 24.0, fontWeight: FontWeight.bold)),
+                  Text(fsrs.config.enabled ? fsrs.config.cards.length.toString() : "未启用" , style: TextStyle(fontSize: 24.0, fontWeight: FontWeight.bold)),
                 ],
               ),
             ),
