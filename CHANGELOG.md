@@ -25,6 +25,7 @@
 - 修复了日志中FSRS信息输出错误的问题
 - 修复了新用户无法进入的问题
 - 修复了FSRS复习界面中，“下一题”动画期间文字溢出的问题
+- 修复了固定列数文本溢出的问题[#44](https://github.com/OctagonalStar/arabic_learning/issues/44)
 
 ### Delete
 
