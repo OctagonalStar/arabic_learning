@@ -607,7 +607,7 @@ class _WordCardOverViewPage extends State<WordCardOverViewPage> {
                       children: [
                         StatefulBuilder(
                           builder: (context, setLocalState) {
-                            return Row(
+                            return Column(
                               mainAxisSize: MainAxisSize.min,
                               children: [
                                 Text("设置固定列数"),
@@ -625,7 +625,7 @@ class _WordCardOverViewPage extends State<WordCardOverViewPage> {
                                     context.read<Global>().uiLogger.info("设置固定列数为$value");
                                   },
                                 ),
-                                SizedBox(width: 60, child: Text(forceColumn == 0 ? "0(自动)" : forceColumn.toString()))
+                                Text(forceColumn == 0 ? "0(自动)" : forceColumn.toString())
                               ],
                             );
                           }

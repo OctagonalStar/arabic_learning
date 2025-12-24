@@ -300,24 +300,17 @@ class LearningConfig {
   /// 连续学习最后有记录的日期(相较于2025/11/1)
   final int lastDate;
 
-  /// 已经学习的单词
-  /// 内部int为单词ID
-  final List<int> knownWords;
-
   const LearningConfig({
     int? startDate,
     int? lastDate,
-    List<int>? knownWords
   }):
     startDate = startDate??0,
-    lastDate = lastDate??0,
-    knownWords = knownWords??const [];
+    lastDate = lastDate??0;
 
   Map<String, dynamic> toMap(){
     return {
       "startDate": startDate,
       "lastDate": lastDate,
-      "KnownWords": knownWords,
     };
   }
 
@@ -326,7 +319,6 @@ class LearningConfig {
     return LearningConfig(
       startDate: setting["startDate"],
       lastDate: setting["lastDate"],
-      knownWords: setting["knownWords"]
     );
   }
 
@@ -338,7 +330,6 @@ class LearningConfig {
     return LearningConfig(
       startDate: startDate ?? this.startDate,
       lastDate: lastDate ?? this.lastDate,
-      knownWords: knownWords ?? this.knownWords,
     );
   }
 }
