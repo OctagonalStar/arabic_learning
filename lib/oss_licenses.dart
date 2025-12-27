@@ -9134,12 +9134,12 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.''',
   );
 
-/// arabic_learning 0.1.11+11
+/// arabic_learning 0.1.12+12
 const _arabic_learning = Package(
     name: 'arabic_learning',
     description: '一个用于记背阿拉伯语单词的学习软件。',
     authors: [],
-    version: '0.1.11+11',
+    version: '0.1.12+12',
     spdxIdentifiers: ['AGPL-3.0'],
     isMarkdown: false,
     isSdk: false,

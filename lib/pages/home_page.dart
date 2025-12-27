@@ -1,13 +1,14 @@
 import 'dart:math';
 
+import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+
 import 'package:arabic_learning/funcs/ui.dart';
 import 'package:arabic_learning/funcs/utili.dart';
 import 'package:arabic_learning/pages/setting_page.dart';
 import 'package:arabic_learning/vars/config_structure.dart';
 import 'package:arabic_learning/vars/global.dart';
 import 'package:arabic_learning/vars/statics_var.dart';
-import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
 import 'package:arabic_learning/funcs/fsrs_func.dart';
 
 class HomePage extends StatelessWidget {
