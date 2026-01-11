@@ -1,11 +1,17 @@
+import 'dart:convert';
+
+import 'package:file_picker/file_picker.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+
 import 'package:arabic_learning/funcs/ui.dart';
 import 'package:arabic_learning/sub_pages_builder/setting_pages/item_widget.dart';
 import 'package:arabic_learning/funcs/sync.dart';
 import 'package:arabic_learning/vars/config_structure.dart';
 import 'package:arabic_learning/vars/global.dart';
 import 'package:arabic_learning/vars/statics_var.dart';
-import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
+import 'package:arabic_learning/package_replacement/fake_dart_io.dart' if (dart.library.io) 'dart:io' as io;
 
 class DataSyncPage extends StatefulWidget {
   const DataSyncPage({super.key});
@@ -192,8 +198,27 @@ class _DataSyncPage extends State<DataSyncPage> {
                     ),
                   ),
                   ElevatedButton(
-                    onPressed: (){
-                      // TODO: export
+                    onPressed: () async {
+                      try{
+                        if(await FilePicker.platform.saveFile(
+                          dialogTitle: "导出数据",
+                          lockParentWindow: true,
+                          fileName: "export.json",
+                          bytes: utf8.encode(jsonEncode(context.read<Global>().prefs.export())),
+                        ) != null) {
+                          if(context.mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                              content: Text("导出完成"),
+                            ));
+                          }
+                        }
+                      } catch (e){
+                        if(!context.mounted) return;
+                        context.read<Global>().uiLogger.severe(e);
+                        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                          content: Text("导出时发生错误: $e"),
+                        ));
+                      }
                     }, 
                     child: Text("导出")
                   )
@@ -214,8 +239,39 @@ class _DataSyncPage extends State<DataSyncPage> {
                     ),
                   ),
                   ElevatedButton(
-                    onPressed: (){
-                      // TODO: import
+                    onPressed: () async {
+                      context.read<Global>().uiLogger.info("导入软件数据");
+                      FilePickerResult? result = await FilePicker.platform.pickFiles(
+                        allowMultiple: false,
+                        type: FileType.custom,
+                        allowedExtensions: ['json'],
+                      );
+                      if (result != null) {
+                        String jsonString;
+                        PlatformFile platformFile = result.files.first;
+                        if (platformFile.bytes != null){
+                          jsonString = utf8.decode(platformFile.bytes!);
+                        } else if (platformFile.path != null && !kIsWeb) {
+                          jsonString = await io.File(platformFile.path!).readAsString();
+                        } else {
+                          if (!context.mounted) return;
+                          context.read<Global>().uiLogger.warning("备份数据导入错误: bytes和path均为null");
+                          alart(context, "文件 \"${platformFile.name}\" \n无法读取：bytes和path均为null。");
+                          return;
+                        }
+                        if (!context.mounted) return;
+                        try{
+                          context.read<Global>().uiLogger.fine("备份数据读取完成，开始解析");
+                          context.read<Global>().prefs.recovery(jsonDecode(jsonString));
+                          if(context.mounted) context.read<Global>().conveySetting();
+                          alart(context, "备份数据 \"${platformFile.name}\" \n已恢复\n部分设置可能需要软件重启后才能生效");
+                          context.read<Global>().uiLogger.info("备份数据 \"${platformFile.name}\" \n已导入。");
+                        } catch (e) {
+                          if (!context.mounted) return;
+                          context.read<Global>().uiLogger.severe("文件 ${platformFile.name} 无效: $e");
+                          alart(context, '文件 ${platformFile.name} 无效：\n$e');
+                        }
+                      }
                     }, 
                     child: Text("导入")
                   )
