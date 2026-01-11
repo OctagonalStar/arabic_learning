@@ -34,7 +34,7 @@ dependencies:
   path_provider: ^2.1.5 #no support [Web] UNacceptable
   provider: ^6.0.1
   file_picker: ^10.3.3 #no completely support [Web] UNacceptable
-  flutter_tts: ^3.8.0
+  flutter_tts: ^4.2.5
   just_audio: ^0.10.5
   just_audio_windows: ^0.2.2 #just_audio's windows addon
   flutter_launcher_icons: ^0.14.4
@@ -51,11 +51,7 @@ dependencies:
   logging: ^1.3.0
   flutter_local_notifications: ^19.5.0
   workmanager: ^0.9.0+3
-  # fl_chart: ^1.1.1
-  # 暂时不用
-  # 25.10.31 注释: 感觉依赖项好多，后续可以考虑精简 
-  # The following adds the Cupertino Icons font to your application.
-  # Use with the CupertinoIcons class for iOS style icons.
+  # file_saver: ^0.3.1
   cupertino_icons: ^1.0.8
   dart_pubspec_licenses: ^3.0.14
   bk_tree: ^0.1.2
