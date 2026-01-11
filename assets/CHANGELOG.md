@@ -1,5 +1,11 @@
 # Changelog
 
+## v0.1.13 - ????-??-?? - (??????)
+
+### Added
+
+- 添加了备份数据文件导出功能 [#50](https://github.com/OctagonalStar/arabic_learning/issues/50)
+
 ## v0.1.12 - 2025-12-27 - (000112)
 
 ### Added
