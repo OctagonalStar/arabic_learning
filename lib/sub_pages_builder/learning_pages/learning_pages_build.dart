@@ -1,5 +1,6 @@
 import 'dart:math';
 
+import 'package:arabic_learning/funcs/utili.dart' show getRandomWords;
 import 'package:arabic_learning/vars/config_structure.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -44,6 +45,7 @@ class _InLearningPageState extends State<InLearningPage> {
                                         : widget.studyType == 1 ? context.read<Global>().globalConfig.quiz.zh 
                                         : context.read<Global>().globalConfig.quiz.ar;
     List<List<List<dynamic>>> questionsInSections = List.generate(questionsSetting.questionSections.length, (_) => []);
+
     for(int sectionIndex = 0; sectionIndex < questionsSetting.questionSections.length; sectionIndex++) {
       for(WordItem wordItem in widget.words) {
         late List<dynamic> extra;
@@ -53,27 +55,9 @@ class _InLearningPageState extends State<InLearningPage> {
           extra = [];
         } else if(testType == 1 || testType == 2) {
           // 中译阿/阿译中 选择题
-          List<String> strList = [];
-          int correctIndex = rnd.nextInt(4); // 正确答案在选项中的索引
-          List<int> rndLst = [wordItem.id]; // 已抽取的 绝对索引
-          for (int i = 0; i < correctIndex; i++) {
-            WordItem r = widget.words[rnd.nextInt(widget.words.length)];
-            while (rndLst.contains(r.id)){
-              r = widget.words[rnd.nextInt(widget.words.length)];
-            }
-            rndLst.add(r.id);
-            strList.add(testType == 1 ? r.arabic : r.chinese);
-          }
-          strList.add(testType == 1 ? wordItem.arabic : wordItem.chinese);
-          for (int i = correctIndex + 1; i < 4; i++) {
-            WordItem r = widget.words[rnd.nextInt(widget.words.length)];
-            while (rndLst.contains(r.id)){
-              r = widget.words[rnd.nextInt(widget.words.length)];
-            }
-            rndLst.add(r.id);
-            strList.add(testType == 1 ? r.arabic : r.chinese);
-          }
-          extra = [correctIndex, strList];
+          List<WordItem> optionWords = getRandomWords(4, context.read<Global>().wordData, include: wordItem, preferClass: !questionsSetting.preferSimilar, rnd: rnd);
+          List<String> strList = List.generate(4, (int index) => (testType == 1 ? optionWords[index].arabic : optionWords[index].chinese), growable: false);
+          extra = [optionWords.indexWhere((WordItem item) => item == wordItem), strList];
         } else if(testType == 3) {
           extra = [];
         }

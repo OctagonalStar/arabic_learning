@@ -5,6 +5,11 @@
 ### Added
 
 - 添加了备份数据文件导出功能 [#50](https://github.com/OctagonalStar/arabic_learning/issues/50)
+- 添加了易混词偏好配置
+
+### Improvement
+
+- 优化了选择题单词挑选逻辑 [#48](https://github.com/OctagonalStar/arabic_learning/issues/48)
 
 ## v0.1.12 - 2025-12-27 - (000112)
 

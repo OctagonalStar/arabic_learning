@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:arabic_learning/funcs/utili.dart';
 import 'package:logging/logging.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
@@ -60,6 +61,7 @@ class Global with ChangeNotifier {
   Future<void> conveySetting() async {
     logger.info("处理配置文件");
     wordData = DictData.buildFromMap(jsonDecode(prefs.getString("wordData")!));
+    BKSearch.init(wordData.words);
     Config oldConfig = Config.buildFromMap(jsonDecode(prefs.getString("settingData")!));
     if(oldConfig.lastVersion != globalConfig.lastVersion) {
       logger.info("检测到当前版本与上次启动版本不同");
