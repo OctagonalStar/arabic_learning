@@ -221,6 +221,71 @@ String _zfillImpl(num value, int width) {
   return isNegative ? '-$zeros$raw' : '$zeros$raw';
 }
 
+extension RemoveDuplicatesExtension<T> on List<T> {
+  void removeDuplicates() {
+    final Set<T> seen = {};
+    final List<T> uniqueItems = [];
+    
+    for (final item in this) {
+      if (!seen.contains(item)) {
+        seen.add(item);
+        uniqueItems.add(item);
+      }
+    }
+    
+    clear();
+    addAll(uniqueItems);
+  }
+}
+
+/// 获取[count]个随机的单词
+/// 如果指定了[include]则一定包含有其
+/// 并且仅有指定了[include]后[useSimilar]和[sameClassOnly]才会生效
+/// 如果[useSimilar]为真则使用与[include]相似的单词
+/// 如果[sameClassOnly]为真则使用与[include]相同课程的单词
+/// 如果[allowRepet]为真则可能随机出现重复项
+/// 要集中进行随机的时候可以提供[rnd]实例避免重复创建实例
+List<WordItem> getRandomWords(int count, DictData dict, {WordItem? include, bool useSimilar = true, bool sameClassOnly = false, bool allowRepet = false, bool shuffle = true, Random? rnd}){
+  rnd ??= Random();
+  List<WordItem> wordList = [];
+  List<WordItem> rndRange = [];
+
+  if(include != null){
+    wordList.add(include);
+    if(sameClassOnly) {
+      for(SourceItem source in dict.classes){
+        if(source.subClasses.any((ClassItem item) => item.className == include.className)){
+          ClassItem course = source.subClasses.singleWhere((ClassItem item) => item.className == include.className);
+          for(int index in course.wordIndexs){
+            rndRange.add(dict.words[index]);
+          }
+        }
+      }
+    }
+    if(useSimilar) {
+      rndRange.addAll(BKSearch.search(include));
+      while(rndRange.length <= count && !allowRepet) {
+        rndRange.add(dict.words[rnd.nextInt(dict.words.length)]);
+      }
+    }
+  }
+  
+  if(rndRange.isEmpty) rndRange = dict.words;
+  
+  
+
+  do {
+    while (wordList.length < count){
+      wordList.add(rndRange[rnd.nextInt(rndRange.length)]);
+    }
+    if(!allowRepet) wordList.removeDuplicates();
+  } while (wordList.length < count);
+  
+  if(shuffle) wordList.shuffle();
+
+  return wordList;
+}
+
 /// 简单的词性枚举，用于区分词汇类别
 enum ArabicPOS {
   verb,   // 动词
@@ -332,6 +397,9 @@ class ArabicStemmer {
     if (text.isEmpty) return "";
     // 移除所有元音符号
     String res = text.replaceAll(_diacritics, '');
+    // 移除额外复数部分
+    res = res.replaceAll(RegExp(r'\(.*\)'), ""); // for "قَلَمٌ (ج: أَقْلَامٌ)"
+    res = res.replaceAll(RegExp(r'\ /\ (.*)'), ""); // for "جَدِيدٌ / جَدِيدَةٌ"
     // 统一不同形式的 Alef
     res = res.replaceAll(RegExp(r'[أإآ]'), 'ا');
     // 将 Alef Maqsura 统一为 Alef
@@ -462,10 +530,10 @@ int getArabicWordsSimilarity(String wordA, String wordB) {
 class VocabularyOptimizer {
   final _stemmer = ArabicStemmer();
   BKTree? _bkTree;
-  final Map<String, Set<String>> _rootToWordsMap = {}; 
+  final Map<String, Set<WordItem>> _rootToWordsMap = {}; 
 
   /// 初始化并构建优化器
-  void build(List<String> words) {
+  void build(List<WordItem> words) {
     _rootToWordsMap.clear();
     for (final word in words) {
       _addWordToMap(word);
@@ -477,8 +545,8 @@ class VocabularyOptimizer {
     }
   }
 
-  void _addWordToMap(String word) {
-    final root = _stemmer.extractRoot(word);
+  void _addWordToMap(WordItem word) {
+    final root = _stemmer.extractRoot(word.arabic);
     if (root.isEmpty) return;
 
     if (_rootToWordsMap.containsKey(root)) {
@@ -489,14 +557,14 @@ class VocabularyOptimizer {
   }
 
   /// 查找与给定单词相似的所有单词
-  List<String> findSimilarWords(String word, {int maxDistance = 1}) {
+  List<WordItem> findSimilarWords(WordItem word, {int maxDistance = 1}) {
     if (_bkTree == null) return [];
-    final queryRoot = _stemmer.extractRoot(word);
+    final queryRoot = _stemmer.extractRoot(word.arabic);
     if (queryRoot.isEmpty) return [];
 
     final results = _bkTree!.search(queryHash: queryRoot, tolerance: maxDistance);
     
-    final resultWords = <String>[];
+    final resultWords = <WordItem>[];
     for (final match in results) {
       if (match is Map && match.isNotEmpty) {
           final root = match.keys.first as String;
@@ -524,7 +592,7 @@ class BKSearch {
 
   /// [必须调用] 初始化搜索引擎
   /// 通常在 App 启动或加载词库时调用
-  static void init(List<String> allWords) {
+  static void init(List<WordItem> allWords) {
     if (_isInitialized) return; // 避免重复初始化
     logger.info("正在构建 BK-Tree 搜索索引，词库大小: ${allWords.length}...");
     _optimizer.build(allWords);
@@ -535,7 +603,7 @@ class BKSearch {
   /// 普通搜索: 返回所有相似词列表
   /// [query] : 用户输入的单词
   /// [threshold] : 容错阈值，默认 1 (允许 1 个字符的编辑距离差异)
-  static List<String> search(String query, {int threshold = 1}) {
+  static List<WordItem> search(WordItem query, {int threshold = 1}) {
     if (!_isInitialized) {
       debugPrint("警告: BKSearch 尚未初始化，请先调用 init()");
       return [];
@@ -550,20 +618,20 @@ class BKSearch {
   /// Tier 2: 近根(dist=1) + 同词性
   /// Tier 3: 同根 + 异词性
   /// Tier 4: 近根(dist=1) + 异/未知词性
-  static Map<int, List<String>> searchWithTiers(String targetWord) {
+  static Map<int, List<WordItem>> searchWithTiers(WordItem targetWord) {
     if (!_isInitialized) {
       debugPrint("警告: BKSearch 尚未初始化，无法执行分级搜索");
       return {1: [], 2: [], 3: [], 4: []};
     }
 
     // 1. 分析目标词
-    final targetAnalysis = _arabicStemmer.analyze(targetWord);
+    final targetAnalysis = _arabicStemmer.analyze(targetWord.arabic);
     
     // 2. 使用 BK-Tree 快速获取候选词 (词根距离 <= 1)
     // 这一步利用了索引，极大减少了计算量
     final candidates = _optimizer.findSimilarWords(targetWord, maxDistance: 1);
 
-    final Map<int, List<String>> result = {
+    final Map<int, List<WordItem>> result = {
       1: [],
       2: [],
       3: [],
@@ -571,10 +639,10 @@ class BKSearch {
     };
 
     // 3. 遍历候选词，进行精细分类
-    for (String candidateStr in candidates) {
+    for (WordItem candidateStr in candidates) {
       if (candidateStr == targetWord) continue; // 跳过自己
 
-      final candidateAnalysis = _arabicStemmer.analyze(candidateStr);
+      final candidateAnalysis = _arabicStemmer.analyze(candidateStr.arabic);
       
       int tier = _calculateTier(targetAnalysis, candidateAnalysis);
       if (tier > 0) {

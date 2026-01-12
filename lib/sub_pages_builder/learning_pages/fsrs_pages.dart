@@ -239,16 +239,11 @@ class _FSRSReviewCardPage extends State<FSRSReviewCardPage> {
     final List<WordItem> wordData = context.read<Global>().wordData.words;
 
     // 防止重建后选项丢失
-    options ??= [wordData[widget.wordID].chinese,
-                wordData[widget.rnd.nextInt(context.read<Global>().wordCount)].chinese,
-                wordData[widget.rnd.nextInt(context.read<Global>().wordCount)].chinese,
-                wordData[widget.rnd.nextInt(context.read<Global>().wordCount)].chinese]..shuffle();
-    while(options!.hasDuplicate()) {
-      options = [wordData[widget.wordID].chinese,
-                wordData[widget.rnd.nextInt(context.read<Global>().wordCount)].chinese,
-                wordData[widget.rnd.nextInt(context.read<Global>().wordCount)].chinese,
-                wordData[widget.rnd.nextInt(context.read<Global>().wordCount)].chinese]..shuffle();
+    if(options == null){
+      List<WordItem> optionWords = getRandomWords(4, context.read<Global>().wordData, include: wordData[widget.wordID], rnd: widget.rnd);
+      options ??= List.generate(4, (int index) => optionWords[index].chinese, growable: false);
     }
+    
     final int correct = options!.indexOf(context.read<Global>().wordData.words[widget.wordID].chinese);
     return Material(
       child: ChoiceQuestions(
@@ -405,17 +400,8 @@ class _FSRSLearningPageState extends State<FSRSLearningPage> {
   void initState() {
     final Random rnd = Random();
     for(WordItem word in widget.words) {
-      List<String> option = [widget.words[rnd.nextInt(widget.words.length)].chinese,
-                            widget.words[rnd.nextInt(widget.words.length)].chinese,
-                            widget.words[rnd.nextInt(widget.words.length)].chinese,
-                            word.chinese];
-      while(option.hasDuplicate()) {
-        option = [widget.words[rnd.nextInt(widget.words.length)].chinese,
-                            widget.words[rnd.nextInt(widget.words.length)].chinese,
-                            widget.words[rnd.nextInt(widget.words.length)].chinese,
-                            word.chinese];
-      }
-      option.shuffle();
+      List<WordItem> optionWords = getRandomWords(4, context.read<Global>().wordData, include: word, rnd: rnd);
+      List<String> option = List.generate(4, (int index) => optionWords[index].chinese, growable: false);
       options.add(option);
     }
     super.initState();
