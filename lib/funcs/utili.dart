@@ -1,19 +1,21 @@
 import 'dart:convert';
-import 'package:arabic_learning/vars/config_structure.dart';
+import 'dart:math';
+
+import 'package:flutter/material.dart';
 import 'package:archive/archive.dart';
 import 'package:flutter_tts/flutter_tts.dart';
 import 'package:logging/logging.dart';
 import 'package:path_provider/path_provider.dart' as path_provider;
+import 'package:provider/provider.dart';
+import 'package:dio/dio.dart';
+import 'package:just_audio/just_audio.dart';
+import 'package:bk_tree/bk_tree.dart';
+
+import 'package:arabic_learning/vars/statics_var.dart';
+import 'package:arabic_learning/vars/config_structure.dart';
+import 'package:arabic_learning/vars/global.dart';
 import 'package:arabic_learning/package_replacement/fake_dart_io.dart' if (dart.library.io) 'dart:io' as io;
 import 'package:arabic_learning/package_replacement/fake_sherpa_onnx.dart' if (dart.library.io) 'package:sherpa_onnx/sherpa_onnx.dart' as sherpa_onnx;
-import 'package:arabic_learning/vars/global.dart';
-import 'package:arabic_learning/vars/statics_var.dart';
-import 'package:dio/dio.dart';
-import 'package:flutter/material.dart';
-import 'package:just_audio/just_audio.dart';
-import 'package:provider/provider.dart';
-import 'dart:math';
-import 'package:bk_tree/bk_tree.dart';
 
 /// 下载文件到指定的目录
 /// 
@@ -218,22 +220,6 @@ String _zfillImpl(num value, int width) {
   String zeros = '0' * padding;
   return isNegative ? '-$zeros$raw' : '$zeros$raw';
 }
-
-Map<K, V> deepMerge<K, V>(Map<K, V> base, Map<K, V> overlay) {
-  final result = Map<K, V>.from(base);
-  overlay.forEach((key, value) {
-    if (result[key] is Map && value is Map) {
-      result[key] = deepMerge(
-        Map<String, dynamic>.from(result[key] as Map),
-        Map<String, dynamic>.from(value as Map),
-      ) as V;
-    } else {
-      result[key] = value;
-    }
-  });
-  return result;
-}
-
 
 /// 简单的词性枚举，用于区分词汇类别
 enum ArabicPOS {
