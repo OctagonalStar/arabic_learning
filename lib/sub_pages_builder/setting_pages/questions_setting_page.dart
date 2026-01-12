@@ -165,10 +165,6 @@ class _QuestionsSettingPage extends State<QuestionsSettingPage> {
                   }
                 ),
                 Expanded(child: Text("题型内题目乱序")),
-              ],
-            ),
-            Row(
-              children: [
                 Switch(
                   value: section.shuffleExternaly, 
                   onChanged: (value) {
@@ -209,6 +205,24 @@ class _QuestionsSettingPage extends State<QuestionsSettingPage> {
                   }
                 ),
                 Expanded(child: Text("全局乱序")),
+                Switch(
+                  value: section.preferSimilar, 
+                  onChanged: (value) {
+                    context.read<Global>().uiLogger.info("偏好相似: $value");
+                    setState(() {
+                      if(widget.sectionKey == 0){
+                        context.read<Global>().globalConfig = context.read<Global>().globalConfig.copyWith(
+                          quiz: context.read<Global>().globalConfig.quiz.copyWith(
+                            zhar: context.read<Global>().globalConfig.quiz.zhar.copyWith(
+                              preferSimilar: value
+                            )
+                          )
+                        );
+                      }
+                    });
+                  }
+                ),
+                Expanded(child: Text("偏好易混词而非同课词")),
               ],
             )
           ],

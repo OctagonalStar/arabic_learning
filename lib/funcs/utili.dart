@@ -240,43 +240,49 @@ extension RemoveDuplicatesExtension<T> on List<T> {
 
 /// 获取[count]个随机的单词
 /// 如果指定了[include]则一定包含有其
-/// 并且仅有指定了[include]后[useSimilar]和[sameClassOnly]才会生效
+/// 并且仅有指定了[include]后[useSimilar]和[preferClass]才会生效
 /// 如果[useSimilar]为真则使用与[include]相似的单词
-/// 如果[sameClassOnly]为真则使用与[include]相同课程的单词
+/// 如果[preferClass]为真则使用与[include]相同课程的单词
 /// 如果[allowRepet]为真则可能随机出现重复项
 /// 要集中进行随机的时候可以提供[rnd]实例避免重复创建实例
-List<WordItem> getRandomWords(int count, DictData dict, {WordItem? include, bool useSimilar = true, bool sameClassOnly = false, bool allowRepet = false, bool shuffle = true, Random? rnd}){
+List<WordItem> getRandomWords(int count, DictData dict, {WordItem? include, bool preferClass = true, bool allowRepet = false, bool shuffle = true, Random? rnd}){
   rnd ??= Random();
   List<WordItem> wordList = [];
   List<WordItem> rndRange = [];
+  List<WordItem> backupRndRange = [];
 
   if(include != null){
     wordList.add(include);
-    if(sameClassOnly) {
-      for(SourceItem source in dict.classes){
-        if(source.subClasses.any((ClassItem item) => item.className == include.className)){
-          ClassItem course = source.subClasses.singleWhere((ClassItem item) => item.className == include.className);
-          for(int index in course.wordIndexs){
+    for(SourceItem source in dict.classes){
+      if(source.subClasses.any((ClassItem item) => item.className == include.className)){
+        ClassItem course = source.subClasses.singleWhere((ClassItem item) => item.className == include.className);
+        for(int index in course.wordIndexs){
+          if(preferClass){
             rndRange.add(dict.words[index]);
+          } else {
+            backupRndRange.add(dict.words[index]);
           }
         }
       }
     }
-    if(useSimilar) {
+
+    if(preferClass){
+      backupRndRange.addAll(BKSearch.search(include));
+    } else {
       rndRange.addAll(BKSearch.search(include));
-      while(rndRange.length <= count && !allowRepet) {
-        rndRange.add(dict.words[rnd.nextInt(dict.words.length)]);
-      }
     }
   }
   
-  if(rndRange.isEmpty) rndRange = dict.words;
-  
-  
+  if(rndRange.length + backupRndRange.length < count) backupRndRange = dict.words;
 
   do {
     while (wordList.length < count){
-      wordList.add(rndRange[rnd.nextInt(rndRange.length)]);
+      // 30% 的概率在后备的列表里选择
+      if((rnd.nextInt(10) > 6 && backupRndRange.isNotEmpty) || rndRange.isEmpty) {
+        wordList.add(backupRndRange[rnd.nextInt(backupRndRange.length)]);
+      } else {
+        wordList.add(rndRange[rnd.nextInt(rndRange.length)]);
+      }
     }
     if(!allowRepet) wordList.removeDuplicates();
   } while (wordList.length < count);
@@ -397,7 +403,7 @@ class ArabicStemmer {
     if (text.isEmpty) return "";
     // 移除所有元音符号
     String res = text.replaceAll(_diacritics, '');
-    // 移除额外复数部分
+    // 移除额外部分
     res = res.replaceAll(RegExp(r'\(.*\)'), ""); // for "قَلَمٌ (ج: أَقْلَامٌ)"
     res = res.replaceAll(RegExp(r'\ /\ (.*)'), ""); // for "جَدِيدٌ / جَدِيدَةٌ"
     // 统一不同形式的 Alef
@@ -541,7 +547,7 @@ class VocabularyOptimizer {
     
     final rootMap = {for (var r in _rootToWordsMap.keys) r: r};
     if (rootMap.isNotEmpty) {
-      _bkTree = BKTree(rootMap, getLevenshtein);
+      _bkTree = BKTree(rootMap, getLevenshtein, verbose: false);
     }
   }
 
@@ -605,7 +611,7 @@ class BKSearch {
   /// [threshold] : 容错阈值，默认 1 (允许 1 个字符的编辑距离差异)
   static List<WordItem> search(WordItem query, {int threshold = 1}) {
     if (!_isInitialized) {
-      debugPrint("警告: BKSearch 尚未初始化，请先调用 init()");
+      logger.warning("警告: BKSearch 尚未初始化，请先调用 init()");
       return [];
     }
     return _optimizer.findSimilarWords(query, maxDistance: threshold);
@@ -620,7 +626,7 @@ class BKSearch {
   /// Tier 4: 近根(dist=1) + 异/未知词性
   static Map<int, List<WordItem>> searchWithTiers(WordItem targetWord) {
     if (!_isInitialized) {
-      debugPrint("警告: BKSearch 尚未初始化，无法执行分级搜索");
+      logger.warning("警告: BKSearch 尚未初始化，无法执行分级搜索");
       return {1: [], 2: [], 3: [], 4: []};
     }
 

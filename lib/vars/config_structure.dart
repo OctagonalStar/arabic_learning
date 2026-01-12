@@ -355,21 +355,24 @@ class QuizConfig {
       shuffleGlobally: true, 
       shuffleInternaly: false, 
       shuffleExternaly: false, 
-      modifyAllowed: true
+      modifyAllowed: true,
+      preferSimilar: false
     ),
     ar = ar??const SubQuizConfig(
       questionSections: [2], 
       shuffleGlobally: true, 
       shuffleInternaly: false, 
       shuffleExternaly: false, 
-      modifyAllowed: false
+      modifyAllowed: false,
+      preferSimilar: false
     ),
     zh = zh??const SubQuizConfig(
       questionSections: [1], 
       shuffleGlobally: true, 
       shuffleInternaly: false, 
       shuffleExternaly: false, 
-      modifyAllowed: false
+      modifyAllowed: false,
+      preferSimilar: false
     );
 
   Map<String, dynamic> toMap(){
@@ -435,12 +438,16 @@ class SubQuizConfig {
   /// 是否允许修改配置
   final bool modifyAllowed;
 
+  /// 相比于同课程的单词，更偏向于相似的单词
+  final bool preferSimilar;
+
   const SubQuizConfig ({
     required this.questionSections,
     required this.shuffleGlobally,
     required this.shuffleInternaly,
     required this.shuffleExternaly,
-    required this.modifyAllowed
+    required this.modifyAllowed,
+    required this.preferSimilar
   });
 
   Map<String, dynamic> toMap(){
@@ -450,6 +457,7 @@ class SubQuizConfig {
       "shuffleInternaly": shuffleInternaly,
       "shuffleExternaly": shuffleExternaly,
       "modifyAllowed": modifyAllowed,
+      "preferSimilar": preferSimilar
     };
   }
 
@@ -460,7 +468,8 @@ class SubQuizConfig {
       shuffleGlobally: setting["shuffleGlobally"], 
       shuffleInternaly: setting["shuffleInternaly"], 
       shuffleExternaly: setting["shuffleExternaly"], 
-      modifyAllowed: setting["modifyAllowed"]
+      modifyAllowed: setting["modifyAllowed"],
+      preferSimilar: setting["preferSimilar"] ?? false
     );
   }
 
@@ -470,6 +479,7 @@ class SubQuizConfig {
     bool? shuffleInternaly,
     bool? shuffleExternaly,
     bool? modifyAllowed,
+    bool? preferSimilar
   }) {
     return SubQuizConfig(
       questionSections: questionSections ?? this.questionSections,
@@ -477,6 +487,7 @@ class SubQuizConfig {
       shuffleInternaly: shuffleInternaly ?? this.shuffleInternaly,
       shuffleExternaly: shuffleExternaly ?? this.shuffleExternaly,
       modifyAllowed: modifyAllowed ?? this.modifyAllowed,
+      preferSimilar: preferSimilar?? this.preferSimilar
     );
   }
 }

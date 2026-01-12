@@ -55,7 +55,7 @@ class _InLearningPageState extends State<InLearningPage> {
           extra = [];
         } else if(testType == 1 || testType == 2) {
           // 中译阿/阿译中 选择题
-          List<WordItem> optionWords = getRandomWords(4, context.read<Global>().wordData, include: wordItem, sameClassOnly: true, rnd: rnd);
+          List<WordItem> optionWords = getRandomWords(4, context.read<Global>().wordData, include: wordItem, preferClass: !questionsSetting.preferSimilar, rnd: rnd);
           List<String> strList = List.generate(4, (int index) => (testType == 1 ? optionWords[index].arabic : optionWords[index].chinese), growable: false);
           extra = [optionWords.indexWhere((WordItem item) => item == wordItem), strList];
         } else if(testType == 3) {

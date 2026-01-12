@@ -124,6 +124,7 @@ class FSRSConfig {
   final double desiredRetention;
   final int easyDuration;
   final int goodDuration;
+  final bool preferSimilar;
 
   const FSRSConfig({
     bool? enabled,
@@ -132,14 +133,16 @@ class FSRSConfig {
     List<ReviewLog>? reviewLogs,
     double? desiredRetention,
     int? easyDuration,
-    int? goodDuration
+    int? goodDuration,
+    bool? preferSimilar
   }) :
     enabled = enabled??false,
     cards = cards??const [],
     reviewLogs = reviewLogs??const [],
     desiredRetention = desiredRetention??0.9,
     easyDuration = easyDuration??3000,
-    goodDuration = goodDuration??6000;
+    goodDuration = goodDuration??6000,
+    preferSimilar = preferSimilar??false;
   
   Map<String, dynamic> toMap(){
     return {
@@ -149,7 +152,8 @@ class FSRSConfig {
       'reviewLog': List<Map>.generate(reviewLogs.length, (index) => reviewLogs[index].toMap(), growable: false),
       "desiredRetention": desiredRetention,
       "easyDuration": easyDuration,
-      "goodDuration": goodDuration
+      "goodDuration": goodDuration,
+      "preferSimilar": preferSimilar
     };
   }
 
@@ -160,7 +164,8 @@ class FSRSConfig {
     List<ReviewLog>? reviewLogs,
     double? desiredRetention,
     int? easyDuration,
-    int? goodDuration
+    int? goodDuration,
+    bool? preferSimilar
   }) {
     return FSRSConfig(
       enabled: enabled??this.enabled,
@@ -169,7 +174,8 @@ class FSRSConfig {
       reviewLogs: reviewLogs??this.reviewLogs,
       desiredRetention: desiredRetention??this.desiredRetention,
       easyDuration: easyDuration??this.easyDuration,
-      goodDuration: goodDuration??this.goodDuration
+      goodDuration: goodDuration??this.goodDuration,
+      preferSimilar: preferSimilar??this.preferSimilar
     );
   }
 
@@ -182,7 +188,8 @@ class FSRSConfig {
         reviewLogs: List<ReviewLog>.generate(configData["reviewLog"].length,(index) => ReviewLog.fromMap(configData["reviewLog"][index]), growable: true),
         desiredRetention: configData["desiredRetention"],
         easyDuration: configData["easyDuration"],
-        goodDuration: configData["goodDuration"]
+        goodDuration: configData["goodDuration"],
+        preferSimilar: configData["preferSimilar"]
       );
     }
     return FSRSConfig(enabled: false);

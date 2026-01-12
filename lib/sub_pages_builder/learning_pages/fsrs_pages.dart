@@ -136,6 +136,36 @@ class ForeFSRSSettingPage extends StatelessWidget {
                   ],
                 ),
               ),
+              Container(
+                decoration: BoxDecoration(
+                  borderRadius: StaticsVar.br,
+                  color: Theme.of(context).colorScheme.onSecondary
+                ),
+                margin: EdgeInsets.all(8.0),
+                padding: EdgeInsets.all(8.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Expanded(child: Text("偏好易混词", style: Theme.of(context).textTheme.bodyLarge)),
+                        Switch(
+                          value: fsrs.config.preferSimilar, 
+                          onChanged: (value){
+                            setState(() {
+                              fsrs.config = fsrs.config.copyWith(
+                                preferSimilar: value
+                              );
+                            });
+                          }
+                        )
+                      ],
+                    ),
+                    Text("偏好易混词 开启时选择题的选项更多地按照词根寻找相似的单词进行测试"),
+                    Text("关闭时选择题的选项更多地考察同课程的单词")
+                  ],
+                ),
+              ),
               ElevatedButton.icon(
                 style: ElevatedButton.styleFrom(
                   fixedSize: Size.fromHeight(100),
@@ -240,7 +270,7 @@ class _FSRSReviewCardPage extends State<FSRSReviewCardPage> {
 
     // 防止重建后选项丢失
     if(options == null){
-      List<WordItem> optionWords = getRandomWords(4, context.read<Global>().wordData, include: wordData[widget.wordID], rnd: widget.rnd);
+      List<WordItem> optionWords = getRandomWords(4, context.read<Global>().wordData, include: wordData[widget.wordID], preferClass: !widget.fsrs.config.preferSimilar, rnd: widget.rnd);
       options ??= List.generate(4, (int index) => optionWords[index].chinese, growable: false);
     }
     
@@ -400,7 +430,7 @@ class _FSRSLearningPageState extends State<FSRSLearningPage> {
   void initState() {
     final Random rnd = Random();
     for(WordItem word in widget.words) {
-      List<WordItem> optionWords = getRandomWords(4, context.read<Global>().wordData, include: word, rnd: rnd);
+      List<WordItem> optionWords = getRandomWords(4, context.read<Global>().wordData, include: word, preferClass: !widget.fsrs.config.preferSimilar, rnd: rnd);
       List<String> option = List.generate(4, (int index) => optionWords[index].chinese, growable: false);
       options.add(option);
     }
