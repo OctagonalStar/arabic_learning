@@ -874,6 +874,15 @@ class WordLookupLayout extends StatelessWidget {
     }
     
     context.read<Global>().uiLogger.finer("单词检索结果: $match");
+    if(!context.read<Global>().globalConfig.learning.wordLookupRealtime){
+      Future.delayed(Durations.medium1, () {
+        if(context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text("检索到${match.length}个结果"), duration: Duration(seconds: 1),),
+          );
+        }
+      }); 
+    }
 
     return GridView.builder(
       itemCount: match.length,
