@@ -27,33 +27,30 @@ class _SettingPage extends State<SettingPage> {
   @override
   Widget build(BuildContext context) {
     context.read<Global>().uiLogger.fine("构建 SettingPage");
-    return Scaffold(
-      appBar: AppBar(title: Text("设置")),
-      body: Consumer<Global>(
-        builder: (context, value, child) {
-          return ListView(
-            children: [
-              SettingItem(
-                title: "常规设置",
-                padding: EdgeInsets.all(8.0),
-                children: regularSetting(context),
-              ),
-              SettingItem(
-                title: "学习设置", 
-                children: dataSetting(context), 
-              ),
-              SettingItem(
-                title: "音频设置", 
-                children: audioSetting(context), 
-              ),
-              SettingItem(
-                title: "关于", 
-                children: aboutSetting(context), 
-              ),
-            ],
-          );
-        },
-      ),
+    return Consumer<Global>(
+      builder: (context, value, child) {
+        return ListView(
+          children: [
+            SettingItem(
+              title: "常规设置",
+              padding: EdgeInsets.all(8.0),
+              children: regularSetting(context),
+            ),
+            SettingItem(
+              title: "学习设置", 
+              children: dataSetting(context), 
+            ),
+            SettingItem(
+              title: "音频设置", 
+              children: audioSetting(context), 
+            ),
+            SettingItem(
+              title: "关于", 
+              children: aboutSetting(context), 
+            ),
+          ],
+        );
+      },
     );
   }
 

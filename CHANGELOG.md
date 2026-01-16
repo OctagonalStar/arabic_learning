@@ -12,6 +12,10 @@
 
 - 优化了选择题单词挑选逻辑 [#48](https://github.com/OctagonalStar/arabic_learning/issues/48)
 
+### Fix
+
+- 将设置选项重新放回首页
+
 ## v0.1.12 - 2025-12-27 - (000112)
 
 ### Added
