@@ -76,7 +76,7 @@ Future<List<dynamic>> playTextToSpeech(String text, BuildContext context, {doubl
     FlutterTts flutterTts = FlutterTts();
     if(!(await flutterTts.getLanguages).toString().contains("ar") && context.mounted) {
       context.read<Global>().logger.warning("[TTS]用户设备不支持AR语言TTS");
-      return [false, "你的设备似乎未安装阿拉伯语语言或不支持阿拉伯语文本转语音功能，语音可能无法正常播放。\n你可以尝试在 设置 - 系统语言 - 添加语言 中添加阿拉伯语。\n实在无法使用可在设置页面启用备用音频源(需要网络)"];
+      return [false, "你的设备似乎未安装阿拉伯语语言或不支持阿拉伯语文本转语音功能，语音可能无法正常播放。\n你可以在 设置-常见问题 中找到可能的解决方案"];
     }
     await flutterTts.setLanguage("ar");
     await flutterTts.setPitch(1.0);

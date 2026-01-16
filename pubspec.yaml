@@ -83,6 +83,7 @@ flutter:
     - CHANGELOG.md
     - assets/eggs/s.txt
     - assets/fonts/zh/NotoSansSC-Medium.ttf
+    - assets/help/audio.md
   fonts:
     - family: Vazirmatn
       fonts:
