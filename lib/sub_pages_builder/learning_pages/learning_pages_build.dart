@@ -841,7 +841,7 @@ class WordLookupLayout extends StatelessWidget {
           match.add(word);
           continue;
         }
-        if(lookfor.length >=3 && word.chinese.length > 3 && getLevenshtein(lookfor, word.chinese) < 4) {
+        if(lookfor.length >=3 && getLevenshtein(lookfor, word.chinese) < 4) {
           if(!lookfor.split("").any((String char) => word.chinese.contains(char))) continue;
           match.add(word);
           continue;
