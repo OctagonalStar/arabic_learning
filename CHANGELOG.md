@@ -6,6 +6,7 @@
 
 - 添加了备份数据文件导出功能 [#50](https://github.com/OctagonalStar/arabic_learning/issues/50)
 - 添加了易混词偏好配置
+- 添加了词汇查找功能 [#49](https://github.com/OctagonalStar/arabic_learning/issues/49)
 
 ### Improvement
 
