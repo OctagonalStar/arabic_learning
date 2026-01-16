@@ -1,6 +1,6 @@
 import 'dart:convert';
 
-import 'package:arabic_learning/sub_pages_builder/setting_pages/debug_page.dart';
+import 'package:arabic_learning/vars/statics_var.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
@@ -9,7 +9,9 @@ import 'package:url_launcher/url_launcher.dart';
 
 import 'package:arabic_learning/funcs/ui.dart';
 import 'package:arabic_learning/vars/global.dart';
-import 'package:arabic_learning/sub_pages_builder/setting_pages/item_widget.dart';
+import 'package:arabic_learning/sub_pages_builder/setting_pages/help_page.dart' show HelpPage;
+import 'package:arabic_learning/sub_pages_builder/setting_pages/item_widget.dart'show SettingItem;
+import 'package:arabic_learning/sub_pages_builder/setting_pages/debug_page.dart' show DebugPage;
 import 'package:arabic_learning/sub_pages_builder/setting_pages/about_page.dart' show AboutPage;
 import 'package:arabic_learning/sub_pages_builder/setting_pages/data_download_page.dart' show DownloadPage;
 import 'package:arabic_learning/sub_pages_builder/setting_pages/model_download_page.dart' show ModelDownload;
@@ -27,34 +29,60 @@ class _SettingPage extends State<SettingPage> {
   @override
   Widget build(BuildContext context) {
     context.read<Global>().uiLogger.fine("构建 SettingPage");
-    return Scaffold(
-      appBar: AppBar(title: Text("设置")),
-      body: Consumer<Global>(
-        builder: (context, value, child) {
-          return ListView(
-            children: [
-              SettingItem(
-                title: "常规设置",
-                padding: EdgeInsets.all(8.0),
-                children: regularSetting(context),
-              ),
-              SettingItem(
-                title: "学习设置", 
-                children: dataSetting(context), 
-              ),
-              SettingItem(
-                title: "音频设置", 
-                children: audioSetting(context), 
-              ),
-              SettingItem(
-                title: "关于", 
-                children: aboutSetting(context), 
-              ),
-            ],
-          );
-        },
-      ),
+    return Consumer<Global>(
+      builder: (context, value, child) {
+        return ListView(
+          children: [
+            SettingItem(
+              title: "帮助", 
+              children: helpEssay(context)
+            ),
+            SettingItem(
+              title: "常规设置",
+              padding: EdgeInsets.all(8.0),
+              children: regularSetting(context),
+            ),
+            SettingItem(
+              title: "学习设置", 
+              children: dataSetting(context), 
+            ),
+            SettingItem(
+              title: "音频设置", 
+              children: audioSetting(context), 
+            ),
+            SettingItem(
+              title: "关于", 
+              children: aboutSetting(context), 
+            ),
+          ],
+        );
+      },
     );
+  }
+
+  List<Widget> helpEssay(BuildContext context) {
+    MediaQueryData mediaQuery = MediaQuery.of(context);
+    return [
+      ElevatedButton(
+        style: ElevatedButton.styleFrom(
+          minimumSize: Size.fromHeight(mediaQuery.size.height * 0.08),
+          backgroundColor: Theme.of(context).colorScheme.onPrimary.withAlpha(150),
+          shape: RoundedRectangleBorder(borderRadius: StaticsVar.br)
+        ),
+        onPressed: (){
+          context.read<Global>().uiLogger.info("跳转: SettingPage => HelpPage");
+          Navigator.push(context, MaterialPageRoute(builder: (context) => HelpPage()));
+        }, 
+        child: Row(
+          children: [
+            Icon(Icons.help, size: 24.0),
+            SizedBox(width: mediaQuery.size.width * 0.01),
+            Expanded(child: Text("常见问题", textAlign: TextAlign.start)),
+            Icon(Icons.arrow_forward_ios)
+          ]
+        ),
+      )
+    ];
   }
 
   List<Widget> regularSetting(BuildContext context) {

@@ -53,20 +53,9 @@ class _ForeListeningSettingPage extends State<ForeListeningSettingPage> {
                     }, 
                     icon: Icon(Icons.volume_up, size: 100)
                   ),
-                  TextContainer(text: "点击以上按钮，等待约10秒。期间如果你能听到u和开口短音符音(wa)，则说明你当前音源支持发音符号。"),
-                  ExpansionTile(
-                    title: Text("解决方案"),
-                    children: [
-                      TextContainer(text: "如果你不能听到开口短音符音，请*逐个*尝试以下修复方案："),
-                      TextContainer(text: "1. 软件设置中的\"选择文本转语音接口\"不能选择\"请求TextReadTTS.com的语音\""),
-                      TextContainer(text: "2. 查找设备设置中\"Text To Speech\"或\"文本转语音\"选项，检查是否有阿拉伯语(国际符号为ar-00或ar-SA)支持（由于手机厂商多样性，无法保证所有的手机都支持阿拉伯语）"),
-                      TextContainer(text: "3. 如果你是Android系统手机，还可以尝试安装\"Google 语音识别和语音合成\"(包名为com.google.android.tts)", selectable: true),
-                      TextContainer(text: "4. 终极方案：使用APP版本，在软件内-设置 下载文本转语音神经网络模型并设置文本转语音为神经网络合成语音")
-                    ],
-                  )
-                  
+                  TextContainer(text: "点击以上按钮，等待约10秒。期间如果你能听到u和开口短音符音(wa)，则说明你当前音源支持发音符号。若不行请查阅“常见问题”"),
                 ],
-              ),
+              )
             ),
             ElevatedButton(
               style: ElevatedButton.styleFrom(

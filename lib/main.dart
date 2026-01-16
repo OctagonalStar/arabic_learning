@@ -114,9 +114,7 @@ class MyHomePage extends StatefulWidget {
 
 class _MyHomePageState extends State<MyHomePage> {
   late List<Widget> _pageList;
-  int currentIndex = 1;
-  bool onSlip = false;
-  final PageController _pageController = PageController(initialPage: 1);
+  final PageController _pageController = PageController(initialPage: 0);
   static const Duration _duration = Duration(milliseconds: 500);
   bool disPlayedFirst = false;
 
@@ -132,7 +130,7 @@ class _MyHomePageState extends State<MyHomePage> {
         // 侧边导航栏
         NavigationRail(
           minWidth: MediaQuery.of(context).size.width * 0.05,
-          selectedIndex: currentIndex,
+          selectedIndex: _pageController.hasClients ? _pageController.page!.round() : 0,
           onDestinationSelected: (int index) {
             _onNavigationTapped(index);
           },
@@ -140,19 +138,24 @@ class _MyHomePageState extends State<MyHomePage> {
           backgroundColor: Theme.of(context).colorScheme.onPrimary.withAlpha(150),
           destinations: const [
             NavigationRailDestination(
-              icon: Icon(Icons.book_outlined),
-              selectedIcon: Icon(Icons.book),
-              label: Text('学习'),
-            ),
-            NavigationRailDestination(
               icon: Icon(Icons.home_outlined),
               selectedIcon: Icon(Icons.home),
               label: Text('主页'),
             ),
             NavigationRailDestination(
+              icon: Icon(Icons.book_outlined),
+              selectedIcon: Icon(Icons.book),
+              label: Text('学习'),
+            ),
+            NavigationRailDestination(
               icon: Icon(Icons.edit_outlined),
               selectedIcon: Icon(Icons.edit),
               label: Text('测试'),
+            ),
+            NavigationRailDestination(
+              icon: Icon(Icons.settings_applications_outlined),
+              selectedIcon: Icon(Icons.settings_applications),
+              label: Text('设置'),
             ),
           ],
         ),
@@ -164,10 +167,7 @@ class _MyHomePageState extends State<MyHomePage> {
             scrollDirection: Axis.vertical,
             controller: _pageController,
             onPageChanged: (index) {
-              if (onSlip) return;
-              setState(() {
-                currentIndex = index;
-              });
+              setState(() {});
             },
             // physics: const NeverScrollableScrollPhysics(), // 禁用滑动
             children: _pageList,
@@ -188,17 +188,14 @@ class _MyHomePageState extends State<MyHomePage> {
             controller: _pageController,
             scrollDirection: Axis.horizontal,
             onPageChanged: (index) {
-              if (onSlip) return;
-              setState(() {
-                currentIndex = index;
-              });
+              setState(() {});
             },
             children: _pageList,
           ),
         ),
         // 底部导航栏
         NavigationBar(
-          selectedIndex: currentIndex,
+          selectedIndex: _pageController.hasClients ? _pageController.page!.round() : 0,
           onDestinationSelected: (int index) {
             _onNavigationTapped(index);
           },
@@ -208,19 +205,24 @@ class _MyHomePageState extends State<MyHomePage> {
           backgroundColor: Theme.of(context).colorScheme.onPrimary.withAlpha(150),
           destinations: const [
             NavigationDestination(
-              icon: Icon(Icons.book_outlined),
-              selectedIcon: Icon(Icons.book),
-              label: '学习',
-            ),
-            NavigationDestination(
               icon: Icon(Icons.home_outlined),
               selectedIcon: Icon(Icons.home),
               label: '主页',
             ),
             NavigationDestination(
+              icon: Icon(Icons.book_outlined),
+              selectedIcon: Icon(Icons.book),
+              label: '学习',
+            ),
+            NavigationDestination(
               icon: Icon(Icons.edit_outlined),
               selectedIcon: Icon(Icons.edit),
               label: '测试',
+            ),
+            NavigationDestination(
+              icon: Icon(Icons.settings_applications_outlined),
+              selectedIcon: Icon(Icons.settings_applications),
+              label: '设置',
             ),
           ]
         )
@@ -230,18 +232,11 @@ class _MyHomePageState extends State<MyHomePage> {
 
   // 统一的导航点击处理
   void _onNavigationTapped(int index) {
-    onSlip = true;
     _pageController.animateToPage(
       index,
       duration: _duration,
       curve: StaticsVar.curve,
     );
-    Future.delayed(_duration, () {
-      onSlip = false;
-    });
-    setState(() {
-      currentIndex = index;
-    });
   }
 
   final TextEditingController controller = TextEditingController();
@@ -364,9 +359,10 @@ class _MyHomePageState extends State<MyHomePage> {
       });
     }
     _pageList = [
-      LearningPage(),
       HomePage(),
-      TestPage()
+      LearningPage(),
+      TestPage(),
+      SettingPage()
     ];
     return Scaffold(
       backgroundColor: context.read<Global>().globalConfig.egg.stella ? Colors.transparent : null,
@@ -382,13 +378,6 @@ class _MyHomePageState extends State<MyHomePage> {
               launchUrl(Uri.parse("https://github.com/OctagonalStar/arabic_learning/releases/latest"));
             }
           ),
-          IconButton(
-            onPressed: () {
-              context.read<Global>().uiLogger.info("跳转: MyHomePage => SettingPage");
-              Navigator.of(context).push(MaterialPageRoute(builder: (context) => SettingPage()));
-            }, 
-            icon: Icon(Icons.settings)
-          )
         ],
       ),
       body: LayoutBuilder(
