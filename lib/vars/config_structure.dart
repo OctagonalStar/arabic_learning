@@ -300,17 +300,29 @@ class LearningConfig {
   /// 连续学习最后有记录的日期(相较于2025/11/1)
   final int lastDate;
 
+  /// 词汇总览中的固定列数
+  final int overviewForceColumn;
+
+  /// 搜索时是否实时搜索
+  final bool wordLookupRealtime;
+
   const LearningConfig({
     int? startDate,
     int? lastDate,
+    int? overviewForceColumn,
+    bool? wordLookupRealtime
   }):
     startDate = startDate??0,
-    lastDate = lastDate??0;
+    lastDate = lastDate??0,
+    overviewForceColumn = overviewForceColumn??0,
+    wordLookupRealtime = wordLookupRealtime??true;
 
   Map<String, dynamic> toMap(){
     return {
       "startDate": startDate,
       "lastDate": lastDate,
+      "overviewForceColumn": overviewForceColumn,
+      "wordLookupRealtime": wordLookupRealtime
     };
   }
 
@@ -319,17 +331,22 @@ class LearningConfig {
     return LearningConfig(
       startDate: setting["startDate"],
       lastDate: setting["lastDate"],
+      overviewForceColumn: setting["overviewForceColumn"],
+      wordLookupRealtime: setting["wordLookupRealtime"]
     );
   }
 
   LearningConfig copyWith({
     int? startDate,
     int? lastDate,
-    List<int>? knownWords,
+    int? overviewForceColumn,
+    bool? wordLookupRealtime
   }) {
     return LearningConfig(
       startDate: startDate ?? this.startDate,
       lastDate: lastDate ?? this.lastDate,
+      overviewForceColumn: overviewForceColumn??this.overviewForceColumn,
+      wordLookupRealtime: wordLookupRealtime??this.wordLookupRealtime
     );
   }
 }

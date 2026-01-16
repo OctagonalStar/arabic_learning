@@ -567,7 +567,6 @@ class WordCardOverViewPage extends StatefulWidget {
 
 class _WordCardOverViewPage extends State<WordCardOverViewPage> {
   final TextEditingController searchController = TextEditingController();
-  int forceColumn = 0;
   bool inSearch = false;
 
   @override
@@ -607,9 +606,9 @@ class _WordCardOverViewPage extends State<WordCardOverViewPage> {
                     onSubmitted: (text) {
                       setState(() {});
                     },
-                    onChanged: (text) {
+                    onChanged: context.read<Global>().globalConfig.learning.wordLookupRealtime ? (text) {
                       setState(() {});
-                    },
+                    } : null,
                   ),
                 ),
               );
@@ -623,62 +622,86 @@ class _WordCardOverViewPage extends State<WordCardOverViewPage> {
             icon: inSearch ? Icon(Icons.search_off) : Icon(Icons.search)
           ),
           IconButton(
-            onPressed: () async {
-              await showDialog(
+            onPressed: () {
+              showModalBottomSheet(
                 context: context, 
                 builder: (context) {
-                  return AlertDialog(
-                    content: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        StatefulBuilder(
-                          builder: (context, setLocalState) {
-                            return Column(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Text("设置固定列数"),
-                                Slider(
-                                  min: 0,
-                                  max: 5,
-                                  divisions: 5,
-                                  value: forceColumn.toDouble(), 
-                                  onChanged: (value){
-                                    setLocalState(() {
-                                      forceColumn = value.ceil();
-                                    });
-                                  },
-                                  onChangeEnd: (value) {
-                                    context.read<Global>().uiLogger.info("设置固定列数为$value");
-                                  },
+                  return BottomSheet(
+                    onClosing: () {
+                      
+                    },
+                    builder: (context) {
+                      int forceCloumn = context.read<Global>().globalConfig.learning.overviewForceColumn;
+                      bool lookupRealtime = context.read<Global>().globalConfig.learning.wordLookupRealtime;
+                      return StatefulBuilder(
+                        builder: (context, setLocalState) {
+                          return Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Row(
+                                children: [
+                                  Text("设置固定列数"),
+                                  Slider(
+                                    min: 0,
+                                    max: 5,
+                                    divisions: 5,
+                                    value: forceCloumn.toDouble(), 
+                                    onChanged: (value){
+                                      setLocalState(() {
+                                        forceCloumn = value.ceil();
+                                      });
+                                    },
+                                    onChangeEnd: (value) {
+                                      context.read<Global>().uiLogger.info("设置固定列数为$value");
+                                    },
+                                  ),
+                                  Text(forceCloumn == 0 ? "0(自动)" : forceCloumn.toString()),
+                                ],
+                              ),
+                              Row(
+                                children: [
+                                  Text("搜索时实时显示结果"),
+                                  Switch(
+                                    value: lookupRealtime, 
+                                    onChanged: (value){
+                                      setLocalState(() {
+                                        lookupRealtime = value;
+                                      });
+                                      context.read<Global>().uiLogger.info("设置实时查找为$value");
+                                    }
+                                  )
+                                ],
+                              ),
+                              ElevatedButton.icon(
+                                style: ElevatedButton.styleFrom(
+                                  shape: RoundedRectangleBorder(borderRadius: StaticsVar.br),
+                                  fixedSize: Size(mediaQuery.size.width * 0.6, 100)
                                 ),
-                                Text(forceColumn == 0 ? "0(自动)" : forceColumn.toString())
-                              ],
-                            );
-                          }
-                        ),
-                      ],
-                    ),
-                    actions: [
-                      ElevatedButton(
-                        onPressed: (){
-                          Navigator.pop(context);
-                          setState(() {}); // 刷新全局状态
-                        }, 
-                        child: Text("确认")
-                      ),
-                      ElevatedButton(
-                        onPressed: (){
-                          Navigator.pop(context);
-                        }, 
-                        child: Text("取消")
-                      )
-                    ],
+                                onPressed: (){
+                                  setState(() {
+                                    context.read<Global>().globalConfig = context.read<Global>().globalConfig.copyWith(
+                                      learning: context.read<Global>().globalConfig.learning.copyWith(
+                                        overviewForceColumn: forceCloumn,
+                                        wordLookupRealtime: lookupRealtime
+                                      )
+                                    );
+                                    context.read<Global>().updateSetting(refresh: false);
+                                  });
+                                  Navigator.pop(context);
+                                }, 
+                                icon: Icon(Icons.done),
+                                label: Text("确认"),
+                              )
+                            ],
+                          );
+                        }
+                      );
+                    },
                   );
                 }
               );
-              
             }, 
-            icon: Icon(Icons.view_column)
+            icon: Icon(Icons.settings)
           )
         ],
       ),
@@ -688,14 +711,13 @@ class _WordCardOverViewPage extends State<WordCardOverViewPage> {
         child: inSearch ? Icon(Icons.search_off) : Icon(Icons.search)
       ),
 
-      body: inSearch ? WordLookupLayout(lookfor: searchController.text.removeAracicExtensionPart(), column: forceColumn) : WordCardOverViewLayout(forceColumn: forceColumn)
+      body: inSearch ? WordLookupLayout(lookfor: searchController.text.removeAracicExtensionPart()) : WordCardOverViewLayout()
     );
   }
 }
 
 class WordCardOverViewLayout extends StatefulWidget {
-  final int forceColumn;
-  const WordCardOverViewLayout({super.key, this.forceColumn = 0});
+  const WordCardOverViewLayout({super.key});
 
   @override
   State<StatefulWidget> createState() => _WordCardOverViewLayout();
@@ -777,15 +799,15 @@ class _WordCardOverViewLayout extends State<WordCardOverViewLayout> {
                         height: mediaQuery.size.height * 0.8,
                         child: GridView.builder(
                           itemCount: classItem.wordIndexs.length,
-                          gridDelegate: widget.forceColumn == 0 ? SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: mediaQuery.size.width ~/ 300) : SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: widget.forceColumn), 
+                          gridDelegate: context.read<Global>().globalConfig.learning.overviewForceColumn == 0 ? SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: mediaQuery.size.width ~/ 300) : SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: context.read<Global>().globalConfig.learning.overviewForceColumn), 
                           itemBuilder: (context, index) {
                             return Container(
                               margin: EdgeInsets.all(8.0),
                               child: WordCard(
                                 word: context.read<Global>().wordData.words[classItem.wordIndexs[index]],
                                 useMask: false,
-                                width: mediaQuery.size.width / (widget.forceColumn == 0 ? (mediaQuery.size.width ~/ 300) : widget.forceColumn),
-                                height: mediaQuery.size.width / (widget.forceColumn == 0 ? (mediaQuery.size.width ~/ 300) : widget.forceColumn),
+                                width: mediaQuery.size.width / (context.read<Global>().globalConfig.learning.overviewForceColumn == 0 ? (mediaQuery.size.width ~/ 300) : context.read<Global>().globalConfig.learning.overviewForceColumn),
+                                height: mediaQuery.size.width / (context.read<Global>().globalConfig.learning.overviewForceColumn == 0 ? (mediaQuery.size.width ~/ 300) : context.read<Global>().globalConfig.learning.overviewForceColumn),
                               ),
                             );
                           }
@@ -806,8 +828,7 @@ class _WordCardOverViewLayout extends State<WordCardOverViewLayout> {
 
 class WordLookupLayout extends StatelessWidget {
   final String lookfor;
-  final int column;
-  const WordLookupLayout({super.key, required this.lookfor, required this.column});
+  const WordLookupLayout({super.key, required this.lookfor});
 
   @override
   Widget build(BuildContext context) {
@@ -856,15 +877,15 @@ class WordLookupLayout extends StatelessWidget {
 
     return GridView.builder(
       itemCount: match.length,
-      gridDelegate: column == 0 ? SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: mediaQuery.size.width ~/ 300) : SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: column), 
+      gridDelegate: context.read<Global>().globalConfig.learning.overviewForceColumn == 0 ? SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: mediaQuery.size.width ~/ 300) : SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: context.read<Global>().globalConfig.learning.overviewForceColumn), 
       itemBuilder: (context, index) {
         return Container(
           margin: EdgeInsets.all(8.0),
           child: WordCard(
             word: match[index],
             useMask: false,
-            width: mediaQuery.size.width / (column == 0 ? (mediaQuery.size.width ~/ 300) : column),
-            height: mediaQuery.size.width / (column == 0 ? (mediaQuery.size.width ~/ 300) : column),
+            width: mediaQuery.size.width / (context.read<Global>().globalConfig.learning.overviewForceColumn == 0 ? (mediaQuery.size.width ~/ 300) : context.read<Global>().globalConfig.learning.overviewForceColumn),
+            height: mediaQuery.size.width / (context.read<Global>().globalConfig.learning.overviewForceColumn == 0 ? (mediaQuery.size.width ~/ 300) : context.read<Global>().globalConfig.learning.overviewForceColumn),
           ),
         );
       }
