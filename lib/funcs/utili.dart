@@ -184,6 +184,14 @@ extension StringExtensions on String {
     final arabicRegExp = RegExp(r'[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\uFB50-\uFDFF\uFE70-\uFEFF]');
     return arabicRegExp.hasMatch(this);
   }
+  String removeAracicExtensionPart(){
+    String res = this;
+    res = res.replaceAll(RegExp(r'[\u064B-\u065F\u0640\u0670\u06D6-\u06ED]'), ""); 
+    res = res.replaceAll(RegExp(r'\(.*\)'), ""); // for "قَلَمٌ (ج: أَقْلَامٌ)"
+    res = res.replaceAll(RegExp(r'\ [ج\-/م][^]*$'), ""); // for "ميلادي م ميلاد" "جَدِيدٌ / جَدِيدَةٌ"
+    res = res.replaceAll(RegExp(r'[،.][^]*$'), ""); // for "متواصل، متواصل"
+    return res;
+  }
 }
 
 extension ListExtensions on List {
@@ -331,9 +339,6 @@ class _RootPattern {
 /// 该类通过一个预定义的模式库来识别单词的构词形式，并从中提取出标准的三字母词根。
 /// 这对于判断不同派生词之间的相似性至关重要。
 class ArabicStemmer {
-  // 1. 元音范围
-  static final _diacritics = RegExp(r'[\u064B-\u065F\u0640\u0670\u06D6-\u06ED]');
-  
   // 2. 定义模式库 (优先级：长/特异性 -> 短/通用性)
   static final List<_RootPattern> _patterns = [
     // --- Form X (استفعل) ---
@@ -401,11 +406,8 @@ class ArabicStemmer {
   /// 对输入的阿拉伯语单词进行预处理和规范化。
   String normalize(String text) {
     if (text.isEmpty) return "";
-    // 移除所有元音符号
-    String res = text.replaceAll(_diacritics, '');
     // 移除额外部分
-    res = res.replaceAll(RegExp(r'\(.*\)'), ""); // for "قَلَمٌ (ج: أَقْلَامٌ)"
-    res = res.replaceAll(RegExp(r'\ /\ (.*)'), ""); // for "جَدِيدٌ / جَدِيدَةٌ"
+    String res = text.removeAracicExtensionPart();
     // 统一不同形式的 Alef
     res = res.replaceAll(RegExp(r'[أإآ]'), 'ا');
     // 将 Alef Maqsura 统一为 Alef

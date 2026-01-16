@@ -61,7 +61,7 @@ class Global with ChangeNotifier {
   Future<void> conveySetting() async {
     logger.info("处理配置文件");
     wordData = DictData.buildFromMap(jsonDecode(prefs.getString("wordData")!));
-    BKSearch.init(wordData.words);
+    if(!BKSearch.isReady) BKSearch.init(wordData.words);
     Config oldConfig = Config.buildFromMap(jsonDecode(prefs.getString("settingData")!));
     if(oldConfig.lastVersion != globalConfig.lastVersion) {
       logger.info("检测到当前版本与上次启动版本不同");
@@ -268,6 +268,7 @@ class Global with ChangeNotifier {
     logger.info("收到词汇导入请求");
     wordData = dataFormater(data, wordData, source);
     prefs.setString("wordData", jsonEncode(wordData.toMap()));
+    BKSearch.init(wordData.words); // 重新建树
     logger.info("词汇导入完成");
     notifyListeners();
   }

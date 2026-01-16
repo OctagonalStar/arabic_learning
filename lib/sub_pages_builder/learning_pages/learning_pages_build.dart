@@ -1,6 +1,6 @@
 import 'dart:math';
 
-import 'package:arabic_learning/funcs/utili.dart' show getRandomWords;
+import 'package:arabic_learning/funcs/utili.dart' show BKSearch, StringExtensions, getLevenshtein, getRandomWords;
 import 'package:arabic_learning/vars/config_structure.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -566,171 +566,338 @@ class WordCardOverViewPage extends StatefulWidget {
 }
 
 class _WordCardOverViewPage extends State<WordCardOverViewPage> {
-  ScrollController jsonController = ScrollController();
-  ScrollController classController = ScrollController();
-  bool allowJsonScorll = true;
-  bool allowClassScorll = false;
-  int forceColumn = 0;
+  final TextEditingController searchController = TextEditingController();
+  bool inSearch = false;
 
   @override
   Widget build(BuildContext context) {
-    context.read<Global>().uiLogger.info("构建 WordCardOverViewPage");
+    context.read<Global>().uiLogger.info("构建 WordCardOverViewPage: inSearch{$inSearch}");
     MediaQueryData mediaQuery = MediaQuery.of(context);
     return Scaffold(
       appBar: AppBar(
-        title: Text("单词总览"),
+        bottom: inSearch ? PreferredSize(
+          preferredSize: Size(mediaQuery.size.width, 75), 
+          child: TweenAnimationBuilder<double>(
+            tween: Tween(begin: 0.0, end: inSearch ? 1.0 : 0.0), 
+            duration: Duration(milliseconds: 300), 
+            curve: StaticsVar.curve,
+            builder: (context, value, child){
+              return Center(
+                child: SizedBox(
+                  width: mediaQuery.size.width * value,
+                  child: TextField(
+                    textDirection: searchController.text.isArabic() ? TextDirection.rtl : TextDirection.ltr,
+                    controller: searchController,
+                    autofocus: true,
+                    expands: false,
+                    maxLines: 1,
+                    decoration: InputDecoration(
+                      labelText: "词汇检索",
+                      hintText: "阿语单词或中文释义",
+                      border: OutlineInputBorder(
+                        borderRadius: StaticsVar.br,
+                        borderSide: BorderSide(color: Theme.of(context).colorScheme.outline),
+                      ),
+                      suffix: ElevatedButton(
+                        onPressed: () => setState(() {}), 
+                        child: Text("查找")
+                      ),
+                    ),
+                    onSubmitted: (text) {
+                      setState(() {});
+                    },
+                    onChanged: context.read<Global>().globalConfig.learning.wordLookupRealtime ? (text) {
+                      setState(() {});
+                    } : null,
+                  ),
+                ),
+              );
+            }
+          )
+        ) : null,
+        title: Text(inSearch ? "单词检索" : "单词总览"),
         actions: [
           IconButton(
-            onPressed: () async {
-              await showDialog(
+            onPressed: () => setState(() => inSearch = !inSearch),
+            icon: inSearch ? Icon(Icons.search_off) : Icon(Icons.search)
+          ),
+          IconButton(
+            onPressed: () {
+              showModalBottomSheet(
                 context: context, 
                 builder: (context) {
-                  return AlertDialog(
-                    content: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        StatefulBuilder(
-                          builder: (context, setLocalState) {
-                            return Column(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Text("设置固定列数"),
-                                Slider(
-                                  min: 0,
-                                  max: 5,
-                                  divisions: 5,
-                                  value: forceColumn.toDouble(), 
-                                  onChanged: (value){
-                                    setLocalState(() {
-                                      forceColumn = value.ceil();
-                                    });
-                                  },
-                                  onChangeEnd: (value) {
-                                    context.read<Global>().uiLogger.info("设置固定列数为$value");
-                                  },
+                  return BottomSheet(
+                    onClosing: () {
+                      
+                    },
+                    builder: (context) {
+                      int forceCloumn = context.read<Global>().globalConfig.learning.overviewForceColumn;
+                      bool lookupRealtime = context.read<Global>().globalConfig.learning.wordLookupRealtime;
+                      return StatefulBuilder(
+                        builder: (context, setLocalState) {
+                          return Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Row(
+                                children: [
+                                  Text("设置固定列数"),
+                                  Slider(
+                                    min: 0,
+                                    max: 5,
+                                    divisions: 5,
+                                    value: forceCloumn.toDouble(), 
+                                    onChanged: (value){
+                                      setLocalState(() {
+                                        forceCloumn = value.ceil();
+                                      });
+                                    },
+                                    onChangeEnd: (value) {
+                                      context.read<Global>().uiLogger.info("设置固定列数为$value");
+                                    },
+                                  ),
+                                  Text(forceCloumn == 0 ? "0(自动)" : forceCloumn.toString()),
+                                ],
+                              ),
+                              Row(
+                                children: [
+                                  Text("搜索时实时显示结果"),
+                                  Switch(
+                                    value: lookupRealtime, 
+                                    onChanged: (value){
+                                      setLocalState(() {
+                                        lookupRealtime = value;
+                                      });
+                                      context.read<Global>().uiLogger.info("设置实时查找为$value");
+                                    }
+                                  )
+                                ],
+                              ),
+                              ElevatedButton.icon(
+                                style: ElevatedButton.styleFrom(
+                                  shape: RoundedRectangleBorder(borderRadius: StaticsVar.br),
+                                  fixedSize: Size(mediaQuery.size.width * 0.6, 100)
                                 ),
-                                Text(forceColumn == 0 ? "0(自动)" : forceColumn.toString())
-                              ],
-                            );
-                          }
-                        ),
-                      ],
-                    ),
-                    actions: [
-                      ElevatedButton(
-                        onPressed: (){
-                          Navigator.pop(context);
-                          setState(() {}); // 刷新全局状态
-                        }, 
-                        child: Text("确认")
-                      ),
-                      ElevatedButton(
-                        onPressed: (){
-                          Navigator.pop(context);
-                        }, 
-                        child: Text("取消")
-                      )
-                    ],
+                                onPressed: (){
+                                  setState(() {
+                                    context.read<Global>().globalConfig = context.read<Global>().globalConfig.copyWith(
+                                      learning: context.read<Global>().globalConfig.learning.copyWith(
+                                        overviewForceColumn: forceCloumn,
+                                        wordLookupRealtime: lookupRealtime
+                                      )
+                                    );
+                                    context.read<Global>().updateSetting(refresh: false);
+                                  });
+                                  Navigator.pop(context);
+                                }, 
+                                icon: Icon(Icons.done),
+                                label: Text("确认"),
+                              )
+                            ],
+                          );
+                        }
+                      );
+                    },
                   );
                 }
               );
-              
             }, 
-            icon: Icon(Icons.view_column)
+            icon: Icon(Icons.settings)
           )
         ],
       ),
-      body: ListView.builder(
-        physics: allowJsonScorll ? null : NeverScrollableScrollPhysics(),
-        controller: jsonController,
-        itemCount: context.read<Global>().wordData.classes.length + 1,
-        itemBuilder: (context, jsonIndex) {
-          if(jsonIndex == context.read<Global>().wordData.classes.length) {
-            return SizedBox(height: mediaQuery.size.height);
-          }
 
-          final SourceItem jsonSource = context.read<Global>().wordData.classes[jsonIndex];
-          return ExpansionTile(
-            title: Text(jsonSource.sourceJsonFileName.trim()),
-            minTileHeight: 64,
-            onExpansionChanged: (value) {
-              setState(() {
-                allowClassScorll = value;
-                allowJsonScorll = !value; // 展开json后锁定首个ListView，禁止滑动
-              });
-              jsonController.animateTo(
-                (66 * jsonIndex).toDouble(), 
-                duration: Duration(milliseconds: 200), 
-                curve: StaticsVar.curve
-              );
-            },
-            children: [
-              SizedBox(
-                height: mediaQuery.size.height * 0.9,
-                child: ListView.builder(
-                  physics: allowClassScorll ? null : NeverScrollableScrollPhysics(),
-                  controller: classController,
-                  itemCount: jsonSource.subClasses.length + 1,
-                  itemBuilder: (context, classIndex) {
-                    if(classIndex == jsonSource.subClasses.length) {
-                      return SizedBox(height: mediaQuery.size.height); // 避免0.9空间估计不足
-                    }
-                    final ClassItem classItem = jsonSource.subClasses[classIndex];
-                    return ExpansionTile(
-                      title: Text(classItem.className.trim()),
-                      minTileHeight: 62,
-                      onExpansionChanged: (value) {
-                        setState(() {
-                          allowClassScorll = !value;
-                        });
-                        if(value) {
-                          classController.animateTo(
-                            (64 * classIndex).toDouble(), 
-                            duration: Duration(milliseconds: 200), 
-                            curve: StaticsVar.curve
-                          );
-                          jsonController.animateTo(
-                            (66 * (jsonIndex + 1)).toDouble(), 
-                            duration: Duration(milliseconds: 200), 
-                            curve: StaticsVar.curve
-                          );
-                        } else {
-                          jsonController.animateTo(
-                            (66 * jsonIndex).toDouble(), 
-                            duration: Duration(milliseconds: 200), 
-                            curve: StaticsVar.curve
-                          );
-                        }
-                      },
-                      children: [
-                        SizedBox(
-                          height: mediaQuery.size.height * 0.8,
-                          child: GridView.builder(
-                            itemCount: classItem.wordIndexs.length,
-                            gridDelegate: forceColumn == 0 ? SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: mediaQuery.size.width ~/ 300) : SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: forceColumn), 
-                            itemBuilder: (context, index) {
-                              return Container(
-                                margin: EdgeInsets.all(8.0),
-                                child: WordCard(
-                                  word: context.read<Global>().wordData.words[classItem.wordIndexs[index]],
-                                  useMask: false,
-                                  width: mediaQuery.size.width / (forceColumn == 0 ? (mediaQuery.size.width ~/ 300) : forceColumn),
-                                  height: mediaQuery.size.width / (forceColumn == 0 ? (mediaQuery.size.width ~/ 300) : forceColumn),
-                                ),
-                              );
-                            }
-                          ),
-                        ),
-                        SizedBox(height: mediaQuery.size.height * 0.5)
-                      ],
-                    );
+      floatingActionButton: FloatingActionButton(
+        onPressed: () => setState(() => inSearch = !inSearch),
+        child: inSearch ? Icon(Icons.search_off) : Icon(Icons.search)
+      ),
+
+      body: inSearch ? WordLookupLayout(lookfor: searchController.text.removeAracicExtensionPart()) : WordCardOverViewLayout()
+    );
+  }
+}
+
+class WordCardOverViewLayout extends StatefulWidget {
+  const WordCardOverViewLayout({super.key});
+
+  @override
+  State<StatefulWidget> createState() => _WordCardOverViewLayout();
+}
+
+class _WordCardOverViewLayout extends State<WordCardOverViewLayout> {
+  final ScrollController jsonController = ScrollController();
+  final ScrollController classController = ScrollController();
+  bool allowJsonScorll = true;
+  bool allowClassScorll = false;
+
+  @override
+  Widget build(BuildContext context) {
+    MediaQueryData mediaQuery = MediaQuery.of(context);
+
+    return ListView.builder(
+      physics: allowJsonScorll ? null : NeverScrollableScrollPhysics(),
+      controller: jsonController,
+      itemCount: context.read<Global>().wordData.classes.length + 1,
+      itemBuilder: (context, jsonIndex) {
+        if(jsonIndex == context.read<Global>().wordData.classes.length) {
+          return SizedBox(height: mediaQuery.size.height);
+        }
+        final SourceItem jsonSource = context.read<Global>().wordData.classes[jsonIndex];
+        return ExpansionTile(
+          title: Text(jsonSource.sourceJsonFileName.trim()),
+          minTileHeight: 64,
+          onExpansionChanged: (value) {
+            setState(() {
+              allowClassScorll = value;
+              allowJsonScorll = !value; // 展开json后锁定首个ListView，禁止滑动
+            });
+            jsonController.animateTo(
+              (66 * jsonIndex).toDouble(), 
+              duration: Duration(milliseconds: 200), 
+              curve: StaticsVar.curve
+            );
+          },
+          children: [
+            SizedBox(
+              height: mediaQuery.size.height * 0.9,
+              child: ListView.builder(
+                physics: allowClassScorll ? null : NeverScrollableScrollPhysics(),
+                controller: classController,
+                itemCount: jsonSource.subClasses.length + 1,
+                itemBuilder: (context, classIndex) {
+                  if(classIndex == jsonSource.subClasses.length) {
+                    return SizedBox(height: mediaQuery.size.height); // 避免0.9空间估计不足
                   }
-                ),
+                  final ClassItem classItem = jsonSource.subClasses[classIndex];
+                  return ExpansionTile(
+                    title: Text(classItem.className.trim()),
+                    minTileHeight: 62,
+                    onExpansionChanged: (value) {
+                      setState(() {
+                        allowClassScorll = !value;
+                      });
+                      if(value) {
+                        classController.animateTo(
+                          (64 * classIndex).toDouble(), 
+                          duration: Duration(milliseconds: 200), 
+                          curve: StaticsVar.curve
+                        );
+                        jsonController.animateTo(
+                          (66 * (jsonIndex + 1)).toDouble(), 
+                          duration: Duration(milliseconds: 200), 
+                          curve: StaticsVar.curve
+                        );
+                      } else {
+                        jsonController.animateTo(
+                          (66 * jsonIndex).toDouble(), 
+                          duration: Duration(milliseconds: 200), 
+                          curve: StaticsVar.curve
+                        );
+                      }
+                    },
+                    children: [
+                      SizedBox(
+                        height: mediaQuery.size.height * 0.8,
+                        child: GridView.builder(
+                          itemCount: classItem.wordIndexs.length,
+                          gridDelegate: context.read<Global>().globalConfig.learning.overviewForceColumn == 0 ? SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: mediaQuery.size.width ~/ 300) : SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: context.read<Global>().globalConfig.learning.overviewForceColumn), 
+                          itemBuilder: (context, index) {
+                            return Container(
+                              margin: EdgeInsets.all(8.0),
+                              child: WordCard(
+                                word: context.read<Global>().wordData.words[classItem.wordIndexs[index]],
+                                useMask: false,
+                                width: mediaQuery.size.width / (context.read<Global>().globalConfig.learning.overviewForceColumn == 0 ? (mediaQuery.size.width ~/ 300) : context.read<Global>().globalConfig.learning.overviewForceColumn),
+                                height: mediaQuery.size.width / (context.read<Global>().globalConfig.learning.overviewForceColumn == 0 ? (mediaQuery.size.width ~/ 300) : context.read<Global>().globalConfig.learning.overviewForceColumn),
+                              ),
+                            );
+                          }
+                        ),
+                      ),
+                      SizedBox(height: mediaQuery.size.height * 0.5)
+                    ],
+                  );
+                }
               ),
-            ],
+            ),
+          ],
+        );
+      }
+    );
+  }
+}
+
+class WordLookupLayout extends StatelessWidget {
+  final String lookfor;
+  const WordLookupLayout({super.key, required this.lookfor});
+
+  @override
+  Widget build(BuildContext context) {
+    if(lookfor.isEmpty) return SizedBox();
+    MediaQueryData mediaQuery = MediaQuery.of(context);
+    List<WordItem> match = [];
+    if(lookfor.isArabic()) {
+      match.addAll(BKSearch.search(
+        WordItem(arabic: lookfor, chinese: lookfor, explanation: "", id: 0, className: ""), 
+        threshold: 4~/(lookfor.length * 0.5 + 1) // 输入越多 容差越小
+      )); // 从BK树找
+
+      for(WordItem word in context.read<Global>().wordData.words) {
+        if(match.contains(word)) continue;
+        if(word.arabic.removeAracicExtensionPart().contains(lookfor.removeAracicExtensionPart())) {
+          match.add(word);
+          continue;
+        }
+        if(lookfor.length >=3 && getLevenshtein(lookfor.removeAracicExtensionPart(), word.arabic.removeAracicExtensionPart()) < 6~/(lookfor.length * 0.5 + 1)) {
+          match.add(word);
+          continue;
+        }
+      }
+      match.sort((WordItem a, WordItem b) => 
+        getLevenshtein(lookfor.removeAracicExtensionPart(), a.arabic.removeAracicExtensionPart()) - getLevenshtein(lookfor.removeAracicExtensionPart(), b.arabic.removeAracicExtensionPart())
+      );
+    } else {
+      for(WordItem word in context.read<Global>().wordData.words) {
+        if(match.contains(word)) continue;
+        if(word.chinese.contains(lookfor)) {
+          match.add(word);
+          continue;
+        }
+        if(lookfor.length >=3 && getLevenshtein(lookfor, word.chinese) < 4) {
+          if(!lookfor.split("").any((String char) => word.chinese.contains(char))) continue;
+          match.add(word);
+          continue;
+        }
+      }
+      match.sort((WordItem a, WordItem b) => 
+        a.chinese.contains(lookfor) ? -1 : a.chinese.contains(lookfor) ? 1 : getLevenshtein(lookfor, a.chinese) - getLevenshtein(lookfor, b.chinese)
+      );
+    }
+    
+    context.read<Global>().uiLogger.finer("单词检索结果: $match");
+    if(!context.read<Global>().globalConfig.learning.wordLookupRealtime){
+      Future.delayed(Durations.medium1, () {
+        if(context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text("检索到${match.length}个结果"), duration: Duration(seconds: 1),),
           );
         }
-      )
+      }); 
+    }
+
+    return GridView.builder(
+      itemCount: match.length,
+      gridDelegate: context.read<Global>().globalConfig.learning.overviewForceColumn == 0 ? SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: mediaQuery.size.width ~/ 300) : SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: context.read<Global>().globalConfig.learning.overviewForceColumn), 
+      itemBuilder: (context, index) {
+        return Container(
+          margin: EdgeInsets.all(8.0),
+          child: WordCard(
+            word: match[index],
+            useMask: false,
+            width: mediaQuery.size.width / (context.read<Global>().globalConfig.learning.overviewForceColumn == 0 ? (mediaQuery.size.width ~/ 300) : context.read<Global>().globalConfig.learning.overviewForceColumn),
+            height: mediaQuery.size.width / (context.read<Global>().globalConfig.learning.overviewForceColumn == 0 ? (mediaQuery.size.width ~/ 300) : context.read<Global>().globalConfig.learning.overviewForceColumn),
+          ),
+        );
+      }
     );
   }
 }
