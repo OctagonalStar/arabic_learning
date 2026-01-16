@@ -1,11 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart' show rootBundle;
-import 'package:provider/provider.dart';
 import 'package:flutter_markdown_plus/flutter_markdown_plus.dart';
 
 class HelpPage extends StatelessWidget{
-  HelpPage({super.key});
-  List<String> helpMarkdown = [];
+  const HelpPage({super.key});
 
   @override
   Widget build(BuildContext context) {

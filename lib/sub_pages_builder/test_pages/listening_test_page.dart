@@ -54,11 +54,8 @@ class _ForeListeningSettingPage extends State<ForeListeningSettingPage> {
                     icon: Icon(Icons.volume_up, size: 100)
                   ),
                   TextContainer(text: "点击以上按钮，等待约10秒。期间如果你能听到u和开口短音符音(wa)，则说明你当前音源支持发音符号。若不行请查阅“常见问题”"),
-                    ],
-                  )
-                  
                 ],
-              ),
+              )
             ),
             ElevatedButton(
               style: ElevatedButton.styleFrom(
