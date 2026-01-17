@@ -11,9 +11,8 @@ import 'package:arabic_learning/funcs/ui.dart';
 
 
 
-// 学习主入口页面
+/// 学习主入口页面
 class InLearningPage extends StatefulWidget {
-  final int studyType;
   /*
   题型说明 
     0: 单词卡片
@@ -22,14 +21,14 @@ class InLearningPage extends StatefulWidget {
     3: 中译阿 拼写题
   */
   final List<WordItem> words;
-  const InLearningPage({super.key, required this.studyType, required this.words});
+  const InLearningPage({super.key, required this.words});
   @override
   State<InLearningPage> createState() => _InLearningPageState();
 }
 
 class _InLearningPageState extends State<InLearningPage> {
   Random rnd = Random();
-  List<List<dynamic>> testList = []; // [[word(Map), testType(int), [extraValues]]]
+  List<TestItem> testList = []; // [[word(Map), testType(int), [extraValues]]]
   bool clicked = false;
   int correctCount = 0;
   late final int startTime;
@@ -39,39 +38,26 @@ class _InLearningPageState extends State<InLearningPage> {
   @override
   void initState() {
     // 加载测试词
-    final SubQuizConfig questionsSetting = widget.studyType == 0 ? context.read<Global>().globalConfig.quiz.zhar 
-                                        : widget.studyType == 1 ? context.read<Global>().globalConfig.quiz.zh 
-                                        : context.read<Global>().globalConfig.quiz.ar;
-    List<List<List<dynamic>>> questionsInSections = List.generate(questionsSetting.questionSections.length, (_) => []);
+    final SubQuizConfig questionsSetting = context.read<Global>().globalConfig.quiz.zhar;
+    List<List<TestItem>> questionsInSections = List.generate(questionsSetting.questionSections.length, (_) => []);
 
     for(int sectionIndex = 0; sectionIndex < questionsSetting.questionSections.length; sectionIndex++) {
       for(WordItem wordItem in widget.words) {
-        late List<dynamic> extra;
-        final int testType = questionsSetting.questionSections[sectionIndex];
-        if(testType == 0) {
-          // 单词卡片 没有额外数据
-          extra = [];
-        } else if(testType == 1 || testType == 2) {
-          // 中译阿/阿译中 选择题
-          List<WordItem> optionWords = getRandomWords(4, context.read<Global>().wordData, include: wordItem, preferClass: !questionsSetting.preferSimilar, rnd: rnd);
-          List<String> strList = List.generate(4, (int index) => (testType == 1 ? optionWords[index].arabic : optionWords[index].chinese), growable: false);
-          extra = [optionWords.indexWhere((WordItem item) => item == wordItem), strList];
-        } else if(testType == 3) {
-          // 拼写题
-          extra = [];
-        } else if(testType == 4) {
-          // 听力题
-          List<WordItem> optionWords = getRandomWords(4, context.read<Global>().wordData, include: wordItem, preferClass: !questionsSetting.preferSimilar, rnd: rnd);
-          List<String> strList = List.generate(4, (int index) => (rnd.nextBool() ? optionWords[index].chinese : optionWords[index].arabic), growable: false);
-          extra = [optionWords.indexWhere((WordItem item) => item == wordItem), strList];
-        }
-        questionsInSections[sectionIndex].add([wordItem, testType, extra]);
+        questionsInSections[sectionIndex].add(
+          TestItem.buildTestItem(
+            wordItem, 
+            questionsSetting.questionSections[sectionIndex], 
+            context.read<Global>().wordData, 
+            questionsSetting.preferSimilar, 
+            rnd
+          )
+        );
       }
     }
 
     // shuffle part
     if(questionsSetting.shuffleExternaly) questionsInSections.shuffle();
-    for(List<List<dynamic>> testItems in questionsInSections) {
+    for(List<TestItem> testItems in questionsInSections) {
       if(questionsSetting.shuffleInternaly) testItems.shuffle();
       testList.addAll(testItems);
     }
@@ -176,12 +162,11 @@ class _InLearningPageState extends State<InLearningPage> {
                 ];
                 return ConcludePage(data: data);
               }
-              List<dynamic> testItem = testList[index];
-              // testItem 0:MainWord; 1:TestType; 2: (extra)[0:CorrectIndex; 1:strList]
-              if(testItem[1] == 0) {
+              final TestItem testItem = testList[index];
+              if(testItem.testType == 0) {
                 // wordCard
                 return WordCardQuestion(
-                  word: testItem[0],
+                  word: testItem.testWord,
                   hint: "尝试自行回忆以下单词",
                   bottomWidget: ElevatedButton.icon(
                     style: ElevatedButton.styleFrom(
@@ -199,16 +184,16 @@ class _InLearningPageState extends State<InLearningPage> {
                     label: Text("下一题"),
                   ),
                 );
-              } else if(testItem[1] == 1 || testItem[1] == 2) {
+              } else if(testItem.testType == 1 || testItem.testType == 2) {
                 // ar-zh choose questions
                 return ChoiceQuestions(
-                  mainWord: testItem[1] == 1 ? (testItem[0] as WordItem).chinese :  (testItem[0] as WordItem).arabic, 
-                  choices: testItem[2][1], 
-                  allowAudio: testItem[1] == 2, 
+                  mainWord: testItem.testType == 1 ? testItem.testWord.chinese :  testItem.testWord.arabic, 
+                  choices: testItem.options!, 
+                  allowAudio: testItem.testType == 2, 
                   onSelected: (value) {
-                    bool ans = value == testItem[2][0];
+                    bool ans = value == testItem.correctIndex;
                     if(!ans) {
-                      Future.delayed(Duration(seconds: 1), (){if(context.mounted) viewAnswer(context, testItem[0]);});
+                      Future.delayed(Duration(seconds: 1), (){if(context.mounted) viewAnswer(context, testItem.testWord);});
                     } else {
                       correctCount++;
                     }
@@ -218,7 +203,7 @@ class _InLearningPageState extends State<InLearningPage> {
                     return ans;
                   },
                   allowMutipleSelect: true,
-                  hint: testItem[1] == 1 ? "通过中文选择阿拉伯语" : "通过阿拉伯语选择中文",
+                  hint: testItem.testType == 1 ? "通过中文选择阿拉伯语" : "通过阿拉伯语选择中文",
                   bottomWidget: BottomTip(
                     isShowNext: clicked, 
                     isLast: controller.page?.ceil() == testList.length - 1, 
@@ -229,24 +214,24 @@ class _InLearningPageState extends State<InLearningPage> {
                       });
                     }, 
                     onTipClicked: (){
-                      viewAnswer(context, testItem[0]);
+                      viewAnswer(context, testItem.testWord);
                     }
                   )
                 );
-              } else if(testItem[1] == 3) {
+              } else if(testItem.testType == 3) {
                 // spell question
                 return SpellQuestion(
-                  word: testItem[0],
+                  word: testItem.testWord,
                   hint: "拼写以下单词",
                   onCheck: (text) {
                     setState(() {
                       clicked = true;
                     });
-                    if(text == testItem[0].arabic) {
+                    if(text == testItem.testWord.arabic) {
                       correctCount++;
                       return true;
                     } else {
-                      viewAnswer(context, testItem[0]);
+                      viewAnswer(context, testItem.testWord);
                       return false;
                     }
                   },
@@ -260,26 +245,26 @@ class _InLearningPageState extends State<InLearningPage> {
                       });
                     }, 
                     onTipClicked: (){
-                      viewAnswer(context, testItem[0]);
+                      viewAnswer(context, testItem.testWord);
                     }
                   )
                 );
-              } else if(testItem[1] == 4){
+              } else if(testItem.testType == 4){
                 // 听力题
                 return ListeningQuestion(
-                  mainWord: testItem[0].arabic, 
-                  choices: testItem[2][1], 
+                  mainWord: testItem.testWord.arabic, 
+                  choices: testItem.options!, 
                   onSelected: (value) {
                     if(value == -1) {
                       setState(() {
-                        testList.removeWhere((List wtestItem) => (wtestItem[1] == 4 && index < testList.indexOf(wtestItem)));
+                        testList.removeWhere((TestItem wtestItem) => (wtestItem.testType == 4 && index < testList.indexOf(wtestItem)));
                         clicked = true;
                       });
                       return false;
                     }
-                    bool ans = value == testItem[2][0];
+                    bool ans = value == testItem.correctIndex;
                     if(!ans) {
-                      Future.delayed(Duration(seconds: 1), (){if(context.mounted) viewAnswer(context, testItem[0]);});
+                      Future.delayed(Duration(seconds: 1), (){if(context.mounted) viewAnswer(context, testItem.testWord);});
                     } else {
                       correctCount++;
                     }
@@ -300,7 +285,7 @@ class _InLearningPageState extends State<InLearningPage> {
                       });
                     }, 
                     onTipClicked: (){
-                      viewAnswer(context, testItem[0]);
+                      viewAnswer(context, testItem.testWord);
                     }
                   )
                 );
@@ -565,6 +550,47 @@ class _ConcludePageState extends State<ConcludePage> {
         ],
       ),
     );
+  }
+}
+
+@immutable
+class TestItem {
+  /// 测试单词
+  final WordItem testWord;
+
+  /// 测试类型
+  /// 0: 单词卡片
+  /// 1: 中译阿 选择题
+  /// 2: 阿译中 选择题
+  /// 3: 拼写题
+  /// 4: 听力题
+  final int testType;
+
+  /// 选择题和听力题的选项
+  final List<String>? options;
+
+  /// 选择题和听力题的正确血选项索引号
+  final int? correctIndex;
+
+  const TestItem({
+    required this.testWord,
+    required this.testType,
+    this.options,
+    this.correctIndex
+  });
+
+  static TestItem buildTestItem(WordItem word, int testType, DictData wordData,bool preferSimilar,Random rnd){
+    if(testType == 0 || testType == 3){
+      return TestItem(testWord: word, testType: testType);
+    } else {
+      final List<WordItem> optionWords = getRandomWords(4, wordData, include: word, preferClass: !preferSimilar, rnd: rnd);
+      return TestItem(
+        testWord: word, 
+        testType: testType,
+        options: List.generate(4, (int index) => ((testType == 2 || (testType == 4 && rnd.nextBool())) ? optionWords[index].chinese : optionWords[index].arabic), growable: false),
+        correctIndex: optionWords.indexOf(word)
+      );
+    }
   }
 }
 
