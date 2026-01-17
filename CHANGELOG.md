@@ -8,6 +8,7 @@
 - 添加了易混词偏好配置
 - 添加了词汇查找功能 [#49](https://github.com/OctagonalStar/arabic_learning/issues/49)
 - 添加了常见问题页面
+- 给部分文本框添加了动画
 
 ### Improvement
 

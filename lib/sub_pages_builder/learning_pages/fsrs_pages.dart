@@ -262,6 +262,8 @@ class _FSRSReviewCardPage extends State<FSRSReviewCardPage> {
   List<String>? options;
   bool choosed = false;
   final DateTime start = DateTime.now();
+  late final DateTime end;
+
   @override
   Widget build(BuildContext context) {
     context.read<Global>().uiLogger.info("构建 FSRSReviewCardPage");
@@ -282,7 +284,7 @@ class _FSRSReviewCardPage extends State<FSRSReviewCardPage> {
         allowAudio: true, 
         allowAnitmation: true,
         allowMutipleSelect: false,
-        hint: "单词ID: ${widget.wordID}",
+        hint: "单词ID: ${widget.wordID}${choosed ? " 用时: ${end.difference(start).inMilliseconds}毫秒" : ""}",
         onDisAllowMutipleSelect: (value) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(content: Text("人要向前看 题要向下翻 :)"), duration: Duration(seconds: 1),),
@@ -291,13 +293,14 @@ class _FSRSReviewCardPage extends State<FSRSReviewCardPage> {
         onSelected: (value) {
           setState(() {
             choosed = true;
+            end =  DateTime.now();
           });
           if(correct == value) {
-            widget.fsrs.reviewCard(widget.wordID, DateTime.now().difference(start).inMilliseconds, true);
+            widget.fsrs.reviewCard(widget.wordID, end.difference(start).inMilliseconds, true);
             context.read<Global>().updateLearningStreak();
             return true;
           } else {
-            widget.fsrs.reviewCard(widget.wordID, DateTime.now().difference(start).inMilliseconds, false);
+            widget.fsrs.reviewCard(widget.wordID, end.difference(start).inMilliseconds, false);
             return false;
           }
         },
