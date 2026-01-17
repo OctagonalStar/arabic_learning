@@ -8,14 +8,18 @@
 - 添加了易混词偏好配置
 - 添加了词汇查找功能 [#49](https://github.com/OctagonalStar/arabic_learning/issues/49)
 - 添加了常见问题页面
+- 给部分文本框添加了动画
 
 ### Improvement
 
 - 优化了选择题单词挑选逻辑 [#48](https://github.com/OctagonalStar/arabic_learning/issues/48)
+- 修复了BKTree日志刷屏问题
+- 移除了提醒配置的中间页面
 
 ### Fix
 
 - 将设置选项重新放回首页
+- 修复了拼写题错误问题
 
 ## v0.1.12 - 2025-12-27 - (000112)
 

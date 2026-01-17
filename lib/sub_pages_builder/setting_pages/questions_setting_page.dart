@@ -1,66 +1,11 @@
 import 'package:arabic_learning/funcs/ui.dart';
 import 'package:arabic_learning/vars/config_structure.dart';
 import 'package:arabic_learning/vars/global.dart';
-import 'package:arabic_learning/vars/statics_var.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-class QuestionsSettingLeadingPage extends StatelessWidget{
-  const QuestionsSettingLeadingPage({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    context.read<Global>().uiLogger.info("构建: QuestionsSettingLeadingPage");
-    return Scaffold(
-      appBar: AppBar(title: Text("题型设置")),
-      body: ListView(
-        children: [
-          TextContainer(text: "你可以通过此设置较自由配置每次测试/学习应当测试的题目"),
-          EnterSpecificQuestionSettingButton(name: "综合学习", sectionKey: 0)
-        ],
-      ),
-    );
-  }
-}
-
-class EnterSpecificQuestionSettingButton extends StatelessWidget {
-  final String name;
-  final int sectionKey;
-  final List<int> allowTypes;
-  const EnterSpecificQuestionSettingButton({super.key, required this.name, required this.sectionKey, this.allowTypes = const [0, 1 ,2]});
-
-  @override
-  Widget build(BuildContext context) {
-    late final bool isAllowModify;
-    if(sectionKey == 0) {
-      isAllowModify = context.read<Global>().globalConfig.quiz.zhar.modifyAllowed;
-    } else {
-      throw Exception("未指定的类型");
-    }
-    return ElevatedButton(
-      style: ElevatedButton.styleFrom(
-        fixedSize: Size.fromHeight(MediaQuery.of(context).size.height * 0.08),
-        shape: RoundedRectangleBorder(borderRadius: StaticsVar.br)
-      ),
-      onPressed: (){
-        context.read<Global>().uiLogger.info("跳转: QuestionsSettingLeadingPage => QuestionsSettingPage");
-        Navigator.of(context).push(MaterialPageRoute(builder: (context) => QuestionsSettingPage(sectionKey: sectionKey, allowTypes: allowTypes, isAllowModify: isAllowModify)));
-      }, 
-      child: Row(
-        children: [
-          Expanded(child: Text(name)),
-          Icon(Icons.arrow_forward_ios),
-        ],
-      )
-    );
-  }
-}
-
 class QuestionsSettingPage extends StatefulWidget {
-  final int sectionKey;
-  final List<int> allowTypes;
-  final bool isAllowModify;
-  const QuestionsSettingPage({super.key, required this.sectionKey, required this.allowTypes, required this.isAllowModify});
+  const QuestionsSettingPage({super.key});
 
   @override
   State<StatefulWidget> createState() => _QuestionsSettingPage();
@@ -76,12 +21,7 @@ class _QuestionsSettingPage extends State<QuestionsSettingPage> {
   Widget build(BuildContext context) {
     context.read<Global>().uiLogger.info("构建 QuestionsSettingPage:$selectedTypes");
     late final SubQuizConfig section;
-    if(widget.sectionKey == 0) {
-      section = context.read<Global>().globalConfig.quiz.zhar;
-    } else {
-      context.read<Global>().uiLogger.severe("出现未指定的题型配置");
-      throw Exception("未指定的类型");
-    }
+    section = context.read<Global>().globalConfig.quiz.zhar;
     MediaQueryData mediaQuery = MediaQuery.of(context);
     selectedTypes ??= section.questionSections;
     List<Widget> listTiles = [];
@@ -128,10 +68,10 @@ class _QuestionsSettingPage extends State<QuestionsSettingPage> {
         context.read<Global>().updateSetting(refresh: false);
       },
       child: Scaffold(
-        appBar: AppBar(title: Text("题型配置: ${widget.sectionKey}")),
+        appBar: AppBar(title: Text("题型配置")),
         body: Column(
           children: [
-            if(!context.read<Global>().isWideScreen) TextContainer(text: "长按可拖动排序", style: TextStyle(color: Colors.grey)),
+            if(!context.read<Global>().isWideScreen) TextContainer(text: "长按可拖动排序", style: TextStyle(color: Colors.grey), animated: true),
             Expanded(
               child: ReorderableListView(
                 onReorder: (oldIndex, newIndex) {
@@ -152,33 +92,33 @@ class _QuestionsSettingPage extends State<QuestionsSettingPage> {
                   onChanged: (value) {
                     context.read<Global>().uiLogger.info("题型内题目乱序: $value");
                     setState(() {
-                      if(widget.sectionKey == 0){
-                        context.read<Global>().globalConfig = context.read<Global>().globalConfig.copyWith(
-                          quiz: context.read<Global>().globalConfig.quiz.copyWith(
-                            zhar: context.read<Global>().globalConfig.quiz.zhar.copyWith(
-                              shuffleInternaly: value
-                            )
+                      context.read<Global>().globalConfig = context.read<Global>().globalConfig.copyWith(
+                        quiz: context.read<Global>().globalConfig.quiz.copyWith(
+                          zhar: context.read<Global>().globalConfig.quiz.zhar.copyWith(
+                            shuffleInternaly: value
                           )
-                        );
-                      }
+                        )
+                      );
                     });
                   }
                 ),
                 Expanded(child: Text("题型内题目乱序")),
+              ],
+            ),
+            Row(
+              children: [
                 Switch(
                   value: section.shuffleExternaly, 
                   onChanged: (value) {
                     context.read<Global>().uiLogger.info("题型乱序: $value");
                     setState(() {
-                      if(widget.sectionKey == 0){
-                        context.read<Global>().globalConfig = context.read<Global>().globalConfig.copyWith(
-                          quiz: context.read<Global>().globalConfig.quiz.copyWith(
-                            zhar: context.read<Global>().globalConfig.quiz.zhar.copyWith(
-                              shuffleExternaly: value
-                            )
+                      context.read<Global>().globalConfig = context.read<Global>().globalConfig.copyWith(
+                        quiz: context.read<Global>().globalConfig.quiz.copyWith(
+                          zhar: context.read<Global>().globalConfig.quiz.zhar.copyWith(
+                            shuffleExternaly: value
                           )
-                        );
-                      }
+                        )
+                      );
                     });
                   }
                 ),
@@ -192,33 +132,33 @@ class _QuestionsSettingPage extends State<QuestionsSettingPage> {
                   onChanged: (value) {
                     context.read<Global>().uiLogger.info("全局乱序: $value");
                     setState(() {
-                      if(widget.sectionKey == 0){
-                        context.read<Global>().globalConfig = context.read<Global>().globalConfig.copyWith(
-                          quiz: context.read<Global>().globalConfig.quiz.copyWith(
-                            zhar: context.read<Global>().globalConfig.quiz.zhar.copyWith(
-                              shuffleGlobally: value
-                            )
+                      context.read<Global>().globalConfig = context.read<Global>().globalConfig.copyWith(
+                        quiz: context.read<Global>().globalConfig.quiz.copyWith(
+                          zhar: context.read<Global>().globalConfig.quiz.zhar.copyWith(
+                            shuffleGlobally: value
                           )
-                        );
-                      }
+                        )
+                      );
                     });
                   }
                 ),
                 Expanded(child: Text("全局乱序")),
+              ],
+            ),
+            Row(
+              children: [
                 Switch(
                   value: section.preferSimilar, 
                   onChanged: (value) {
                     context.read<Global>().uiLogger.info("偏好相似: $value");
                     setState(() {
-                      if(widget.sectionKey == 0){
-                        context.read<Global>().globalConfig = context.read<Global>().globalConfig.copyWith(
-                          quiz: context.read<Global>().globalConfig.quiz.copyWith(
-                            zhar: context.read<Global>().globalConfig.quiz.zhar.copyWith(
-                              preferSimilar: value
-                            )
+                      context.read<Global>().globalConfig = context.read<Global>().globalConfig.copyWith(
+                        quiz: context.read<Global>().globalConfig.quiz.copyWith(
+                          zhar: context.read<Global>().globalConfig.quiz.zhar.copyWith(
+                            preferSimilar: value
                           )
-                        );
-                      }
+                        )
+                      );
                     });
                   }
                 ),

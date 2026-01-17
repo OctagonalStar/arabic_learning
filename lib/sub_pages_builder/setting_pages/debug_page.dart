@@ -31,7 +31,7 @@ class _DebugPage extends State<DebugPage> {
       body: ListView(
         controller: controller,
         children: [
-          TextContainer(text: "该页面为软件调试/测试和bug反馈使用，非必要请勿开启日志捕获，以免性能损耗", style: TextStyle(color: Colors.redAccent)),
+          TextContainer(text: "该页面为软件调试/测试和bug反馈使用，非必要请勿开启日志捕获，以免性能损耗", style: TextStyle(color: Colors.redAccent), animated: true),
           Container(
             decoration: BoxDecoration(
               borderRadius: StaticsVar.br,

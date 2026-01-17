@@ -254,10 +254,12 @@ class TextContainer extends StatelessWidget {
   final bool selectable;
   final Size? size;
   final TextAlign? textAlign;
+  final bool animated;
   const TextContainer({super.key, 
                       required this.text, 
                       this.style,
                       this.size,
+                      this.animated = false,
                       this.selectable = false,
                       this.textAlign = TextAlign.start});
 
@@ -272,17 +274,35 @@ class TextContainer extends StatelessWidget {
       actualStyle = style!;
     }
     return Container(
-        width: size?.width,
-        height: size?.height,
-        margin: EdgeInsets.all(16.0),
-        padding: EdgeInsets.all(8.0),
-        decoration: BoxDecoration(
-          color: Theme.of(context).colorScheme.onPrimary.withAlpha(150),
-          borderRadius: StaticsVar.br,
-        ),
-        child: (selectable) 
-                ? SelectableText(text,style: actualStyle, textAlign: textAlign,) 
-                : Text(text,style: actualStyle, textAlign: textAlign),
+      width: size?.width,
+      height: size?.height,
+      margin: EdgeInsets.all(16.0),
+      padding: EdgeInsets.all(8.0),
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.onPrimary.withAlpha(150),
+        borderRadius: StaticsVar.br,
+      ),
+      child: (animated)
+        ? TweenAnimationBuilder<double>(
+          tween: Tween(begin: 0.0, end: text.length.toDouble()), 
+          duration: Duration(milliseconds: 700),
+          curve: StaticsVar.curve,
+          builder: (context, value, child) {
+            if(value == text.length.toDouble()) return child!;
+            return Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(text.substring(0, value.floor()), style: actualStyle, textAlign: textAlign, maxLines: 1),
+                Text(text[value.floor()], style: actualStyle.copyWith(color: actualStyle.color?.withAlpha((255 * value.remainder(1)).round()) ?? Theme.of(context).textTheme.bodyLarge!.color!.withAlpha((255 * value.remainder(1)).round())), maxLines: 1)
+              ],
+            );
+          },
+          child: (selectable) 
+            ? SelectableText(text,style: actualStyle, textAlign: textAlign, maxLines: 1)
+            : Text(text,style: actualStyle, textAlign: textAlign, maxLines: 1)
+        ) : (selectable) 
+            ? SelectableText(text,style: actualStyle, textAlign: textAlign)
+            : Text(text,style: actualStyle, textAlign: textAlign)
     );
   }
 }
@@ -741,7 +761,7 @@ class _ChoiceQuestions extends State<ChoiceQuestions> {
       child: Center(
         child: Column(
           children: [
-            if(widget.hint!=null) TextContainer(text: widget.hint!),
+            if(widget.hint!=null) TextContainer(text: widget.hint!, animated: true),
             Expanded(
               child: StatefulBuilder(
                 builder: (context, setLocalState) {
@@ -823,7 +843,7 @@ class WordCardQuestion extends StatelessWidget {
     return Material(
       child: Column(
         children: [
-          if(hint != null) TextContainer(text: hint!),
+          if(hint != null) TextContainer(text: hint!, animated: true),
           SizedBox(height: mediaQuery.size.height * 0.01),
           WordCard(word: word),
           Expanded(child: SizedBox()),
@@ -837,7 +857,7 @@ class WordCardQuestion extends StatelessWidget {
 
 /// 拼写题目页面
 class SpellQuestion extends StatefulWidget {
-  final Map<String, dynamic> word;
+  final WordItem word;
   final bool Function(String text) onCheck;
   final String? hint;
   final Widget? bottomWidget;
@@ -864,14 +884,14 @@ class _SpellQuestion extends State<SpellQuestion> {
 
   @override
   Widget build(BuildContext context) {
-    context.read<Global>().uiLogger.info("构建拼写题页面，主单词: ${widget.word["arabic"]}");
+    context.read<Global>().uiLogger.info("构建拼写题页面，主单词: ${widget.word.arabic}");
     MediaQueryData mediaQuery = MediaQuery.of(context);
     return Material(
       child: Column(
         children: [
-          if(widget.hint != null) TextContainer(text: widget.hint!),
+          if(widget.hint != null) TextContainer(text: widget.hint!, animated: true),
           TextContainer(
-            text: widget.word["chinese"],
+            text: widget.word.chinese,
             size: Size(mediaQuery.size.width * 0.8, mediaQuery.size.height * 0.2),
             style: Theme.of(context).textTheme.displayLarge,
             textAlign: TextAlign.center,

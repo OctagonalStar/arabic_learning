@@ -15,7 +15,7 @@ import 'package:arabic_learning/sub_pages_builder/setting_pages/debug_page.dart'
 import 'package:arabic_learning/sub_pages_builder/setting_pages/about_page.dart' show AboutPage;
 import 'package:arabic_learning/sub_pages_builder/setting_pages/data_download_page.dart' show DownloadPage;
 import 'package:arabic_learning/sub_pages_builder/setting_pages/model_download_page.dart' show ModelDownload;
-import 'package:arabic_learning/sub_pages_builder/setting_pages/questions_setting_page.dart' show QuestionsSettingLeadingPage;
+import 'package:arabic_learning/sub_pages_builder/setting_pages/questions_setting_page.dart' show QuestionsSettingPage;
 import 'package:arabic_learning/sub_pages_builder/setting_pages/sync_page.dart' show DataSyncPage;
 import 'package:arabic_learning/package_replacement/fake_dart_io.dart' if (dart.library.io) 'dart:io' as io;
 
@@ -264,8 +264,8 @@ class _SettingPage extends State<SettingPage> {
           shape: BeveledRectangleBorder()
         ),
         onPressed: (){
-          context.read<Global>().uiLogger.info("跳转: SettingPage => QuestionsSettingLeadingPage");
-          Navigator.of(context).push(MaterialPageRoute(builder: (context) => QuestionsSettingLeadingPage()));
+          context.read<Global>().uiLogger.info("跳转: SettingPage => QuestionsSettingPage");
+          Navigator.of(context).push(MaterialPageRoute(builder: (context) => QuestionsSettingPage()));
         }, 
         child: Row(
           children: [
