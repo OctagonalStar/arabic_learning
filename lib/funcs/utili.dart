@@ -596,7 +596,7 @@ class BKSearch {
   static final VocabularyOptimizer _optimizer = VocabularyOptimizer();
   static bool _isInitialized = false;
 
-  static final Logger logger = Logger("BKTree");
+  static final Logger logger = Logger("BKT");
 
   /// [必须调用] 初始化搜索引擎
   /// 通常在 App 启动或加载词库时调用
