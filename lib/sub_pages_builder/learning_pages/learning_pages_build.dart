@@ -93,7 +93,7 @@ class _InLearningPageState extends State<InLearningPage> {
       child: Scaffold(
         appBar: AppBar(
           automaticallyImplyLeading: false,
-          title: (((controller.hasClients ? controller.page : 0) ?? 0)+1) >= testList.length ? Center(child: Text("学习完成"))
+          title: (((controller.hasClients ? controller.page?.ceil() : 0) ?? 0)+1) >= testList.length ? Center(child: Text("学习完成"))
           : Row(
             children: [
               ElevatedButton(
@@ -135,7 +135,7 @@ class _InLearningPageState extends State<InLearningPage> {
                 child: TweenAnimationBuilder<double>(
                   tween: Tween<double>(
                     begin: 0.00,
-                    end: ((controller.hasClients ? controller.page : 0) ?? 0) / (testList.length - 1),
+                    end: ((controller.hasClients ? controller.page?.ceil() : 0) ?? 0) / (testList.length - 1),
                   ),
                   duration: const Duration(milliseconds: 500),
                   curve: StaticsVar.curve,
@@ -154,7 +154,7 @@ class _InLearningPageState extends State<InLearningPage> {
                 width: mediaQuery.size.width * 0.05,
                 child: FittedBox(
                   fit: BoxFit.scaleDown,
-                  child: Text("${testList.length - ((controller.hasClients ? controller.page?.round() : 0) ?? 0) - 1}"),
+                  child: Text("${testList.length - ((controller.hasClients ? controller.page?.ceil() : 0) ?? 0) - 1}"),
                 ),
               )
             ],
@@ -189,9 +189,9 @@ class _InLearningPageState extends State<InLearningPage> {
                       shape: RoundedRectangleBorder(borderRadius: StaticsVar.br)
                     ),
                     onPressed: (){
+                      controller.nextPage(duration: Duration(milliseconds: 500), curve: StaticsVar.curve);
                       setState(() {
                         correctCount++;
-                        controller.nextPage(duration: Duration(milliseconds: 500), curve: StaticsVar.curve);
                       });
                       
                     },
@@ -221,11 +221,11 @@ class _InLearningPageState extends State<InLearningPage> {
                   hint: testItem[1] == 1 ? "通过中文选择阿拉伯语" : "通过阿拉伯语选择中文",
                   bottomWidget: BottomTip(
                     isShowNext: clicked, 
-                    isLast: controller.page?.round() == testList.length - 1, 
+                    isLast: controller.page?.ceil() == testList.length - 1, 
                     onNextClicked: (){
+                      controller.nextPage(duration: Duration(milliseconds: 500), curve: StaticsVar.curve);
                       setState(() {
                         clicked = false;
-                        controller.nextPage(duration: Duration(milliseconds: 500), curve: StaticsVar.curve);
                       });
                     }, 
                     onTipClicked: (){
@@ -252,11 +252,11 @@ class _InLearningPageState extends State<InLearningPage> {
                   },
                   bottomWidget: BottomTip(
                     isShowNext: clicked, 
-                    isLast: controller.page?.round() == testList.length - 1, 
+                    isLast: controller.page?.ceil() == testList.length - 1, 
                     onNextClicked: (){
+                      controller.nextPage(duration: Duration(milliseconds: 500), curve: StaticsVar.curve);
                       setState(() {
                         clicked = false;
-                        controller.nextPage(duration: Duration(milliseconds: 500), curve: StaticsVar.curve);
                       });
                     }, 
                     onTipClicked: (){
@@ -274,7 +274,6 @@ class _InLearningPageState extends State<InLearningPage> {
                       setState(() {
                         testList.removeWhere((List wtestItem) => (wtestItem[1] == 4 && index < testList.indexOf(wtestItem)));
                         clicked = true;
-                        testList.length = testList.length;
                       });
                       return false;
                     }
@@ -293,11 +292,11 @@ class _InLearningPageState extends State<InLearningPage> {
                   hint: "听下面的音频，选择最合适的选项",
                   bottom: BottomTip(
                     isShowNext: clicked, 
-                    isLast: controller.page?.round() == testList.length - 1, 
+                    isLast: controller.page?.ceil() == testList.length - 1, 
                     onNextClicked: (){
+                      controller.nextPage(duration: Duration(milliseconds: 500), curve: StaticsVar.curve);
                       setState(() {
                         clicked = false;
-                        controller.nextPage(duration: Duration(milliseconds: 500), curve: StaticsVar.curve);
                       });
                     }, 
                     onTipClicked: (){
