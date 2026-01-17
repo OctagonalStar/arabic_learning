@@ -155,6 +155,23 @@ Future<List<dynamic>> playTextToSpeech(String text, BuildContext context, {doubl
   return [true, ""];
 }
 
+int calculateButtonBoxLayout(List<String> possible, double width, bool isWideScreen){
+  // showingMode 0: 1 Row, 1: 2 Rows, 2: 4 Rows
+  for(int i = 1; i < 4; i++) {
+    if(possible[i].length * 16 > width * (isWideScreen ? 0.21 : 0.8)){
+      if (isWideScreen) {
+        return 1;
+      } else {
+        return 2;
+      }
+    }
+  }
+  if (isWideScreen) {
+    return 0;
+  } else {
+    return 1;
+  }
+}
 
 Future<void> extractTarBz2(String inputPath, String outputDir) async {
   final bytes = await io.File(inputPath).readAsBytes();

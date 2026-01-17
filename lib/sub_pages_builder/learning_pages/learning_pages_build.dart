@@ -31,11 +31,9 @@ class _InLearningPageState extends State<InLearningPage> {
   Random rnd = Random();
   List<List<dynamic>> testList = []; // [[word(Map), testType(int), [extraValues]]]
   bool clicked = false;
-  int currentPage = 0;
   int correctCount = 0;
   late final int startTime;
   bool finished = false;
-  late final int total;
   final PageController controller = PageController(initialPage: 0);
 
   @override
@@ -59,7 +57,13 @@ class _InLearningPageState extends State<InLearningPage> {
           List<String> strList = List.generate(4, (int index) => (testType == 1 ? optionWords[index].arabic : optionWords[index].chinese), growable: false);
           extra = [optionWords.indexWhere((WordItem item) => item == wordItem), strList];
         } else if(testType == 3) {
+          // 拼写题
           extra = [];
+        } else if(testType == 4) {
+          // 听力题
+          List<WordItem> optionWords = getRandomWords(4, context.read<Global>().wordData, include: wordItem, preferClass: !questionsSetting.preferSimilar, rnd: rnd);
+          List<String> strList = List.generate(4, (int index) => (rnd.nextBool() ? optionWords[index].chinese : optionWords[index].arabic), growable: false);
+          extra = [optionWords.indexWhere((WordItem item) => item == wordItem), strList];
         }
         questionsInSections[sectionIndex].add([wordItem, testType, extra]);
       }
@@ -72,7 +76,6 @@ class _InLearningPageState extends State<InLearningPage> {
       testList.addAll(testItems);
     }
     if(questionsSetting.shuffleGlobally) testList.shuffle();
-    total = testList.length;
     startTime  = DateTime.now().millisecondsSinceEpoch;
     super.initState();
   }
@@ -90,7 +93,7 @@ class _InLearningPageState extends State<InLearningPage> {
       child: Scaffold(
         appBar: AppBar(
           automaticallyImplyLeading: false,
-          title: currentPage == total ? Center(child: Text("学习完成"))
+          title: (((controller.hasClients ? controller.page : 0) ?? 0)+1) >= testList.length ? Center(child: Text("学习完成"))
           : Row(
             children: [
               ElevatedButton(
@@ -132,7 +135,7 @@ class _InLearningPageState extends State<InLearningPage> {
                 child: TweenAnimationBuilder<double>(
                   tween: Tween<double>(
                     begin: 0.00,
-                    end: currentPage / (total - 1),
+                    end: ((controller.hasClients ? controller.page : 0) ?? 0) / (testList.length - 1),
                   ),
                   duration: const Duration(milliseconds: 500),
                   curve: StaticsVar.curve,
@@ -151,7 +154,7 @@ class _InLearningPageState extends State<InLearningPage> {
                 width: mediaQuery.size.width * 0.05,
                 child: FittedBox(
                   fit: BoxFit.scaleDown,
-                  child: Text("${total - currentPage}"),
+                  child: Text("${testList.length - ((controller.hasClients ? controller.page?.round() : 0) ?? 0) - 1}"),
                 ),
               )
             ],
@@ -161,18 +164,13 @@ class _InLearningPageState extends State<InLearningPage> {
           child: PageView.builder(
             scrollDirection: Provider.of<Global>(context).isWideScreen ? Axis.vertical : Axis.horizontal,
             physics: NeverScrollableScrollPhysics(),
-            // itemCount: total,
+            // itemCount: testList.length,
             controller: controller,
-            onPageChanged: (index) {
-              setState(() {
-                currentPage++;
-              });
-            },
             itemBuilder: (context, index) {
-              if(index >= testList.length) {
+              if(index == testList.length) {
                 finished = true;
                 List<int> data = [
-                  total, 
+                  testList.length, 
                   correctCount, 
                   ((DateTime.now().millisecondsSinceEpoch - startTime)/1000.0).toInt()
                 ];
@@ -191,8 +189,11 @@ class _InLearningPageState extends State<InLearningPage> {
                       shape: RoundedRectangleBorder(borderRadius: StaticsVar.br)
                     ),
                     onPressed: (){
-                      correctCount++;
-                      controller.animateToPage(currentPage + 1, duration: Duration(milliseconds: 500), curve: StaticsVar.curve);
+                      setState(() {
+                        correctCount++;
+                        controller.nextPage(duration: Duration(milliseconds: 500), curve: StaticsVar.curve);
+                      });
+                      
                     },
                     icon: Icon(Icons.arrow_forward),
                     label: Text("下一题"),
@@ -218,71 +219,19 @@ class _InLearningPageState extends State<InLearningPage> {
                   },
                   allowMutipleSelect: true,
                   hint: testItem[1] == 1 ? "通过中文选择阿拉伯语" : "通过阿拉伯语选择中文",
-                  bottomWidget: TweenAnimationBuilder<double>(
-                    tween: Tween<double>(
-                      begin: 0.0,
-                      end: clicked ? 1.0 : 0.0,
-                    ),
-                    duration: const Duration(milliseconds: 500),
-                    curve: StaticsVar.curve,
-                    builder: (context, value, child) {
-                      return Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          ElevatedButton(
-                            style: ElevatedButton.styleFrom(
-                              fixedSize: Size(mediaQuery.size.width * (0.8 - (0.45 * value)), mediaQuery.size.height * 0.1),
-                              backgroundColor: Theme.of(context).colorScheme.secondaryContainer,
-                              foregroundColor: Theme.of(context).colorScheme.onSurface,
-                              shadowColor: Colors.transparent,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: StaticsVar.br,
-                              ),
-                            ),
-                            onPressed: () {
-                              viewAnswer(context, testItem[0]);
-                            }, 
-                            child: FittedBox(
-                              fit: BoxFit.contain,
-                              child: Row(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  Icon(Icons.view_list, size: 16.0, semanticLabel: "查看详解"),
-                                  SizedBox(width: mediaQuery.size.width * 0.01),
-                                  Text("查看详解"),
-                                ],
-                              ),
-                            )
-                          ),
-                          SizedBox(width: mediaQuery.size.width * 0.05 * value),
-                          if(value != 0.0) ElevatedButton(
-                            style: ElevatedButton.styleFrom(
-                              fixedSize: Size(mediaQuery.size.width * (0.45 * value), mediaQuery.size.height * 0.1),
-                              backgroundColor: Theme.of(context).colorScheme.primaryContainer,
-                              foregroundColor: Theme.of(context).colorScheme.onSurface,
-                              shadowColor: Colors.transparent,
-                              shape: RoundedRectangleBorder(borderRadius: StaticsVar.br),
-                            ),
-                            onPressed: () {
-                              clicked = false; // 还原未点击状态
-                              controller.animateToPage(currentPage + 1, duration: Duration(milliseconds: 500), curve: StaticsVar.curve);
-                            },
-                            child: FittedBox(
-                              fit: BoxFit.contain,
-                              child: Row(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  Icon(currentPage == total-1 ? Icons.done : Icons.navigate_next, size: 16.0),
-                                  SizedBox(width: mediaQuery.size.width * 0.01),
-                                  Text(currentPage == total-1 ? "完成" : "下一个"),
-                                ],
-                              ),
-                            ),
-                          )
-                        ],
-                      );
+                  bottomWidget: BottomTip(
+                    isShowNext: clicked, 
+                    isLast: controller.page?.round() == testList.length - 1, 
+                    onNextClicked: (){
+                      setState(() {
+                        clicked = false;
+                        controller.nextPage(duration: Duration(milliseconds: 500), curve: StaticsVar.curve);
+                      });
+                    }, 
+                    onTipClicked: (){
+                      viewAnswer(context, testItem[0]);
                     }
-                  ),
+                  )
                 );
               } else if(testItem[1] == 3) {
                 // spell question
@@ -301,71 +250,60 @@ class _InLearningPageState extends State<InLearningPage> {
                       return false;
                     }
                   },
-                  bottomWidget: TweenAnimationBuilder<double>(
-                    tween: Tween<double>(
-                      begin: 0.0,
-                      end: clicked ? 1.0 : 0.0,
-                    ),
-                    duration: const Duration(milliseconds: 500),
-                    curve: StaticsVar.curve,
-                    builder: (context, value, child) {
-                      return Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          ElevatedButton(
-                            style: ElevatedButton.styleFrom(
-                              fixedSize: Size(mediaQuery.size.width * (0.8 - (0.45 * value)), mediaQuery.size.height * 0.1),
-                              backgroundColor: Theme.of(context).colorScheme.secondaryContainer,
-                              foregroundColor: Theme.of(context).colorScheme.onSurface,
-                              shadowColor: Colors.transparent,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: StaticsVar.br,
-                              ),
-                            ),
-                            onPressed: () {
-                              viewAnswer(context, testItem[0]);
-                            }, 
-                            child: FittedBox(
-                              fit: BoxFit.contain,
-                              child: Row(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  Icon(Icons.view_list, size: 16.0, semanticLabel: "查看详解"),
-                                  SizedBox(width: mediaQuery.size.width * 0.01),
-                                  Text("查看详解"),
-                                ],
-                              ),
-                            )
-                          ),
-                          SizedBox(width: mediaQuery.size.width * 0.05 * value),
-                          if(value != 0.0) ElevatedButton(
-                            style: ElevatedButton.styleFrom(
-                              fixedSize: Size(mediaQuery.size.width * (0.45 * value), mediaQuery.size.height * 0.1),
-                              backgroundColor: Theme.of(context).colorScheme.primaryContainer,
-                              foregroundColor: Theme.of(context).colorScheme.onSurface,
-                              shadowColor: Colors.transparent,
-                              shape: RoundedRectangleBorder(borderRadius: StaticsVar.br),
-                            ),
-                            onPressed: () {
-                              clicked = false; // 还原未点击状态
-                              controller.animateToPage(currentPage + 1, duration: Duration(milliseconds: 500), curve: StaticsVar.curve);
-                            },
-                            child: FittedBox(
-                              fit: BoxFit.contain,
-                              child: Row(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  Icon(currentPage == total-1 ? Icons.done : Icons.navigate_next, size: 16.0),
-                                  SizedBox(width: mediaQuery.size.width * 0.01),
-                                  Text(currentPage == total-1 ? "完成" : "下一个"),
-                                ],
-                              ),
-                            ),
-                          )
-                        ],
-                      );
+                  bottomWidget: BottomTip(
+                    isShowNext: clicked, 
+                    isLast: controller.page?.round() == testList.length - 1, 
+                    onNextClicked: (){
+                      setState(() {
+                        clicked = false;
+                        controller.nextPage(duration: Duration(milliseconds: 500), curve: StaticsVar.curve);
+                      });
+                    }, 
+                    onTipClicked: (){
+                      viewAnswer(context, testItem[0]);
                     }
-                  ),
+                  )
+                );
+              } else if(testItem[1] == 4){
+                // 听力题
+                return ListeningQuestion(
+                  mainWord: testItem[0].arabic, 
+                  choices: testItem[2][1], 
+                  onSelected: (value) {
+                    if(value == -1) {
+                      setState(() {
+                        testList.removeWhere((List wtestItem) => (wtestItem[1] == 4 && index < testList.indexOf(wtestItem)));
+                        clicked = true;
+                        testList.length = testList.length;
+                      });
+                      return false;
+                    }
+                    bool ans = value == testItem[2][0];
+                    if(!ans) {
+                      Future.delayed(Duration(seconds: 1), (){if(context.mounted) viewAnswer(context, testItem[0]);});
+                    } else {
+                      correctCount++;
+                    }
+                    Future.delayed(Duration(milliseconds: 700) ,(){setState(() {
+                      clicked = true;
+                    });});
+                    return ans;
+                  },
+                  allowMutipleSelect: true,
+                  hint: "听下面的音频，选择最合适的选项",
+                  bottom: BottomTip(
+                    isShowNext: clicked, 
+                    isLast: controller.page?.round() == testList.length - 1, 
+                    onNextClicked: (){
+                      setState(() {
+                        clicked = false;
+                        controller.nextPage(duration: Duration(milliseconds: 500), curve: StaticsVar.curve);
+                      });
+                    }, 
+                    onTipClicked: (){
+                      viewAnswer(context, testItem[0]);
+                    }
+                  )
                 );
               }
               return Center(
@@ -375,6 +313,79 @@ class _InLearningPageState extends State<InLearningPage> {
           )
         )
       ),
+    );
+  }
+}
+
+class BottomTip extends StatelessWidget {
+  final bool isShowNext;
+  final bool isLast;
+  final void Function() onTipClicked;
+  final void Function() onNextClicked;
+  const BottomTip({super.key, required this.isShowNext, required this.isLast, required this.onNextClicked, required this.onTipClicked});
+
+  @override
+  Widget build(BuildContext context) {
+    MediaQueryData mediaQuery = MediaQuery.of(context);
+    return TweenAnimationBuilder<double>(
+      tween: Tween<double>(
+        begin: 0.0,
+        end: isShowNext ? 1.0 : 0.0,
+      ),
+      duration: const Duration(milliseconds: 500),
+      curve: StaticsVar.curve,
+      builder: (context, value, child) {
+        return Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                fixedSize: Size(mediaQuery.size.width * (0.8 - (0.45 * value)), mediaQuery.size.height * 0.1),
+                backgroundColor: Theme.of(context).colorScheme.secondaryContainer,
+                foregroundColor: Theme.of(context).colorScheme.onSurface,
+                shadowColor: Colors.transparent,
+                shape: RoundedRectangleBorder(
+                  borderRadius: StaticsVar.br,
+                ),
+              ),
+              onPressed: onTipClicked, 
+              child: FittedBox(
+                fit: BoxFit.contain,
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(Icons.view_list, size: 16.0, semanticLabel: "查看详解"),
+                    SizedBox(width: mediaQuery.size.width * 0.01),
+                    Text("查看详解"),
+                  ],
+                ),
+              )
+            ),
+            SizedBox(width: mediaQuery.size.width * 0.05 * value),
+            if(value != 0.0) ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                fixedSize: Size(mediaQuery.size.width * (0.45 * value), mediaQuery.size.height * 0.1),
+                backgroundColor: Theme.of(context).colorScheme.primaryContainer,
+                foregroundColor: Theme.of(context).colorScheme.onSurface,
+                shadowColor: Colors.transparent,
+                shape: RoundedRectangleBorder(borderRadius: StaticsVar.br),
+              ),
+              onPressed: onNextClicked,
+              child: FittedBox(
+                fit: BoxFit.contain,
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(isLast ? Icons.done : Icons.navigate_next, size: 16.0),
+                    SizedBox(width: mediaQuery.size.width * 0.01),
+                    Text(isLast ? "完成" : "下一个"),
+                  ],
+                ),
+              ),
+            )
+          ],
+        );
+      }
     );
   }
 }

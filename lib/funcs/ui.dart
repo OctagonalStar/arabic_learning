@@ -733,28 +733,7 @@ class _ChoiceQuestions extends State<ChoiceQuestions> {
     // showingMode 0: 1 Row, 1: 2 Rows, 2: 4 Rows
     if(showingMode == -1){
       context.read<Global>().uiLogger.fine("未指定布局，开始计算");
-      bool overFlowPossible = false;
-      for(int i = 1; i < 4; i++) {
-        if(widget.choices[i].length * 16 > mediaQuery.size.width * (context.read<Global>().isWideScreen ? 0.21 : 0.8)){
-          context.read<Global>().uiLogger.fine("在 [${widget.choices[i]}] 可能溢出，采用密集布局");
-          overFlowPossible = true;
-          break;
-        }
-      }
-
-      if (context.read<Global>().isWideScreen) {
-        if(overFlowPossible){
-          showingMode = 1;
-        } else {
-          showingMode = 0;
-        }
-      } else {
-        if(overFlowPossible){
-          showingMode = 2;
-        } else {
-          showingMode = 1;
-        }
-      }
+      showingMode = calculateButtonBoxLayout(widget.choices, mediaQuery.size.width, context.read<Global>().isWideScreen);
       context.read<Global>().uiLogger.info("最终采用布局方案: $showingMode");
     }
     return Material(
@@ -948,6 +927,120 @@ class _SpellQuestion extends State<SpellQuestion> {
           if(widget.bottomWidget != null) widget.bottomWidget!,
           SizedBox(height: mediaQuery.size.height * 0.05)
         ],
+      ),
+    );
+  }
+}
+
+/// 听力题目页面
+class ListeningQuestion extends StatefulWidget {
+  final String mainWord;
+  final List<String> choices;
+  final bool? Function(int) onSelected;
+  final String? hint;
+  final Widget? bottom;
+  final Function? onDisAllowMutipleSelect;
+  final bool allowMutipleSelect;
+  final int bottonLayout;
+  final bool allowAnitmation;
+  const ListeningQuestion({super.key, 
+                        required this.mainWord, 
+                        required this.choices, 
+                        required this.onSelected,
+                        this.hint, 
+                        this.bottom, 
+                        this.onDisAllowMutipleSelect,
+                        this.bottonLayout = -1,
+                        this.allowMutipleSelect = true,
+                        this.allowAnitmation = true});
+
+  @override
+  State<StatefulWidget> createState() => _ListeningQuestion();
+}
+
+class _ListeningQuestion extends State<ListeningQuestion> {
+  bool choosed = false;
+  bool playing = false;
+
+  @override
+  Widget build(BuildContext context) {
+    context.read<Global>().uiLogger.info("构建听力题页面: 主单词: ${widget.mainWord};选项: ${widget.choices}");
+    MediaQueryData mediaQuery = MediaQuery.of(context);
+    int showingMode = widget.bottonLayout;
+    if(showingMode == -1){
+      context.read<Global>().uiLogger.fine("未指定布局，开始计算");
+      showingMode = calculateButtonBoxLayout(widget.choices, mediaQuery.size.width, context.read<Global>().isWideScreen);
+      context.read<Global>().uiLogger.info("最终采用布局方案: $showingMode");
+    }
+    return Material(
+      child: Center(
+        child: Column(
+          children: [
+            if(widget.hint!=null) TextContainer(text: widget.hint!, animated: true),
+            Expanded(
+              child: StatefulBuilder(
+                builder: (context, setLocalState) {
+                  return IconButton(
+                    icon: Icon(playing ? Icons.multitrack_audio : Icons.volume_up, size: 60,),
+                    style: ElevatedButton.styleFrom(
+                      fixedSize: Size.fromWidth(mediaQuery.size.width * 0.8),
+                      shape: RoundedRectangleBorder(borderRadius: StaticsVar.br),
+                    ),
+                    onPressed: () async {
+                      if (playing) {
+                        context.read<Global>().uiLogger.warning("正在播放，中断TTS");
+                        return;
+                      }
+                      setLocalState(() {
+                        playing = true;
+                      });
+                      late List<dynamic> temp;
+                      temp = await playTextToSpeech(widget.mainWord, context);
+                      if(!temp[0] && context.mounted) {
+                        alart(context, temp[1]);
+                      }
+                      setLocalState(() {
+                        playing = false;
+                      });
+                    },
+                  );
+                }
+              ),
+            ),
+            SizedBox(height: mediaQuery.size.height *0.01),
+            ChooseButtons(
+              options: widget.choices, 
+              settingShowingMode: showingMode,
+              onSelected: (value) {
+                if(widget.allowMutipleSelect) return widget.onSelected(value);
+                if(choosed) {
+                  if(widget.onDisAllowMutipleSelect != null) return widget.onDisAllowMutipleSelect!(value);
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('该页面不允许多次选择'),
+                      duration: Duration(seconds: 1),
+                    ),
+                  );
+                  return null;
+                } else {
+                  choosed = true;
+                  return widget.onSelected(value);
+                }
+              }, 
+              isShowAnimation: widget.allowAnitmation
+            ),
+            TextButton(
+              onPressed: (){
+                choosed = true;
+                widget.onSelected(-1);
+              }, 
+              child: Text("跳过听力题目")
+            ),
+            SizedBox(height: mediaQuery.size.height *0.01),
+            if(widget.bottom != null) widget.bottom!,
+            SizedBox(height: mediaQuery.size.height *0.05),
+          ],
+        ),
       ),
     );
   }
