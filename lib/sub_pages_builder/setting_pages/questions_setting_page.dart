@@ -14,7 +14,7 @@ class QuestionsSettingPage extends StatefulWidget {
 class _QuestionsSettingPage extends State<QuestionsSettingPage> {
   List<dynamic>? selectedTypes;
   bool floatButtonFlod = true;
-  static const Map<int, String> castMap = {0: "单词卡片学习", 1: "中译阿 选择题", 2: "阿译中 选择题", 3: "中译阿 拼写题"};
+  static const Map<int, String> castMap = {0: "单词卡片学习", 1: "中译阿 选择题", 2: "阿译中 选择题", 3: "中译阿 拼写题", 4: "听力题"};
 
 
   @override
@@ -176,8 +176,6 @@ class _QuestionsSettingPage extends State<QuestionsSettingPage> {
           curve: Curves.bounceOut, 
           builder: (context, value, child) {
             return Container(
-              // width: mediaQuery.size.width * 0.07 + mediaQuery.size.width * 0.1 * value,
-              // height: mediaQuery.size.height * 0.1 + mediaQuery.size.height * 0.45 * value, //实际稍高一些 避免默认margin导致的溢出
               decoration: BoxDecoration(
                 color: Colors.transparent,
               ),
@@ -185,7 +183,7 @@ class _QuestionsSettingPage extends State<QuestionsSettingPage> {
                 mainAxisAlignment: MainAxisAlignment.end,
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  if(value > 0.3) ...List.generate(4, (i) {
+                  if(value > 0.3) ...List.generate(castMap.length, (i) {
                     return ElevatedButton.icon(
                       style: ElevatedButton.styleFrom(
                         fixedSize: Size(70 + 150 * value, mediaQuery.size.height * 0.1 * value),
