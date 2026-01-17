@@ -83,13 +83,11 @@ class FSRS {
   }
 
   bool isContained(int wordId) {
-    for(Card card in config.cards) {
-      if(card.cardId == wordId) return true;
-    }
-    return false;
+    return config.cards.any((Card card) => card.cardId == wordId);
   }
 
   void addWordCard(int wordId) {
+    logger.fine("添加复习卡片: Id: $wordId");
     // os the wordID == cardID
     config.cards.add(Card(cardId: wordId, state: State.learning));
     config.reviewLogs.add(ReviewLog(cardId: wordId, rating: Rating.good, reviewDateTime: DateTime.now()));

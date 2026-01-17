@@ -1,5 +1,6 @@
 import 'dart:math';
 
+import 'package:arabic_learning/funcs/fsrs_func.dart' show FSRS;
 import 'package:arabic_learning/funcs/utili.dart' show BKSearch, StringExtensions, getLevenshtein, getRandomWords;
 import 'package:arabic_learning/vars/config_structure.dart';
 import 'package:flutter/material.dart';
@@ -31,9 +32,24 @@ class _InLearningPageState extends State<InLearningPage> {
   List<TestItem> testList = []; // [[word(Map), testType(int), [extraValues]]]
   bool clicked = false;
   int correctCount = 0;
-  late final int startTime;
+  late final DateTime startTime;
   bool finished = false;
   final PageController controller = PageController(initialPage: 0);
+
+  void onSolve({required WordItem targetWord, 
+                required bool isCorrect, 
+                required int takentime,
+                required FSRS fsrs}){
+    if(isCorrect) correctCount++;
+    if(fsrs.config.enabled) {
+      if(fsrs.isContained(targetWord.id)){
+        fsrs.reviewCard(targetWord.id, takentime, isCorrect);
+      } else {
+        if(isCorrect) fsrs.addWordCard(targetWord.id);
+      }
+      
+    }
+  }
 
   @override
   void initState() {
@@ -62,7 +78,7 @@ class _InLearningPageState extends State<InLearningPage> {
       testList.addAll(testItems);
     }
     if(questionsSetting.shuffleGlobally) testList.shuffle();
-    startTime  = DateTime.now().millisecondsSinceEpoch;
+    startTime  = DateTime.now();
     super.initState();
   }
 
@@ -158,11 +174,12 @@ class _InLearningPageState extends State<InLearningPage> {
                 List<int> data = [
                   testList.length, 
                   correctCount, 
-                  ((DateTime.now().millisecondsSinceEpoch - startTime)/1000.0).toInt()
+                  DateTime.now().difference(startTime).inSeconds
                 ];
                 return ConcludePage(data: data);
               }
               final TestItem testItem = testList[index];
+              final DateTime quizStart = DateTime.now();
               if(testItem.testType == 0) {
                 // wordCard
                 return WordCardQuestion(
@@ -175,10 +192,8 @@ class _InLearningPageState extends State<InLearningPage> {
                     ),
                     onPressed: (){
                       controller.nextPage(duration: Duration(milliseconds: 500), curve: StaticsVar.curve);
-                      setState(() {
-                        correctCount++;
-                      });
-                      
+                      correctCount++;
+                      setState(() {});
                     },
                     icon: Icon(Icons.arrow_forward),
                     label: Text("下一题"),
@@ -194,9 +209,8 @@ class _InLearningPageState extends State<InLearningPage> {
                     bool ans = value == testItem.correctIndex;
                     if(!ans) {
                       Future.delayed(Duration(seconds: 1), (){if(context.mounted) viewAnswer(context, testItem.testWord);});
-                    } else {
-                      correctCount++;
                     }
+                    onSolve(targetWord: testItem.testWord, isCorrect: ans, takentime: DateTime.now().difference(quizStart).inMilliseconds, fsrs: context.read<Global>().globalFSRS);
                     Future.delayed(Duration(milliseconds: 700) ,(){setState(() {
                       clicked = true;
                     });});
@@ -228,9 +242,10 @@ class _InLearningPageState extends State<InLearningPage> {
                       clicked = true;
                     });
                     if(text == testItem.testWord.arabic) {
-                      correctCount++;
+                      onSolve(targetWord: testItem.testWord, isCorrect: true, takentime: DateTime.now().difference(quizStart).inMilliseconds, fsrs: context.read<Global>().globalFSRS);
                       return true;
                     } else {
+                      onSolve(targetWord: testItem.testWord, isCorrect: false, takentime: DateTime.now().difference(quizStart).inMilliseconds, fsrs: context.read<Global>().globalFSRS);
                       viewAnswer(context, testItem.testWord);
                       return false;
                     }
@@ -265,9 +280,8 @@ class _InLearningPageState extends State<InLearningPage> {
                     bool ans = value == testItem.correctIndex;
                     if(!ans) {
                       Future.delayed(Duration(seconds: 1), (){if(context.mounted) viewAnswer(context, testItem.testWord);});
-                    } else {
-                      correctCount++;
-                    }
+                    } 
+                    onSolve(targetWord: testItem.testWord, isCorrect: ans, takentime: DateTime.now().difference(quizStart).inMilliseconds, fsrs: context.read<Global>().globalFSRS);
                     Future.delayed(Duration(milliseconds: 700) ,(){setState(() {
                       clicked = true;
                     });});

@@ -18,7 +18,7 @@ class ForeFSRSSettingPage extends StatelessWidget {
   Widget build(BuildContext context) {
     context.read<Global>().uiLogger.info("构建 ForeFSRSSettingPage");
     MediaQueryData mediaQuery = MediaQuery.of(context);
-    FSRS fsrs = FSRS()..init(outerPrefs: context.read<Global>().prefs);
+    final FSRS fsrs = context.read<Global>().globalFSRS;
     if(fsrs.config.enabled && !forceChoosing) {
       return MainFSRSPage(fsrs: fsrs);
     }

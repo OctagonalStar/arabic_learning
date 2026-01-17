@@ -17,8 +17,8 @@ class HomePage extends StatelessWidget {
   Widget build(BuildContext context) {
     context.read<Global>().uiLogger.fine("构建 HomePage");
     final themeColor = Theme.of(context).colorScheme;
-    final mediaQuery = MediaQuery.of(context);
-    final FSRS fsrs = FSRS()..init(outerPrefs: context.read<Global>().prefs);
+    final MediaQueryData mediaQuery = MediaQuery.of(context);
+    final FSRS fsrs = context.read<Global>().globalFSRS;
     return Column(
       children: [
         DailyWord(),
