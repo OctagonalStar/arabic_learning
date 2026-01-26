@@ -16,6 +16,7 @@
 - 优化了选择题单词挑选逻辑 [#48](https://github.com/OctagonalStar/arabic_learning/issues/48)
 - 修复了BKTree日志刷屏问题
 - 移除了提醒配置的中间页面
+- 对于拼写题型放宽了时间要求 [#52](https://github.com/OctagonalStar/arabic_learning/issues/52)
 
 ### Fix
 

@@ -50,11 +50,11 @@ class FSRS {
     return config.cards[index].due.toLocal().difference(DateTime.now()).inDays;
   }
 
-  void reviewCard(int wordId, int duration, bool isCorrect) {
+  void reviewCard(int wordId, int duration, bool isCorrect, {Rating? forceRate}) {
     logger.fine("记录复习卡片: Id: $wordId; duration: $duration; isCorrect: $isCorrect");
     int index = config.cards.indexWhere((Card card) => card.cardId == wordId); // 避免有时候cardId != wordId
     logger.fine("定位复习卡片地址: $index, 目前阶段: ${config.cards[index].step}, 难度: ${config.cards[index].difficulty}, 稳定: ${config.cards[index].stability}, 过期时间(+8): ${config.cards[index].due.toLocal()}");
-    final (:card, :reviewLog) = config.scheduler!.reviewCard(config.cards[index], calculate(duration, isCorrect), reviewDateTime: DateTime.now().toUtc(), reviewDuration: duration);
+    final (:card, :reviewLog) = config.scheduler!.reviewCard(config.cards[index], forceRate ?? calculate(duration, isCorrect), reviewDateTime: DateTime.now().toUtc(), reviewDuration: duration);
     config.cards[index] = card;
     config.reviewLogs[index] = reviewLog;
     logger.fine("卡片 $index 复习后: 目前阶段: ${config.cards[index].step}, 难度: ${config.cards[index].difficulty}, 稳定: ${config.cards[index].stability}, 过期时间(+8): ${config.cards[index].due.toLocal()}");

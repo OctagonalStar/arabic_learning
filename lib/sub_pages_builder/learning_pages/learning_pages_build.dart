@@ -4,6 +4,7 @@ import 'package:arabic_learning/funcs/fsrs_func.dart' show FSRS;
 import 'package:arabic_learning/funcs/utili.dart' show BKSearch, StringExtensions, getLevenshtein, getRandomWords;
 import 'package:arabic_learning/vars/config_structure.dart';
 import 'package:flutter/material.dart';
+import 'package:fsrs/fsrs.dart' show Rating;
 import 'package:provider/provider.dart';
 
 import 'package:arabic_learning/vars/statics_var.dart';
@@ -29,7 +30,7 @@ class InLearningPage extends StatefulWidget {
 
 class _InLearningPageState extends State<InLearningPage> {
   Random rnd = Random();
-  List<TestItem> testList = []; // [[word(Map), testType(int), [extraValues]]]
+  List<TestItem> testList = [];
   bool clicked = false;
   int correctCount = 0;
   late final DateTime startTime;
@@ -39,11 +40,16 @@ class _InLearningPageState extends State<InLearningPage> {
   void onSolve({required WordItem targetWord, 
                 required bool isCorrect, 
                 required int takentime,
-                required FSRS fsrs}){
+                required FSRS fsrs,
+                bool isTypingQuestion = false}){
     if(isCorrect) correctCount++;
     if(fsrs.config.enabled) {
       if(fsrs.isContained(targetWord.id)){
-        fsrs.reviewCard(targetWord.id, takentime, isCorrect);
+        if(isTypingQuestion) {
+          fsrs.reviewCard(targetWord.id, takentime, isCorrect, forceRate: isCorrect ? Rating.good : Rating.again);
+        } else {
+          fsrs.reviewCard(targetWord.id, takentime, isCorrect);
+        }
       } else {
         if(isCorrect) fsrs.addWordCard(targetWord.id);
       }
@@ -242,10 +248,10 @@ class _InLearningPageState extends State<InLearningPage> {
                       clicked = true;
                     });
                     if(text == testItem.testWord.arabic) {
-                      onSolve(targetWord: testItem.testWord, isCorrect: true, takentime: DateTime.now().difference(quizStart).inMilliseconds, fsrs: context.read<Global>().globalFSRS);
+                      onSolve(targetWord: testItem.testWord, isCorrect: true, takentime: DateTime.now().difference(quizStart).inMilliseconds, fsrs: context.read<Global>().globalFSRS, isTypingQuestion: true);
                       return true;
                     } else {
-                      onSolve(targetWord: testItem.testWord, isCorrect: false, takentime: DateTime.now().difference(quizStart).inMilliseconds, fsrs: context.read<Global>().globalFSRS);
+                      onSolve(targetWord: testItem.testWord, isCorrect: false, takentime: DateTime.now().difference(quizStart).inMilliseconds, fsrs: context.read<Global>().globalFSRS, isTypingQuestion: true);
                       viewAnswer(context, testItem.testWord);
                       return false;
                     }
