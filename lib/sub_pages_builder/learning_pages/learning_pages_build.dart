@@ -23,7 +23,8 @@ class InLearningPage extends StatefulWidget {
     3: 中译阿 拼写题
   */
   final List<WordItem> words;
-  const InLearningPage({super.key, required this.words});
+  final bool countInReview;
+  const InLearningPage({super.key, required this.words, required this.countInReview});
   @override
   State<InLearningPage> createState() => _InLearningPageState();
 }
@@ -43,7 +44,7 @@ class _InLearningPageState extends State<InLearningPage> {
                 required FSRS fsrs,
                 bool isTypingQuestion = false}){
     if(isCorrect) correctCount++;
-    if(fsrs.config.enabled) {
+    if(widget.countInReview && fsrs.config.enabled) {
       if(fsrs.isContained(targetWord.id)){
         if(isTypingQuestion) {
           fsrs.reviewCard(targetWord.id, takentime, isCorrect, forceRate: isCorrect ? Rating.good : Rating.again);

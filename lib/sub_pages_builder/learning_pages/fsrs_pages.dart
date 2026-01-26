@@ -390,11 +390,11 @@ class _FSRSOverViewPageState extends State<FSRSOverViewPage> {
             icon: const Icon(Icons.label_important, size: 24.0),
             label: const Text("去学习新单词"),
             onPressed: () async {
-              late List<ClassItem> selectedClasses;
+              late ClassSelection selectedClasses;
               late List<WordItem> words;
-              selectedClasses = await popSelectClasses(context, withCache: false);
-              if(!context.mounted || selectedClasses.isEmpty) return;
-              words = getSelectedWords(context, forceSelectClasses: selectedClasses, doShuffle: true, doDouble: false);
+              selectedClasses = await popSelectClasses(context, withCache: false, withReviewChoose: false);
+              if(!context.mounted || selectedClasses.selectedClass.isEmpty) return;
+              words = getSelectedWords(context, forceSelectClasses: selectedClasses.selectedClass, doShuffle: true, doDouble: false);
               // 去除已经学习的项目
               words.removeWhere((WordItem item) => widget.fsrs.isContained(item.id));
               context.read<Global>().uiLogger.info("跳转: FSRSOverViewPage => FSRSLearningPage");
