@@ -123,6 +123,7 @@ class FSRSConfig {
   final int easyDuration;
   final int goodDuration;
   final bool preferSimilar;
+  final bool selfEvaluate;
 
   const FSRSConfig({
     bool? enabled,
@@ -132,7 +133,8 @@ class FSRSConfig {
     double? desiredRetention,
     int? easyDuration,
     int? goodDuration,
-    bool? preferSimilar
+    bool? preferSimilar,
+    bool? selfEvaluate
   }) :
     enabled = enabled??false,
     cards = cards??const [],
@@ -140,7 +142,8 @@ class FSRSConfig {
     desiredRetention = desiredRetention??0.9,
     easyDuration = easyDuration??3000,
     goodDuration = goodDuration??6000,
-    preferSimilar = preferSimilar??false;
+    preferSimilar = preferSimilar??false,
+    selfEvaluate = selfEvaluate??false;
   
   Map<String, dynamic> toMap(){
     return {
@@ -151,7 +154,8 @@ class FSRSConfig {
       "desiredRetention": desiredRetention,
       "easyDuration": easyDuration,
       "goodDuration": goodDuration,
-      "preferSimilar": preferSimilar
+      "preferSimilar": preferSimilar,
+      "selfEvaluate": selfEvaluate
     };
   }
 
@@ -163,7 +167,8 @@ class FSRSConfig {
     double? desiredRetention,
     int? easyDuration,
     int? goodDuration,
-    bool? preferSimilar
+    bool? preferSimilar,
+    bool? selfEvaluate
   }) {
     return FSRSConfig(
       enabled: enabled??this.enabled,
@@ -173,7 +178,8 @@ class FSRSConfig {
       desiredRetention: desiredRetention??this.desiredRetention,
       easyDuration: easyDuration??this.easyDuration,
       goodDuration: goodDuration??this.goodDuration,
-      preferSimilar: preferSimilar??this.preferSimilar
+      preferSimilar: preferSimilar??this.preferSimilar,
+      selfEvaluate: selfEvaluate??this.selfEvaluate
     );
   }
 
@@ -187,7 +193,8 @@ class FSRSConfig {
         desiredRetention: configData["desiredRetention"],
         easyDuration: configData["easyDuration"],
         goodDuration: configData["goodDuration"],
-        preferSimilar: configData["preferSimilar"]
+        preferSimilar: configData["preferSimilar"],
+        selfEvaluate: configData["selfEvaluate"]
       );
     }
     return FSRSConfig(enabled: false);

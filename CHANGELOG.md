@@ -11,6 +11,7 @@
 - 给部分文本框添加了动画
 - 添加了听力题型 [#51](https://github.com/OctagonalStar/arabic_learning/issues/51)
 - 为每次学习添加了是否计算复习的提示 [#52](https://github.com/OctagonalStar/arabic_learning/issues/52)
+- 在复习部分添加了自我评级方案 [#52](https://github.com/OctagonalStar/arabic_learning/issues/52)
 
 ### Improvement
 

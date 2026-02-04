@@ -2,6 +2,7 @@ import 'dart:math';
 
 import 'package:arabic_learning/vars/config_structure.dart';
 import 'package:flutter/material.dart';
+import 'package:fsrs/fsrs.dart' show Rating;
 import 'package:provider/provider.dart';
 
 import 'package:arabic_learning/vars/statics_var.dart';
@@ -148,6 +149,37 @@ class ForeFSRSSettingPage extends StatelessWidget {
                   children: [
                     Row(
                       children: [
+                        Expanded(child: Text("使用自我评级", style: Theme.of(context).textTheme.bodyLarge)),
+                        Switch(
+                          value: fsrs.config.selfEvaluate, 
+                          onChanged: (value){
+                            setState(() {
+                              fsrs.config = fsrs.config.copyWith(
+                                selfEvaluate: value
+                              );
+                            });
+                          }
+                        )
+                      ],
+                    ),
+                    Text("自我评级 开启时会向你展示遮挡了中文的单词卡片，由你自行选择你是 记得很清楚/还记得/回忆困难/忘了"),
+                    Text("在此模式下，计时仅作展示，不作为评分依据"),
+                    Text("适合清楚自己的实力的人启用")
+                  ],
+                ),
+              ),
+              if(!fsrs.config.selfEvaluate) Container(
+                decoration: BoxDecoration(
+                  borderRadius: StaticsVar.br,
+                  color: Theme.of(context).colorScheme.onPrimary
+                ),
+                margin: EdgeInsets.all(8.0),
+                padding: EdgeInsets.all(8.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
                         Expanded(child: Text("偏好易混词", style: Theme.of(context).textTheme.bodyLarge)),
                         Switch(
                           value: fsrs.config.preferSimilar, 
@@ -162,7 +194,8 @@ class ForeFSRSSettingPage extends StatelessWidget {
                       ],
                     ),
                     Text("偏好易混词 开启时选择题的选项更多地按照词根寻找相似的单词进行测试"),
-                    Text("关闭时选择题的选项更多地考察同课程的单词")
+                    Text("关闭时选择题的选项更多地考察同课程的单词"),
+                    Text("该选型仅在自我评级关闭时生效")
                   ],
                 ),
               ),
@@ -225,7 +258,7 @@ class MainFSRSPage extends StatelessWidget {
             return Center(
               child: Column(
                 children: [
-                  TextContainer(text: "你有${fsrs.getWillDueCount().toString()}个单词即将逾期!\n上滑页面开始复习",size: Size(mediaQuery.size.width * 0.8, mediaQuery.size.height * 0.4),textAlign: TextAlign.center),
+                  TextContainer(text: "你有${fsrs.getWillDueCount().toString()}个单词需要复习!\n上滑页面开始复习",size: Size(mediaQuery.size.width * 0.8, mediaQuery.size.height * 0.4),textAlign: TextAlign.center),
                   Icon(Icons.arrow_upward, size: 48.0, color: Colors.grey)
                 ],
               ),
@@ -269,20 +302,27 @@ class _FSRSReviewCardPage extends State<FSRSReviewCardPage> {
     context.read<Global>().uiLogger.info("构建 FSRSReviewCardPage");
     MediaQueryData mediaQuery = MediaQuery.of(context);
     final List<WordItem> wordData = context.read<Global>().wordData.words;
+    late final int correct;
 
     // 防止重建后选项丢失
     if(options == null){
-      List<WordItem> optionWords = getRandomWords(4, context.read<Global>().wordData, include: wordData[widget.wordID], preferClass: !widget.fsrs.config.preferSimilar, rnd: widget.rnd);
-      options ??= List.generate(4, (int index) => optionWords[index].chinese, growable: false);
+      if(widget.fsrs.config.selfEvaluate) {
+        options = const ["记得很清楚", "还记得", "回忆困难", "忘了"];
+        correct = -1;
+      } else {
+        List<WordItem> optionWords = getRandomWords(4, context.read<Global>().wordData, include: wordData[widget.wordID], preferClass: !widget.fsrs.config.preferSimilar, rnd: widget.rnd);
+        options = List.generate(4, (int index) => optionWords[index].chinese, growable: false);
+        correct  = options!.indexOf(context.read<Global>().wordData.words[widget.wordID].chinese);
+      }
     }
     
-    final int correct = options!.indexOf(context.read<Global>().wordData.words[widget.wordID].chinese);
     return Material(
       child: ChoiceQuestions(
-        mainWord: wordData[widget.wordID].arabic, 
+        mainWord: widget.fsrs.config.selfEvaluate ? "[selfEvaluate]" : wordData[widget.wordID].arabic, 
+        midWidget: widget.fsrs.config.selfEvaluate ? WordCard(word: wordData[widget.wordID]) : null,
         choices: options!, 
         allowAudio: true, 
-        allowAnitmation: true,
+        allowAnitmation: !widget.fsrs.config.selfEvaluate,
         allowMutipleSelect: false,
         hint: "单词ID: ${widget.wordID}${choosed ? " 用时: ${end.difference(start).inMilliseconds}毫秒" : ""}",
         onDisAllowMutipleSelect: (value) {
@@ -295,13 +335,18 @@ class _FSRSReviewCardPage extends State<FSRSReviewCardPage> {
             choosed = true;
             end =  DateTime.now();
           });
-          if(correct == value) {
-            widget.fsrs.reviewCard(widget.wordID, end.difference(start).inMilliseconds, true);
-            context.read<Global>().updateLearningStreak();
+          context.read<Global>().updateLearningStreak();
+          if(widget.fsrs.config.selfEvaluate) {
+            widget.fsrs.reviewCard(widget.wordID, end.difference(start).inMilliseconds, true, forceRate: (const [Rating.easy, Rating.good, Rating.hard, Rating.again]).elementAt(value));
             return true;
           } else {
-            widget.fsrs.reviewCard(widget.wordID, end.difference(start).inMilliseconds, false);
-            return false;
+            if(correct == value) {
+              widget.fsrs.reviewCard(widget.wordID, end.difference(start).inMilliseconds, true);
+              return true;
+            } else {
+              widget.fsrs.reviewCard(widget.wordID, end.difference(start).inMilliseconds, false);
+              return false;
+            }
           }
         },
         bottomWidget: TweenAnimationBuilder<double>(
@@ -315,7 +360,7 @@ class _FSRSReviewCardPage extends State<FSRSReviewCardPage> {
             return Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                ElevatedButton.icon(
+                if(!widget.fsrs.config.selfEvaluate) ElevatedButton.icon(
                   style: ElevatedButton.styleFrom(
                     fixedSize: Size(mediaQuery.size.width * 0.9 - mediaQuery.size.width * 0.5 * value, mediaQuery.size.height * 0.1),
                     shape: RoundedRectangleBorder(borderRadius: StaticsVar.br)
@@ -329,10 +374,10 @@ class _FSRSReviewCardPage extends State<FSRSReviewCardPage> {
                   icon: Icon(Icons.tips_and_updates),
                   label: Text(value == 0.0 ? "忘了？" : "详解"),
                 ),
-                SizedBox(width: mediaQuery.size.width*0.02*value),
+                if(!widget.fsrs.config.selfEvaluate) SizedBox(width: mediaQuery.size.width*0.02*value),
                 if(value > 0.3) ElevatedButton.icon(
                   style: ElevatedButton.styleFrom(
-                    fixedSize: Size(mediaQuery.size.width * 0.5 * value, mediaQuery.size.height * 0.1),
+                    fixedSize: Size(mediaQuery.size.width * (widget.fsrs.config.selfEvaluate ? 1 : 0.5) * value, mediaQuery.size.height * 0.1),
                     shape: RoundedRectangleBorder(borderRadius: StaticsVar.br)
                   ),
                   onPressed: () {

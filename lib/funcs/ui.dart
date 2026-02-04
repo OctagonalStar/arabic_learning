@@ -716,6 +716,7 @@ class ChoiceQuestions extends StatefulWidget {
   final List<String> choices;
   final bool? Function(int) onSelected;
   final String? hint;
+  final Widget? midWidget;
   final Widget? bottomWidget;
   final Function? onDisAllowMutipleSelect;
   final bool allowMutipleSelect;
@@ -728,6 +729,7 @@ class ChoiceQuestions extends StatefulWidget {
                         required this.allowAudio, 
                         required this.onSelected,
                         this.hint, 
+                        this.midWidget,
                         this.bottomWidget, 
                         this.onDisAllowMutipleSelect,
                         this.bottonLayout = -1,
@@ -758,7 +760,7 @@ class _ChoiceQuestions extends State<ChoiceQuestions> {
           children: [
             if(widget.hint!=null) TextContainer(text: widget.hint!, animated: true),
             Expanded(
-              child: StatefulBuilder(
+              child: widget.midWidget ?? StatefulBuilder(
                 builder: (context, setLocalState) {
                   return ElevatedButton.icon(
                     icon: Icon(widget.allowAudio ? (playing ? Icons.multitrack_audio : Icons.volume_up) : Icons.short_text, size: 24.0),
