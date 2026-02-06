@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:arabic_learning/sub_pages_builder/setting_pages/questions_setting_page.dart' show QuestionsSettingPage;
 import 'package:arabic_learning/vars/config_structure.dart';
 import 'package:flutter/material.dart';
@@ -7,7 +9,7 @@ import 'package:arabic_learning/funcs/ui.dart';
 import 'package:arabic_learning/funcs/utili.dart';
 import 'package:arabic_learning/vars/global.dart';
 import 'package:arabic_learning/vars/statics_var.dart';
-import 'package:arabic_learning/sub_pages_builder/learning_pages/fsrs_pages.dart' show ForeFSRSSettingPage;
+import 'package:arabic_learning/sub_pages_builder/learning_pages/fsrs_pages.dart' show FSRSLearningPage, ForeFSRSSettingPage;
 import 'package:arabic_learning/sub_pages_builder/learning_pages/learning_pages_build.dart';
 
 class LearningPage extends StatelessWidget {
@@ -67,13 +69,19 @@ class LearningPage extends StatelessWidget {
                 ),
               ),
               onPressed: (){
-                context.read<Global>().uiLogger.info("跳转: LearningPage => ForeFSRSSettingPage");
-                Navigator.push(
-                  context, 
-                  MaterialPageRoute(
-                    builder: (context) => ForeFSRSSettingPage()
-                  )
-                );
+                if(context.read<Global>().globalFSRS.getWillDueCount() != 0) {
+                  context.read<Global>().uiLogger.info("跳转: LearningPage => ForeFSRSSettingPage");
+                  Navigator.push(
+                    context, 
+                    MaterialPageRoute(
+                      builder: (context) => ForeFSRSSettingPage()
+                    )
+                  );
+                } else {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text("目前没有要复习的单词"), duration: Duration(seconds: 1),),
+                  );
+                }
               },
               child: FittedBox(
                 fit: BoxFit.contain,
@@ -86,6 +94,41 @@ class LearningPage extends StatelessWidget {
               ),
             ),
           ],
+        ),
+        SizedBox(height: mediaQuery.size.height * 0.05),
+        if(context.read<Global>().globalFSRS.config.pushAmount != 0) ElevatedButton.icon(
+          style: ElevatedButton.styleFrom(
+            backgroundColor: Theme.of(context).colorScheme.onPrimary.withAlpha(150),
+            fixedSize: Size(mediaQuery.size.width * 0.7, mediaQuery.size.height * 0.2),
+            shape: RoundedRectangleBorder(borderRadius: StaticsVar.br),
+          ),
+          onPressed: (){
+            final DateTime now = DateTime.now();
+            final int seed = now.year * 10000 + now.month * 100 + now.day;
+            final List<WordItem> pushWords = [];
+            final Random rnd = Random(seed);
+            for(int i = 0; i < context.read<Global>().globalFSRS.config.pushAmount; i++){
+              int chosen = rnd.nextInt(context.read<Global>().wordData.words.length);
+              if(!context.read<Global>().globalFSRS.isContained(chosen)) {
+                pushWords.add(context.read<Global>().wordData.words.elementAt(chosen));
+              }
+            }
+            if(pushWords.isEmpty) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text("今日的推送已完成"), duration: Duration(seconds: 1),),
+              );
+              return;
+            }
+            context.read<Global>().uiLogger.info("跳转: LearningPage => FSRSLearningPage");
+            Navigator.push(
+              context, 
+              MaterialPageRoute(
+                builder: (context) => FSRSLearningPage(fsrs: context.read<Global>().globalFSRS, words: pushWords)
+              )
+            );
+          },
+          icon: Icon(Icons.push_pin, size: 24),
+          label: Text("学习推送单词", style: TextStyle(fontSize: 40.0, fontWeight: FontWeight.bold)),
         ),
         SizedBox(height: mediaQuery.size.height * 0.05),
         ElevatedButton.icon(

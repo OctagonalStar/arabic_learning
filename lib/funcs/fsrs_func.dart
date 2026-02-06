@@ -124,6 +124,7 @@ class FSRSConfig {
   final int goodDuration;
   final bool preferSimilar;
   final bool selfEvaluate;
+  final int pushAmount;
 
   const FSRSConfig({
     bool? enabled,
@@ -134,7 +135,8 @@ class FSRSConfig {
     int? easyDuration,
     int? goodDuration,
     bool? preferSimilar,
-    bool? selfEvaluate
+    bool? selfEvaluate,
+    int? pushAmount
   }) :
     enabled = enabled??false,
     cards = cards??const [],
@@ -143,7 +145,8 @@ class FSRSConfig {
     easyDuration = easyDuration??3000,
     goodDuration = goodDuration??6000,
     preferSimilar = preferSimilar??false,
-    selfEvaluate = selfEvaluate??false;
+    selfEvaluate = selfEvaluate??false,
+    pushAmount = pushAmount??0;
   
   Map<String, dynamic> toMap(){
     return {
@@ -155,7 +158,8 @@ class FSRSConfig {
       "easyDuration": easyDuration,
       "goodDuration": goodDuration,
       "preferSimilar": preferSimilar,
-      "selfEvaluate": selfEvaluate
+      "selfEvaluate": selfEvaluate,
+      "pushAmount": pushAmount
     };
   }
 
@@ -168,7 +172,8 @@ class FSRSConfig {
     int? easyDuration,
     int? goodDuration,
     bool? preferSimilar,
-    bool? selfEvaluate
+    bool? selfEvaluate,
+    int? pushAmount
   }) {
     return FSRSConfig(
       enabled: enabled??this.enabled,
@@ -179,7 +184,8 @@ class FSRSConfig {
       easyDuration: easyDuration??this.easyDuration,
       goodDuration: goodDuration??this.goodDuration,
       preferSimilar: preferSimilar??this.preferSimilar,
-      selfEvaluate: selfEvaluate??this.selfEvaluate
+      selfEvaluate: selfEvaluate??this.selfEvaluate,
+      pushAmount: pushAmount??this.pushAmount
     );
   }
 
@@ -194,7 +200,8 @@ class FSRSConfig {
         easyDuration: configData["easyDuration"],
         goodDuration: configData["goodDuration"],
         preferSimilar: configData["preferSimilar"],
-        selfEvaluate: configData["selfEvaluate"]
+        selfEvaluate: configData["selfEvaluate"],
+        pushAmount: configData["pushAmount"]
       );
     }
     return FSRSConfig(enabled: false);
