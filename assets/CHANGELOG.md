@@ -10,12 +10,16 @@
 - 添加了常见问题页面
 - 给部分文本框添加了动画
 - 添加了听力题型 [#51](https://github.com/OctagonalStar/arabic_learning/issues/51)
+- 为每次学习添加了是否计算复习的提示 [#52](https://github.com/OctagonalStar/arabic_learning/issues/52)
+- 在复习部分添加了自我评级方案 [#52](https://github.com/OctagonalStar/arabic_learning/issues/52)
+- 添加了每日单词推送功能 [#52](https://github.com/OctagonalStar/arabic_learning/issues/52)
 
 ### Improvement
 
 - 优化了选择题单词挑选逻辑 [#48](https://github.com/OctagonalStar/arabic_learning/issues/48)
 - 修复了BKTree日志刷屏问题
 - 移除了提醒配置的中间页面
+- 对于拼写题型放宽了时间要求 [#52](https://github.com/OctagonalStar/arabic_learning/issues/52)
 
 ### Fix
 
