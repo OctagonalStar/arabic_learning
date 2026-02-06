@@ -50,11 +50,11 @@ class FSRS {
     return config.cards[index].due.toLocal().difference(DateTime.now()).inDays;
   }
 
-  void reviewCard(int wordId, int duration, bool isCorrect) {
+  void reviewCard(int wordId, int duration, bool isCorrect, {Rating? forceRate}) {
     logger.fine("记录复习卡片: Id: $wordId; duration: $duration; isCorrect: $isCorrect");
     int index = config.cards.indexWhere((Card card) => card.cardId == wordId); // 避免有时候cardId != wordId
     logger.fine("定位复习卡片地址: $index, 目前阶段: ${config.cards[index].step}, 难度: ${config.cards[index].difficulty}, 稳定: ${config.cards[index].stability}, 过期时间(+8): ${config.cards[index].due.toLocal()}");
-    final (:card, :reviewLog) = config.scheduler!.reviewCard(config.cards[index], calculate(duration, isCorrect), reviewDateTime: DateTime.now().toUtc(), reviewDuration: duration);
+    final (:card, :reviewLog) = config.scheduler!.reviewCard(config.cards[index], forceRate ?? calculate(duration, isCorrect), reviewDateTime: DateTime.now().toUtc(), reviewDuration: duration);
     config.cards[index] = card;
     config.reviewLogs[index] = reviewLog;
     logger.fine("卡片 $index 复习后: 目前阶段: ${config.cards[index].step}, 难度: ${config.cards[index].difficulty}, 稳定: ${config.cards[index].stability}, 过期时间(+8): ${config.cards[index].due.toLocal()}");
@@ -83,13 +83,11 @@ class FSRS {
   }
 
   bool isContained(int wordId) {
-    for(Card card in config.cards) {
-      if(card.cardId == wordId) return true;
-    }
-    return false;
+    return config.cards.any((Card card) => card.cardId == wordId);
   }
 
   void addWordCard(int wordId) {
+    logger.fine("添加复习卡片: Id: $wordId");
     // os the wordID == cardID
     config.cards.add(Card(cardId: wordId, state: State.learning));
     config.reviewLogs.add(ReviewLog(cardId: wordId, rating: Rating.good, reviewDateTime: DateTime.now()));
@@ -125,6 +123,8 @@ class FSRSConfig {
   final int easyDuration;
   final int goodDuration;
   final bool preferSimilar;
+  final bool selfEvaluate;
+  final int pushAmount;
 
   const FSRSConfig({
     bool? enabled,
@@ -134,7 +134,9 @@ class FSRSConfig {
     double? desiredRetention,
     int? easyDuration,
     int? goodDuration,
-    bool? preferSimilar
+    bool? preferSimilar,
+    bool? selfEvaluate,
+    int? pushAmount
   }) :
     enabled = enabled??false,
     cards = cards??const [],
@@ -142,7 +144,9 @@ class FSRSConfig {
     desiredRetention = desiredRetention??0.9,
     easyDuration = easyDuration??3000,
     goodDuration = goodDuration??6000,
-    preferSimilar = preferSimilar??false;
+    preferSimilar = preferSimilar??false,
+    selfEvaluate = selfEvaluate??false,
+    pushAmount = pushAmount??0;
   
   Map<String, dynamic> toMap(){
     return {
@@ -153,7 +157,9 @@ class FSRSConfig {
       "desiredRetention": desiredRetention,
       "easyDuration": easyDuration,
       "goodDuration": goodDuration,
-      "preferSimilar": preferSimilar
+      "preferSimilar": preferSimilar,
+      "selfEvaluate": selfEvaluate,
+      "pushAmount": pushAmount
     };
   }
 
@@ -165,7 +171,9 @@ class FSRSConfig {
     double? desiredRetention,
     int? easyDuration,
     int? goodDuration,
-    bool? preferSimilar
+    bool? preferSimilar,
+    bool? selfEvaluate,
+    int? pushAmount
   }) {
     return FSRSConfig(
       enabled: enabled??this.enabled,
@@ -175,7 +183,9 @@ class FSRSConfig {
       desiredRetention: desiredRetention??this.desiredRetention,
       easyDuration: easyDuration??this.easyDuration,
       goodDuration: goodDuration??this.goodDuration,
-      preferSimilar: preferSimilar??this.preferSimilar
+      preferSimilar: preferSimilar??this.preferSimilar,
+      selfEvaluate: selfEvaluate??this.selfEvaluate,
+      pushAmount: pushAmount??this.pushAmount
     );
   }
 
@@ -189,7 +199,9 @@ class FSRSConfig {
         desiredRetention: configData["desiredRetention"],
         easyDuration: configData["easyDuration"],
         goodDuration: configData["goodDuration"],
-        preferSimilar: configData["preferSimilar"]
+        preferSimilar: configData["preferSimilar"],
+        selfEvaluate: configData["selfEvaluate"],
+        pushAmount: configData["pushAmount"]
       );
     }
     return FSRSConfig(enabled: false);

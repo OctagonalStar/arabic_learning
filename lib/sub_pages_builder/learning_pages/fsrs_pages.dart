@@ -2,6 +2,7 @@ import 'dart:math';
 
 import 'package:arabic_learning/vars/config_structure.dart';
 import 'package:flutter/material.dart';
+import 'package:fsrs/fsrs.dart' show Rating;
 import 'package:provider/provider.dart';
 
 import 'package:arabic_learning/vars/statics_var.dart';
@@ -17,21 +18,18 @@ class ForeFSRSSettingPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     context.read<Global>().uiLogger.info("构建 ForeFSRSSettingPage");
-    MediaQueryData mediaQuery = MediaQuery.of(context);
-    FSRS fsrs = FSRS()..init(outerPrefs: context.read<Global>().prefs);
+    final FSRS fsrs = context.read<Global>().globalFSRS;
     if(fsrs.config.enabled && !forceChoosing) {
       return MainFSRSPage(fsrs: fsrs);
     }
     return Scaffold(
       appBar: AppBar(
-        title: const Text("FSRS-抗遗忘学习 预设置"),
+        title: const Text("单词规律复习设置"),
       ),
       body: StatefulBuilder(
         builder: (context, setState) {
           return ListView(
             children: [
-              TextContainer(text: "本软件通过FSRS（Forgetting Spaced Repetition System）遗忘曲线的间隔重复学习算法，帮助用户更有效地记忆单词。\n你可以通过调整以下参数来个性化学习方案："),
-              SizedBox(height: mediaQuery.size.height * 0.02),
               TextContainer(text: "参数配置", textAlign: TextAlign.center),
               Container(
                 decoration: BoxDecoration(
@@ -148,6 +146,70 @@ class ForeFSRSSettingPage extends StatelessWidget {
                   children: [
                     Row(
                       children: [
+                        Expanded(child: Text("使用自我评级", style: Theme.of(context).textTheme.bodyLarge)),
+                        Switch(
+                          value: fsrs.config.selfEvaluate, 
+                          onChanged: (value){
+                            setState(() {
+                              fsrs.config = fsrs.config.copyWith(
+                                selfEvaluate: value
+                              );
+                            });
+                          }
+                        )
+                      ],
+                    ),
+                    Text("自我评级 开启时会向你展示遮挡了中文的单词卡片，由你自行选择你是 记得很清楚/还记得/回忆困难/忘了"),
+                    Text("在此模式下，计时仅作展示，不作为评分依据"),
+                    Text("适合清楚自己的实力的人启用")
+                  ],
+                ),
+              ),
+              Container(
+                decoration: BoxDecoration(
+                  borderRadius: StaticsVar.br,
+                  color: Theme.of(context).colorScheme.onSecondary
+                ),
+                margin: EdgeInsets.all(8.0),
+                padding: EdgeInsets.all(8.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Expanded(child: Text("每日单词推送", style: Theme.of(context).textTheme.bodyLarge)),
+                        Slider(
+                          max: 20.0,
+                          min: 0.0,
+                          divisions: 20,
+                          value: fsrs.config.pushAmount.toDouble(), 
+                          onChanged: (double value){
+                            setState(() {
+                              fsrs.config = fsrs.config.copyWith(pushAmount: value.round());
+                            });
+                          },
+                          label: fsrs.config.pushAmount == 0 ? "禁用" : fsrs.config.pushAmount.toString(),
+                        )
+                      ],
+                    ),
+                    Text("单词推送 开启后每天会推送新单词 但数量不一定是你所指定的（大概率会少几个） 你可以在学习页面入口进入推送单词学习"),
+                    Text("学习的推送单词会加入复习中"),
+                    Text("当天是否学习新单词对连胜计数没有影响 学不学可以看你心情")
+                  ],
+                ),
+              ),
+              if(!fsrs.config.selfEvaluate) Container(
+                decoration: BoxDecoration(
+                  borderRadius: StaticsVar.br,
+                  color: Theme.of(context).colorScheme.onPrimary
+                ),
+                margin: EdgeInsets.all(8.0),
+                padding: EdgeInsets.all(8.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
                         Expanded(child: Text("偏好易混词", style: Theme.of(context).textTheme.bodyLarge)),
                         Switch(
                           value: fsrs.config.preferSimilar, 
@@ -162,7 +224,8 @@ class ForeFSRSSettingPage extends StatelessWidget {
                       ],
                     ),
                     Text("偏好易混词 开启时选择题的选项更多地按照词根寻找相似的单词进行测试"),
-                    Text("关闭时选择题的选项更多地考察同课程的单词")
+                    Text("关闭时选择题的选项更多地考察同课程的单词"),
+                    Text("该选型仅在自我评级关闭时生效")
                   ],
                 ),
               ),
@@ -193,13 +256,9 @@ class MainFSRSPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     context.read<Global>().uiLogger.info("构建 MainFSRSPage");
-    bool isAnyDue = fsrs.getWillDueCount() != 0;
     MediaQueryData mediaQuery = MediaQuery.of(context);
     final PageController controller = PageController();
     Random sharedRnd = Random();
-    if(!isAnyDue) {
-      return FSRSOverViewPage(fsrs: fsrs);
-    }
     return Scaffold(
       appBar: AppBar(
         title: const Text("规律学习"),
@@ -225,7 +284,7 @@ class MainFSRSPage extends StatelessWidget {
             return Center(
               child: Column(
                 children: [
-                  TextContainer(text: "你有${fsrs.getWillDueCount().toString()}个单词即将逾期!\n上滑页面开始复习",size: Size(mediaQuery.size.width * 0.8, mediaQuery.size.height * 0.4),textAlign: TextAlign.center),
+                  TextContainer(text: "你有${fsrs.getWillDueCount().toString()}个单词需要复习!\n上滑页面开始复习",size: Size(mediaQuery.size.width * 0.8, mediaQuery.size.height * 0.4),textAlign: TextAlign.center),
                   Icon(Icons.arrow_upward, size: 48.0, color: Colors.grey)
                 ],
               ),
@@ -269,39 +328,46 @@ class _FSRSReviewCardPage extends State<FSRSReviewCardPage> {
     context.read<Global>().uiLogger.info("构建 FSRSReviewCardPage");
     MediaQueryData mediaQuery = MediaQuery.of(context);
     final List<WordItem> wordData = context.read<Global>().wordData.words;
+    late final int correct;
 
     // 防止重建后选项丢失
     if(options == null){
-      List<WordItem> optionWords = getRandomWords(4, context.read<Global>().wordData, include: wordData[widget.wordID], preferClass: !widget.fsrs.config.preferSimilar, rnd: widget.rnd);
-      options ??= List.generate(4, (int index) => optionWords[index].chinese, growable: false);
+      if(widget.fsrs.config.selfEvaluate) {
+        options = const ["记得很清楚", "还记得", "回忆困难", "忘了"];
+        correct = -1;
+      } else {
+        List<WordItem> optionWords = getRandomWords(4, context.read<Global>().wordData, include: wordData[widget.wordID], preferClass: !widget.fsrs.config.preferSimilar, rnd: widget.rnd);
+        options = List.generate(4, (int index) => optionWords[index].chinese, growable: false);
+        correct  = options!.indexOf(context.read<Global>().wordData.words[widget.wordID].chinese);
+      }
     }
     
-    final int correct = options!.indexOf(context.read<Global>().wordData.words[widget.wordID].chinese);
     return Material(
       child: ChoiceQuestions(
-        mainWord: wordData[widget.wordID].arabic, 
+        mainWord: widget.fsrs.config.selfEvaluate ? "[selfEvaluate]" : wordData[widget.wordID].arabic, 
+        midWidget: widget.fsrs.config.selfEvaluate ? WordCard(word: wordData[widget.wordID]) : null,
         choices: options!, 
         allowAudio: true, 
-        allowAnitmation: true,
+        allowAnitmation: !widget.fsrs.config.selfEvaluate,
         allowMutipleSelect: false,
         hint: "单词ID: ${widget.wordID}${choosed ? " 用时: ${end.difference(start).inMilliseconds}毫秒" : ""}",
-        onDisAllowMutipleSelect: (value) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text("人要向前看 题要向下翻 :)"), duration: Duration(seconds: 1),),
-          );
-        },
         onSelected: (value) {
           setState(() {
             choosed = true;
             end =  DateTime.now();
           });
-          if(correct == value) {
-            widget.fsrs.reviewCard(widget.wordID, end.difference(start).inMilliseconds, true);
-            context.read<Global>().updateLearningStreak();
+          context.read<Global>().updateLearningStreak();
+          if(widget.fsrs.config.selfEvaluate) {
+            widget.fsrs.reviewCard(widget.wordID, end.difference(start).inMilliseconds, true, forceRate: (const [Rating.easy, Rating.good, Rating.hard, Rating.again]).elementAt(value));
             return true;
           } else {
-            widget.fsrs.reviewCard(widget.wordID, end.difference(start).inMilliseconds, false);
-            return false;
+            if(correct == value) {
+              widget.fsrs.reviewCard(widget.wordID, end.difference(start).inMilliseconds, true);
+              return true;
+            } else {
+              widget.fsrs.reviewCard(widget.wordID, end.difference(start).inMilliseconds, false);
+              return false;
+            }
           }
         },
         bottomWidget: TweenAnimationBuilder<double>(
@@ -315,7 +381,7 @@ class _FSRSReviewCardPage extends State<FSRSReviewCardPage> {
             return Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                ElevatedButton.icon(
+                if(!widget.fsrs.config.selfEvaluate) ElevatedButton.icon(
                   style: ElevatedButton.styleFrom(
                     fixedSize: Size(mediaQuery.size.width * 0.9 - mediaQuery.size.width * 0.5 * value, mediaQuery.size.height * 0.1),
                     shape: RoundedRectangleBorder(borderRadius: StaticsVar.br)
@@ -329,10 +395,10 @@ class _FSRSReviewCardPage extends State<FSRSReviewCardPage> {
                   icon: Icon(Icons.tips_and_updates),
                   label: Text(value == 0.0 ? "忘了？" : "详解"),
                 ),
-                SizedBox(width: mediaQuery.size.width*0.02*value),
+                if(!widget.fsrs.config.selfEvaluate) SizedBox(width: mediaQuery.size.width*0.02*value),
                 if(value > 0.3) ElevatedButton.icon(
                   style: ElevatedButton.styleFrom(
-                    fixedSize: Size(mediaQuery.size.width * 0.5 * value, mediaQuery.size.height * 0.1),
+                    fixedSize: Size(mediaQuery.size.width * (widget.fsrs.config.selfEvaluate ? 1 : 0.5) * value, mediaQuery.size.height * 0.1),
                     shape: RoundedRectangleBorder(borderRadius: StaticsVar.br)
                   ),
                   onPressed: () {
@@ -345,69 +411,6 @@ class _FSRSReviewCardPage extends State<FSRSReviewCardPage> {
             );
           }
         )
-      )
-    );
-  }
-}
-
-// 没有东西复习的时候
-class FSRSOverViewPage extends StatefulWidget {
-  final FSRS fsrs;
-  const FSRSOverViewPage({super.key, required this.fsrs});
-
-  @override
-  State<FSRSOverViewPage> createState() => _FSRSOverViewPageState();
-}
-
-class _FSRSOverViewPageState extends State<FSRSOverViewPage> {
-  @override
-  Widget build(BuildContext context) {
-    MediaQueryData mediaQuery = MediaQuery.of(context);
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text("进度概览"),
-        actions: [
-          IconButton(
-            icon: Icon(Icons.keyboard_option_key),
-            onPressed: () {
-              showModalBottomSheet(
-                context: context, 
-                isScrollControlled: true,
-                builder: (context) => ForeFSRSSettingPage(forceChoosing: true)
-              );
-            },
-          ),
-        ],
-      ),
-      body: ListView(
-        children: [
-          TextContainer(text: "目前没有需要复习的单词！"),
-          SizedBox(height: mediaQuery.size.height * 0.01),
-          ElevatedButton.icon(
-            style: ElevatedButton.styleFrom(
-              fixedSize: Size.fromHeight(mediaQuery.size.height * 0.1)
-            ),
-            icon: const Icon(Icons.label_important, size: 24.0),
-            label: const Text("去学习新单词"),
-            onPressed: () async {
-              late List<ClassItem> selectedClasses;
-              late List<WordItem> words;
-              selectedClasses = await popSelectClasses(context, withCache: false);
-              if(!context.mounted || selectedClasses.isEmpty) return;
-              words = getSelectedWords(context, forceSelectClasses: selectedClasses, doShuffle: true, doDouble: false);
-              // 去除已经学习的项目
-              words.removeWhere((WordItem item) => widget.fsrs.isContained(item.id));
-              context.read<Global>().uiLogger.info("跳转: FSRSOverViewPage => FSRSLearningPage");
-              Navigator.push(
-                context, 
-                MaterialPageRoute(
-                  builder: (context) => FSRSLearningPage(words: words, fsrs: widget.fsrs,),
-                )
-              );
-            },
-          ),
-        // TextContainer(text: "统计数据")
-        ],
       )
     );
   }
@@ -446,7 +449,7 @@ class _FSRSLearningPageState extends State<FSRSLearningPage> {
     if(widget.words.isEmpty) {
       return Scaffold(
         appBar: AppBar(),
-        body: Center(child: TextContainer(text: "你选择的课程中所有的单词都已经学习过了\n等复习吧")),
+        body: Center(child: TextContainer(text: "你选择的所有的单词都已经学习过了\n等复习吧")),
       );
     }
     return Scaffold(

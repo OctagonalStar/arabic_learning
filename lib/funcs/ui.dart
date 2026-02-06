@@ -1,7 +1,7 @@
 import 'dart:convert';
 import 'dart:ui';
 
-import 'package:arabic_learning/vars/config_structure.dart' show ClassItem, SourceItem, WordItem;
+import 'package:arabic_learning/vars/config_structure.dart' show ClassItem, SourceItem, WordItem, ClassSelection;
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -36,7 +36,7 @@ import 'package:arabic_learning/funcs/utili.dart';
 /// List<List<String>> value = await popSelectClasses(context);
 /// List<Map<String, dynamic>> words = getSelectedWords(context , forceSelectClasses: value);
 /// ```
-Future<List<ClassItem>> popSelectClasses(BuildContext context, {bool withCache = false}) async {
+Future<ClassSelection> popSelectClasses(BuildContext context, {bool withCache = false, bool withReviewChoose = true}) async {
   context.read<Global>().uiLogger.info("弹出课程选择（ClassSelectPage），withCache: $withCache");
   final List<ClassItem> beforeSelectedClasses = [];
   if(withCache) {
@@ -59,15 +59,14 @@ Future<List<ClassItem>> popSelectClasses(BuildContext context, {bool withCache =
     }
     context.read<Global>().uiLogger.fine("已缓存课程选择: $beforeSelectedClasses");
   }
-  List<ClassItem>? selectedClasses = await showModalBottomSheet<List<ClassItem>>(
+  ClassSelection? selectedClasses = await showModalBottomSheet<ClassSelection>(
     context: context,
-    // 假装圆角... :)
     shape: RoundedRectangleBorder(side: BorderSide(width: 1.0, color: Theme.of(context).colorScheme.onSurface.withAlpha(150)), borderRadius: StaticsVar.br),
     isDismissible: false,
     isScrollControlled: context.read<Global>().isWideScreen,
     enableDrag: true,
     builder: (BuildContext context) {
-      return ClassSelectPage(beforeSelectedClasses: beforeSelectedClasses);
+      return ClassSelectPage(beforeSelectedClasses: beforeSelectedClasses, withReviewChoose: withReviewChoose);
     }
   );
   if(withCache && selectedClasses != null && context.mounted) {
@@ -78,7 +77,7 @@ Future<List<ClassItem>> popSelectClasses(BuildContext context, {bool withCache =
     context.read<Global>().uiLogger.info("课程选择缓存完成");
   }
   if(context.mounted) context.read<Global>().uiLogger.fine("选择的课程: $selectedClasses");
-  return selectedClasses??[];
+  return selectedClasses??ClassSelection(selectedClass: [], countInReview: false);
 }
 
 
@@ -573,19 +572,23 @@ class WordCard extends StatelessWidget {
 /// 注意：如果你要进行课程选择，请先考虑 [popSelectClasses] 函数，这是一个已经基本成熟的实现
 class ClassSelectPage extends StatelessWidget { 
   final List<ClassItem> beforeSelectedClasses;
-  const ClassSelectPage({super.key, this.beforeSelectedClasses = const []});
+  final bool withReviewChoose;
+  const ClassSelectPage({super.key, this.beforeSelectedClasses = const [], this.withReviewChoose = false});
   @override
   Widget build(BuildContext context) {
     final MediaQueryData mediaQuery = MediaQuery.of(context);
-    List<ClassItem> selectedClass = beforeSelectedClasses.toList();
+    ClassSelection classSelection = ClassSelection(
+      selectedClass: beforeSelectedClasses.toList(), 
+      countInReview: context.read<Global>().globalFSRS.config.enabled
+      );
     void addClass(ClassItem classInfo) {
-      selectedClass.add(classInfo);
+      classSelection.selectedClass.add(classInfo);
     }
     void removeClass(ClassItem classInfo) {
-      selectedClass.remove(classInfo);
+      classSelection.selectedClass.remove(classInfo);
     }
     bool isClassSelected(ClassItem classInfo) {
-      return selectedClass.any((e) => e==classInfo);
+      return classSelection.selectedClass.any((e) => e==classInfo);
     }
     void onClassChanged(ClassItem classInfo) {
       if(isClassSelected(classInfo)) {
@@ -594,14 +597,6 @@ class ClassSelectPage extends StatelessWidget {
         addClass(classInfo);
       }
     }
-    // 和监听器脱钩...
-    // if(!context.watch<ClassSelectModel>().initialized) {
-    //   return Scaffold(
-    //     body: Center(
-    //       child: CircularProgressIndicator(),
-    //     ),
-    //   );
-    // }
 
     return Scaffold(
       appBar: AppBar(
@@ -614,6 +609,27 @@ class ClassSelectPage extends StatelessWidget {
               children: classesSelectionList(context, onClassChanged, isClassSelected)
             ),
           ),
+          if(withReviewChoose) StatefulBuilder(
+            builder: (context, setLocalState) {
+              return Row(
+                children: [
+                  Expanded(child: Text("本次学习${classSelection.countInReview?"将":"不会"}计入复习系统")),
+                  Switch(
+                    value: classSelection.countInReview, 
+                    onChanged: (value){
+                      if(value == true && !context.read<Global>().globalFSRS.config.enabled) {
+                        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("请先启用复习系统")));
+                        return ;
+                      }
+                      setLocalState(() {
+                        classSelection.countInReview = value;
+                      });
+                    }
+                  )
+                ],
+              );
+            }
+          ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(
               fixedSize: Size(mediaQuery.size.width, mediaQuery.size.height * 0.08),
@@ -621,7 +637,7 @@ class ClassSelectPage extends StatelessWidget {
             ),
             child: Text('确认'),
             onPressed: () {
-              Navigator.pop(context, selectedClass);
+              Navigator.pop(context, classSelection);
             },
           ),
         ],
@@ -700,6 +716,7 @@ class ChoiceQuestions extends StatefulWidget {
   final List<String> choices;
   final bool? Function(int) onSelected;
   final String? hint;
+  final Widget? midWidget;
   final Widget? bottomWidget;
   final Function? onDisAllowMutipleSelect;
   final bool allowMutipleSelect;
@@ -712,6 +729,7 @@ class ChoiceQuestions extends StatefulWidget {
                         required this.allowAudio, 
                         required this.onSelected,
                         this.hint, 
+                        this.midWidget,
                         this.bottomWidget, 
                         this.onDisAllowMutipleSelect,
                         this.bottonLayout = -1,
@@ -742,7 +760,7 @@ class _ChoiceQuestions extends State<ChoiceQuestions> {
           children: [
             if(widget.hint!=null) TextContainer(text: widget.hint!, animated: true),
             Expanded(
-              child: StatefulBuilder(
+              child: widget.midWidget ?? StatefulBuilder(
                 builder: (context, setLocalState) {
                   return ElevatedButton.icon(
                     icon: Icon(widget.allowAudio ? (playing ? Icons.multitrack_audio : Icons.volume_up) : Icons.short_text, size: 24.0),

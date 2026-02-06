@@ -752,3 +752,13 @@ class WordItem {
     );
   }
 }
+
+class ClassSelection {
+  List<ClassItem> selectedClass;
+  bool countInReview;
+
+  ClassSelection({
+    required this.selectedClass,
+    required this.countInReview
+  });
+}

@@ -19,14 +19,14 @@ class _ForeListeningSettingPage extends State<ForeListeningSettingPage> {
   int playTimes = 3;
   int interval = 5;
   int intervalBetweenWords = 10;
-  List<ClassItem> selectedClasses = [];
+  ClassSelection selectedClasses = ClassSelection(selectedClass: List.empty(), countInReview: false);
   
 
   @override
   Widget build(BuildContext context) {
     context.read<Global>().uiLogger.info("构建 ForeListeningSettingPage");
     MediaQueryData mediaQuery = MediaQuery.of(context);
-    int wordCount = getSelectedWords(context, forceSelectClasses: selectedClasses).length;
+    int wordCount = getSelectedWords(context, forceSelectClasses: selectedClasses.selectedClass).length;
     return Scaffold(
       appBar: AppBar(
         title: Text('自主听写预设置'),
@@ -66,7 +66,7 @@ class _ForeListeningSettingPage extends State<ForeListeningSettingPage> {
                 ),
               ),
               onPressed: () async {
-                selectedClasses = await popSelectClasses(context, withCache: false);
+                selectedClasses = await popSelectClasses(context, withCache: false, withReviewChoose: false);
                 setState(() {});
               }, 
               child: Column(
@@ -196,7 +196,7 @@ class _ForeListeningSettingPage extends State<ForeListeningSettingPage> {
               icon: Icon(Icons.rocket_launch, size: 32.0,),
               label: Text("听写，启动！", style: TextStyle(fontSize: 24.0),),
               onPressed: () {
-                if(selectedClasses.isEmpty) {
+                if(selectedClasses.selectedClass.isEmpty) {
                   alart(context, "是哪个小可爱没选课程就来听写了");
                   return;
                 }
@@ -210,7 +210,7 @@ class _ForeListeningSettingPage extends State<ForeListeningSettingPage> {
                       playTimes: playTimes, 
                       interval: interval, 
                       intervalBetweenWords: intervalBetweenWords, 
-                      words: getSelectedWords(context, forceSelectClasses: selectedClasses, doShuffle: true)
+                      words: getSelectedWords(context, forceSelectClasses: selectedClasses.selectedClass, doShuffle: true)
                     )
                   )
                 );

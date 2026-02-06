@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:arabic_learning/funcs/fsrs_func.dart';
 import 'package:arabic_learning/funcs/utili.dart';
 import 'package:logging/logging.dart';
 import 'package:flutter/material.dart';
@@ -27,6 +28,7 @@ class Global with ChangeNotifier {
   late bool updateLogRequire; //是否需要显示更新日志
   late bool isWideScreen; // 设备是否是宽屏幕
   late final SharedPreferences prefs; // 储存实例
+  late FSRS globalFSRS;
   late ThemeData themeData;
   bool modelTTSDownloaded = false;
   late DictData wordData;
@@ -60,8 +62,12 @@ class Global with ChangeNotifier {
   // 预处理一些版本更新的配置文件兼容
   Future<void> conveySetting() async {
     logger.info("处理配置文件");
+
+    // 在配置文件加载完成前可以做的
     wordData = DictData.buildFromMap(jsonDecode(prefs.getString("wordData")!));
     if(!BKSearch.isReady) BKSearch.init(wordData.words);
+    globalFSRS = FSRS()..init(outerPrefs: prefs);
+
     Config oldConfig = Config.buildFromMap(jsonDecode(prefs.getString("settingData")!));
     if(oldConfig.lastVersion != globalConfig.lastVersion) {
       logger.info("检测到当前版本与上次启动版本不同");
