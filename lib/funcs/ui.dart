@@ -844,7 +844,7 @@ class WordCardQuestion extends StatelessWidget {
           SizedBox(height: mediaQuery.size.height * 0.01),
           WordCard(word: word),
           Expanded(child: SizedBox()),
-          if(bottomWidget != null) bottomWidget!,
+          ?bottomWidget,
           SizedBox(height: mediaQuery.size.height * 0.05),
         ],
       ),

@@ -3,7 +3,7 @@
 class OfflineTts {
   OfflineTts(OfflineTtsConfig config);
 
-  generate({required String text, required speed}) {}
+  dynamic generate({required String text, required speed}) {}
 }
 
 void initBindings ({
