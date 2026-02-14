@@ -18,7 +18,7 @@ jobs:
         uses: subosito/flutter-action@v2
         with:
           channel: stable
-          flutter-version: '3.35.5'
+          flutter-version: '3.41.0'
       - name: Decode keystore
         run: |
           echo "${{ secrets.ANDROID_KEYSTORE_BASE64 }}" | base64 --decode > android/release.jks
@@ -55,7 +55,7 @@ jobs:
         uses: subosito/flutter-action@v2
         with:
           channel: stable
-          flutter-version: '3.35.5'
+          flutter-version: '3.41.0'
 
       - run: flutter pub get
       - run: flutter build windows
@@ -75,7 +75,7 @@ jobs:
         uses: subosito/flutter-action@v2
         with:
           channel: stable
-          flutter-version: '3.35.5'
+          flutter-version: '3.41.0'
 
       - run: flutter pub get
       - run: flutter build macos
@@ -95,7 +95,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: subosito/flutter-action@v2
         with:
-          flutter-version: '3.35.5'
+          flutter-version: '3.41.0'
       - run: flutter pub get
       - run: flutter build web --release --base-href /arabic_learning/
 

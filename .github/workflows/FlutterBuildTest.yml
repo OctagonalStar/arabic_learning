@@ -15,7 +15,7 @@ jobs:
         uses: subosito/flutter-action@v2
         with:
           channel: stable
-          flutter-version: '3.35.5'
+          flutter-version: '3.41.0'
 
       - run: flutter pub get
       - run: flutter build windows
@@ -32,7 +32,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: subosito/flutter-action@v2
         with:
-          flutter-version: '3.35.5'
+          flutter-version: '3.41.0'
       - run: flutter pub get
       - run: flutter build web --release
       - uses: actions/upload-artifact@v4
