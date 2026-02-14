@@ -19,7 +19,7 @@ Future<FlutterLocalNotificationsPlugin?> initNotificationsBackground() async {
 
   // 通知接口
   FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin = FlutterLocalNotificationsPlugin();
-  await flutterLocalNotificationsPlugin.initialize(initializationSettings);
+  await flutterLocalNotificationsPlugin.initialize(settings: initializationSettings);
 
   // 通知渠道
   const AndroidNotificationChannel channel = AndroidNotificationChannel(
@@ -66,10 +66,10 @@ Future<bool> sendNotification() async {
   
   final Random rnd = Random();
   await localNotificationPlugin.show(
-    rnd.nextInt(9999),
-    '学习提醒',
-    StaticsVar.learningMessage[rnd.nextInt(StaticsVar.learningMessage.length)],
-    notificationDetails,
+    id: rnd.nextInt(9999),
+    title: '学习提醒',
+    body: StaticsVar.learningMessage[rnd.nextInt(StaticsVar.learningMessage.length)],
+    notificationDetails: notificationDetails,
   );
   return Future.value(true);
 }

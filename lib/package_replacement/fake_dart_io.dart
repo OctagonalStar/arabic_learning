@@ -44,7 +44,7 @@ class IdbFactory{
 }
 
 class Database {
-  transaction(String s, String t) {}
+  dynamic transaction(String s, String t) {}
   void createObjectStore(String s, {required bool autoIncrement}) {}
 }
 
