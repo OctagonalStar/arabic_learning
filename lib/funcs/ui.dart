@@ -512,12 +512,52 @@ class WordCard extends StatelessWidget {
                 color: Theme.of(context).colorScheme.onInverseSurface.withAlpha(150),
                 borderRadius: BorderRadius.vertical(bottom: Radius.circular(25.0)),
               ),
-              child: Center(
-                child: Text(' 中文：${word.chinese}\n 示例：${word.explanation}\n 归属课程：${word.className}',
-                  style: Theme.of(context).textTheme.bodyLarge,
-                  textAlign: TextAlign.left,
-                ),
-              ),
+              child: ListView(
+                children: [
+                  Row(
+                    children: [
+                      Container(
+                        height: useHeight*0.16,
+                        width: useWidth*0.2,
+                        decoration: BoxDecoration(
+                          color: Theme.of(context).colorScheme.onSecondary.withAlpha(150),
+                        ),
+                        child: Center(child: Text("中文", style: TextStyle(fontSize: 18),)),
+                      ),
+                      Expanded(child: Text(word.chinese, style: TextStyle(fontSize: 24), textAlign: TextAlign.center))
+                    ],
+                  ),
+                  Divider(height: 0),
+                  Row(
+                    children: [
+                      Container(
+                        height: useHeight*0.3,
+                        width: useWidth*0.2,
+                        decoration: BoxDecoration(
+                          color: Theme.of(context).colorScheme.onPrimary.withAlpha(150),
+                        ),
+                        child: Center(child: Text("解释", style: TextStyle(fontSize: 18),)),
+                      ),
+                      Expanded(child: Text(word.explanation, style: TextStyle(fontSize: 18), textAlign: TextAlign.center))
+                    ],
+                  ),
+                  Divider(height: 0),
+                  Row(
+                    children: [
+                      Container(
+                        height: useHeight*0.14,
+                        width: useWidth*0.2,
+                        decoration: BoxDecoration(
+                          color: Theme.of(context).colorScheme.onSecondary.withAlpha(150),
+                          borderRadius: BorderRadius.only(bottomLeft: Radius.circular(25.0))
+                        ),
+                        child: Center(child: Text("归属课程", style: TextStyle(fontSize: 16),)),
+                      ),
+                      Expanded(child: Text(word.className, style: TextStyle(fontSize: 18), textAlign: TextAlign.center))
+                    ],
+                  )
+                ],
+              )
             ),
             StatefulBuilder(
               builder: (context, setLocalState) {
