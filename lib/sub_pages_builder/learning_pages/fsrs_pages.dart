@@ -345,7 +345,7 @@ class _FSRSReviewCardPage extends State<FSRSReviewCardPage> {
     return Material(
       child: ChoiceQuestions(
         mainWord: widget.fsrs.config.selfEvaluate ? "[selfEvaluate]" : wordData[widget.wordID].arabic, 
-        midWidget: widget.fsrs.config.selfEvaluate ? WordCard(word: wordData[widget.wordID]) : null,
+        midWidget: widget.fsrs.config.selfEvaluate ? WordCard(word: wordData[widget.wordID], width: mediaQuery.size.width * 0.8, height: mediaQuery.size.height * 0.4, useMask: !choosed) : null,
         choices: options!, 
         allowAudio: true, 
         allowAnitmation: !widget.fsrs.config.selfEvaluate,
@@ -395,10 +395,10 @@ class _FSRSReviewCardPage extends State<FSRSReviewCardPage> {
                   icon: Icon(Icons.tips_and_updates),
                   label: Text(value == 0.0 ? "忘了？" : "详解"),
                 ),
-                if(!widget.fsrs.config.selfEvaluate) SizedBox(width: mediaQuery.size.width*0.02*value),
+                SizedBox(width: mediaQuery.size.width*0.02*value, height: mediaQuery.size.height * 0.1),
                 if(value > 0.3) ElevatedButton.icon(
                   style: ElevatedButton.styleFrom(
-                    fixedSize: Size(mediaQuery.size.width * (widget.fsrs.config.selfEvaluate ? 1 : 0.5) * value, mediaQuery.size.height * 0.1),
+                    fixedSize: Size(mediaQuery.size.width * (widget.fsrs.config.selfEvaluate ? 0.8 : 0.5) * value, mediaQuery.size.height * 0.1),
                     shape: RoundedRectangleBorder(borderRadius: StaticsVar.br)
                   ),
                   onPressed: () {
@@ -473,7 +473,7 @@ class _FSRSLearningPageState extends State<FSRSLearningPage> {
                   Expanded(child: SizedBox()),
                   ElevatedButton.icon(
                     style: ElevatedButton.styleFrom(
-                      fixedSize: Size(mediaQuery.size.width * 0.8, mediaQuery.size.height * 0.2),
+                      fixedSize: Size(mediaQuery.size.width * 0.8, mediaQuery.size.height * 0.15),
                       shape: RoundedRectangleBorder(borderRadius: StaticsVar.br)
                     ),
                     icon: Icon(index == widget.words.length-1 ? Icons.arrow_forward : Icons.arrow_downward),
@@ -485,7 +485,8 @@ class _FSRSLearningPageState extends State<FSRSLearningPage> {
                       controllerLearning.nextPage(duration: Duration(milliseconds: 500), curve: StaticsVar.curve);
                       }
                     }, 
-                  )
+                  ),
+                  SizedBox(height: mediaQuery.size.height * 0.02)
                 ],
               );
             }

@@ -29,7 +29,7 @@ class LearningPage extends StatelessWidget {
                 ElevatedButton(
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Theme.of(context).colorScheme.onPrimary.withAlpha(150),
-                    fixedSize: Size(mediaQuery.size.width * 0.4, mediaQuery.size.height * 0.2),
+                    fixedSize: Size(mediaQuery.size.width * 0.4, mediaQuery.size.height * 0.15),
                     shape: RoundedRectangleBorder(borderRadius: BorderRadiusGeometry.vertical(top: Radius.circular(25.0))),
                   ),
                   onPressed: () {
@@ -63,7 +63,7 @@ class LearningPage extends StatelessWidget {
             ElevatedButton(
               style: ElevatedButton.styleFrom(
                 backgroundColor: Theme.of(context).colorScheme.onPrimary.withAlpha(150),
-                fixedSize: Size(mediaQuery.size.width * 0.4, mediaQuery.size.height * 0.3),
+                fixedSize: Size(mediaQuery.size.width * 0.4, mediaQuery.size.height * 0.25),
                 shape: RoundedRectangleBorder(
                   borderRadius: StaticsVar.br,
                 ),
@@ -99,7 +99,7 @@ class LearningPage extends StatelessWidget {
         if(context.read<Global>().globalFSRS.config.pushAmount != 0) ElevatedButton.icon(
           style: ElevatedButton.styleFrom(
             backgroundColor: Theme.of(context).colorScheme.onPrimary.withAlpha(150),
-            fixedSize: Size(mediaQuery.size.width * 0.7, mediaQuery.size.height * 0.2),
+            fixedSize: Size(mediaQuery.size.width * 0.8, mediaQuery.size.height * 0.15),
             shape: RoundedRectangleBorder(borderRadius: StaticsVar.br),
           ),
           onPressed: (){
@@ -128,13 +128,13 @@ class LearningPage extends StatelessWidget {
             );
           },
           icon: Icon(Icons.push_pin, size: 24),
-          label: Text("学习推送单词", style: TextStyle(fontSize: 40.0, fontWeight: FontWeight.bold)),
+          label: FittedBox(child: Text("学习推送单词", style: TextStyle(fontSize: 40.0))),
         ),
         SizedBox(height: mediaQuery.size.height * 0.05),
         ElevatedButton.icon(
           style: ElevatedButton.styleFrom(
             backgroundColor: Theme.of(context).colorScheme.onPrimary.withAlpha(150),
-            fixedSize: Size(mediaQuery.size.width * 0.7, mediaQuery.size.height * 0.2),
+            fixedSize: Size(mediaQuery.size.width * 0.8, mediaQuery.size.height * 0.2),
             shape: RoundedRectangleBorder(borderRadius: StaticsVar.br),
           ),
           onPressed: (){
@@ -147,7 +147,7 @@ class LearningPage extends StatelessWidget {
             );
           },
           icon: Icon(Icons.abc, size: 24),
-          label: Text("词汇总览", style: TextStyle(fontSize: 40.0, fontWeight: FontWeight.bold)),
+          label: Text("词汇总览", style: TextStyle(fontSize: 40.0)),
         ),
       ]
     );
