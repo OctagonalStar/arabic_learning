@@ -16,6 +16,15 @@ class _QuestionsSettingPage extends State<QuestionsSettingPage> {
   bool floatButtonFlod = true;
   static const Map<int, String> castMap = {0: "单词卡片学习", 1: "中译阿 选择题", 2: "阿译中 选择题", 3: "中译阿 拼写题", 4: "听力题"};
 
+  void _updateConfig() {
+    context.read<Global>().globalConfig = context.read<Global>().globalConfig.copyWith(
+      quiz: context.read<Global>().globalConfig.quiz.copyWith(
+        zhar: context.read<Global>().globalConfig.quiz.zhar.copyWith(
+          questionSections: selectedTypes!.cast<int>()
+        )
+      )
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -23,7 +32,7 @@ class _QuestionsSettingPage extends State<QuestionsSettingPage> {
     late final SubQuizConfig section;
     section = context.read<Global>().globalConfig.quiz.zhar;
     MediaQueryData mediaQuery = MediaQuery.of(context);
-    selectedTypes ??= section.questionSections;
+    selectedTypes ??= List.from(section.questionSections);
     List<Widget> listTiles = [];
     bool isEven = true;
     for(int index = 0; index < selectedTypes!.length; index++) {
@@ -48,6 +57,7 @@ class _QuestionsSettingPage extends State<QuestionsSettingPage> {
                     context.read<Global>().uiLogger.fine("移除题型项目: $index");
                     setState(() {
                       selectedTypes!.removeAt(index.toInt());
+                      _updateConfig();
                     });
                   }
                 }, 
@@ -80,6 +90,7 @@ class _QuestionsSettingPage extends State<QuestionsSettingPage> {
                     if(oldIndex < newIndex) newIndex--; // 修正索引
                     int old = selectedTypes!.removeAt(oldIndex);
                     selectedTypes!.insert(newIndex, old);
+                    _updateConfig();
                   });
                 },
                 children: listTiles, 
@@ -194,6 +205,7 @@ class _QuestionsSettingPage extends State<QuestionsSettingPage> {
                         context.read<Global>().uiLogger.info("添加题型类型: $i");
                         setState(() {
                           selectedTypes!.add(i);
+                          _updateConfig();
                         });
                       }, 
                       icon: Icon(Icons.add),

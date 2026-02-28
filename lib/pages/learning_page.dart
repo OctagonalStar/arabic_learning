@@ -69,19 +69,13 @@ class LearningPage extends StatelessWidget {
                 ),
               ),
               onPressed: (){
-                if(context.read<Global>().globalFSRS.getWillDueCount() != 0) {
-                  context.read<Global>().uiLogger.info("跳转: LearningPage => ForeFSRSSettingPage");
-                  Navigator.push(
-                    context, 
-                    MaterialPageRoute(
-                      builder: (context) => ForeFSRSSettingPage()
-                    )
-                  );
-                } else {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text("目前没有要复习的单词"), duration: Duration(seconds: 1),),
-                  );
-                }
+                context.read<Global>().uiLogger.info("跳转: LearningPage => ForeFSRSSettingPage");
+                Navigator.push(
+                  context, 
+                  MaterialPageRoute(
+                    builder: (context) => ForeFSRSSettingPage()
+                  )
+                );
               },
               child: FittedBox(
                 fit: BoxFit.contain,
@@ -103,15 +97,23 @@ class LearningPage extends StatelessWidget {
             shape: RoundedRectangleBorder(borderRadius: StaticsVar.br),
           ),
           onPressed: (){
+            if(context.read<Global>().wordData.words.isEmpty) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text("词库为空，无法推送！请先导入词库"), duration: Duration(seconds: 1),),
+              );
+              return;
+            }
             final DateTime now = DateTime.now();
             final int seed = now.year * 10000 + now.month * 100 + now.day;
-            final List<WordItem> pushWords = [];
+            final Set<WordItem> pushWords = {};
             final Random rnd = Random(seed);
-            for(int i = 0; i < context.read<Global>().globalFSRS.config.pushAmount; i++){
+            int tries = 0;
+            while(pushWords.length < context.read<Global>().globalFSRS.config.pushAmount && tries < context.read<Global>().globalFSRS.config.pushAmount * 10){
               int chosen = rnd.nextInt(context.read<Global>().wordData.words.length);
               if(!context.read<Global>().globalFSRS.isContained(chosen)) {
                 pushWords.add(context.read<Global>().wordData.words.elementAt(chosen));
               }
+              tries++;
             }
             if(pushWords.isEmpty) {
               ScaffoldMessenger.of(context).showSnackBar(
@@ -123,7 +125,7 @@ class LearningPage extends StatelessWidget {
             Navigator.push(
               context, 
               MaterialPageRoute(
-                builder: (context) => FSRSLearningPage(fsrs: context.read<Global>().globalFSRS, words: pushWords)
+                builder: (context) => FSRSLearningPage(fsrs: context.read<Global>().globalFSRS, words: pushWords.toList())
               )
             );
           },
