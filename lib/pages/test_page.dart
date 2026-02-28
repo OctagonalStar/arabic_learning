@@ -6,8 +6,8 @@ import 'package:provider/provider.dart';
 import 'package:arabic_learning/vars/global.dart';
 import 'package:arabic_learning/vars/statics_var.dart';
 import 'package:arabic_learning/sub_pages_builder/test_pages/listening_test_page.dart' show ForeListeningSettingPage;
-import 'package:arabic_learning/package_replacement/fake_local_pk_server.dart' if (dart.library.io) 'package:arabic_learning/funcs/local_pk_server.dart' show PKServer;
-import 'package:arabic_learning/package_replacement/fake_local_pk_page.dart' if (dart.library.io) 'package:arabic_learning/sub_pages_builder/test_pages/local_pk_page.dart' show LocalPKSelectPage;
+import 'package:arabic_learning/funcs/local_pk_server.dart' show PKServer;
+import 'package:arabic_learning/sub_pages_builder/test_pages/local_pk_page.dart' show LocalPKSelectPage;
 
 class TestPage extends StatelessWidget {
   const TestPage({super.key});
@@ -30,16 +30,12 @@ class TestPage extends StatelessWidget {
             ),
           ),
           onPressed: () {
-            if(kIsWeb) {
-              alart(context, "局域网联机功能因为技术原因，不对网页端开放。");
-              return;
-            }
             context.read<Global>().uiLogger.info("跳转: TestPage => LocalPKSelectPage");
             Navigator.push(
               context, 
               MaterialPageRoute(
                 builder: (context) => ChangeNotifierProvider(
-                  create: (context) => PKServer()..init(context.read<Global>()),
+                  create: (context) => PKServer(),
                   child: LocalPKSelectPage()
                 )
               )
