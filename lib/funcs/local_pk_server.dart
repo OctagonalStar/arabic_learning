@@ -1,10 +1,11 @@
+import 'dart:async';
 import 'dart:convert';
 import 'package:archive/archive.dart';
 import 'package:arabic_learning/funcs/ui.dart' show alart;
 import 'package:arabic_learning/funcs/utili.dart';
 import 'package:arabic_learning/vars/config_structure.dart';
 import 'package:arabic_learning/vars/global.dart';
-import 'package:flutter/material.dart' show BuildContext;
+import 'package:flutter/material.dart' show BuildContext, Navigator;
 import 'package:logging/logging.dart';
 import 'package:arabic_learning/vars/statics_var.dart';
 import 'package:flutter/foundation.dart' show ChangeNotifier;
@@ -14,28 +15,39 @@ import 'package:dio/dio.dart' as dio;
 class PKServer with ChangeNotifier{
   final Logger logger = Logger("PKServer");
   bool isServer = false;
+  bool inited = false;
+  late RTCPeerConnection _connection;
+  late RTCDataChannel _channel;
+  static const Map<String, dynamic> _rtcConstraints = {
+    'mandatory': {
+      'OfferToReceiveAudio': false,
+      'OfferToReceiveVideo': false,
+    },
+    'optional': [],
+  };
+  static const Map<String, dynamic> _rtcConfig = {
+    'iceServers': [
+      {'urls': 'stun:stun.l.google.com:19302'},
+      {'urls': 'stun:stun1.l.google.com:19302'},
+    ]
+  };
+  
+  
   late int rndSeed;
+  late Global global;
   List<SourceItem> selectableSource = [];
   ClassSelection? classSelection;
-  late Global global;
   DateTime? startTime;
   bool preparedP1 = false;
   bool preparedP2 = false;
   late PKState pkState;
-  late RTCPeerConnection _connection;
-  late RTCDataChannel _channel;
   bool started = false;
   Duration? delay;
-  late RTCSessionDescription _offer;
-  late RTCSessionDescription _answer;
   bool get connected {
-    return false;
-    //return _connection.connectionState == RTCPeerConnectionState.RTCPeerConnectionStateConnected;
+    return _connection.connectionState == RTCPeerConnectionState.RTCPeerConnectionStateConnected;
   }
 
-  String? get connectpwd {
-    return base64Encode(ZLibEncoderWeb().encodeBytes(utf8.encode(isServer ? _offer.sdp! : _answer.sdp!)));
-  }
+  String? connectpwd;
 
   void renew() {
     selectableSource = [];
@@ -47,36 +59,139 @@ class PKServer with ChangeNotifier{
     delay = null;
   }
 
-  Future<bool> initHost(bool isHoster, Global outerglobal, {String? offer}) async {
+  Future<void> initHost(bool isHoster, Global outerglobal, {String? offer}) async {
     isServer = isHoster;
     global = outerglobal;
 
     logger.info("正在初始化WebRTC");
-    _connection = await createPeerConnection({'iceServers': []});
-    _channel = await _connection.createDataChannel("Connection", RTCDataChannelInit());
-    _channel.onMessage = ((msg) {
-      logger.fine('收到消息：${msg.text}');
-    });
+    _connection = await createPeerConnection(_rtcConfig, _rtcConstraints);
+    // _connection.setConfiguration({'iceServers': [{"urls": "stun:stun.l.google.com"}, {"urls": "stun://stun.miwifi.com"}]});
+    _connection.onConnectionState = (state) {
+      logger.info("连接状态变更: $state");
+      notifyListeners();
+    };
+    
 
     if(isServer) {
-      logger.fine("正在生成Offer");
-      _offer = await _connection.createOffer();
-      logger.info("offer详情: ${_offer.sdp}");
-      await _connection.setLocalDescription(_offer);
+      _channel = await _connection.createDataChannel("Connection", RTCDataChannelInit());
+      logger.info("已创建信道");
+      _channel.onMessage = ((msg) {
+        logger.fine('收到消息：${msg.text}');
+      });
+      _setupDataChannel();
+
+
+      RTCSessionDescription offer = await _connection.createOffer();
+      await _connection.setLocalDescription(offer);
+      
+      // 等待 ICE 收集完毕后再生成最终字符串，防止 Candidate 丢失
+      await _waitForIceGathering(); 
+      
     } else {
       await _connection.setRemoteDescription(RTCSessionDescription(utf8.decode(ZLibDecoderWeb().decodeBytes(base64Decode(offer!))), "offer"));
-      _answer = await _connection.createAnswer();
+      await _connection.setLocalDescription(await _connection.createAnswer());
+      _connection.onDataChannel = (channel) {
+        logger.info("Client 接收到了来自 Server 的 DataChannel: ${channel.label}");
+        _channel = channel;
+      };
+      await _waitForIceGathering();
     }
-    return true;
+    
+    notifyListeners();
   }
 
-  void loadAnswer(String answer) async {
-    await _connection.setRemoteDescription(RTCSessionDescription(utf8.decode(ZLibDecoderWeb().decodeBytes(base64Decode(answer))), "answer"));
-    while(!connected){
-      Future.delayed(Duration(seconds: 1));
-      logger.fine("尝试连接远程");
+  Future<void> _waitForIceGathering() async {
+    if (_connection.iceGatheringState == RTCIceGatheringState.RTCIceGatheringStateComplete) {
+      return;
     }
-    _channel.send(RTCDataChannelMessage("hello"));
+    
+    final completer = Completer<void>();
+    _connection.onIceGatheringState = (state) async {
+      if (state == RTCIceGatheringState.RTCIceGatheringStateComplete) {
+        if (!completer.isCompleted) completer.complete();
+        String sdp = (await _connection.getLocalDescription())!.sdp!;
+        sdp = optimizeSdp(sdp);
+        connectpwd = base64Encode(ZLibEncoderWeb().encodeBytes(utf8.encode(sdp), level: 9));
+        logger.info("最终的SDP: $sdp");
+        inited = true;
+        notifyListeners();
+      }
+    };
+    
+    // 增加超时保护（某些网络下可能收不到完成信号）
+    return completer.future.timeout(const Duration(minutes: 1), onTimeout: () async {
+      logger.info("ICE 收集超时，尝试使用当前收集到的 Candidate");
+      String sdp = (await _connection.getLocalDescription())!.sdp!;
+      sdp = optimizeSdp(sdp);
+      connectpwd = base64Encode(ZLibEncoderWeb().encodeBytes(utf8.encode(sdp), level: 9));
+      inited = true;
+      notifyListeners();
+    });
+  }
+
+  static String optimizeSdp(String sdp) {
+    List<String> lines = sdp.split('\r\n');
+    List<String> newLines = [];
+    bool inDataBlock = false;
+    for (var line in lines) {
+      if(
+        line.startsWith('v=') || 
+        line.startsWith('o=') || 
+        line.startsWith('s=') || 
+        line.startsWith('t=') ||
+        line.startsWith('a=ice-ufrag:') ||
+        line.startsWith('a=ice-pwd:') ||
+        line.startsWith('a=fingerprint:') || 
+        line.startsWith('a=setup:') ||
+        line.startsWith('a=sctp-port:') ||
+        line.startsWith('a=mid:')
+        ){
+        newLines.add(line);
+        continue;
+      }
+
+      if (line.startsWith('m=')) {
+        if(line.contains("application")) {
+          inDataBlock = true;
+        } else {
+          inDataBlock = false;
+        }
+      }
+
+      if (inDataBlock) {
+        newLines.add(line);
+      }
+    }
+    return newLines.join('\r\n');
+  }
+
+  void _setupDataChannel() {
+    _channel.onMessage = (RTCDataChannelMessage message) {
+    logger.info("收到消息: ${message.text}");
+      if(message.text == "ping") {
+          _channel.send(RTCDataChannelMessage("pong"));
+        }
+        if(message.text == "pong") {
+          Future.delayed(Duration(seconds: 1), () => _channel.send(RTCDataChannelMessage("ping")));
+        }
+    };
+    _channel.onDataChannelState = (state) {
+      logger.fine("Channel 状态: $state");
+      notifyListeners();
+    };
+  }
+
+  Future<void> loadAnswer(String answer, BuildContext context) async {
+    try {
+      await _connection.setRemoteDescription(RTCSessionDescription(utf8.decode(ZLibDecoderWeb().decodeBytes(base64Decode(answer))), "answer"));
+      while(!connected || _channel.state != RTCDataChannelState.RTCDataChannelOpen){
+        await Future.delayed(Duration(seconds: 1));
+        logger.fine("等待连接远程");
+      }
+      await _channel.send(RTCDataChannelMessage("ping"));
+    } catch (e) {
+      if(context.mounted) alart(context, "连接错误: $e", onConfirmed: () => Navigator.popUntil(context, (route) => route.isFirst));
+    }
   }
 
 //  Future<bool> startHost() async {
