@@ -10,7 +10,6 @@ import 'package:logging/logging.dart';
 import 'package:arabic_learning/vars/statics_var.dart';
 import 'package:flutter/foundation.dart' show ChangeNotifier;
 import 'package:flutter_webrtc/flutter_webrtc.dart';
-import 'package:dio/dio.dart' as dio;
 
 class PKServer with ChangeNotifier{
   final Logger logger = Logger("PKServer");
@@ -93,6 +92,7 @@ class PKServer with ChangeNotifier{
       _connection.onDataChannel = (channel) {
         logger.info("Client 接收到了来自 Server 的 DataChannel: ${channel.label}");
         _channel = channel;
+        _setupDataChannel();
       };
       await _waitForIceGathering();
     }
