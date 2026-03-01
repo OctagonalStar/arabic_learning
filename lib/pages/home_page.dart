@@ -181,7 +181,7 @@ class _DailyWord extends State<DailyWord> {
           playing = false;
         } else {
           context.read<Global>().uiLogger.info("跳转: DailyWord => SettingPage");
-          Navigator.of(context).push(MaterialPageRoute(builder: (context) => SettingPage()));
+          Navigator.of(context).push(MaterialPageRoute(builder: (context) => Scaffold(appBar: AppBar(title: Text("设置")) , body: SettingPage())));
         }
       },
       style: ElevatedButton.styleFrom(
