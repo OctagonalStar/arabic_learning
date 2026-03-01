@@ -5,16 +5,20 @@
 ### Added
 
 - 添加了联机功能
+- 添加了停用FSRS（复习）的选项 [#67](https://github.com/OctagonalStar/arabic_learning/pull/67)
 
 ### Improvement
 
 - 优化了单词卡片的排版
 - 添加了联机功能对Web的支持
+- 优化了单词导入时的去重逻辑 [#67](https://github.com/OctagonalStar/arabic_learning/pull/67)
 
 ### Fix
 
 - 修复了自我评级开启时复习页面可能溢出的问题
 - 修复了无数据时，从每日单词进入设置发生错误的问题
+- 修复了规律学习重复推送同一个单词的问题 [#67](https://github.com/OctagonalStar/arabic_learning/pull/67)
+- 修复了新安装无复习任务时 FSRS 设置菜单丢失的问题 [#67](https://github.com/OctagonalStar/arabic_learning/pull/67)
 
 ## v0.1.13 - 2026-2-6 - (000113)
 
