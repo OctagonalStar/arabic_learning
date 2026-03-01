@@ -1,12 +1,9 @@
-import 'package:arabic_learning/funcs/ui.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import 'package:arabic_learning/vars/global.dart';
 import 'package:arabic_learning/vars/statics_var.dart';
 import 'package:arabic_learning/sub_pages_builder/test_pages/listening_test_page.dart' show ForeListeningSettingPage;
-import 'package:arabic_learning/funcs/local_pk_server.dart' show PKServer;
 import 'package:arabic_learning/sub_pages_builder/test_pages/local_pk_page.dart' show LocalPKSelectPage;
 
 class TestPage extends StatelessWidget {
@@ -34,10 +31,7 @@ class TestPage extends StatelessWidget {
             Navigator.push(
               context, 
               MaterialPageRoute(
-                builder: (context) => ChangeNotifierProvider(
-                  create: (context) => PKServer(),
-                  child: LocalPKSelectPage()
-                )
+                builder: (context) => LocalPKSelectPage()
               )
             );
           },

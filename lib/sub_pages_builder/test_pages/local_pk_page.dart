@@ -1,4 +1,3 @@
-import 'dart:async';
 import 'dart:math';
 
 import 'package:arabic_learning/funcs/ui.dart';
@@ -7,6 +6,7 @@ import 'package:arabic_learning/vars/config_structure.dart';
 import 'package:arabic_learning/vars/global.dart';
 import 'package:arabic_learning/vars/statics_var.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart' show Clipboard, ClipboardData;
 import 'package:qr_flutter/qr_flutter.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:provider/provider.dart';
@@ -22,44 +22,25 @@ class LocalPKSelectPage extends StatefulWidget {
 class _LocalPKSelectPage extends State<LocalPKSelectPage> {
   final TextEditingController connectpwdController = TextEditingController();
   final MobileScannerController scannerController = MobileScannerController();
-  bool isconnecting = false;
   bool isScaning = false;
 
-  Future<void> connecting() async {
-    if(isconnecting || connectpwdController.text.isEmpty) return;
-    setState(() {
-      isconnecting = true;
-    });
-
-    try {
-      await context.read<PKServer>().initHost(false, context.read<Global>() ,offer: connectpwdController.text);
-    } catch (e) {
-      setState(() {
-        isconnecting = false;
-      });
-      // ignore: use_build_context_synchronously
-      if(context.mounted) alart(context, "连接发生错误: $e");
-      return;
-    }
-    if(!context.mounted) return;
-    // ignore: use_build_context_synchronously
-    PKServer notifier = context.read<PKServer>();
+  void connecting() {
+    if(connectpwdController.text.isEmpty) return;
     Navigator.push(
-      // ignore: use_build_context_synchronously
       context, 
-      MaterialPageRoute(builder: (context) => ChangeNotifierProvider.value(
-        value: notifier,
-        child: LocalPKPage(isServer: false),
-      ))
+      MaterialPageRoute(builder: (context) => 
+        ChangeNotifierProvider(
+          create: (context) => PKServer(),
+          child: LocalPKPage(isServer: false, offer: connectpwdController.text),
+        )
+      )
     );
-    if(isScaning) scannerController.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     context.read<Global>().uiLogger.info("构建局域网联机主页面");
     MediaQueryData mediaQuery = MediaQuery.of(context);
-    PKServer notifier = context.read<PKServer>();
 
     return Scaffold(
       appBar: AppBar(title: Text("局域网联机")),
@@ -75,8 +56,8 @@ class _LocalPKSelectPage extends State<LocalPKSelectPage> {
               Navigator.push(
                 context, 
                 MaterialPageRoute(
-                  builder: (context) => ChangeNotifierProvider.value(
-                    value: notifier,
+                  builder: (context) => ChangeNotifierProvider(
+                    create: (context) => PKServer(),
                     child: LocalPKPage(isServer: true),
                   )
                 )
@@ -140,7 +121,7 @@ class _LocalPKSelectPage extends State<LocalPKSelectPage> {
               controller: scannerController,
               fit: BoxFit.scaleDown,
               onDetect: (barcodes) {
-                if(isconnecting || barcodes.barcodes.isEmpty) return;
+                if(barcodes.barcodes.isEmpty) return;
                 setState(() {
                   connectpwdController.text = barcodes.barcodes.first.rawValue??"";
                   isScaning = !isScaning;
@@ -148,8 +129,7 @@ class _LocalPKSelectPage extends State<LocalPKSelectPage> {
                 connecting();
               },
             ),
-          ),
-          if(isconnecting) CircularProgressIndicator()
+          )
         ],
       ),
     );
@@ -158,40 +138,42 @@ class _LocalPKSelectPage extends State<LocalPKSelectPage> {
 
 class LocalPKPage extends StatefulWidget {
   final bool isServer;
-  const LocalPKPage({super.key, required this.isServer});
+  final String? offer;
+  const LocalPKPage({super.key, required this.isServer, this.offer});
 
   @override
-  State<StatefulWidget> createState() => _ServerPage();
+  State<StatefulWidget> createState() => _LocalPKPage();
 }
 
-class _ServerPage extends State<LocalPKPage> {
+class _LocalPKPage extends State<LocalPKPage> {
   final PageController pageController = PageController();
-  bool clientWaited = false;
+
+  @override
+  void initState() {
+    context.read<PKServer>().initHost(widget.isServer, context, offer: widget.offer);
+    super.initState();
+  }
 
   @override
   Widget build(BuildContext context) {
-    if(!widget.isServer && !clientWaited) {
-      // context.read<PKServer>().watingSelection(context, () => pageController.nextPage(duration: Duration(milliseconds: 500), curve: StaticsVar.curve));
-      // TODO
-      clientWaited = true;
+    if(context.read<PKServer>().pageController == null) {
+      context.read<PKServer>().setPageControler(pageController);
     }
+
     return PopScope(
       canPop: true,
       onPopInvokedWithResult: (didPop, result) {
-        if(widget.isServer) {
-          // context.read<PKServer>().stopHost();
-          // TODO
-        }
-        context.read<PKServer>().renew();
+        context.read<PKServer>().disconnect();
       },
       child: PageView(
         physics: NeverScrollableScrollPhysics(),
         controller: pageController,
         children: [
-          widget.isServer ? ServerHostWatingPage(pageController: pageController) : ClientWatingPage(),
-          PKClassSelectionPage(pageController: pageController),
-          PKPreparePage(pageController: pageController),
-          PKOngoingPage()
+          widget.isServer ? ServerHostWatingPage() : ClientWatingPage(),
+          widget.isServer ? PKClassSelectionPage() : ClientWatingPage(),
+          PKPreparePage(),
+          PKOngoingPage(),
+          PKErrorPage()
         ],
       ),
     );
@@ -199,8 +181,7 @@ class _ServerPage extends State<LocalPKPage> {
 }
 
 class ServerHostWatingPage extends StatefulWidget {
-  final PageController pageController;
-  const ServerHostWatingPage({super.key, required this.pageController});
+  const ServerHostWatingPage({super.key});
 
   @override
   State<StatefulWidget> createState() => _ServerHostWatingPage();
@@ -210,11 +191,21 @@ class _ServerHostWatingPage extends State<ServerHostWatingPage> {
   bool isScaning = false;
   bool isConnecting = false;
   MobileScannerController scannerController = MobileScannerController();
+  TextEditingController connectpwdController = TextEditingController();
 
-  @override
-  void initState() {
-    context.read<PKServer>().initHost(true, context.read<Global>());
-    super.initState();
+  Future<void> connectClient() async {
+    try {
+      await context.read<PKServer>().loadAnswer(connectpwdController.text, context);
+    } catch (e) {
+      if(context.mounted) {
+        // ignore: use_build_context_synchronously
+        alart(context, "连接错误: $e", onConfirmed: () {
+          setState(() {
+            isConnecting = false;
+          });
+        });
+      }
+    }
   }
 
   @override
@@ -227,80 +218,123 @@ class _ServerHostWatingPage extends State<ServerHostWatingPage> {
   Widget build(BuildContext context) {
     context.read<Global>().uiLogger.info("构建局域网联机课程选择页面");
     MediaQueryData mediaQuery = MediaQuery.of(context);
+
     return Scaffold(
-      appBar: AppBar(title: Text(context.watch<PKServer>().inited ? "准备连接..." : "正在启动服务")),
+      appBar: AppBar(title: Text(context.watch<PKServer>().inited ? "准备连接" : "正在启动服务")),
       body: Center(
         child: context.watch<PKServer>().inited
-              ? Center(child: Column(
-                children: [
-                  SizedBox(height: mediaQuery.size.height * 0.05),
-                  isScaning
-                  ? SizedBox(
-                    width: mediaQuery.size.width * 0.8,
-                    height: mediaQuery.size.height * 0.4,
-                    child: MobileScanner(
-                      controller: scannerController,
-                      fit: BoxFit.scaleDown,
-                      onDetect: (barcodes) async {
-                        if(barcodes.barcodes.isEmpty || isConnecting) return;
-                        setState(() {
-                          isConnecting = true;
-                          isScaning = false;
-                          scannerController.stop();
-                        });
-                        await context.read<PKServer>().loadAnswer(barcodes.barcodes.first.rawValue!, context);
-                        widget.pageController.nextPage(duration: Duration(milliseconds: 500), curve: StaticsVar.curve);
-                      },
-                    ),
-                  )
-                  : Container(
-                    padding: EdgeInsets.all(8.0),
-                    decoration: BoxDecoration(
-                      borderRadius: StaticsVar.br,
-                      color: Colors.white
-                    ),
-                    child: QrImageView(
-                      data: context.read<PKServer>().connectpwd!,
-                      backgroundColor: Colors.white,
-                      version: QrVersions.auto,
-                      size: min(mediaQuery.size.width, mediaQuery.size.height) * 0.8,
-                    ),
+          ? Column(
+            children: [
+              TextField(
+                autocorrect: false,
+                controller: connectpwdController,
+                expands: false,
+                maxLines: 1,
+                keyboardType: TextInputType.visiblePassword,
+                decoration: InputDecoration(
+                  labelText: "联机口令",
+                  border: OutlineInputBorder(
+                    borderRadius: StaticsVar.br,
+                    borderSide: BorderSide(color: Theme.of(context).colorScheme.outline),
                   ),
-                  
-                  isConnecting 
-                  ? Text("正在构建连接")
-                  : ElevatedButton.icon(
-                    onPressed: () {
-                      if(isScaning) scannerController.stop();
+                  suffix: ElevatedButton(
+                    onPressed: () async {
+                      if(isConnecting) return;
                       setState(() {
-                        isScaning = !isScaning;
+                        isConnecting = true;
                       });
+                      connectClient();
                     }, 
-                    icon: Icon(isScaning ? Icons.stop : Icons.qr_code_scanner),
-                    label: Text(isScaning ? "停止扫描" : "扫描二维码")
+                    child: Text("加入")
                   ),
-                ],
-              ))
+                ),
+                onSubmitted: (text) async {
+                  if(isConnecting) return;
+                  setState(() {
+                    isConnecting = true;
+                  });
+                  connectClient();
+                },
+              ),
+              if(!isConnecting) isScaning
+              ? SizedBox(
+                width: mediaQuery.size.width * 0.8,
+                height: mediaQuery.size.height * 0.4,
+                child: MobileScanner(
+                  controller: scannerController,
+                  fit: BoxFit.scaleDown,
+                  onDetect: (barcodes) async {
+                    if(barcodes.barcodes.isEmpty || isConnecting) return;
+                    setState(() {
+                      isConnecting = true;
+                      isScaning = false;
+                      scannerController.stop();
+                    });
+                    connectpwdController.text = barcodes.barcodes.first.rawValue!;
+                    connectClient();
+                  },
+                ),
+              )
+              : Container(
+                padding: EdgeInsets.all(8.0),
+                decoration: BoxDecoration(
+                  borderRadius: StaticsVar.br,
+                  color: Colors.white
+                ),
+                child: QrImageView(
+                  data: context.read<PKServer>().connectpwd!,
+                  backgroundColor: Colors.white,
+                  version: QrVersions.auto,
+                  size: min(mediaQuery.size.width, mediaQuery.size.height) * 0.8,
+                ),
+              ),
+            
+            isConnecting
+            ? Column(
+              children: [
+                CircularProgressIndicator(),
+                Text("正在构建连接"),
+              ],
+            )
+            : Row(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children: [
+                ElevatedButton.icon(
+                  onPressed: () {
+                    if(isScaning) scannerController.stop();
+                    setState(() {
+                      isScaning = !isScaning;
+                    });
+                  }, 
+                  icon: Icon(isScaning ? Icons.stop : Icons.qr_code_scanner),
+                  label: Text(isScaning ? "停止扫描" : "扫描对方的二维码")
+                ),
+                ElevatedButton.icon(
+                  onPressed: () {
+                    Clipboard.setData(ClipboardData(text: context.read<PKServer>().connectpwd!));
+                  }, 
+                  icon: Icon(Icons.copy),
+                  label: Text("复制口令到剪切板")
+                ),
+              ],
+            ),
+          ],
+        )
 
-              : Center(child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  CircularProgressIndicator(),
-                  Text("服务加载中... 可能需要大致一分钟")
-                ],
-              ))
+      : Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            CircularProgressIndicator(),
+            Text("服务加载中...\n该过程或将需要一分钟")
+          ],
+        )
       ),
     );
   }
 }
 
 class PKClassSelectionPage extends StatelessWidget {
-  const PKClassSelectionPage({
-    super.key,
-    required this.pageController,
-  });
-
-  final PageController pageController;
+  const PKClassSelectionPage({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -319,9 +353,9 @@ class PKClassSelectionPage extends StatelessWidget {
             ElevatedButton(
               onPressed: () async {
                 ClassSelection selection = await popSelectClasses(context, forceSelectRange: context.read<PKServer>().selectableSource, withCache: false, withReviewChoose: false);
-                if(!context.mounted) return;
-                context.read<PKServer>().classSelection = selection;
-                pageController.nextPage(duration: Duration(milliseconds: 500), curve: StaticsVar.curve);
+                if(!context.mounted || selection.selectedClass.isEmpty) return;
+                context.read<PKServer>().setSelectedClass(selection);
+                context.read<PKServer>().pageController!.nextPage(duration: Duration(milliseconds: 500), curve: StaticsVar.curve);
               }, 
               child: Text("开始选课")
             )
@@ -341,11 +375,12 @@ class ClientWatingPage extends StatelessWidget {
     MediaQueryData mediaQuery = MediaQuery.of(context);
 
     return Scaffold(
-      appBar: AppBar(title: Text("连接成功")),
+      appBar: AppBar(title: Text(context.watch<PKServer>().inited ? "收集信息中" : context.watch<PKServer>().connected ? "已连接" : "等待连接")),
       body: Center(child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Container(
+          if(context.watch<PKServer>().inited && !context.watch<PKServer>().connected) 
+          ...[Container(
             padding: EdgeInsets.all(8.0),
             decoration: BoxDecoration(
               borderRadius: StaticsVar.br,
@@ -358,41 +393,33 @@ class ClientWatingPage extends StatelessWidget {
               size: min(mediaQuery.size.width, mediaQuery.size.height) * 0.8,
             ),
           ),
+          ElevatedButton.icon(
+            onPressed: () {
+              Clipboard.setData(ClipboardData(text: context.read<PKServer>().connectpwd!));
+            },
+            icon: Icon(Icons.copy),
+            label: Text("复制口令到剪切板")
+          )],
+
           CircularProgressIndicator(),
-          Text("正在等待房主选择课程")
+          Text(context.read<PKServer>().inited ? 
+                context.watch<PKServer>().selectableSource.isNotEmpty ? "正在等待房主选择课程" : "请将以上二维码给对方扫描或传递口令"
+                : "正在收集信息生成认证\n此过程或将需要一分钟")
         ]
       ))
     );
   }
 }
 
-class PKPreparePage extends StatefulWidget {
-  final PageController pageController;
-  const PKPreparePage({super.key, required this.pageController});
+class PKPreparePage extends StatelessWidget {
+  const PKPreparePage({super.key});
 
-  @override
-  State<StatefulWidget> createState() => _PKPreparePage();
-}
-
-class _PKPreparePage extends State<PKPreparePage> {
-  bool watching = false;
-  bool downCount = false;
 
   @override
   Widget build(BuildContext context) {
     context.read<Global>().uiLogger.info("构建局域网联机准备页面");
     MediaQueryData mediaQuery = MediaQuery.of(context);
-    if(!watching && !context.read<PKServer>().started) {
-      // context.read<PKServer>().watingPrepare(context);
-      // TODO
-    }
-    if(context.read<PKServer>().startTime != null&&!downCount) {
-      downCount = true;
-      Future.delayed(context.read<PKServer>().startTime!.difference(DateTime.now()), () {
-        if(!context.mounted) return;
-        widget.pageController.nextPage(duration: Duration(milliseconds: 500), curve: StaticsVar.curve);
-      });
-    }
+
     return Scaffold(
       appBar: AppBar(title: Text("请准备")),
       body: Center(
@@ -426,9 +453,7 @@ class _PKPreparePage extends State<PKPreparePage> {
                           shape: RoundedRectangleBorder(borderRadius: StaticsVar.br)
                         ),
                         onPressed: (){
-                          setState(() {
-                            context.read<PKServer>().preparedP1 = true;
-                          });
+                          context.read<PKServer>().setPrepare();
                         }, 
                         child: Text("准备")
                       ),
@@ -455,7 +480,7 @@ class _PKPreparePage extends State<PKPreparePage> {
                 )
               ],
             ),
-            if(downCount) TweenAnimationBuilder<double>(
+            if(context.watch<PKServer>().startTime != null) TweenAnimationBuilder<double>(
               tween: Tween(
                 begin: 1,
                 end: 0
@@ -489,20 +514,19 @@ class _PKOngoingPage extends State<PKOngoingPage> {
   List<List<String>> choiceOptions = [];
 
   @override
+  void initState() {
+    Random rnd = Random(context.read<PKServer>().rndSeed);
+    for(WordItem wordItem in context.read<PKServer>().pkState.testWords) {
+      List<WordItem> optionWords = getRandomWords(4, context.read<Global>().wordData, allowRepet: false, include: wordItem, shuffle: true, rnd: rnd);
+      choiceOptions.add(List.generate(4, (int index) => optionWords[index].chinese));
+    }
+    super.initState();
+  }
+
+  @override
   Widget build(BuildContext context) {
     context.read<Global>().uiLogger.info("构建局域网联机对局页面");
     MediaQueryData mediaQuery = MediaQuery.of(context);
-
-    if(state == 0) {
-      if(!context.read<PKServer>().started) context.read<PKServer>().initPK(context);
-      
-      Random rnd = Random(context.read<PKServer>().rndSeed);
-      for(WordItem wordItem in context.read<PKServer>().pkState.testWords) {
-        List<WordItem> optionWords = getRandomWords(4, context.read<Global>().wordData, allowRepet: false, include: wordItem, shuffle: true, rnd: rnd);
-        choiceOptions.add(List.generate(4, (int index) => optionWords[index].chinese));
-      }
-      state++;
-    }
 
     return PopScope(
       canPop: false,
@@ -520,7 +544,6 @@ class _PKOngoingPage extends State<PKOngoingPage> {
                   physics: NeverScrollableScrollPhysics(),
                   itemBuilder: (context, index) {
                     if(index == context.read<PKServer>().pkState.testWords.length) {
-                      context.read<PKServer>().pkState.selfTookenTime ??= DateTime.now().difference(context.read<PKServer>().startTime!).inSeconds;
                       if(context.read<PKServer>().pkState.sideTookenTime == null) {
                         return Center(
                           child: Text("等待对方完成中...", style: Theme.of(context).textTheme.headlineSmall),
@@ -774,6 +797,30 @@ class TopScoreBar extends StatelessWidget {
           ],
         ),
       ],
+    );
+  }
+}
+
+class PKErrorPage extends StatelessWidget {
+  const PKErrorPage({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      child: Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(Icons.link_off, size: 64),
+            TextContainer(text: "连接丢失"),
+            TextContainer(text: "原因: ${context.read<PKServer>().exitMessage??"未知"}"),
+            ElevatedButton(
+              onPressed: () => Navigator.pop(context), 
+              child: Text("返回")
+            )
+          ],
+        ),
+      ),
     );
   }
 }

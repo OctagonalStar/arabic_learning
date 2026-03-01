@@ -178,6 +178,7 @@ void alart(BuildContext context, String e, {Function? onConfirmed, Duration dela
   context.read<Global>().uiLogger.info("构建弹出窗口: 携带信息: $e ;确认参数: ${onConfirmed != null}; 延迟: ${delayConfirm.inMilliseconds}");
   showDialog(
     context: context, 
+    requestFocus: true,
     builder: (BuildContext context) {
       return AlertDialog(
         title: Text("提示"),
