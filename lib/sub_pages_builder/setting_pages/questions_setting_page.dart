@@ -183,7 +183,7 @@ class _QuestionsSettingPage extends State<QuestionsSettingPage> {
             begin: 0.0,
             end: floatButtonFlod ? 0.0 : 1.0
           ), 
-          duration: Duration(milliseconds: 500),
+          duration: Durations.medium2,
           curve: Curves.bounceOut, 
           builder: (context, value, child) {
             return Container(

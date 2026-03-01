@@ -13,6 +13,7 @@
 - 添加了联机功能对Web的支持
 - 优化了单词导入时的去重逻辑 [#67](https://github.com/OctagonalStar/arabic_learning/pull/67)
 - 优化复习页面逻辑
+- 优化动画流畅性
 
 ### Fix
 

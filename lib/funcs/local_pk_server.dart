@@ -6,7 +6,7 @@ import 'package:archive/archive.dart';
 import 'package:arabic_learning/funcs/utili.dart';
 import 'package:arabic_learning/vars/config_structure.dart';
 import 'package:arabic_learning/vars/global.dart';
-import 'package:flutter/material.dart' show BuildContext, PageController;
+import 'package:flutter/material.dart' show BuildContext, PageController, Durations;
 import 'package:logging/logging.dart';
 import 'package:arabic_learning/vars/statics_var.dart';
 import 'package:flutter/foundation.dart' show ChangeNotifier;
@@ -222,7 +222,7 @@ class PKServer with ChangeNotifier{
 
   void _questStartTime(){
     startTime = DateTime.now().add(Duration(seconds: 5));
-    Future.delayed(Duration(seconds: 5), () => pageController!.nextPage(duration: Duration(milliseconds: 5), curve: StaticsVar.curve));
+    Future.delayed(Duration(seconds: 5), () => pageController!.nextPage(duration: Durations.medium2, curve: StaticsVar.curve));
     _channel!.send(RTCDataChannelMessage(json.encode({
       "step": 4,
       "startTime": startTime?.add(delay!).toIso8601String()
@@ -302,7 +302,7 @@ class PKServer with ChangeNotifier{
             if(sumList.contains(source.getHash(global.wordData.words))) selectableSource.add(source);
             logger.fine("[$packageid] 计算得到${source.sourceJsonFileName}在哈希中有匹配");
           }
-          pageController!.nextPage(duration: Duration(milliseconds: 500), curve: StaticsVar.curve);
+          pageController!.nextPage(duration: Durations.medium2, curve: StaticsVar.curve);
         } else {
           logger.warning("[$packageid] 双端没有任意词库匹配");
           exitMessage = "双端没有任意词库匹配";
@@ -328,7 +328,7 @@ class PKServer with ChangeNotifier{
             "dictSum": List.generate(selectableSource.length, (int index) => selectableSource[index].getHash(global.wordData.words)),
             "time": DateTime.now().toIso8601String()
           })));
-          pageController!.nextPage(duration: Duration(milliseconds: 500), curve: StaticsVar.curve);
+          pageController!.nextPage(duration: Durations.medium2, curve: StaticsVar.curve);
         } else {
           _channel!.send(RTCDataChannelMessage(json.encode({
             "step": 1,
@@ -352,7 +352,7 @@ class PKServer with ChangeNotifier{
           }
         }
         classSelection = ClassSelection(selectedClass: selectedClass, countInReview: false);
-        pageController!.nextPage(duration: Duration(milliseconds: 500), curve: StaticsVar.curve);
+        pageController!.nextPage(duration: Durations.medium2, curve: StaticsVar.curve);
         break;
       }
       /// 接受对方完成准备 from both
@@ -366,7 +366,7 @@ class PKServer with ChangeNotifier{
       case 4: {
         startTime = DateTime.parse(data["startTime"]);
         Future.delayed(-DateTime.now().difference(startTime!), 
-          ()=>pageController!.nextPage(duration: Duration(milliseconds: 500), curve: StaticsVar.curve));
+          ()=>pageController!.nextPage(duration: Durations.medium2, curve: StaticsVar.curve));
         notifyListeners();
         break;
       }

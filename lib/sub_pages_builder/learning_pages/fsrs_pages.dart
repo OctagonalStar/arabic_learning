@@ -405,7 +405,7 @@ class _FSRSReviewCardPage extends State<FSRSReviewCardPage> {
             begin: 0.0,
             end: choosed ? 1.0 : 0.0
           ),
-          duration: Duration(milliseconds: 500),
+          duration: Durations.medium2,
           curve: StaticsVar.curve,
           builder: (context, value, child) {
             return Row(
@@ -432,7 +432,7 @@ class _FSRSReviewCardPage extends State<FSRSReviewCardPage> {
                     shape: RoundedRectangleBorder(borderRadius: StaticsVar.br)
                   ),
                   onPressed: () {
-                    widget.controller.nextPage(duration: Duration(milliseconds: 500), curve: StaticsVar.curve);
+                    widget.controller.nextPage(duration: Durations.medium2, curve: StaticsVar.curve);
                   },
                   icon: Icon(Icons.arrow_downward),
                   label: FittedBox(fit: BoxFit.contain, child: Text("下一题")),
@@ -510,9 +510,9 @@ class _FSRSLearningPageState extends State<FSRSLearningPage> {
                     label: Text(index == widget.words.length-1 ? "开始答题" : "下一个"),
                     onPressed: (){
                       if(index == widget.words.length-1) {
-                        controllerHor.nextPage(duration: Duration(milliseconds: 500), curve: StaticsVar.curve);
+                        controllerHor.nextPage(duration: Durations.medium2, curve: StaticsVar.curve);
                       } else {
-                      controllerLearning.nextPage(duration: Duration(milliseconds: 500), curve: StaticsVar.curve);
+                      controllerLearning.nextPage(duration: Durations.medium2, curve: StaticsVar.curve);
                       }
                     }, 
                   ),
@@ -557,7 +557,7 @@ class _FSRSLearningPageState extends State<FSRSLearningPage> {
                     begin: 0.0,
                     end: corrected ? 1.0 : 0.0
                   ),
-                  duration: Duration(milliseconds: 500),
+                  duration: Durations.medium2,
                   curve: StaticsVar.curve,
                   builder: (context, value, child) {
                     return Row(
@@ -582,9 +582,9 @@ class _FSRSLearningPageState extends State<FSRSLearningPage> {
                           ),
                           onPressed: () {
                             if(index == widget.words.length-1) {
-                              controllerHor.nextPage(duration: Duration(milliseconds: 500), curve: StaticsVar.curve);
+                              controllerHor.nextPage(duration: Durations.medium2, curve: StaticsVar.curve);
                             }
-                            controllerQuestions.nextPage(duration: Duration(milliseconds: 500), curve: StaticsVar.curve);
+                            controllerQuestions.nextPage(duration: Durations.medium2, curve: StaticsVar.curve);
                           },
                           icon: Icon(index == widget.words.length-1 ? Icons.done_all : Icons.arrow_downward),
                           label: FittedBox(child: Text(index == widget.words.length-1 ? "完成学习" : "下一题")),

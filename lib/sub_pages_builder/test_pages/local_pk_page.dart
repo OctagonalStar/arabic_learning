@@ -355,7 +355,7 @@ class PKClassSelectionPage extends StatelessWidget {
                 ClassSelection selection = await popSelectClasses(context, forceSelectRange: context.read<PKServer>().selectableSource, withCache: false, withReviewChoose: false);
                 if(!context.mounted || selection.selectedClass.isEmpty) return;
                 context.read<PKServer>().setSelectedClass(selection);
-                context.read<PKServer>().pageController!.nextPage(duration: Duration(milliseconds: 500), curve: StaticsVar.curve);
+                context.read<PKServer>().pageController!.nextPage(duration: Durations.medium2, curve: StaticsVar.curve);
               }, 
               child: Text("开始选课")
             )
@@ -575,7 +575,7 @@ class _PKOngoingPage extends State<PKOngoingPage> {
                       allowAudio: true, 
                       allowAnitmation: false,
                       onSelected: (int choosed) {
-                        pageController.nextPage(duration: Duration(milliseconds: 500), curve: StaticsVar.curve);
+                        pageController.nextPage(duration: Durations.medium2, curve: StaticsVar.curve);
                         if(choiceOptions[index][choosed] == context.read<PKServer>().pkState.testWords[index].chinese) {
                           context.read<PKServer>().updateState(true);
                           return true;
@@ -660,7 +660,7 @@ class PKConclue extends StatelessWidget {
             end: 1
           ), 
           curve: StaticsVar.curve,
-          duration: Duration(milliseconds: 500), 
+          duration: Durations.medium2, 
           builder: (context, value, child) {
             return Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -760,7 +760,7 @@ class TopScoreBar extends StatelessWidget {
                   begin: 0.0,
                   end: context.watch<PKServer>().pkState.selfProgress.length/context.watch<PKServer>().pkState.testWords.length
                 ),
-                duration: Duration(milliseconds: 500),
+                duration: Durations.medium2,
                 builder: (context, value, child) {
                   return LinearProgressIndicator(
                     value: value,
@@ -783,7 +783,7 @@ class TopScoreBar extends StatelessWidget {
                   begin: 0.0,
                   end: context.watch<PKServer>().pkState.sideProgress.length/context.watch<PKServer>().pkState.testWords.length
                 ),
-                duration: Duration(milliseconds: 500),
+                duration: Durations.medium2,
                 builder: (context, value, child) {
                   return LinearProgressIndicator(
                     value: value,
