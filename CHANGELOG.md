@@ -21,6 +21,7 @@
 - 修复了无数据时，从每日单词进入设置发生错误的问题
 - 修复了规律学习重复推送同一个单词的问题 [#67](https://github.com/OctagonalStar/arabic_learning/pull/67)
 - 修复了新安装无复习任务时 FSRS 设置菜单丢失的问题 [#67](https://github.com/OctagonalStar/arabic_learning/pull/67)
+- 修复了单词卡片可能溢出的问题
 
 ## v0.1.13 - 2026-2-6 - (000113)
 

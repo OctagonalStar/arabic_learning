@@ -1,6 +1,7 @@
 import 'package:arabic_learning/funcs/ui.dart';
 import 'package:arabic_learning/vars/config_structure.dart';
 import 'package:arabic_learning/vars/global.dart';
+import 'package:arabic_learning/vars/statics_var.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -183,8 +184,8 @@ class _QuestionsSettingPage extends State<QuestionsSettingPage> {
             begin: 0.0,
             end: floatButtonFlod ? 0.0 : 1.0
           ), 
-          duration: Durations.medium2,
-          curve: Curves.bounceOut, 
+          duration: Durations.long2,
+          curve: StaticsVar.curve, 
           builder: (context, value, child) {
             return Container(
               decoration: BoxDecoration(
