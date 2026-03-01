@@ -312,6 +312,12 @@ class MainFSRSPage extends StatelessWidget {
         scrollDirection: Axis.vertical,
         controller: controller,
         itemBuilder: (context, index) {
+          final wordID = fsrs.getLeastDueCard();
+          if(wordID == -1) {
+            return Center(
+              child: TextContainer(text: "当前无需要复习的内容\n点击右上角可修改配置"),
+            );
+          }
           if(index == 0) {
             return Center(
               child: Column(
@@ -320,12 +326,6 @@ class MainFSRSPage extends StatelessWidget {
                   Icon(Icons.arrow_upward, size: 48.0, color: Colors.grey)
                 ],
               ),
-            );
-          }
-          final wordID = fsrs.getLeastDueCard();
-          if(wordID == -1) {
-            return Center(
-              child: TextContainer(text: "今日复习任务已完成\n(或当前无复习内容)\n点击右上角齿轮可修改配置"),
             );
           }
           return FSRSReviewCardPage(wordID: wordID, fsrs: fsrs, rnd: sharedRnd, controller: controller,);
