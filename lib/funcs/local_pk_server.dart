@@ -55,7 +55,6 @@ class PKServer with ChangeNotifier{
     try {
       logger.info("正在初始化WebRTC");
       _connection = await createPeerConnection(_rtcConfig, _rtcConstraints);
-      // _connection.setConfiguration({'iceServers': [{"urls": "stun:stun.l.google.com"}, {"urls": "stun://stun.miwifi.com"}]});
       _connection!.onConnectionState = (state) {
         logger.info("连接状态变更: $state");
         if(state == RTCPeerConnectionState.RTCPeerConnectionStateFailed && _channel != null && !over) {

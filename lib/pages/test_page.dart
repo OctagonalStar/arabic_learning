@@ -18,7 +18,7 @@ class TestPage extends StatelessWidget {
         SizedBox(height: mediaQuery.size.height * 0.05),
         ElevatedButton.icon(
           icon: Icon(Icons.connect_without_contact, size: 36.0),
-          label: FittedBox(child: Text('局域网联机', style: TextStyle(fontSize: 34.0))),
+          label: FittedBox(child: Text('联机', style: TextStyle(fontSize: 34.0))),
           style: ElevatedButton.styleFrom(
             backgroundColor: Theme.of(context).colorScheme.onPrimary.withAlpha(150),
             fixedSize: Size(mediaQuery.size.width * 0.8, mediaQuery.size.height * 0.15),
