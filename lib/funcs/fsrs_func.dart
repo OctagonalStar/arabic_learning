@@ -72,6 +72,7 @@ class FSRS {
   }
 
   int getLeastDueCard() {
+    if (config.cards.isEmpty) return -1;
     int leastDueIndex = 0;
     for(int i = 1; i < config.cards.length; i++) {
       if(config.cards[i].due.toLocal().isBefore(config.cards[leastDueIndex].due.toLocal()) && config.cards[i].due.toLocal().difference(DateTime.now()) < Duration(days: 1)) {
@@ -88,6 +89,9 @@ class FSRS {
 
   void addWordCard(int wordId) {
     logger.fine("添加复习卡片: Id: $wordId");
+    if (config.cards.isEmpty) {
+      config = config.copyWith(cards: [], reviewLogs: []);
+    }
     // os the wordID == cardID
     config.cards.add(Card(cardId: wordId, state: State.learning));
     config.reviewLogs.add(ReviewLog(cardId: wordId, rating: Rating.good, reviewDateTime: DateTime.now()));

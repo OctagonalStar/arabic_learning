@@ -240,6 +240,38 @@ class ForeFSRSSettingPage extends StatelessWidget {
                 }, 
                 icon: Icon(Icons.done),
                 label: Text("确认"),
+              ),
+              if (fsrs.config.enabled) Padding(
+                padding: const EdgeInsets.only(top: 8.0, bottom: 8.0),
+                child: ElevatedButton.icon(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Theme.of(context).colorScheme.errorContainer,
+                    fixedSize: Size.fromHeight(80),
+                    shape: RoundedRectangleBorder(borderRadius: StaticsVar.br)
+                  ),
+                  onPressed: (){
+                    showDialog(
+                      context: context, 
+                      builder: (context) => AlertDialog(
+                        title: Text("重置并停用 FSRS?"),
+                        content: Text("这将永久清除所有规律学习进度及配置，且不可恢复！"),
+                        actions: [
+                          TextButton(onPressed: () => Navigator.pop(context), child: Text("取消")),
+                          TextButton(
+                            onPressed: () {
+                              fsrs.config = const FSRSConfig(enabled: false);
+                              fsrs.save();
+                              Navigator.popUntil(context, (route) => route.isFirst);
+                            }, 
+                            child: Text("确认清空", style: TextStyle(color: Colors.red))
+                          )
+                        ],
+                      )
+                    );
+                  },
+                  icon: Icon(Icons.delete_forever, color: Theme.of(context).colorScheme.error),
+                  label: Text("重置并停用", style: TextStyle(color: Theme.of(context).colorScheme.error)),
+                ),
               )
             ]
           );
@@ -292,10 +324,8 @@ class MainFSRSPage extends StatelessWidget {
           }
           final wordID = fsrs.getLeastDueCard();
           if(wordID == -1) {
-            Future.delayed(
-              Duration(seconds: 1), (){if(context.mounted) alart(context, "今日复习任务已完成", onConfirmed: () {Navigator.pop(context);});});
             return Center(
-              child: TextContainer(text: "今日复习任务已完成"),
+              child: TextContainer(text: "今日复习任务已完成\n(或当前无复习内容)\n点击右上角齿轮可修改配置"),
             );
           }
           return FSRSReviewCardPage(wordID: wordID, fsrs: fsrs, rnd: sharedRnd, controller: controller,);

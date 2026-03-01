@@ -50,6 +50,7 @@ class Global with ChangeNotifier {
       await prefs.setString("wordData", jsonEncode({"Words": [], "Classes": {}}));
       wordData = DictData(words: [], classes: []);
       logger.info("首次启动: 配置表初始化完成");
+      globalFSRS = FSRS()..init(outerPrefs: prefs);
       await postInit();
     } else {
       await conveySetting();
@@ -230,11 +231,20 @@ class Global with ChangeNotifier {
   // }
   DictData dataFormater(Map<String, dynamic> data, DictData exData, String sourceName) {
     logger.info("开始词汇格式化");
-    List<String> wordList = [];
-    for(WordItem x in exData.words) {
-      wordList.add(x.arabic);
+    
+    // Use Maps for O(1) lookup speed instead of O(N) List.indexOf
+    Map<String, int> rawWordMap = {};
+    Map<String, int> pureWordMap = {};
+    List<String> chineseList = [];
+    
+    for(int i = 0; i < exData.words.length; i++) {
+      WordItem x = exData.words[i];
+      rawWordMap[x.arabic] = i;
+      pureWordMap[x.arabic.removeAracicExtensionPart().trim()] = i;
+      chineseList.add(x.chinese); // Keep list for indexing since it maps 1:1 with word id
     }
-    int counter = wordList.length;
+    
+    int counter = exData.words.length;
 
     SourceItem? exSource;
     // 查找已有数据中是否有同名的源数据组
@@ -249,9 +259,28 @@ class Global with ChangeNotifier {
     for(var className in data.keys){
       ClassItem exClass = ClassItem(className: className, wordIndexs: []);
       for(var word in data[className]){
-        if(wordList.contains(word["arabic"])){
+        String newRaw = word["arabic"];
+        String newPure = newRaw.removeAracicExtensionPart().trim();
+        int existingIndex = -1;
+
+        if (rawWordMap.containsKey(newRaw)) {
+          existingIndex = rawWordMap[newRaw]!;
+        } else if (pureWordMap.containsKey(newPure)) {
+          int potentialIndex = pureWordMap[newPure]!;
+          // Pure arabic is the same, but different vowels. Are they the same meaning?
+          if (chineseList[potentialIndex].hasSimilarMeaning(word["chinese"])) {
+            existingIndex = potentialIndex;
+          }
+        }
+
+        if (existingIndex != -1) {
+          // If it already exists globally, just add it to this class
+          if(!exClass.wordIndexs.contains(existingIndex)) {
+            exClass.wordIndexs.add(existingIndex);
+          }
           continue;
         }
+
         exClass.wordIndexs.add(counter);
         exData.words.add(
           WordItem(
@@ -262,7 +291,9 @@ class Global with ChangeNotifier {
             id: counter
           )
         );
-        wordList.add(word["arabic"]);
+        rawWordMap[newRaw] = counter;
+        pureWordMap[newPure] = counter;
+        chineseList.add(word["chinese"]);
         counter ++;
       }
       exSource.subClasses.add(exClass);
