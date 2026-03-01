@@ -696,19 +696,8 @@ class SourceItem {
     return classesMap;
   }
 
-  Map<String, List<Map>> toComparableMap(List<WordItem> words) {
-    Map<String, List<Map<String, String>>> classesMap = {};
-    for(ClassItem classItem in subClasses) {
-      classesMap[classItem.className] = [];
-      for(int index in classItem.wordIndexs) {
-        classesMap[classItem.className]!.add(words[index].toMap());
-      }
-    }
-    return classesMap;
-  }
-
   String getHash(List<WordItem> words) {
-    return sha256.convert(utf8.encode(toComparableMap(words).toString())).toString();
+    return sha256.convert(utf8.encode(sourceJsonFileName)).toString();
   }
 }
 

@@ -58,7 +58,7 @@ class PKServer with ChangeNotifier{
       // _connection.setConfiguration({'iceServers': [{"urls": "stun:stun.l.google.com"}, {"urls": "stun://stun.miwifi.com"}]});
       _connection!.onConnectionState = (state) {
         logger.info("连接状态变更: $state");
-        if((state == RTCPeerConnectionState.RTCPeerConnectionStateFailed || state == RTCPeerConnectionState.RTCPeerConnectionStateDisconnected) && _channel != null && !over) {
+        if(state == RTCPeerConnectionState.RTCPeerConnectionStateFailed && _channel != null && !over) {
             disconnect();
             pageController!.jumpToPage(4);
         }
@@ -242,7 +242,7 @@ class PKServer with ChangeNotifier{
       logger.finer("[$packageid] 回复心跳包");
       _channel!.send(RTCDataChannelMessage("pong"));
       Future.delayed(Duration(seconds: 1), (){
-        if(_channel!.state == RTCDataChannelState.RTCDataChannelOpen) {
+        if(_channel?.state == RTCDataChannelState.RTCDataChannelOpen) {
           logger.finer("发送心跳包");
           _channel!.send(RTCDataChannelMessage("ping"));
         }
@@ -377,6 +377,8 @@ class PKServer with ChangeNotifier{
         if(data["tookenTime"] != null) {
           pkState.sideTookenTime = data["tookenTime"];
           over = true;
+        }
+        if(pkState.selfTookenTime != null && pkState.sideTookenTime != null) {
           disconnect();
         }
         notifyListeners();
