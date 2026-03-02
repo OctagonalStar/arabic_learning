@@ -10,7 +10,7 @@ class StaticsVar {
   static const int appVersion = 000113;
   static const String modelPath = 'arabicLearning/tts/model/vits-piper-ar_JO-kareem-medium';
   static const Map<String, dynamic> tempConfig = {"SelectedClasses": []};
-  static const Curve curve = Curves.easeInOut;
+  static const Curve curve = Curves.fastEaseInToSlowEaseOut;
   static const String onlineDictOwner = 'JYinherit';
   static const String arBackupFont = "Vazirmatn";
   static const String zhBackupFont = "NotoSansSC";

@@ -25,7 +25,7 @@ class _DebugPage extends State<DebugPage> {
       floatingActionButton: FloatingActionButton(
         child: Icon(Icons.arrow_upward),
         onPressed: (){
-          controller.animateTo(0, duration: Duration(milliseconds: 500), curve: StaticsVar.curve);
+          controller.animateTo(0, duration: Durations.medium2, curve: StaticsVar.curve);
         }
       ),
       body: ListView(

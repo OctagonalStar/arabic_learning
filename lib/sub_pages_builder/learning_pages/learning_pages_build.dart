@@ -146,7 +146,7 @@ class _InLearningPageState extends State<InLearningPage> {
                     begin: 0.00,
                     end: ((controller.hasClients ? controller.page?.ceil() : 0) ?? 0) / (testList.length - 1),
                   ),
-                  duration: const Duration(milliseconds: 500),
+                  duration: Durations.extralong4,
                   curve: StaticsVar.curve,
                   builder: (context, value, child) {
                     return LinearProgressIndicator(
@@ -198,7 +198,7 @@ class _InLearningPageState extends State<InLearningPage> {
                       shape: RoundedRectangleBorder(borderRadius: StaticsVar.br)
                     ),
                     onPressed: (){
-                      controller.nextPage(duration: Duration(milliseconds: 500), curve: StaticsVar.curve);
+                      controller.nextPage(duration: Durations.medium2, curve: StaticsVar.curve);
                       correctCount++;
                       setState(() {});
                     },
@@ -229,7 +229,7 @@ class _InLearningPageState extends State<InLearningPage> {
                     isShowNext: clicked, 
                     isLast: controller.page?.ceil() == testList.length - 1, 
                     onNextClicked: (){
-                      controller.nextPage(duration: Duration(milliseconds: 500), curve: StaticsVar.curve);
+                      controller.nextPage(duration: Durations.medium2, curve: StaticsVar.curve);
                       setState(() {
                         clicked = false;
                       });
@@ -261,7 +261,7 @@ class _InLearningPageState extends State<InLearningPage> {
                     isShowNext: clicked, 
                     isLast: controller.page?.ceil() == testList.length - 1, 
                     onNextClicked: (){
-                      controller.nextPage(duration: Duration(milliseconds: 500), curve: StaticsVar.curve);
+                      controller.nextPage(duration: Durations.medium2, curve: StaticsVar.curve);
                       setState(() {
                         clicked = false;
                       });
@@ -300,7 +300,7 @@ class _InLearningPageState extends State<InLearningPage> {
                     isShowNext: clicked, 
                     isLast: controller.page?.ceil() == testList.length - 1, 
                     onNextClicked: (){
-                      controller.nextPage(duration: Duration(milliseconds: 500), curve: StaticsVar.curve);
+                      controller.nextPage(duration: Durations.medium2, curve: StaticsVar.curve);
                       setState(() {
                         clicked = false;
                       });
@@ -337,7 +337,7 @@ class BottomTip extends StatelessWidget {
         begin: 0.0,
         end: isShowNext ? 1.0 : 0.0,
       ),
-      duration: const Duration(milliseconds: 500),
+      duration: Durations.medium2,
       curve: StaticsVar.curve,
       builder: (context, value, child) {
         return Row(
@@ -636,7 +636,7 @@ class _WordCardOverViewPage extends State<WordCardOverViewPage> {
           preferredSize: Size(mediaQuery.size.width, 75), 
           child: TweenAnimationBuilder<double>(
             tween: Tween(begin: 0.0, end: inSearch ? 1.0 : 0.0), 
-            duration: Duration(milliseconds: 300), 
+            duration: Durations.short4, 
             curve: StaticsVar.curve,
             builder: (context, value, child){
               return Center(
@@ -809,7 +809,7 @@ class _WordCardOverViewLayout extends State<WordCardOverViewLayout> {
             });
             jsonController.animateTo(
               (66 * jsonIndex).toDouble(), 
-              duration: Duration(milliseconds: 200), 
+              duration: Durations.medium1, 
               curve: StaticsVar.curve
             );
           },
@@ -835,18 +835,18 @@ class _WordCardOverViewLayout extends State<WordCardOverViewLayout> {
                       if(value) {
                         classController.animateTo(
                           (64 * classIndex).toDouble(), 
-                          duration: Duration(milliseconds: 200), 
+                          duration: Durations.medium1, 
                           curve: StaticsVar.curve
                         );
                         jsonController.animateTo(
                           (66 * (jsonIndex + 1)).toDouble(), 
-                          duration: Duration(milliseconds: 200), 
+                          duration: Durations.medium1, 
                           curve: StaticsVar.curve
                         );
                       } else {
                         jsonController.animateTo(
                           (66 * jsonIndex).toDouble(), 
-                          duration: Duration(milliseconds: 200), 
+                          duration: Durations.medium1, 
                           curve: StaticsVar.curve
                         );
                       }

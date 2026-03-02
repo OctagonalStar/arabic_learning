@@ -116,7 +116,6 @@ class MyHomePage extends StatefulWidget {
 class _MyHomePageState extends State<MyHomePage> {
   late List<Widget> _pageList;
   final PageController _pageController = PageController(initialPage: 0);
-  static const Duration _duration = Duration(milliseconds: 500);
   bool disPlayedFirst = false;
 
   // 判断是否为桌面端的阈值（可根据需要调整）
@@ -201,7 +200,7 @@ class _MyHomePageState extends State<MyHomePage> {
             _onNavigationTapped(index);
           },
           height: MediaQuery.of(context).size.height * 0.1,
-          animationDuration: Duration(milliseconds: 500),
+          animationDuration: Durations.medium2,
           labelBehavior: NavigationDestinationLabelBehavior.onlyShowSelected,
           backgroundColor: Theme.of(context).colorScheme.onPrimary.withAlpha(150),
           destinations: const [
@@ -235,7 +234,7 @@ class _MyHomePageState extends State<MyHomePage> {
   void _onNavigationTapped(int index) {
     _pageController.animateToPage(
       index,
-      duration: _duration,
+      duration: Durations.medium2,
       curve: StaticsVar.curve,
     );
   }

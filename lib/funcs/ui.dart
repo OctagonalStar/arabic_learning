@@ -174,7 +174,7 @@ List<Widget> classesSelectionList(BuildContext context, Function (ClassItem) onC
 ///   alart(context, "你点击了按钮"，onConfirmed: (){i++}, delayConfirm: Duration(seconds: 1));
 /// }
 /// ```
-void alart(BuildContext context, String e, {Function? onConfirmed, Duration delayConfirm = const Duration(milliseconds: 0)}) {
+void alart(BuildContext context, String e, {Function? onConfirmed, Duration delayConfirm = const Duration()}) {
   context.read<Global>().uiLogger.info("构建弹出窗口: 携带信息: $e ;确认参数: ${onConfirmed != null}; 延迟: ${delayConfirm.inMilliseconds}");
   showDialog(
     context: context, 
@@ -291,7 +291,7 @@ class TextContainer extends StatelessWidget {
       child: (animated)
         ? TweenAnimationBuilder<double>(
           tween: Tween(begin: 0.0, end: text.length.toDouble()), 
-          duration: Duration(milliseconds: 700),
+          duration: Durations.long4,
           curve: StaticsVar.curve,
           builder: (context, value, child) {
             if(value == text.length.toDouble()) return child!;
@@ -430,7 +430,7 @@ class _ChooseButtonBoxState extends State<ChooseButtonBox> {
     color ??= widget.cl ?? Theme.of(context).colorScheme.primaryContainer.withAlpha(150);
     return AnimatedContainer(
       margin: EdgeInsets.all(8.0),
-      duration: Duration(milliseconds: widget.isAnimated ? 500 : 0),
+      duration: widget.isAnimated ? Durations.medium4 : Duration(),
       curve: StaticsVar.curve,
       decoration: BoxDecoration(
         color: color,
@@ -442,7 +442,7 @@ class _ChooseButtonBoxState extends State<ChooseButtonBox> {
             bool? ans = widget.chose(widget.index);
             if(ans != null) {
               color = Colors.amber;
-              Future.delayed(Duration(milliseconds: widget.isAnimated ? 500 : 0), (){
+              Future.delayed(widget.isAnimated ? Durations.medium4 : Duration(), (){
                 setState(() {
                   if(ans) {
                     color = Colors.greenAccent;
@@ -560,7 +560,7 @@ class WordCard extends StatelessWidget {
                         ),
                         child: FittedBox(fit: BoxFit.scaleDown, child: Text("归属课程", style: TextStyle(fontSize: 16))),
                       ),
-                      Expanded(child: Text(word.className, style: TextStyle(fontSize: 18), textAlign: TextAlign.center))
+                      Expanded(child: FittedBox(fit: BoxFit.scaleDown, child: Text(word.className, style: TextStyle(fontSize: 18), textAlign: TextAlign.center)))
                     ],
                   )
                 ],
@@ -573,13 +573,13 @@ class WordCard extends StatelessWidget {
                     begin: 1.0,
                     end: hide ? 1.0 : 0.0
                   ),
-                  duration: Duration(milliseconds: 500),
+                  duration: Durations.extralong2,
                   curve: StaticsVar.curve,
                   builder: (context, value, child) {
                     return ClipRRect(
                       borderRadius: BorderRadiusGeometry.vertical(bottom: Radius.circular(25.0)),
                       child: BackdropFilter(
-                        filter: ImageFilter.blur(sigmaX: 10.0 * value,sigmaY: 10.0 * value),
+                        filter: ImageFilter.blur(sigmaX: 15.0 * value,sigmaY: 15.0 * value),
                         enabled: true,
                         child: value == 0.0 ? null : ElevatedButton(
                           style: ElevatedButton.styleFrom(
@@ -862,7 +862,7 @@ class _ChoiceQuestions extends State<ChoiceQuestions> {
             ),
             SizedBox(height: mediaQuery.size.height *0.01),
             if(widget.bottomWidget != null) widget.bottomWidget!,
-            SizedBox(height: mediaQuery.size.height *0.05),
+            SizedBox(height: mediaQuery.size.height *0.03),
           ],
         ),
       ),
@@ -949,7 +949,7 @@ class _SpellQuestion extends State<SpellQuestion> {
                 begin: Theme.of(context).colorScheme.onPrimaryFixed,
                 end: isChecked ? cl.withAlpha(180) : Theme.of(context).colorScheme.onPrimaryFixed
               ),
-              duration: Duration(milliseconds: 500),
+              duration: Durations.medium2,
               curve: StaticsVar.curve,
               builder: (context, value, child) {
                 return TextField(
