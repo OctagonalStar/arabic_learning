@@ -33,7 +33,7 @@ class Global with ChangeNotifier {
     fontFamily: zhFont,
   );
   
-  late Config globalConfig;
+  Config globalConfig = Config();
 
 
   Future<bool> init() async {
@@ -46,7 +46,6 @@ class Global with ChangeNotifier {
 
     if(appData.isFirstStart) {
       logger.info("首次启动检测为真");
-      globalConfig = Config();
       await refreshApp();
     } else {
       conveySetting();
