@@ -803,7 +803,7 @@ class _ChoiceQuestions extends State<ChoiceQuestions> {
     // showingMode 0: 1 Row, 1: 2 Rows, 2: 4 Rows
     if(showingMode == -1){
       context.read<Global>().uiLogger.fine("未指定布局，开始计算");
-      showingMode = calculateButtonBoxLayout(widget.choices, mediaQuery.size.width, AppData().isWideScreen);
+      showingMode = calculateButtonBoxLayout(widget.choices, mediaQuery.size.width);
       context.read<Global>().uiLogger.info("最终采用布局方案: $showingMode");
     }
     return Material(
@@ -1039,7 +1039,7 @@ class _ListeningQuestion extends State<ListeningQuestion> {
     int showingMode = widget.bottonLayout;
     if(showingMode == -1){
       context.read<Global>().uiLogger.fine("未指定布局，开始计算");
-      showingMode = calculateButtonBoxLayout(widget.choices, mediaQuery.size.width, AppData().isWideScreen);
+      showingMode = calculateButtonBoxLayout(widget.choices, mediaQuery.size.width);
       context.read<Global>().uiLogger.info("最终采用布局方案: $showingMode");
     }
     return Material(

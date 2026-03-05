@@ -134,8 +134,9 @@ Future<List<dynamic>> playTextToSpeech(String text, BuildContext context, {doubl
   return [true, ""];
 }
 
-int calculateButtonBoxLayout(List<String> possible, double width, bool isWideScreen){
+int calculateButtonBoxLayout(List<String> possible, double width){
   // showingMode 0: 1 Row, 1: 2 Rows, 2: 4 Rows
+  bool isWideScreen = AppData().isWideScreen;
   for(int i = 1; i < 4; i++) {
     if(possible[i].length * 16 > width * (isWideScreen ? 0.21 : 0.8)){
       if (isWideScreen) {
