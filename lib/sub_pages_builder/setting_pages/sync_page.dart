@@ -28,12 +28,12 @@ class _DataSyncPage extends State<DataSyncPage> {
   @override
   Widget build(BuildContext context) {
     context.read<Global>().uiLogger.info("构建 DataSyncPage");
-    enabled ??= context.read<Global>().globalConfig.webSync.enabled;
+    enabled ??= AppData().config.webSync.enabled;
     context.read<Global>().uiLogger.fine("获取WebDAV实例");
     final WebDAV webdav = WebDAV(
-      uri: context.read<Global>().globalConfig.webSync.account.uri, 
-      user: context.read<Global>().globalConfig.webSync.account.userName,
-      password: context.read<Global>().globalConfig.webSync.account.passWord
+      uri: AppData().config.webSync.account.uri, 
+      user: AppData().config.webSync.account.userName,
+      password: AppData().config.webSync.account.passWord
     );
     MediaQueryData mediaQuery = MediaQuery.of(context);
 
@@ -69,12 +69,12 @@ class _DataSyncPage extends State<DataSyncPage> {
               Row(
                 children: [
                   Text("联通性检查: "),
-                  if(context.read<Global>().globalConfig.webSync.account.uri.isEmpty) Text("未绑定", style: Theme.of(context).textTheme.labelSmall),
+                  if(AppData().config.webSync.account.uri.isEmpty) Text("未绑定", style: Theme.of(context).textTheme.labelSmall),
                   FutureBuilder(
                     future: WebDAV.test(
-                      context.read<Global>().globalConfig.webSync.account.uri, 
-                      context.read<Global>().globalConfig.webSync.account.userName,
-                      password: context.read<Global>().globalConfig.webSync.account.passWord
+                      AppData().config.webSync.account.uri, 
+                      AppData().config.webSync.account.userName,
+                      password: AppData().config.webSync.account.passWord
                     ), 
                     builder: (context, snapshot) {
                       if(snapshot.hasError) {
@@ -293,9 +293,9 @@ Future<void> popAccountSetting(BuildContext context) async {
   await showDialog<List<String>>(
     context: context,
     builder: (BuildContext context) {
-      uriController.text = context.read<Global>().globalConfig.webSync.account.uri;
-      accountController.text = context.read<Global>().globalConfig.webSync.account.userName;
-      passwdController.text = context.read<Global>().globalConfig.webSync.account.passWord;
+      uriController.text = AppData().config.webSync.account.uri;
+      accountController.text = AppData().config.webSync.account.userName;
+      passwdController.text = AppData().config.webSync.account.passWord;
       return AlertDialog(
         title: Text("设置WebDAV同步"),
         content: Column(
@@ -367,8 +367,8 @@ Future<void> popAccountSetting(BuildContext context) async {
                 alart(context, e.toString());
                 return;
               }
-              context.read<Global>().globalConfig = context.read<Global>().globalConfig.copyWith(
-                webSync: context.read<Global>().globalConfig.webSync.copyWith(
+              AppData().config = AppData().config.copyWith(
+                webSync: AppData().config.webSync.copyWith(
                   account: SyncAccountConfig(
                     uri: uriController.text,
                     userName: accountController.text,

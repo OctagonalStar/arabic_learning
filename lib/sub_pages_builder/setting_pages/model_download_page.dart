@@ -78,7 +78,7 @@ class _ModelDownload extends State<ModelDownload> {
               });
               await extractTarBz2('${basePath.path}/arabicLearning/tts/temp.tar.bz2', "${basePath.path}/arabicLearning/tts/model/");
               if(!context.mounted) return;
-              AppData().loadTTS(context.read<Global>().globalConfig.audio.playRate);
+              AppData().loadTTS(AppData().config.audio.playRate);
               context.read<Global>().uiLogger.info("模型下载完成");
               ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("下载完成")));
               setState(() {

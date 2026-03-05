@@ -13,7 +13,6 @@ import 'package:logging/logging.dart';
 import 'package:arabic_learning/funcs/ui.dart';
 import 'package:arabic_learning/funcs/utili.dart';
 import 'package:arabic_learning/vars/global.dart' show AppData, Global;
-import 'package:arabic_learning/vars/license_storage.dart' show LicenseVars;
 import 'package:arabic_learning/vars/statics_var.dart' show StaticsVar;
 import 'package:arabic_learning/pages/home_page.dart';
 import 'package:arabic_learning/pages/learning_page.dart'show LearningPage;
@@ -78,28 +77,27 @@ class MyApp extends StatelessWidget {
   const MyApp({super.key});
   @override
   Widget build(BuildContext context) {
-    context.read<Global>().uiLogger.fine("收到应用层构建请求");
+    context.read<Global>().uiLogger.info("收到应用层构建请求");
     return context.watch<Global>().inited? 
       MaterialApp(
         title: StaticsVar.appName,
         themeMode: ThemeMode.system,
         theme: context.read<Global>().themeData,
-        home: context.read<Global>().globalConfig.egg.stella
-          ? Scaffold(
-            body: Stack(
-              children: [
-                Container(
-                  decoration: BoxDecoration(
-                    image: DecorationImage(
-                      image: MemoryImage(AppData().stella!),
-                      fit: BoxFit.cover,
-                    ),
+        home: AppData().config.egg.stella
+          ? Stack(
+            children: [
+              Container(
+                decoration: BoxDecoration(
+                  image: DecorationImage(
+                    image: MemoryImage(AppData().stella!),
+                    fit: BoxFit.cover,
                   ),
                 ),
-                const MyHomePage(title: StaticsVar.appName),
-              ],
-            ),)
-          : const MyHomePage(title: StaticsVar.appName),
+              ),
+              const MyHomePage(),
+            ],
+          )
+          : const MyHomePage(),
       )
       : Material(child: Container(width: double.infinity, height: double.infinity, color: Colors.black ,child: Center(child: CircularProgressIndicator())));    
   }
@@ -107,8 +105,8 @@ class MyApp extends StatelessWidget {
 
 
 class MyHomePage extends StatefulWidget {
-  const MyHomePage({super.key, required this.title});
-  final String title;
+  const MyHomePage({super.key});
+
   @override
   State<MyHomePage> createState() => _MyHomePageState();
 }
@@ -117,7 +115,7 @@ class MyHomePage extends StatefulWidget {
 class _MyHomePageState extends State<MyHomePage> {
   late List<Widget> _pageList;
   final PageController _pageController = PageController(initialPage: 0);
-  bool disPlayedFirst = false;
+  final TextEditingController controller = TextEditingController();
 
   // 判断是否为桌面端的阈值（可根据需要调整）
   static const double _desktopBreakpoint = 600;
@@ -240,11 +238,11 @@ class _MyHomePageState extends State<MyHomePage> {
     );
   }
 
-  final TextEditingController controller = TextEditingController();
   @override
   Widget build(BuildContext context) {
     context.read<Global>().uiLogger.fine("构建 MyHomePage");
-    final gob = context.watch<Global>();
+    final global = context.watch<Global>();
+    
     if(AppData().isFirstStart) {
       context.read<Global>().uiLogger.info("构建首次启动页面");
       return Scaffold(
@@ -254,13 +252,13 @@ class _MyHomePageState extends State<MyHomePage> {
               Expanded(
                 child: ListView(
                     children: [
-                      SelectableText('欢迎使用本软件，请先阅读使用说明。', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.redAccent, fontSize: 36)),
-                      SelectableText("软件开源地址：https://github.com/OctagonalStar/arabic_learning"),
-                      SelectableText(LicenseVars.noMyDutyAnnouce),
-                      SelectableText("若你已理解并接受上述条款，请向下翻页，并在底部输入框中填写你的名字，并点击“我没异议”按钮以确认。"),
-                      SizedBox(height: MediaQuery.of(context).size.height * 0.1),
-                      if(kIsWeb) SelectableText(LicenseVars.theWebSpecialAnnouce),
-                      Text('招募软件图标ing\n有想法或者有现有设计可以联系我', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.redAccent, fontSize: 18)),
+                      FutureBuilder(
+                        future: rootBundle.loadString('assets/help/audio.md'),
+                        initialData: "加载中...",
+                        builder: (context, asyncSnapshot) {
+                          return MarkdownBody(data: asyncSnapshot.data!);
+                        }
+                      ),
                       SizedBox(height: MediaQuery.of(context).size.height),
                       TextField(
                         controller: controller,
@@ -293,7 +291,7 @@ class _MyHomePageState extends State<MyHomePage> {
                     onPressed: () async {
                       if(controller.text.isNotEmpty){
                         context.read<Global>().uiLogger.info("用户同意协议，签署名：${controller.text}");
-                        context.read<Global>().globalConfig = context.read<Global>().globalConfig.copyWith(user: controller.text);
+                        AppData().config = AppData().config.copyWith(user: controller.text);
                         context.read<Global>().updateSetting(refresh: true);
                       } else {
                         context.read<Global>().uiLogger.info("用户未填写名称");
@@ -315,15 +313,17 @@ class _MyHomePageState extends State<MyHomePage> {
         ),
       );
     }
+
     if(io.Platform.isAndroid) {
       FlutterLocalNotificationsPlugin()
         .resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>()
         ?.requestNotificationsPermission();
     }
+
     // 更新日志通知
-    if(gob.updateLogRequire) {
+    if(global.updateLogRequire) {
       context.read<Global>().uiLogger.info("预定更新日志通知");
-      gob.updateLogRequire = false;
+      global.updateLogRequire = false;
       Future.delayed(Duration(seconds: 1), () async {
         late final String changeLog;
         changeLog = await rootBundle.loadString('CHANGELOG.md');
@@ -336,30 +336,29 @@ class _MyHomePageState extends State<MyHomePage> {
           isScrollControlled: true,
           builder: (context) {
             context.read<Global>().uiLogger.info("构建更新日志通知");
-            return Material(
-              child: Column(
-                children: [
-                  TextContainer(text: "更新内容 软件版本: ${StaticsVar.appVersion.zfill(6)}"),
-                  SizedBox(
-                    height: MediaQuery.of(context).size.height * 0.8,
-                    child: Markdown(data: changeLog)
+            return Column(
+              children: [
+                TextContainer(text: "更新内容 软件版本: ${StaticsVar.appVersion.zfill(6)}"),
+                SizedBox(
+                  height: MediaQuery.of(context).size.height * 0.8,
+                  child: Markdown(data: changeLog)
+                ),
+                ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    fixedSize: Size(double.infinity, MediaQuery.of(context).size.height * 0.07)
                   ),
-                  ElevatedButton(
-                    style: ElevatedButton.styleFrom(
-                      fixedSize: Size(double.infinity, MediaQuery.of(context).size.height * 0.07)
-                    ),
-                    onPressed: () {
-                      Navigator.pop(context);
-                    }, 
-                    child: Text("知道了")
-                  )
-                ],
-              )
+                  onPressed: () {
+                    Navigator.pop(context);
+                  }, 
+                  child: Text("知道了")
+                )
+              ],
             );
           },
         );
       });
     }
+
     _pageList = [
       HomePage(),
       LearningPage(),
@@ -367,13 +366,13 @@ class _MyHomePageState extends State<MyHomePage> {
       SettingPage()
     ];
     return Scaffold(
-      backgroundColor: context.read<Global>().globalConfig.egg.stella ? Colors.transparent : null,
+      backgroundColor: AppData().config.egg.stella ? Colors.transparent : null,
       appBar: AppBar(
         centerTitle: true,
         backgroundColor: Theme.of(context).colorScheme.inversePrimary.withAlpha(150),
-        title: Text(widget.title),
+        title: Text(StaticsVar.appName),
         actions: [
-          if(kIsWeb && !gob.globalConfig.regular.hideAppDownloadButton) ElevatedButton.icon(
+          if(kIsWeb && !AppData().config.regular.hideAppDownloadButton) ElevatedButton.icon(
             icon: Icon(Icons.add_to_home_screen),
             label: Text('下载APP版本'),
             onPressed: () {

@@ -15,10 +15,12 @@ import 'package:arabic_learning/sub_pages_builder/learning_pages/learning_pages_
 
 class LearningPage extends StatelessWidget {
   const LearningPage({super.key});
+
   @override
   Widget build(BuildContext context) {
     context.read<Global>().uiLogger.fine("构建 LearningPage");
     final mediaQuery = MediaQuery.of(context);
+
     return Column(
       children: [
         SizedBox(height: mediaQuery.size.height * 0.05),

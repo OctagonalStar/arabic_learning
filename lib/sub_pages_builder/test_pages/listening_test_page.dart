@@ -49,7 +49,7 @@ class _ForeListeningSettingPage extends State<ForeListeningSettingPage> {
                   IconButton(
                     onPressed: () {
                       context.read<Global>().uiLogger.info("进行听写发音测试");
-                      playTextToSpeech("وَ", context);
+                      playTextToSpeech("وَ");
                     }, 
                     icon: Icon(Icons.volume_up, size: 100)
                   ),
@@ -398,7 +398,7 @@ class _MainListeningPageState extends State<MainListeningPage> {
           counter = "-";
         });
         if(!context.mounted) return;
-        await playTextToSpeech(x.arabic, context, speed: widget.playRate);
+        await playTextToSpeech(x.arabic, speed: widget.playRate);
         // await Future.delayed(Duration(seconds: 1));
         setState((){
           state = "播放间隔中...";

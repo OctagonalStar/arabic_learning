@@ -87,6 +87,8 @@ class _SettingPage extends State<SettingPage> {
 
   List<Widget> regularSetting(BuildContext context) {
     MediaQueryData mediaQuery = MediaQuery.of(context);
+    AppData appData = AppData();
+
     return  [
       Row(
         children: [
@@ -94,7 +96,7 @@ class _SettingPage extends State<SettingPage> {
           SizedBox(width: mediaQuery.size.width * 0.01),
           Expanded(child: Text("主题颜色:")),
           DropdownButton<int>(
-            value: context.watch<Global>().globalConfig.regular.theme,
+            value: appData.config.regular.theme,
             items: const [
               DropdownMenuItem(value: 0, child: Text('樱粉')),
               DropdownMenuItem(value: 1, child: Text('海蓝')),
@@ -110,8 +112,8 @@ class _SettingPage extends State<SettingPage> {
             ],
             onChanged: (value) async {
               context.read<Global>().uiLogger.info("更新主题颜色: $value");
-              context.read<Global>().globalConfig = context.read<Global>().globalConfig.copyWith(
-                regular: context.read<Global>().globalConfig.regular.copyWith(theme: value)
+              AppData().config = AppData().config.copyWith(
+                regular: AppData().config.regular.copyWith(theme: value)
               );
               context.read<Global>().updateSetting();
             },
@@ -124,11 +126,11 @@ class _SettingPage extends State<SettingPage> {
           SizedBox(width: mediaQuery.size.width * 0.01),
           Expanded(child: Text("深色模式:")),
           Switch(
-            value: context.watch<Global>().globalConfig.regular.darkMode,
+            value: appData.config.regular.darkMode,
             onChanged: (value) {
               context.read<Global>().uiLogger.info("更新深色模式设置: $value");
-              context.read<Global>().globalConfig = context.read<Global>().globalConfig.copyWith(
-                regular: context.read<Global>().globalConfig.regular.copyWith(darkMode: value)
+              AppData().config = AppData().config.copyWith(
+                regular: AppData().config.regular.copyWith(darkMode: value)
               );
               context.read<Global>().updateSetting();
             },
@@ -141,7 +143,7 @@ class _SettingPage extends State<SettingPage> {
           SizedBox(width: mediaQuery.size.width * 0.01),
           Expanded(child: Text("字体设置:")),
           DropdownButton<int>(
-            value: context.watch<Global>().globalConfig.regular.font,
+            value: appData.config.regular.font,
             items: [
               DropdownMenuItem(value: 0, child: Text('默认字体')),
               DropdownMenuItem(value: 1, child: Text('仅阿语使用备用字体')),
@@ -154,8 +156,8 @@ class _SettingPage extends State<SettingPage> {
                   SnackBar(content: Text("网页版加载中文字体需要较长时间，请先耐心等待"), duration: Duration(seconds: 3),),
                 );
               }
-              context.read<Global>().globalConfig = context.read<Global>().globalConfig.copyWith(
-                regular: context.read<Global>().globalConfig.regular.copyWith(font: value)
+              AppData().config = AppData().config.copyWith(
+                regular: AppData().config.regular.copyWith(font: value)
               );
               Provider.of<Global>(context, listen: false).updateSetting();
             },
@@ -168,11 +170,11 @@ class _SettingPage extends State<SettingPage> {
           SizedBox(width: mediaQuery.size.width * 0.01),
           Expanded(child: Text("隐藏网页版右上角APP下载按钮")),
           Switch(
-            value: context.read<Global>().globalConfig.regular.hideAppDownloadButton,
+            value: AppData().config.regular.hideAppDownloadButton,
             onChanged: (value) {
               context.read<Global>().uiLogger.info("更新网页端APP下载按钮隐藏设置: $value");
-              context.read<Global>().globalConfig = context.read<Global>().globalConfig.copyWith(
-                regular: context.read<Global>().globalConfig.regular.copyWith(hideAppDownloadButton: value)
+              AppData().config = AppData().config.copyWith(
+                regular: AppData().config.regular.copyWith(hideAppDownloadButton: value)
               );
               context.read<Global>().updateSetting();
             },
@@ -322,12 +324,12 @@ class _SettingPage extends State<SettingPage> {
             ],
           ),
           DropdownButton(
-            value: context.read<Global>().globalConfig.audio.audioSource, 
+            value: AppData().config.audio.audioSource, 
             onChanged: (value) {
               context.read<Global>().uiLogger.info("更新音频接口: $value");
               if(value == 1) alart(context, "警告: \n来自\"TextReadTTS.com\"的音频不支持发音符号，且只能合成40字以内的文本。\n开启此功能请知悉。");
-              context.read<Global>().globalConfig = context.read<Global>().globalConfig.copyWith(
-                audio: context.read<Global>().globalConfig.audio.copyWith(audioSource: value)
+              AppData().config = AppData().config.copyWith(
+                audio: AppData().config.audio.copyWith(audioSource: value)
               );
               context.read<Global>().updateSetting();
             },
@@ -363,15 +365,15 @@ class _SettingPage extends State<SettingPage> {
             )
           ),
           Slider(
-            value: context.read<Global>().globalConfig.audio.playRate,
+            value: AppData().config.audio.playRate,
             min: 0.5,
             max: 1.5,
             divisions: 10,
-            label: "${context.read<Global>().globalConfig.audio.playRate}",
+            label: "${AppData().config.audio.playRate}",
             onChanged: (value) {
               setState(() {
-                context.read<Global>().globalConfig = context.read<Global>().globalConfig.copyWith(
-                  audio: context.read<Global>().globalConfig.audio.copyWith(playRate: value)
+                AppData().config = AppData().config.copyWith(
+                  audio: AppData().config.audio.copyWith(playRate: value)
                 );
               });
             },

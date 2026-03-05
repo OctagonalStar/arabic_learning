@@ -27,13 +27,11 @@ class Global with ChangeNotifier {
   ThemeData get themeData => ThemeData(
     useMaterial3: true,
     colorScheme: ColorScheme.fromSeed(
-      seedColor: StaticsVar.themeList[globalConfig.regular.theme],
-      brightness: globalConfig.regular.darkMode ? Brightness.dark : Brightness.light,
+      seedColor: StaticsVar.themeList[AppData().config.regular.theme],
+      brightness: AppData().config.regular.darkMode ? Brightness.dark : Brightness.light,
     ),
     fontFamily: zhFont,
   );
-  
-  Config globalConfig = Config();
 
 
   Future<bool> init() async {
@@ -62,21 +60,21 @@ class Global with ChangeNotifier {
     logger.info("处理配置文件");
 
     Config oldConfig = Config.buildFromMap(jsonDecode(AppData().storage.getString("settingData")!));
-    if(oldConfig.lastVersion != globalConfig.lastVersion) {
+    if(oldConfig.lastVersion != AppData().config.lastVersion) {
       logger.info("检测到当前版本与上次启动版本不同");
       updateLogRequire = true;
-      oldConfig=oldConfig.copyWith(lastVersion: globalConfig.lastVersion);
+      oldConfig=oldConfig.copyWith(lastVersion: AppData().config.lastVersion);
     }
 
-    globalConfig = oldConfig;
+    AppData().config = oldConfig;
     logger.info("配置文件合成完成");
   }
 
   // 更新配置到存储中
   Future<void> updateSetting({Map<String, dynamic>? settingData, bool refresh = true}) async {
     logger.info("保存配置文件中");
-    if(settingData != null) globalConfig = Config.buildFromMap(settingData);
-    AppData().storage.setString("settingData", jsonEncode(globalConfig.toMap()));
+    if(settingData != null) AppData().config = Config.buildFromMap(settingData);
+    AppData().storage.setString("settingData", jsonEncode(AppData().config.toMap()));
     if(refresh) await refreshApp();
   }
 
@@ -101,12 +99,12 @@ class Global with ChangeNotifier {
         debugPrint('${record.time}-[${record.loggerName}][${record.level.name}]: ${record.message}');
       });
     }
-    if(globalConfig.debug.enableInternalLog){
+    if(AppData().config.debug.enableInternalLog){
       Logger.root.level = Level.ALL;
       const List<Level> levelList = [Level.ALL, Level.FINEST, Level.FINER, Level.FINE, Level.INFO, Level.WARNING, Level.SEVERE, Level.SHOUT, Level.OFF];
       AppData appData = AppData();
       Logger.root.onRecord.listen((record) async {
-        if(record.level < levelList[globalConfig.debug.internalLevel]) return;
+        if(record.level < levelList[AppData().config.debug.internalLevel]) return;
         appData.internalLogCapture.add('${record.time}-[${record.loggerName}][${record.level.name}]: ${record.message}');
       });
     }
@@ -115,8 +113,8 @@ class Global with ChangeNotifier {
   Future<void> refreshApp() async {
     logger.info("应用设置中");
     AppData appData = AppData();
-    if(globalConfig.audio.audioSource == 2) await appData.loadTTS(globalConfig.audio.playRate);
-    if(globalConfig.egg.stella) await appData.loadEggs();
+    if(AppData().config.audio.audioSource == 2) await appData.loadTTS(AppData().config.audio.playRate);
+    if(AppData().config.egg.stella) await appData.loadEggs();
     changeLoggerBehavior();
     updateTheme();
     notifyListeners();
@@ -125,11 +123,11 @@ class Global with ChangeNotifier {
 
   void updateTheme() {
     logger.info("更新主题中");
-    if(globalConfig.regular.font == 2) {
+    if(AppData().config.regular.font == 2) {
       arFont = StaticsVar.arBackupFont;
       zhFont = StaticsVar.zhBackupFont;
       loadFont();
-    } else if(globalConfig.regular.font == 1) {
+    } else if(AppData().config.regular.font == 1) {
       arFont = StaticsVar.arBackupFont;
       zhFont = null;
     } else {
@@ -140,13 +138,13 @@ class Global with ChangeNotifier {
   
   void updateLearningStreak(){
     final int nowDate = DateTime.now().difference(DateTime(2025, 11, 1)).inDays;
-    if (nowDate == globalConfig.learning.lastDate) return;
+    if (nowDate == AppData().config.learning.lastDate) return;
     logger.info("保存学习进度中");
     // 以 2025/11/1 为基准计算天数（因为这个bug是这天修的:} ）
-    if (nowDate - globalConfig.learning.lastDate > 1) {
-      globalConfig = globalConfig.copyWith(learning: globalConfig.learning.copyWith(startDate: nowDate));
+    if (nowDate - AppData().config.learning.lastDate > 1) {
+      AppData().config = AppData().config.copyWith(learning: AppData().config.learning.copyWith(startDate: nowDate));
     }
-    globalConfig = globalConfig.copyWith(learning: globalConfig.learning.copyWith(lastDate: nowDate));
+    AppData().config = AppData().config.copyWith(learning: AppData().config.learning.copyWith(lastDate: nowDate));
     updateSetting(refresh: false);
     logger.info("学习进度保存完成");
   }
@@ -164,6 +162,7 @@ class AppData {
   List<String> internalLogCapture = [];
   Uint8List? stella;
   bool isWideScreen = false;
+  Config config = Config();
 
   late final SharedPreferences storage;
   late final io.Directory basePath;

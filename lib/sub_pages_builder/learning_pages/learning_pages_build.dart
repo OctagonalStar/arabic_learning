@@ -61,7 +61,7 @@ class _InLearningPageState extends State<InLearningPage> {
   @override
   void initState() {
     // 加载测试词
-    final SubQuizConfig questionsSetting = context.read<Global>().globalConfig.quiz.zhar;
+    final SubQuizConfig questionsSetting = AppData().config.quiz.zhar;
     List<List<TestItem>> questionsInSections = List.generate(questionsSetting.questionSections.length, (_) => []);
 
     for(int sectionIndex = 0; sectionIndex < questionsSetting.questionSections.length; sectionIndex++) {
@@ -663,7 +663,7 @@ class _WordCardOverViewPage extends State<WordCardOverViewPage> {
                     onSubmitted: (text) {
                       setState(() {});
                     },
-                    onChanged: context.read<Global>().globalConfig.learning.wordLookupRealtime ? (text) {
+                    onChanged: AppData().config.learning.wordLookupRealtime ? (text) {
                       setState(() {});
                     } : null,
                   ),
@@ -688,8 +688,8 @@ class _WordCardOverViewPage extends State<WordCardOverViewPage> {
                       
                     },
                     builder: (context) {
-                      int forceCloumn = context.read<Global>().globalConfig.learning.overviewForceColumn;
-                      bool lookupRealtime = context.read<Global>().globalConfig.learning.wordLookupRealtime;
+                      int forceCloumn = AppData().config.learning.overviewForceColumn;
+                      bool lookupRealtime = AppData().config.learning.wordLookupRealtime;
                       return StatefulBuilder(
                         builder: (context, setLocalState) {
                           return Column(
@@ -736,8 +736,8 @@ class _WordCardOverViewPage extends State<WordCardOverViewPage> {
                                 ),
                                 onPressed: (){
                                   setState(() {
-                                    context.read<Global>().globalConfig = context.read<Global>().globalConfig.copyWith(
-                                      learning: context.read<Global>().globalConfig.learning.copyWith(
+                                    AppData().config = AppData().config.copyWith(
+                                      learning: AppData().config.learning.copyWith(
                                         overviewForceColumn: forceCloumn,
                                         wordLookupRealtime: lookupRealtime
                                       )
@@ -857,15 +857,15 @@ class _WordCardOverViewLayout extends State<WordCardOverViewLayout> {
                         height: mediaQuery.size.height * 0.8,
                         child: GridView.builder(
                           itemCount: classItem.wordIndexs.length,
-                          gridDelegate: context.read<Global>().globalConfig.learning.overviewForceColumn == 0 ? SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: mediaQuery.size.width ~/ 300) : SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: context.read<Global>().globalConfig.learning.overviewForceColumn), 
+                          gridDelegate: AppData().config.learning.overviewForceColumn == 0 ? SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: mediaQuery.size.width ~/ 300) : SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: AppData().config.learning.overviewForceColumn), 
                           itemBuilder: (context, index) {
                             return Container(
                               margin: EdgeInsets.all(8.0),
                               child: WordCard(
                                 word: appData.wordData.words[classItem.wordIndexs[index]],
                                 useMask: false,
-                                width: mediaQuery.size.width / (context.read<Global>().globalConfig.learning.overviewForceColumn == 0 ? (mediaQuery.size.width ~/ 300) : context.read<Global>().globalConfig.learning.overviewForceColumn),
-                                height: mediaQuery.size.width / (context.read<Global>().globalConfig.learning.overviewForceColumn == 0 ? (mediaQuery.size.width ~/ 300) : context.read<Global>().globalConfig.learning.overviewForceColumn),
+                                width: mediaQuery.size.width / (AppData().config.learning.overviewForceColumn == 0 ? (mediaQuery.size.width ~/ 300) : AppData().config.learning.overviewForceColumn),
+                                height: mediaQuery.size.width / (AppData().config.learning.overviewForceColumn == 0 ? (mediaQuery.size.width ~/ 300) : AppData().config.learning.overviewForceColumn),
                               ),
                             );
                           }
@@ -932,7 +932,7 @@ class WordLookupLayout extends StatelessWidget {
     }
     
     context.read<Global>().uiLogger.finer("单词检索结果: $match");
-    if(!context.read<Global>().globalConfig.learning.wordLookupRealtime){
+    if(!AppData().config.learning.wordLookupRealtime){
       Future.delayed(Durations.medium1, () {
         if(context.mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
@@ -944,15 +944,15 @@ class WordLookupLayout extends StatelessWidget {
 
     return GridView.builder(
       itemCount: match.length,
-      gridDelegate: context.read<Global>().globalConfig.learning.overviewForceColumn == 0 ? SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: mediaQuery.size.width ~/ 300) : SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: context.read<Global>().globalConfig.learning.overviewForceColumn), 
+      gridDelegate: AppData().config.learning.overviewForceColumn == 0 ? SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: mediaQuery.size.width ~/ 300) : SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: AppData().config.learning.overviewForceColumn), 
       itemBuilder: (context, index) {
         return Container(
           margin: EdgeInsets.all(8.0),
           child: WordCard(
             word: match[index],
             useMask: false,
-            width: mediaQuery.size.width / (context.read<Global>().globalConfig.learning.overviewForceColumn == 0 ? (mediaQuery.size.width ~/ 300) : context.read<Global>().globalConfig.learning.overviewForceColumn),
-            height: mediaQuery.size.width / (context.read<Global>().globalConfig.learning.overviewForceColumn == 0 ? (mediaQuery.size.width ~/ 300) : context.read<Global>().globalConfig.learning.overviewForceColumn),
+            width: mediaQuery.size.width / (AppData().config.learning.overviewForceColumn == 0 ? (mediaQuery.size.width ~/ 300) : AppData().config.learning.overviewForceColumn),
+            height: mediaQuery.size.width / (AppData().config.learning.overviewForceColumn == 0 ? (mediaQuery.size.width ~/ 300) : AppData().config.learning.overviewForceColumn),
           ),
         );
       }

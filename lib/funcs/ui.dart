@@ -511,7 +511,7 @@ class WordCard extends StatelessWidget {
           icon: const Icon(Icons.volume_up, size: 24.0),
           label: FittedBox(child: Text(word.arabic, style: TextStyle(fontSize: 64.0, fontFamily: context.read<Global>().arFont))),
           onPressed: (){
-            playTextToSpeech(word.arabic, context);
+            playTextToSpeech(word.arabic);
           },
         ),
         Stack(
@@ -829,11 +829,12 @@ class _ChoiceQuestions extends State<ChoiceQuestions> {
                       setLocalState(() {
                         playing = true;
                       });
-                      late List<dynamic> temp;
-                      temp = await playTextToSpeech(widget.mainWord, context);
-                      if(!temp[0] && context.mounted) {
-                        alart(context, temp[1]);
+                      try {
+                        await playTextToSpeech(widget.mainWord);
+                      } catch (e) {
+                        if(context.mounted) alart(context, e.toString());
                       }
+                      
                       setLocalState(() {
                         playing = false;
                       });
@@ -1064,11 +1065,12 @@ class _ListeningQuestion extends State<ListeningQuestion> {
                       setLocalState(() {
                         playing = true;
                       });
-                      late List<dynamic> temp;
-                      temp = await playTextToSpeech(widget.mainWord, context);
-                      if(!temp[0] && context.mounted) {
-                        alart(context, temp[1]);
+                      try {
+                        await playTextToSpeech(widget.mainWord);
+                      } catch (e) {
+                        if(context.mounted) alart(context, e.toString());
                       }
+                      
                       setLocalState(() {
                         playing = false;
                       });
