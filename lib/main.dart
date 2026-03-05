@@ -24,6 +24,7 @@ import 'package:workmanager/workmanager.dart' show Workmanager, Constraints;
 void main() async {
   Logger.root.level = kDebugMode ? Level.ALL : Level.OFF;
   if (kDebugMode){
+    Logger.root.clearListeners();
     Logger.root.onRecord.listen((record) {
       if(record.loggerName == "BKTree") return; // bk树不要刷屏
       debugPrint('${record.time}-[${record.loggerName}][${record.level.name}]: ${record.message}');
