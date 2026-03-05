@@ -123,7 +123,7 @@ class _DataSyncPage extends State<DataSyncPage> {
                       });
                       try{
                         if(!webdav.isReachable) await webdav.connect();
-                        if(context.mounted) await webdav.upload(context.read<Global>().prefs);
+                        if(context.mounted) await webdav.upload(AppData().storage);
                       } catch (e) {
                         if(!context.mounted) return;
                         alart(context, e.toString());
@@ -161,7 +161,7 @@ class _DataSyncPage extends State<DataSyncPage> {
                       });
                       try{
                         if(!webdav.isReachable) await webdav.connect();
-                        if(context.mounted) await webdav.download(context.read<Global>().prefs);
+                        if(context.mounted) await webdav.download(AppData().storage);
                         if(context.mounted) context.read<Global>().conveySetting();
                       } catch (e) {
                         if(!context.mounted) return;
@@ -204,7 +204,7 @@ class _DataSyncPage extends State<DataSyncPage> {
                           dialogTitle: "导出数据",
                           lockParentWindow: true,
                           fileName: "export.json",
-                          bytes: utf8.encode(jsonEncode(context.read<Global>().prefs.export())),
+                          bytes: utf8.encode(jsonEncode(AppData().storage.export())),
                         ) != null) {
                           if(context.mounted) {
                             ScaffoldMessenger.of(context).showSnackBar(SnackBar(
@@ -262,7 +262,7 @@ class _DataSyncPage extends State<DataSyncPage> {
                         if (!context.mounted) return;
                         try{
                           context.read<Global>().uiLogger.fine("备份数据读取完成，开始解析");
-                          context.read<Global>().prefs.recovery(jsonDecode(jsonString));
+                          AppData().storage.recovery(jsonDecode(jsonString));
                           if(context.mounted) context.read<Global>().conveySetting();
                           alart(context, "备份数据 \"${platformFile.name}\" \n已恢复\n部分设置可能需要软件重启后才能生效");
                           context.read<Global>().uiLogger.info("备份数据 \"${platformFile.name}\" \n已导入。");

@@ -58,7 +58,7 @@ Future<List<Widget>> downloadList(BuildContext context) async{
   context.read<Global>().uiLogger.info("线上词库获取成功");
   for(var f in json) {
     if(f["type"] == "file") {
-      bool downloaded = context.read<Global>().wordData.classes.any((SourceItem source) => source.sourceJsonFileName == f["name"]);
+      bool downloaded = AppData().wordData.classes.any((SourceItem source) => source.sourceJsonFileName == f["name"]);
       bool inDownloading = false;
       list.add(StatefulBuilder(
         builder: (context, setLocalState) {
@@ -81,7 +81,7 @@ Future<List<Widget>> downloadList(BuildContext context) async{
                     var response = await dio.getUri(Uri.parse(f["download_url"]));
                     if(!context.mounted) return ;
                     if(response.statusCode == 200) {
-                      context.read<Global>().importData(jsonDecode(response.data) as Map<String, dynamic>, f["name"]);
+                      AppData().importDictData(jsonDecode(response.data) as Map<String, dynamic>, f["name"]);
                       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
                         content: Text("下载成功: ${f["name"]}"),
                       ));

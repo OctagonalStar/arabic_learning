@@ -21,7 +21,9 @@ class File {
 }
 
 class Directory {
-  Directory(String filePath);
+  String path;
+
+  Directory(this.path);
 
   Future<void> create({required bool recursive}) async {}
 }

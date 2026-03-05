@@ -193,7 +193,7 @@ class _SettingPage extends State<SettingPage> {
               Icon(Icons.download, size: 24.0),
               SizedBox(width: mediaQuery.size.width * 0.01),
               Expanded(child: Text("导入词库数据")),
-              Text("词库中现有: ${context.read<Global>().wordCount}"),
+              Text("词库中现有: ${AppData().wordCount}"),
               SizedBox(width: mediaQuery.size.width * 0.02),
             ],
           ),
@@ -241,7 +241,7 @@ class _SettingPage extends State<SettingPage> {
                     try{
                       context.read<Global>().uiLogger.fine("文件读取完成，开始解析");
                       Map<String, dynamic> jsonData = json.decode(jsonString);
-                      Provider.of<Global>(context, listen: false).importData(jsonData, platformFile.name);
+                      AppData().importDictData(jsonData, platformFile.name);
                       alart(context, "文件 \"${platformFile.name}\" \n已导入。");
                       context.read<Global>().uiLogger.info("文件解析成功");
                     } catch (e) {
@@ -334,7 +334,13 @@ class _SettingPage extends State<SettingPage> {
             items: [
               DropdownMenuItem(value: 0, child: Text("系统文本转语音", overflow: TextOverflow.ellipsis,)),
               DropdownMenuItem(value: 1, child: Text("请求TextReadTTS.com的语音", overflow: TextOverflow.ellipsis)),
-              DropdownMenuItem(value: 2, enabled: kIsWeb ? false : (context.read<Global>().modelTTSDownloaded ? true : false), child: Text("神经网络合成语音", overflow: TextOverflow.ellipsis, style: TextStyle(color: kIsWeb ? Colors.grey : (context.read<Global>().modelTTSDownloaded ? null : Colors.grey))),),
+              DropdownMenuItem(value: 2, 
+                enabled: kIsWeb ? false : (AppData().modelTTSDownloaded ? true : false), 
+                child: Text("神经网络合成语音", 
+                  overflow: TextOverflow.ellipsis, 
+                  style: TextStyle(color: kIsWeb ? Colors.grey : (AppData().modelTTSDownloaded ? null : Colors.grey))
+                ),
+              )
             ],
             isExpanded: true,
           ),

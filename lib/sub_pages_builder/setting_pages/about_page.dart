@@ -59,7 +59,7 @@ class AboutPage extends StatelessWidget {
           ExpansionTile(
             title: Text("调试信息"),
             children: [
-              TextContainer(text: "Storage Type: ${context.read<Global>().prefs.type ? "SharedPreferences" : "IndexDB"}"),
+              TextContainer(text: "Storage Type: ${AppData().storage.type ? "SharedPreferences" : "IndexDB"}"),
             ],
           )
         ],

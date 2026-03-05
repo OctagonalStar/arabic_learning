@@ -82,7 +82,7 @@ class _QuestionsSettingPage extends State<QuestionsSettingPage> {
         appBar: AppBar(title: Text("题型配置")),
         body: Column(
           children: [
-            if(!context.read<Global>().isWideScreen) TextContainer(text: "长按可拖动排序", style: TextStyle(color: Colors.grey), animated: true),
+            if(!AppData().isWideScreen) TextContainer(text: "长按可拖动排序", style: TextStyle(color: Colors.grey), animated: true),
             Expanded(
               child: ReorderableListView(
                 onReorder: (oldIndex, newIndex) {

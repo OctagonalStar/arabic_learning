@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:arabic_learning/vars/global.dart';
 import 'package:flutter/foundation.dart';
 import 'package:fsrs/fsrs.dart';
 import 'package:logging/logging.dart';
@@ -7,23 +8,26 @@ import 'package:logging/logging.dart';
 import 'package:arabic_learning/package_replacement/storage.dart';
 
 class FSRS { 
-  late final SharedPreferences prefs;
+  // 作为单例
+  static final FSRS _instance = FSRS._internal();
+  factory FSRS() => _instance;
+  FSRS._internal();
+
   late FSRSConfig config;
-  late final Logger logger;
+  
+  final Logger logger = Logger("FSRS");
   // index != cardId; cardId = wordId = the index of word in global.wordData[words]
 
-  bool init({required SharedPreferences outerPrefs}) {
-    prefs = outerPrefs;
-    logger = Logger('FSRS');
+  bool init() {
     logger.fine("构建FSRS模块");
-
-    if(!prefs.containsKey("fsrsData")) {
+    AppData appData = AppData();
+    if(!appData.storage.containsKey("fsrsData")) {
       logger.info("未发现FSRS配置，加载默认配置");
       config = FSRSConfig();
-      prefs.setString("fsrsData", jsonEncode(config.toMap()));
+      appData.storage.setString("fsrsData", jsonEncode(config.toMap()));
       return false;
     } else {
-      config = FSRSConfig.buildFromMap(jsonDecode(prefs.getString("fsrsData")!));
+      config = FSRSConfig.buildFromMap(jsonDecode(appData.storage.getString("fsrsData")!));
       logger.info("FSRS配置加载完成");
     }
     
@@ -34,7 +38,7 @@ class FSRS {
 
   void save() async {
     logger.info("正在保存FSRS配置");
-    prefs.setString("fsrsData", jsonEncode(config.toMap()));
+    AppData().storage.setString("fsrsData", jsonEncode(config.toMap()));
   }
 
   void createScheduler({required SharedPreferences prefs}) {

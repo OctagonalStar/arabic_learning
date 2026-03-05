@@ -11,7 +11,6 @@ import 'package:logging/logging.dart';
 import 'package:arabic_learning/vars/statics_var.dart';
 import 'package:flutter/foundation.dart' show ChangeNotifier;
 import 'package:flutter_webrtc/flutter_webrtc.dart';
-import 'package:provider/provider.dart';
 
 class PKServer with ChangeNotifier{
   final Logger logger = Logger("PKServer");
@@ -38,7 +37,6 @@ class PKServer with ChangeNotifier{
   List<SourceItem> selectableSource = [];
   ClassSelection? classSelection;
   late int rndSeed;
-  late Global global;
   Duration? delay;
   bool preparedP1 = false;
   bool preparedP2 = false;
@@ -50,7 +48,6 @@ class PKServer with ChangeNotifier{
 
   Future<void> initHost(bool isHoster, BuildContext context, {String? offer}) async {
     isServer = isHoster;
-    global = context.read<Global>();
 
     try {
       logger.info("正在初始化WebRTC");
@@ -187,10 +184,12 @@ class PKServer with ChangeNotifier{
   void _questVersionCheck() async => _channel!.send(RTCDataChannelMessage(json.encode({"step": 0, "version": StaticsVar.appVersion})));
 
   void _questDictExchange() async {
+    AppData appData = AppData();
     _channel!.send(RTCDataChannelMessage(
       json.encode({
         "step": 1,
-        "dictSum": List<String>.generate(global.wordData.classes.length, (int index) => global.wordData.classes[index].getHash(global.wordData.words), growable: false)
+        "dictSum": List<String>.generate(appData.wordData.classes.length, (int index) => 
+          appData.wordData.classes[index].getHash(appData.wordData.words), growable: false)
       })
     ));
   }
@@ -208,7 +207,7 @@ class PKServer with ChangeNotifier{
   void setPrepare() {
     preparedP1 = true;
     pkState = PKState(
-      testWords: getSelectedWords(global.wordData, classSelection!.selectedClass, doShuffle: true, shuffleSeed: rndSeed), 
+      testWords: getSelectedWords(AppData().wordData, classSelection!.selectedClass, doShuffle: true, shuffleSeed: rndSeed), 
       selfProgress: [], 
       sideProgress: []
     );
@@ -265,6 +264,8 @@ class PKServer with ChangeNotifier{
       return;
     }
 
+    AppData appData = AppData();
+
     switch(step){
       /// 版本号检查结果 from Client
       case 0 when data.containsKey("accepted"): {
@@ -298,8 +299,8 @@ class PKServer with ChangeNotifier{
           delay = DateTime.parse(data["time"]).difference(DateTime.now());
           List sumList = data["dictSum"];
           selectableSource.clear();
-          for(SourceItem source in global.wordData.classes) {
-            if(sumList.contains(source.getHash(global.wordData.words))) selectableSource.add(source);
+          for(SourceItem source in appData.wordData.classes) {
+            if(sumList.contains(source.getHash(appData.wordData.words))) selectableSource.add(source);
             logger.fine("[$packageid] 计算得到${source.sourceJsonFileName}在哈希中有匹配");
           }
           pageController!.nextPage(duration: Durations.medium2, curve: StaticsVar.curve);
@@ -315,8 +316,8 @@ class PKServer with ChangeNotifier{
         logger.fine("[$packageid] 进行词库检查");
         List sumList = data["dictSum"];
         selectableSource.clear();
-        for(SourceItem source in global.wordData.classes) {
-          if(sumList.contains(source.getHash(global.wordData.words))) {
+        for(SourceItem source in appData.wordData.classes) {
+          if(sumList.contains(source.getHash(appData.wordData.words))) {
             selectableSource.add(source);
             logger.fine("[$packageid] 计算得到${source.sourceJsonFileName}在哈希中有匹配");
           }
@@ -325,7 +326,7 @@ class PKServer with ChangeNotifier{
           _channel!.send(RTCDataChannelMessage(json.encode({
             "step": 1, 
             "accepted": true, 
-            "dictSum": List.generate(selectableSource.length, (int index) => selectableSource[index].getHash(global.wordData.words)),
+            "dictSum": List.generate(selectableSource.length, (int index) => selectableSource[index].getHash(appData.wordData.words)),
             "time": DateTime.now().toIso8601String()
           })));
           pageController!.nextPage(duration: Durations.medium2, curve: StaticsVar.curve);

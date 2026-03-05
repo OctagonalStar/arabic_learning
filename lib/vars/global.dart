@@ -20,87 +20,78 @@ class Global with ChangeNotifier {
   
   bool backupFontLoaded = false;
   bool inited = false; //是否初始化完成
-  List<String> internalLogCapture = [];
-  Uint8List? stella;
   String? arFont;
   String? zhFont;
-  late bool firstStart; // 是否为第一次使用
-  late bool updateLogRequire; //是否需要显示更新日志
-  late bool isWideScreen; // 设备是否是宽屏幕
-  late final SharedPreferences prefs; // 储存实例
-  late FSRS globalFSRS;
-  late ThemeData themeData;
-  bool modelTTSDownloaded = false;
-  late DictData wordData;
-  int get wordCount => wordData.words.length;
-  sherpa_onnx.OfflineTts? vitsTTS;
+  bool updateLogRequire = false; //是否需要显示更新日志
 
-  Config globalConfig = Config();
+  ThemeData get themeData => ThemeData(
+    useMaterial3: true,
+    colorScheme: ColorScheme.fromSeed(
+      seedColor: StaticsVar.themeList[globalConfig.regular.theme],
+      brightness: globalConfig.regular.darkMode ? Brightness.dark : Brightness.light,
+    ),
+    fontFamily: zhFont,
+  );
+  
+  late Config globalConfig;
 
 
   Future<bool> init() async {
     logger.info("类收到初始化请求，当前初始化状态为 $inited");
     if(inited) return false;
-    logger.info("类开始初始化");
-    prefs = await SharedPreferences.getInstance();
-    firstStart = prefs.getString("settingData") == null;
-    if(firstStart) {
+    logger.info("开始类初始化");
+
+    AppData appData = AppData();
+    await appData.init();
+
+    if(appData.isFirstStart) {
       logger.info("首次启动检测为真");
-      updateLogRequire = false;
-      await prefs.setString("wordData", jsonEncode({"Words": [], "Classes": {}}));
-      wordData = DictData(words: [], classes: []);
-      logger.info("首次启动: 配置表初始化完成");
-      globalFSRS = FSRS()..init(outerPrefs: prefs);
-      await postInit();
+      globalConfig = Config();
+      await refreshApp();
     } else {
-      await conveySetting();
+      conveySetting();
+      await updateSetting();
     }
+
     inited = true;
     logger.info("初始化完成");
     return true;
   }
 
   // 预处理一些版本更新的配置文件兼容
-  Future<void> conveySetting() async {
+  void conveySetting() {
     logger.info("处理配置文件");
 
-    // 在配置文件加载完成前可以做的
-    wordData = DictData.buildFromMap(jsonDecode(prefs.getString("wordData")!));
-    if(!BKSearch.isReady) BKSearch.init(wordData.words);
-    globalFSRS = FSRS()..init(outerPrefs: prefs);
-
-    Config oldConfig = Config.buildFromMap(jsonDecode(prefs.getString("settingData")!));
+    Config oldConfig = Config.buildFromMap(jsonDecode(AppData().storage.getString("settingData")!));
     if(oldConfig.lastVersion != globalConfig.lastVersion) {
       logger.info("检测到当前版本与上次启动版本不同");
       updateLogRequire = true;
       oldConfig=oldConfig.copyWith(lastVersion: globalConfig.lastVersion);
-    } else {
-      updateLogRequire = false;
     }
 
     globalConfig = oldConfig;
     logger.info("配置文件合成完成");
-    await updateSetting();
   }
 
   // 更新配置到存储中
   Future<void> updateSetting({Map<String, dynamic>? settingData, bool refresh = true}) async {
     logger.info("保存配置文件中");
     if(settingData != null) globalConfig = Config.buildFromMap(settingData);
-    prefs.setString("settingData", jsonEncode(globalConfig.toMap()));
-    if(refresh) await postInit();
+    AppData().storage.setString("settingData", jsonEncode(globalConfig.toMap()));
+    if(refresh) await refreshApp();
   }
 
-  void loadFont() async {
+  Future<void> loadFont() async {
     if(backupFontLoaded) return;
-    backupFontLoaded = true;
     try{
       final ByteData bundle = await rootBundle.load("assets/fonts/zh/NotoSansSC-Medium.ttf");
       final FontLoader loader = FontLoader(StaticsVar.zhBackupFont)..addFont(Future.value(bundle));
-      loader.load();
+      await loader.load();
     } catch (e) {
-      backupFontLoaded = false;
+      logger.severe("无法加载备用字体");
+      return;
     }
+    backupFontLoaded = true;
     notifyListeners();
   }
 
@@ -114,61 +105,23 @@ class Global with ChangeNotifier {
     if(globalConfig.debug.enableInternalLog){
       Logger.root.level = Level.ALL;
       const List<Level> levelList = [Level.ALL, Level.FINEST, Level.FINER, Level.FINE, Level.INFO, Level.WARNING, Level.SEVERE, Level.SHOUT, Level.OFF];
+      AppData appData = AppData();
       Logger.root.onRecord.listen((record) async {
         if(record.level < levelList[globalConfig.debug.internalLevel]) return;
-        internalLogCapture.add('${record.time}-[${record.loggerName}][${record.level.name}]: ${record.message}');
+        appData.internalLogCapture.add('${record.time}-[${record.loggerName}][${record.level.name}]: ${record.message}');
       });
     }
   }
 
-  Future<void> postInit() async {
+  Future<void> refreshApp() async {
     logger.info("应用设置中");
+    AppData appData = AppData();
+    if(globalConfig.audio.audioSource == 2) await appData.loadTTS(globalConfig.audio.playRate);
+    if(globalConfig.egg.stella) await appData.loadEggs();
     changeLoggerBehavior();
-    await loadTTS();
-    await loadEggs();
     updateTheme();
     notifyListeners();
     logger.info("应用设置完成");
-  }
-
-  // load TTS model if any
-  Future<void> loadTTS() async {
-    if(kIsWeb || vitsTTS != null || globalConfig.audio.audioSource != 2) return;
-    logger.info("TTS: 加载本地TTS中");
-    final basePath = await path_provider.getApplicationDocumentsDirectory();
-    if(io.File("${basePath.path}/${StaticsVar.modelPath}/ar_JO-kareem-medium.onnx").existsSync()){
-      modelTTSDownloaded = true;
-      sherpa_onnx.initBindings();
-      final vits = sherpa_onnx.OfflineTtsVitsModelConfig(
-        model: "${basePath.path}/${StaticsVar.modelPath}/ar_JO-kareem-medium.onnx",
-        // lexicon: '${basePath.path}/${StaticsVar.modelPath}/',
-        dataDir: "${basePath.path}/${StaticsVar.modelPath}/espeak-ng-data",
-        tokens: '${basePath.path}/${StaticsVar.modelPath}/tokens.txt',
-        lengthScale: 1 / globalConfig.audio.playRate,
-      );
-      // kokoro = sherpa_onnx.OfflineTtsKokoroModelConfig();
-      final modelConfig = sherpa_onnx.OfflineTtsModelConfig(
-        vits: vits,
-        numThreads: 2,
-        debug: false,
-        provider: 'cpu',
-      );
-
-      final config = sherpa_onnx.OfflineTtsConfig(
-        model: modelConfig,
-        maxNumSenetences: 1,
-      );
-
-      vitsTTS = sherpa_onnx.OfflineTts(config);
-      logger.info("TTS: 本地TTS加载完成");
-    }
-  }
-
-  Future<void> loadEggs() async {
-    if(globalConfig.egg.stella && stella == null){
-      final rawString = await rootBundle.loadString("assets/eggs/s.txt");
-      stella = base64Decode(rawString.replaceAll('\n', '').replaceAll('\r', '').trim());
-    }
   }
 
   void updateTheme() {
@@ -184,52 +137,123 @@ class Global with ChangeNotifier {
       arFont = null;
       zhFont = null;
     }
-    themeData = ThemeData(
-      useMaterial3: true,
-      colorScheme: ColorScheme.fromSeed(
-        seedColor: StaticsVar.themeList[globalConfig.regular.theme],
-        brightness: globalConfig.regular.darkMode ? Brightness.dark : Brightness.light,
-      ),
-      fontFamily: zhFont,
+  }
+  
+  void updateLearningStreak(){
+    final int nowDate = DateTime.now().difference(DateTime(2025, 11, 1)).inDays;
+    if (nowDate == globalConfig.learning.lastDate) return;
+    logger.info("保存学习进度中");
+    // 以 2025/11/1 为基准计算天数（因为这个bug是这天修的:} ）
+    if (nowDate - globalConfig.learning.lastDate > 1) {
+      globalConfig = globalConfig.copyWith(learning: globalConfig.learning.copyWith(startDate: nowDate));
+    }
+    globalConfig = globalConfig.copyWith(learning: globalConfig.learning.copyWith(lastDate: nowDate));
+    updateSetting(refresh: false);
+    logger.info("学习进度保存完成");
+  }
+}
+
+class AppData {
+  // 作为单例
+  static final AppData _instance = AppData._internal();
+  factory AppData() => _instance;
+  AppData._internal();
+
+  bool inited = false;
+  Logger logger = Logger("AppData");
+
+  List<String> internalLogCapture = [];
+  Uint8List? stella;
+  bool isWideScreen = false;
+
+  late final SharedPreferences storage;
+  late final io.Directory basePath;
+  late FSRS fsrs;
+  late DictData wordData;
+  sherpa_onnx.OfflineTts? vitsTTS;
+  
+  int get wordCount => wordData.words.length;
+  bool get isFirstStart => storage.getString("settingData") == null;
+  bool get modelTTSDownloaded => io.File("${basePath.path}/${StaticsVar.modelPath}/ar_JO-kareem-medium.onnx").existsSync();
+
+  Future<void> init() async {
+    if(inited) return;
+    storage = await SharedPreferences.getInstance();
+    basePath = (await path_provider.getApplicationDocumentsDirectory()) as io.Directory;
+
+    wordData = DictData.buildFromMap(jsonDecode(storage.getString("wordData")!));
+    if(!BKSearch.isReady) BKSearch.init(wordData.words);
+    FSRS().init();
+    inited = true;
+  }
+
+  Future<void> initStorageValue() async {
+      await storage.setString("wordData", jsonEncode({"Words": [], "Classes": {}}));
+      wordData = DictData(words: [], classes: []);
+      logger.info("配置表初始化完成");
+  }
+
+  // load TTS model if any
+  Future<void> loadTTS(double playRate) async {
+    if(kIsWeb || vitsTTS != null || modelTTSDownloaded) return;
+    logger.info("TTS: 加载本地TTS中");
+    sherpa_onnx.initBindings();
+    final vits = sherpa_onnx.OfflineTtsVitsModelConfig(
+      model: "${basePath.path}/${StaticsVar.modelPath}/ar_JO-kareem-medium.onnx",
+      dataDir: "${basePath.path}/${StaticsVar.modelPath}/espeak-ng-data",
+      tokens: '${basePath.path}/${StaticsVar.modelPath}/tokens.txt',
+      lengthScale: 1 / playRate,
     );
+    final modelConfig = sherpa_onnx.OfflineTtsModelConfig(
+      vits: vits,
+      numThreads: 2,
+      debug: false,
+      provider: 'cpu',
+    );
+    final config = sherpa_onnx.OfflineTtsConfig(
+      model: modelConfig,
+      maxNumSenetences: 1,
+    );
+
+    vitsTTS = sherpa_onnx.OfflineTts(config);
+    logger.info("TTS: 本地TTS加载完成");
   }
 
-  void acceptAggrement(String name) {
-    firstStart = false;
-    globalConfig = globalConfig.copyWith(user: name);
-    prefs.setString("settingData", jsonEncode(globalConfig.toMap()));
-    notifyListeners();
+  Future<void> loadEggs() async {
+    if(stella == null){
+      final rawString = await rootBundle.loadString("assets/eggs/s.txt");
+      stella = base64Decode(rawString);
+    }
   }
 
-
-  // Non-Format Data:
-  // {
-  //    "ClassName": [
-  //       {
-  //        "chinese": {Chinese},
-  //        "arabic": {arabic},
-  //        "explanation": {explanation}
-  //       }, ...
-  //    ]
-  // }
-  // Format Data:
-  // {
-  //    "Words" : [
-  //      {
-  //        "arabic": {arabic},
-  //        "chinese": {Chinese},
-  //        "explanation": {explanation},
-  //        "subClass": {ClassName},
-  //        "learningProgress": {times} //int
-  //       }, ...
-  //   ],
-  //   "Classes": {
-  //        "SourceJsonFileName": {
-  //          "ClassName": [wordINDEX],
-  //        }
-  //    }
-  // }
-  DictData dataFormater(Map<String, dynamic> data, DictData exData, String sourceName) {
+  /// Non-Format Data:
+  /// {
+  ///    "ClassName": [
+  ///       {
+  ///        "chinese": {Chinese},
+  ///        "arabic": {arabic},
+  ///        "explanation": {explanation}
+  ///       }, ...
+  ///    ]
+  /// }
+  /// Format Data:
+  /// {
+  ///    "Words" : [
+  ///      {
+  ///        "arabic": {arabic},
+  ///        "chinese": {Chinese},
+  ///        "explanation": {explanation},
+  ///        "subClass": {ClassName},
+  ///        "learningProgress": {times} //int
+  ///       }, ...
+  ///   ],
+  ///   "Classes": {
+  ///        "SourceJsonFileName": {
+  ///          "ClassName": [wordINDEX],
+  ///        }
+  ///    }
+  /// }
+  DictData dataFormater(Map<String, dynamic> data, DictData existData, String sourceName) {
     logger.info("开始词汇格式化");
     
     // Use Maps for O(1) lookup speed instead of O(N) List.indexOf
@@ -237,23 +261,23 @@ class Global with ChangeNotifier {
     Map<String, int> pureWordMap = {};
     List<String> chineseList = [];
     
-    for(int i = 0; i < exData.words.length; i++) {
-      WordItem x = exData.words[i];
+    for(int i = 0; i < existData.words.length; i++) {
+      WordItem x = existData.words[i];
       rawWordMap[x.arabic] = i;
       pureWordMap[x.arabic.removeAracicExtensionPart().trim()] = i;
       chineseList.add(x.chinese); // Keep list for indexing since it maps 1:1 with word id
     }
     
-    int counter = exData.words.length;
+    int counter = existData.words.length;
 
     SourceItem? exSource;
     // 查找已有数据中是否有同名的源数据组
-    for(SourceItem x in exData.classes) {
+    for(SourceItem x in existData.classes) {
       if(x.sourceJsonFileName == sourceName) exSource = x;
     }
     if(exSource == null){
-      exData.classes.add(SourceItem(sourceJsonFileName: sourceName, subClasses: []));
-      exSource = exData.classes.last;
+      existData.classes.add(SourceItem(sourceJsonFileName: sourceName, subClasses: []));
+      exSource = existData.classes.last;
     }
 
     for(var className in data.keys){
@@ -282,7 +306,7 @@ class Global with ChangeNotifier {
         }
 
         exClass.wordIndexs.add(counter);
-        exData.words.add(
+        existData.words.add(
           WordItem(
             arabic: word["arabic"], 
             chinese: word["chinese"], 
@@ -298,28 +322,14 @@ class Global with ChangeNotifier {
       }
       exSource.subClasses.add(exClass);
     }
-    return exData;
+    return existData;
   }
 
-  void importData(Map<String, dynamic> data, String source) {
+  void importDictData(Map<String, dynamic> importData, String source) {
     logger.info("收到词汇导入请求");
-    wordData = dataFormater(data, wordData, source);
-    prefs.setString("wordData", jsonEncode(wordData.toMap()));
+    wordData = dataFormater(importData, wordData, source);
+    storage.setString("wordData", jsonEncode(wordData.toMap()));
     BKSearch.init(wordData.words); // 重新建树
     logger.info("词汇导入完成");
-    notifyListeners();
-  }
-  
-  void updateLearningStreak(){
-    final int nowDate = DateTime.now().difference(DateTime(2025, 11, 1)).inDays;
-    if (nowDate == globalConfig.learning.lastDate) return;
-    logger.info("保存学习进度中");
-    // 以 2025/11/1 为基准计算天数（因为这个bug是这天修的:} ）
-    if (nowDate - globalConfig.learning.lastDate > 1) {
-      globalConfig = globalConfig.copyWith(learning: globalConfig.learning.copyWith(startDate: nowDate));
-    }
-    globalConfig = globalConfig.copyWith(learning: globalConfig.learning.copyWith(lastDate: nowDate));
-    updateSetting(refresh: false);
-    logger.info("学习进度保存完成");
   }
 }

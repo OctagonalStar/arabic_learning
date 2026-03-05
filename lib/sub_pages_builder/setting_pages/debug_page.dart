@@ -92,14 +92,18 @@ class _DebugPage extends State<DebugPage> {
             children: [
               Column(
                 children: List.generate(
-                  context.watch<Global>().internalLogCapture.length, 
+                  AppData().internalLogCapture.length, 
                   (index){
-                    final String logLine = context.read<Global>().internalLogCapture[context.read<Global>().internalLogCapture.length - index - 1];
+                    final String logLine = AppData().internalLogCapture[AppData().internalLogCapture.length - index - 1];
                     return Container(
                       width: MediaQuery.of(context).size.width * 0.9,
                       decoration: BoxDecoration(
                         color: Theme.of(context).colorScheme.onPrimary,
-                        borderRadius: index == 0 ? BorderRadius.vertical(top: Radius.circular(10.0)) : index == context.watch<Global>().internalLogCapture.length-1 ? BorderRadius.vertical(bottom: Radius.circular(10.0)) : BorderRadius.all(Radius.circular(5.0))
+                        borderRadius: index == 0 
+                          ? BorderRadius.vertical(top: Radius.circular(10.0)) 
+                          : index == AppData().internalLogCapture.length-1 
+                            ? BorderRadius.vertical(bottom: Radius.circular(10.0)) 
+                            : BorderRadius.all(Radius.circular(5.0))
                       ),
                       margin: EdgeInsets.all(2.0),
                       padding: EdgeInsets.all(4.0),

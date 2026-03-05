@@ -12,7 +12,7 @@ import 'package:logging/logging.dart';
 
 import 'package:arabic_learning/funcs/ui.dart';
 import 'package:arabic_learning/funcs/utili.dart';
-import 'package:arabic_learning/vars/global.dart' show Global;
+import 'package:arabic_learning/vars/global.dart' show AppData, Global;
 import 'package:arabic_learning/vars/license_storage.dart' show LicenseVars;
 import 'package:arabic_learning/vars/statics_var.dart' show StaticsVar;
 import 'package:arabic_learning/pages/home_page.dart';
@@ -90,7 +90,7 @@ class MyApp extends StatelessWidget {
                 Container(
                   decoration: BoxDecoration(
                     image: DecorationImage(
-                      image: MemoryImage(context.read<Global>().stella!),
+                      image: MemoryImage(AppData().stella!),
                       fit: BoxFit.cover,
                     ),
                   ),
@@ -244,7 +244,7 @@ class _MyHomePageState extends State<MyHomePage> {
   Widget build(BuildContext context) {
     context.read<Global>().uiLogger.fine("构建 MyHomePage");
     final gob = context.watch<Global>();
-    if(gob.firstStart) {
+    if(AppData().isFirstStart) {
       context.read<Global>().uiLogger.info("构建首次启动页面");
       return Scaffold(
         body: PopScope(
@@ -292,7 +292,8 @@ class _MyHomePageState extends State<MyHomePage> {
                     onPressed: () async {
                       if(controller.text.isNotEmpty){
                         context.read<Global>().uiLogger.info("用户同意协议，签署名：${controller.text}");
-                        context.read<Global>().acceptAggrement(controller.text);
+                        context.read<Global>().globalConfig = context.read<Global>().globalConfig.copyWith(user: controller.text);
+                        context.read<Global>().updateSetting(refresh: true);
                       } else {
                         context.read<Global>().uiLogger.info("用户未填写名称");
                         ScaffoldMessenger.of(context).showSnackBar(
@@ -384,10 +385,10 @@ class _MyHomePageState extends State<MyHomePage> {
         builder: (context, constraints) {
           // 根据屏幕宽度决定使用哪种布局
           if (constraints.maxWidth > _desktopBreakpoint) {
-            Provider.of<Global>(context, listen: false).isWideScreen = true;
+            AppData().isWideScreen = true;
             return _buildDesktopLayout(context);
           } else {
-            Provider.of<Global>(context, listen: false).isWideScreen = false;
+            AppData().isWideScreen = false;
             return _buildMobileLayout(context);
           }
         },

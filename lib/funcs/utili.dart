@@ -94,7 +94,7 @@ Future<List<dynamic>> playTextToSpeech(String text, BuildContext context, {doubl
   // 2: sherpa-onnx
   } else if (context.read<Global>().globalConfig.audio.audioSource == 2) {
     context.read<Global>().logger.info("[TTS]配置使用 sherpa_onnx TTS");
-    if(context.read<Global>().vitsTTS == null) {
+    if(AppData().vitsTTS == null) {
       context.read<Global>().logger.warning("[TTS]sherpa_onnx 未加载");
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -108,7 +108,7 @@ Future<List<dynamic>> playTextToSpeech(String text, BuildContext context, {doubl
       final cacheFile = io.File("${basePath.path}/temp.wav");
       if(cacheFile.existsSync()) cacheFile.deleteSync();
       if(!context.mounted) return [false, ""];
-      final audio = context.read<Global>().vitsTTS!.generate(text: text, speed: speed);
+      final audio = AppData().vitsTTS!.generate(text: text, speed: speed);
       final ok = sherpa_onnx.writeWave(
                           filename: cacheFile.path,
                           samples: audio.samples,

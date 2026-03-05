@@ -41,9 +41,9 @@ class _InLearningPageState extends State<InLearningPage> {
   void onSolve({required WordItem targetWord, 
                 required bool isCorrect, 
                 required int takentime,
-                required FSRS fsrs,
                 bool isTypingQuestion = false}){
     if(isCorrect) correctCount++;
+    FSRS fsrs = FSRS();
     if(widget.countInReview && fsrs.config.enabled) {
       if(fsrs.isContained(targetWord.id)){
         if(isTypingQuestion) {
@@ -70,7 +70,7 @@ class _InLearningPageState extends State<InLearningPage> {
           TestItem.buildTestItem(
             wordItem, 
             questionsSetting.questionSections[sectionIndex], 
-            context.read<Global>().wordData, 
+            AppData().wordData, 
             questionsSetting.preferSimilar, 
             rnd
           )
@@ -171,7 +171,7 @@ class _InLearningPageState extends State<InLearningPage> {
         ),
         body: Center(
           child: PageView.builder(
-            scrollDirection: Provider.of<Global>(context).isWideScreen ? Axis.vertical : Axis.horizontal,
+            scrollDirection: AppData().isWideScreen ? Axis.vertical : Axis.horizontal,
             physics: NeverScrollableScrollPhysics(),
             // itemCount: testList.length,
             controller: controller,
@@ -217,7 +217,7 @@ class _InLearningPageState extends State<InLearningPage> {
                     if(!ans) {
                       Future.delayed(Duration(seconds: 1), (){if(context.mounted) viewAnswer(context, testItem.testWord);});
                     }
-                    onSolve(targetWord: testItem.testWord, isCorrect: ans, takentime: DateTime.now().difference(quizStart).inMilliseconds, fsrs: context.read<Global>().globalFSRS);
+                    onSolve(targetWord: testItem.testWord, isCorrect: ans, takentime: DateTime.now().difference(quizStart).inMilliseconds);
                     Future.delayed(Duration(milliseconds: 700) ,(){setState(() {
                       clicked = true;
                     });});
@@ -249,10 +249,10 @@ class _InLearningPageState extends State<InLearningPage> {
                       clicked = true;
                     });
                     if(text == testItem.testWord.arabic) {
-                      onSolve(targetWord: testItem.testWord, isCorrect: true, takentime: DateTime.now().difference(quizStart).inMilliseconds, fsrs: context.read<Global>().globalFSRS, isTypingQuestion: true);
+                      onSolve(targetWord: testItem.testWord, isCorrect: true, takentime: DateTime.now().difference(quizStart).inMilliseconds);
                       return true;
                     } else {
-                      onSolve(targetWord: testItem.testWord, isCorrect: false, takentime: DateTime.now().difference(quizStart).inMilliseconds, fsrs: context.read<Global>().globalFSRS, isTypingQuestion: true);
+                      onSolve(targetWord: testItem.testWord, isCorrect: false, takentime: DateTime.now().difference(quizStart).inMilliseconds);
                       viewAnswer(context, testItem.testWord);
                       return false;
                     }
@@ -288,7 +288,7 @@ class _InLearningPageState extends State<InLearningPage> {
                     if(!ans) {
                       Future.delayed(Duration(seconds: 1), (){if(context.mounted) viewAnswer(context, testItem.testWord);});
                     } 
-                    onSolve(targetWord: testItem.testWord, isCorrect: ans, takentime: DateTime.now().difference(quizStart).inMilliseconds, fsrs: context.read<Global>().globalFSRS);
+                    onSolve(targetWord: testItem.testWord, isCorrect: ans, takentime: DateTime.now().difference(quizStart).inMilliseconds);
                     Future.delayed(Duration(milliseconds: 700) ,(){setState(() {
                       clicked = true;
                     });});
@@ -789,16 +789,17 @@ class _WordCardOverViewLayout extends State<WordCardOverViewLayout> {
   @override
   Widget build(BuildContext context) {
     MediaQueryData mediaQuery = MediaQuery.of(context);
+    AppData appData = AppData();
 
     return ListView.builder(
       physics: allowJsonScorll ? null : NeverScrollableScrollPhysics(),
       controller: jsonController,
-      itemCount: context.read<Global>().wordData.classes.length + 1,
+      itemCount: appData.wordData.classes.length + 1,
       itemBuilder: (context, jsonIndex) {
-        if(jsonIndex == context.read<Global>().wordData.classes.length) {
+        if(jsonIndex == appData.wordData.classes.length) {
           return SizedBox(height: mediaQuery.size.height);
         }
-        final SourceItem jsonSource = context.read<Global>().wordData.classes[jsonIndex];
+        final SourceItem jsonSource = appData.wordData.classes[jsonIndex];
         return ExpansionTile(
           title: Text(jsonSource.sourceJsonFileName.trim()),
           minTileHeight: 64,
@@ -861,7 +862,7 @@ class _WordCardOverViewLayout extends State<WordCardOverViewLayout> {
                             return Container(
                               margin: EdgeInsets.all(8.0),
                               child: WordCard(
-                                word: context.read<Global>().wordData.words[classItem.wordIndexs[index]],
+                                word: appData.wordData.words[classItem.wordIndexs[index]],
                                 useMask: false,
                                 width: mediaQuery.size.width / (context.read<Global>().globalConfig.learning.overviewForceColumn == 0 ? (mediaQuery.size.width ~/ 300) : context.read<Global>().globalConfig.learning.overviewForceColumn),
                                 height: mediaQuery.size.width / (context.read<Global>().globalConfig.learning.overviewForceColumn == 0 ? (mediaQuery.size.width ~/ 300) : context.read<Global>().globalConfig.learning.overviewForceColumn),
@@ -898,7 +899,7 @@ class WordLookupLayout extends StatelessWidget {
         threshold: 4~/(lookfor.length * 0.5 + 1) // 输入越多 容差越小
       )); // 从BK树找
 
-      for(WordItem word in context.read<Global>().wordData.words) {
+      for(WordItem word in AppData().wordData.words) {
         if(match.contains(word)) continue;
         if(word.arabic.removeAracicExtensionPart().contains(lookfor.removeAracicExtensionPart())) {
           match.add(word);
@@ -913,7 +914,7 @@ class WordLookupLayout extends StatelessWidget {
         getLevenshtein(lookfor.removeAracicExtensionPart(), a.arabic.removeAracicExtensionPart()) - getLevenshtein(lookfor.removeAracicExtensionPart(), b.arabic.removeAracicExtensionPart())
       );
     } else {
-      for(WordItem word in context.read<Global>().wordData.words) {
+      for(WordItem word in AppData().wordData.words) {
         if(match.contains(word)) continue;
         if(word.chinese.contains(lookfor)) {
           match.add(word);

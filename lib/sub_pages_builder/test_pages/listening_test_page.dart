@@ -26,7 +26,7 @@ class _ForeListeningSettingPage extends State<ForeListeningSettingPage> {
   Widget build(BuildContext context) {
     context.read<Global>().uiLogger.info("构建 ForeListeningSettingPage");
     MediaQueryData mediaQuery = MediaQuery.of(context);
-    int wordCount = getSelectedWords(context.read<Global>().wordData, selectedClasses.selectedClass).length;
+    int wordCount = getSelectedWords(AppData().wordData, selectedClasses.selectedClass).length;
     return Scaffold(
       appBar: AppBar(
         title: Text('自主听写预设置'),
@@ -210,7 +210,7 @@ class _ForeListeningSettingPage extends State<ForeListeningSettingPage> {
                       playTimes: playTimes, 
                       interval: interval, 
                       intervalBetweenWords: intervalBetweenWords, 
-                      words: getSelectedWords(context.read<Global>().wordData, selectedClasses.selectedClass, doShuffle: true)
+                      words: getSelectedWords(AppData().wordData, selectedClasses.selectedClass, doShuffle: true)
                     )
                   )
                 );

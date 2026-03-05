@@ -517,7 +517,7 @@ class _PKOngoingPage extends State<PKOngoingPage> {
   void initState() {
     Random rnd = Random(context.read<PKServer>().rndSeed);
     for(WordItem wordItem in context.read<PKServer>().pkState.testWords) {
-      List<WordItem> optionWords = getRandomWords(4, context.read<Global>().wordData, allowRepet: false, include: wordItem, shuffle: true, rnd: rnd);
+      List<WordItem> optionWords = getRandomWords(4, AppData().wordData, allowRepet: false, include: wordItem, shuffle: true, rnd: rnd);
       choiceOptions.add(List.generate(4, (int index) => optionWords[index].chinese));
     }
     super.initState();

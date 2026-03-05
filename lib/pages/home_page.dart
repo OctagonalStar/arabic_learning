@@ -18,7 +18,7 @@ class HomePage extends StatelessWidget {
     context.read<Global>().uiLogger.fine("构建 HomePage");
     final themeColor = Theme.of(context).colorScheme;
     final MediaQueryData mediaQuery = MediaQuery.of(context);
-    final FSRS fsrs = context.read<Global>().globalFSRS;
+    final FSRS fsrs = FSRS();
     return Column(
       children: [
         DailyWord(),
@@ -132,7 +132,7 @@ class HomePage extends StatelessWidget {
                 children: [
                   Text('单词总数', style: TextStyle(fontSize: 12.0)),
                   SizedBox(height: mediaQuery.size.height * 0.03),
-                  Text(context.read<Global>().wordCount.toString(), style: TextStyle(fontSize: 24.0, fontWeight: FontWeight.bold))
+                  Text(AppData().wordCount.toString(), style: TextStyle(fontSize: 24.0, fontWeight: FontWeight.bold))
                 ],
               ),
             ),
@@ -163,15 +163,16 @@ class _DailyWord extends State<DailyWord> {
     Random rnd = Random(seed);
     late WordItem data;
     late String dailyWord;
-    if(context.read<Global>().wordCount != 0) {
-      data = context.read<Global>().wordData.words[rnd.nextInt(context.read<Global>().wordCount)];
+    AppData appData = AppData();
+    if(appData.wordCount != 0) {
+      data = appData.wordData.words[rnd.nextInt(appData.wordCount)];
       dailyWord = data.arabic;
     }
 
     return ElevatedButton(
       onPressed: () async {
         if(playing) return;
-        if(context.read<Global>().wordCount != 0) {
+        if(appData.wordCount != 0) {
           playing = true;
           late List<dynamic> temp;
           temp = await playTextToSpeech(dailyWord, context);
@@ -202,7 +203,7 @@ class _DailyWord extends State<DailyWord> {
           FittedBox(
             fit: BoxFit.scaleDown,
             child: Column(
-              children: context.read<Global>().wordCount == 0 ? [Text("当前未导入词库数据\n请点此以跳转设置页面导入")]
+              children: AppData().wordCount == 0 ? [Text("当前未导入词库数据\n请点此以跳转设置页面导入")]
                 : [
                 Text(
                   data.arabic,
