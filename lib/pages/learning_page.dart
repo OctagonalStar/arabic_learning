@@ -1,5 +1,6 @@
 import 'dart:math';
 
+import 'package:arabic_learning/funcs/fsrs_func.dart';
 import 'package:arabic_learning/sub_pages_builder/setting_pages/questions_setting_page.dart' show QuestionsSettingPage;
 import 'package:arabic_learning/vars/config_structure.dart';
 import 'package:flutter/material.dart';
@@ -14,10 +15,12 @@ import 'package:arabic_learning/sub_pages_builder/learning_pages/learning_pages_
 
 class LearningPage extends StatelessWidget {
   const LearningPage({super.key});
+
   @override
   Widget build(BuildContext context) {
     context.read<Global>().uiLogger.fine("构建 LearningPage");
     final mediaQuery = MediaQuery.of(context);
+
     return Column(
       children: [
         SizedBox(height: mediaQuery.size.height * 0.05),
@@ -90,14 +93,14 @@ class LearningPage extends StatelessWidget {
           ],
         ),
         SizedBox(height: mediaQuery.size.height * 0.05),
-        if(context.read<Global>().globalFSRS.config.pushAmount != 0) ElevatedButton.icon(
+        if(FSRS().config.pushAmount != 0) ElevatedButton.icon(
           style: ElevatedButton.styleFrom(
             backgroundColor: Theme.of(context).colorScheme.onPrimary.withAlpha(150),
             fixedSize: Size(mediaQuery.size.width * 0.8, mediaQuery.size.height * 0.15),
             shape: RoundedRectangleBorder(borderRadius: StaticsVar.br),
           ),
           onPressed: (){
-            if(context.read<Global>().wordData.words.isEmpty) {
+            if(AppData().wordData.words.isEmpty) {
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(content: Text("词库为空，无法推送！请先导入词库"), duration: Duration(seconds: 1),),
               );
@@ -108,10 +111,10 @@ class LearningPage extends StatelessWidget {
             final Set<WordItem> pushWords = {};
             final Random rnd = Random(seed);
             int tries = 0;
-            while(pushWords.length < context.read<Global>().globalFSRS.config.pushAmount && tries < context.read<Global>().globalFSRS.config.pushAmount * 10){
-              int chosen = rnd.nextInt(context.read<Global>().wordData.words.length);
-              if(!context.read<Global>().globalFSRS.isContained(chosen)) {
-                pushWords.add(context.read<Global>().wordData.words.elementAt(chosen));
+            while(pushWords.length < FSRS().config.pushAmount && tries < FSRS().config.pushAmount * 10){
+              int chosen = rnd.nextInt(AppData().wordData.words.length);
+              if(!FSRS().isContained(chosen)) {
+                pushWords.add(AppData().wordData.words.elementAt(chosen));
               }
               tries++;
             }
@@ -125,7 +128,7 @@ class LearningPage extends StatelessWidget {
             Navigator.push(
               context, 
               MaterialPageRoute(
-                builder: (context) => FSRSLearningPage(fsrs: context.read<Global>().globalFSRS, words: pushWords.toList())
+                builder: (context) => FSRSLearningPage(fsrs: FSRS(), words: pushWords.toList())
               )
             );
           },
@@ -161,7 +164,7 @@ Future<void> shiftToStudy(BuildContext context) async {
   context.read<Global>().uiLogger.info("准备转向学习页面");
   final ClassSelection classSelection = await popSelectClasses(context, withCache: false, withReviewChoose: true);
   if(classSelection.selectedClass.isEmpty || !context.mounted) return;
-  final List<WordItem> words = getSelectedWords(context.read<Global>().wordData, classSelection.selectedClass, doShuffle: false, doDouble: false);
+  final List<WordItem> words = getSelectedWords(AppData().wordData, classSelection.selectedClass, doShuffle: false, doDouble: false);
   context.read<Global>().uiLogger.info("完成单词挑拣，共${words.length}个");
   if(words.isEmpty) return;
   context.read<Global>().uiLogger.info("跳转: LearningPage => InLearningPage");

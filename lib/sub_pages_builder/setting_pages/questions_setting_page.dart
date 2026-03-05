@@ -18,9 +18,9 @@ class _QuestionsSettingPage extends State<QuestionsSettingPage> {
   static const Map<int, String> castMap = {0: "单词卡片学习", 1: "中译阿 选择题", 2: "阿译中 选择题", 3: "中译阿 拼写题", 4: "听力题"};
 
   void _updateConfig() {
-    context.read<Global>().globalConfig = context.read<Global>().globalConfig.copyWith(
-      quiz: context.read<Global>().globalConfig.quiz.copyWith(
-        zhar: context.read<Global>().globalConfig.quiz.zhar.copyWith(
+    AppData().config = AppData().config.copyWith(
+      quiz: AppData().config.quiz.copyWith(
+        zhar: AppData().config.quiz.zhar.copyWith(
           questionSections: selectedTypes!.cast<int>()
         )
       )
@@ -31,7 +31,7 @@ class _QuestionsSettingPage extends State<QuestionsSettingPage> {
   Widget build(BuildContext context) {
     context.read<Global>().uiLogger.info("构建 QuestionsSettingPage:$selectedTypes");
     late final SubQuizConfig section;
-    section = context.read<Global>().globalConfig.quiz.zhar;
+    section = AppData().config.quiz.zhar;
     MediaQueryData mediaQuery = MediaQuery.of(context);
     selectedTypes ??= List.from(section.questionSections);
     List<Widget> listTiles = [];
@@ -82,7 +82,7 @@ class _QuestionsSettingPage extends State<QuestionsSettingPage> {
         appBar: AppBar(title: Text("题型配置")),
         body: Column(
           children: [
-            if(!context.read<Global>().isWideScreen) TextContainer(text: "长按可拖动排序", style: TextStyle(color: Colors.grey), animated: true),
+            if(!AppData().isWideScreen) TextContainer(text: "长按可拖动排序", style: TextStyle(color: Colors.grey), animated: true),
             Expanded(
               child: ReorderableListView(
                 onReorder: (oldIndex, newIndex) {
@@ -104,9 +104,9 @@ class _QuestionsSettingPage extends State<QuestionsSettingPage> {
                   onChanged: (value) {
                     context.read<Global>().uiLogger.info("题型内题目乱序: $value");
                     setState(() {
-                      context.read<Global>().globalConfig = context.read<Global>().globalConfig.copyWith(
-                        quiz: context.read<Global>().globalConfig.quiz.copyWith(
-                          zhar: context.read<Global>().globalConfig.quiz.zhar.copyWith(
+                      AppData().config = AppData().config.copyWith(
+                        quiz: AppData().config.quiz.copyWith(
+                          zhar: AppData().config.quiz.zhar.copyWith(
                             shuffleInternaly: value
                           )
                         )
@@ -124,9 +124,9 @@ class _QuestionsSettingPage extends State<QuestionsSettingPage> {
                   onChanged: (value) {
                     context.read<Global>().uiLogger.info("题型乱序: $value");
                     setState(() {
-                      context.read<Global>().globalConfig = context.read<Global>().globalConfig.copyWith(
-                        quiz: context.read<Global>().globalConfig.quiz.copyWith(
-                          zhar: context.read<Global>().globalConfig.quiz.zhar.copyWith(
+                      AppData().config = AppData().config.copyWith(
+                        quiz: AppData().config.quiz.copyWith(
+                          zhar: AppData().config.quiz.zhar.copyWith(
                             shuffleExternaly: value
                           )
                         )
@@ -144,9 +144,9 @@ class _QuestionsSettingPage extends State<QuestionsSettingPage> {
                   onChanged: (value) {
                     context.read<Global>().uiLogger.info("全局乱序: $value");
                     setState(() {
-                      context.read<Global>().globalConfig = context.read<Global>().globalConfig.copyWith(
-                        quiz: context.read<Global>().globalConfig.quiz.copyWith(
-                          zhar: context.read<Global>().globalConfig.quiz.zhar.copyWith(
+                      AppData().config = AppData().config.copyWith(
+                        quiz: AppData().config.quiz.copyWith(
+                          zhar: AppData().config.quiz.zhar.copyWith(
                             shuffleGlobally: value
                           )
                         )
@@ -164,9 +164,9 @@ class _QuestionsSettingPage extends State<QuestionsSettingPage> {
                   onChanged: (value) {
                     context.read<Global>().uiLogger.info("偏好相似: $value");
                     setState(() {
-                      context.read<Global>().globalConfig = context.read<Global>().globalConfig.copyWith(
-                        quiz: context.read<Global>().globalConfig.quiz.copyWith(
-                          zhar: context.read<Global>().globalConfig.quiz.zhar.copyWith(
+                      AppData().config = AppData().config.copyWith(
+                        quiz: AppData().config.quiz.copyWith(
+                          zhar: AppData().config.quiz.zhar.copyWith(
                             preferSimilar: value
                           )
                         )

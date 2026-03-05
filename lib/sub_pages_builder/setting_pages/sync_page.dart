@@ -28,12 +28,12 @@ class _DataSyncPage extends State<DataSyncPage> {
   @override
   Widget build(BuildContext context) {
     context.read<Global>().uiLogger.info("构建 DataSyncPage");
-    enabled ??= context.read<Global>().globalConfig.webSync.enabled;
+    enabled ??= AppData().config.webSync.enabled;
     context.read<Global>().uiLogger.fine("获取WebDAV实例");
     final WebDAV webdav = WebDAV(
-      uri: context.read<Global>().globalConfig.webSync.account.uri, 
-      user: context.read<Global>().globalConfig.webSync.account.userName,
-      password: context.read<Global>().globalConfig.webSync.account.passWord
+      uri: AppData().config.webSync.account.uri, 
+      user: AppData().config.webSync.account.userName,
+      password: AppData().config.webSync.account.passWord
     );
     MediaQueryData mediaQuery = MediaQuery.of(context);
 
@@ -43,7 +43,6 @@ class _DataSyncPage extends State<DataSyncPage> {
       ),
       body: ListView(
         children: [
-          TextContainer(text: "该功能还处在预览阶段", style: TextStyle(color: Colors.redAccent)),
           SettingItem(
             title: "远程",
             padding: EdgeInsets.all(8.0),
@@ -69,12 +68,12 @@ class _DataSyncPage extends State<DataSyncPage> {
               Row(
                 children: [
                   Text("联通性检查: "),
-                  if(context.read<Global>().globalConfig.webSync.account.uri.isEmpty) Text("未绑定", style: Theme.of(context).textTheme.labelSmall),
+                  if(AppData().config.webSync.account.uri.isEmpty) Text("未绑定", style: Theme.of(context).textTheme.labelSmall),
                   FutureBuilder(
                     future: WebDAV.test(
-                      context.read<Global>().globalConfig.webSync.account.uri, 
-                      context.read<Global>().globalConfig.webSync.account.userName,
-                      password: context.read<Global>().globalConfig.webSync.account.passWord
+                      AppData().config.webSync.account.uri, 
+                      AppData().config.webSync.account.userName,
+                      password: AppData().config.webSync.account.passWord
                     ), 
                     builder: (context, snapshot) {
                       if(snapshot.hasError) {
@@ -123,7 +122,7 @@ class _DataSyncPage extends State<DataSyncPage> {
                       });
                       try{
                         if(!webdav.isReachable) await webdav.connect();
-                        if(context.mounted) await webdav.upload(context.read<Global>().prefs);
+                        if(context.mounted) await webdav.upload(AppData().storage);
                       } catch (e) {
                         if(!context.mounted) return;
                         alart(context, e.toString());
@@ -161,7 +160,7 @@ class _DataSyncPage extends State<DataSyncPage> {
                       });
                       try{
                         if(!webdav.isReachable) await webdav.connect();
-                        if(context.mounted) await webdav.download(context.read<Global>().prefs);
+                        if(context.mounted) await webdav.download(AppData().storage);
                         if(context.mounted) context.read<Global>().conveySetting();
                       } catch (e) {
                         if(!context.mounted) return;
@@ -204,7 +203,7 @@ class _DataSyncPage extends State<DataSyncPage> {
                           dialogTitle: "导出数据",
                           lockParentWindow: true,
                           fileName: "export.json",
-                          bytes: utf8.encode(jsonEncode(context.read<Global>().prefs.export())),
+                          bytes: utf8.encode(jsonEncode(AppData().storage.export())),
                         ) != null) {
                           if(context.mounted) {
                             ScaffoldMessenger.of(context).showSnackBar(SnackBar(
@@ -262,7 +261,7 @@ class _DataSyncPage extends State<DataSyncPage> {
                         if (!context.mounted) return;
                         try{
                           context.read<Global>().uiLogger.fine("备份数据读取完成，开始解析");
-                          context.read<Global>().prefs.recovery(jsonDecode(jsonString));
+                          AppData().storage.recovery(jsonDecode(jsonString));
                           if(context.mounted) context.read<Global>().conveySetting();
                           alart(context, "备份数据 \"${platformFile.name}\" \n已恢复\n部分设置可能需要软件重启后才能生效");
                           context.read<Global>().uiLogger.info("备份数据 \"${platformFile.name}\" \n已导入。");
@@ -293,9 +292,9 @@ Future<void> popAccountSetting(BuildContext context) async {
   await showDialog<List<String>>(
     context: context,
     builder: (BuildContext context) {
-      uriController.text = context.read<Global>().globalConfig.webSync.account.uri;
-      accountController.text = context.read<Global>().globalConfig.webSync.account.userName;
-      passwdController.text = context.read<Global>().globalConfig.webSync.account.passWord;
+      uriController.text = AppData().config.webSync.account.uri;
+      accountController.text = AppData().config.webSync.account.userName;
+      passwdController.text = AppData().config.webSync.account.passWord;
       return AlertDialog(
         title: Text("设置WebDAV同步"),
         content: Column(
@@ -367,8 +366,8 @@ Future<void> popAccountSetting(BuildContext context) async {
                 alart(context, e.toString());
                 return;
               }
-              context.read<Global>().globalConfig = context.read<Global>().globalConfig.copyWith(
-                webSync: context.read<Global>().globalConfig.webSync.copyWith(
+              AppData().config = AppData().config.copyWith(
+                webSync: AppData().config.webSync.copyWith(
                   account: SyncAccountConfig(
                     uri: uriController.text,
                     userName: accountController.text,

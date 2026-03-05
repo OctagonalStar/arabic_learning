@@ -41,9 +41,9 @@ class _InLearningPageState extends State<InLearningPage> {
   void onSolve({required WordItem targetWord, 
                 required bool isCorrect, 
                 required int takentime,
-                required FSRS fsrs,
                 bool isTypingQuestion = false}){
     if(isCorrect) correctCount++;
+    FSRS fsrs = FSRS();
     if(widget.countInReview && fsrs.config.enabled) {
       if(fsrs.isContained(targetWord.id)){
         if(isTypingQuestion) {
@@ -61,7 +61,7 @@ class _InLearningPageState extends State<InLearningPage> {
   @override
   void initState() {
     // 加载测试词
-    final SubQuizConfig questionsSetting = context.read<Global>().globalConfig.quiz.zhar;
+    final SubQuizConfig questionsSetting = AppData().config.quiz.zhar;
     List<List<TestItem>> questionsInSections = List.generate(questionsSetting.questionSections.length, (_) => []);
 
     for(int sectionIndex = 0; sectionIndex < questionsSetting.questionSections.length; sectionIndex++) {
@@ -70,7 +70,7 @@ class _InLearningPageState extends State<InLearningPage> {
           TestItem.buildTestItem(
             wordItem, 
             questionsSetting.questionSections[sectionIndex], 
-            context.read<Global>().wordData, 
+            AppData().wordData, 
             questionsSetting.preferSimilar, 
             rnd
           )
@@ -171,7 +171,7 @@ class _InLearningPageState extends State<InLearningPage> {
         ),
         body: Center(
           child: PageView.builder(
-            scrollDirection: Provider.of<Global>(context).isWideScreen ? Axis.vertical : Axis.horizontal,
+            scrollDirection: AppData().isWideScreen ? Axis.vertical : Axis.horizontal,
             physics: NeverScrollableScrollPhysics(),
             // itemCount: testList.length,
             controller: controller,
@@ -217,7 +217,7 @@ class _InLearningPageState extends State<InLearningPage> {
                     if(!ans) {
                       Future.delayed(Duration(seconds: 1), (){if(context.mounted) viewAnswer(context, testItem.testWord);});
                     }
-                    onSolve(targetWord: testItem.testWord, isCorrect: ans, takentime: DateTime.now().difference(quizStart).inMilliseconds, fsrs: context.read<Global>().globalFSRS);
+                    onSolve(targetWord: testItem.testWord, isCorrect: ans, takentime: DateTime.now().difference(quizStart).inMilliseconds);
                     Future.delayed(Duration(milliseconds: 700) ,(){setState(() {
                       clicked = true;
                     });});
@@ -249,10 +249,10 @@ class _InLearningPageState extends State<InLearningPage> {
                       clicked = true;
                     });
                     if(text == testItem.testWord.arabic) {
-                      onSolve(targetWord: testItem.testWord, isCorrect: true, takentime: DateTime.now().difference(quizStart).inMilliseconds, fsrs: context.read<Global>().globalFSRS, isTypingQuestion: true);
+                      onSolve(targetWord: testItem.testWord, isCorrect: true, takentime: DateTime.now().difference(quizStart).inMilliseconds);
                       return true;
                     } else {
-                      onSolve(targetWord: testItem.testWord, isCorrect: false, takentime: DateTime.now().difference(quizStart).inMilliseconds, fsrs: context.read<Global>().globalFSRS, isTypingQuestion: true);
+                      onSolve(targetWord: testItem.testWord, isCorrect: false, takentime: DateTime.now().difference(quizStart).inMilliseconds);
                       viewAnswer(context, testItem.testWord);
                       return false;
                     }
@@ -288,7 +288,7 @@ class _InLearningPageState extends State<InLearningPage> {
                     if(!ans) {
                       Future.delayed(Duration(seconds: 1), (){if(context.mounted) viewAnswer(context, testItem.testWord);});
                     } 
-                    onSolve(targetWord: testItem.testWord, isCorrect: ans, takentime: DateTime.now().difference(quizStart).inMilliseconds, fsrs: context.read<Global>().globalFSRS);
+                    onSolve(targetWord: testItem.testWord, isCorrect: ans, takentime: DateTime.now().difference(quizStart).inMilliseconds);
                     Future.delayed(Duration(milliseconds: 700) ,(){setState(() {
                       clicked = true;
                     });});
@@ -663,7 +663,7 @@ class _WordCardOverViewPage extends State<WordCardOverViewPage> {
                     onSubmitted: (text) {
                       setState(() {});
                     },
-                    onChanged: context.read<Global>().globalConfig.learning.wordLookupRealtime ? (text) {
+                    onChanged: AppData().config.learning.wordLookupRealtime ? (text) {
                       setState(() {});
                     } : null,
                   ),
@@ -688,8 +688,8 @@ class _WordCardOverViewPage extends State<WordCardOverViewPage> {
                       
                     },
                     builder: (context) {
-                      int forceCloumn = context.read<Global>().globalConfig.learning.overviewForceColumn;
-                      bool lookupRealtime = context.read<Global>().globalConfig.learning.wordLookupRealtime;
+                      int forceCloumn = AppData().config.learning.overviewForceColumn;
+                      bool lookupRealtime = AppData().config.learning.wordLookupRealtime;
                       return StatefulBuilder(
                         builder: (context, setLocalState) {
                           return Column(
@@ -736,8 +736,8 @@ class _WordCardOverViewPage extends State<WordCardOverViewPage> {
                                 ),
                                 onPressed: (){
                                   setState(() {
-                                    context.read<Global>().globalConfig = context.read<Global>().globalConfig.copyWith(
-                                      learning: context.read<Global>().globalConfig.learning.copyWith(
+                                    AppData().config = AppData().config.copyWith(
+                                      learning: AppData().config.learning.copyWith(
                                         overviewForceColumn: forceCloumn,
                                         wordLookupRealtime: lookupRealtime
                                       )
@@ -789,16 +789,17 @@ class _WordCardOverViewLayout extends State<WordCardOverViewLayout> {
   @override
   Widget build(BuildContext context) {
     MediaQueryData mediaQuery = MediaQuery.of(context);
+    AppData appData = AppData();
 
     return ListView.builder(
       physics: allowJsonScorll ? null : NeverScrollableScrollPhysics(),
       controller: jsonController,
-      itemCount: context.read<Global>().wordData.classes.length + 1,
+      itemCount: appData.wordData.classes.length + 1,
       itemBuilder: (context, jsonIndex) {
-        if(jsonIndex == context.read<Global>().wordData.classes.length) {
+        if(jsonIndex == appData.wordData.classes.length) {
           return SizedBox(height: mediaQuery.size.height);
         }
-        final SourceItem jsonSource = context.read<Global>().wordData.classes[jsonIndex];
+        final SourceItem jsonSource = appData.wordData.classes[jsonIndex];
         return ExpansionTile(
           title: Text(jsonSource.sourceJsonFileName.trim()),
           minTileHeight: 64,
@@ -856,15 +857,15 @@ class _WordCardOverViewLayout extends State<WordCardOverViewLayout> {
                         height: mediaQuery.size.height * 0.8,
                         child: GridView.builder(
                           itemCount: classItem.wordIndexs.length,
-                          gridDelegate: context.read<Global>().globalConfig.learning.overviewForceColumn == 0 ? SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: mediaQuery.size.width ~/ 300) : SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: context.read<Global>().globalConfig.learning.overviewForceColumn), 
+                          gridDelegate: AppData().config.learning.overviewForceColumn == 0 ? SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: mediaQuery.size.width ~/ 300) : SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: AppData().config.learning.overviewForceColumn), 
                           itemBuilder: (context, index) {
                             return Container(
                               margin: EdgeInsets.all(8.0),
                               child: WordCard(
-                                word: context.read<Global>().wordData.words[classItem.wordIndexs[index]],
+                                word: appData.wordData.words[classItem.wordIndexs[index]],
                                 useMask: false,
-                                width: mediaQuery.size.width / (context.read<Global>().globalConfig.learning.overviewForceColumn == 0 ? (mediaQuery.size.width ~/ 300) : context.read<Global>().globalConfig.learning.overviewForceColumn),
-                                height: mediaQuery.size.width / (context.read<Global>().globalConfig.learning.overviewForceColumn == 0 ? (mediaQuery.size.width ~/ 300) : context.read<Global>().globalConfig.learning.overviewForceColumn),
+                                width: mediaQuery.size.width / (AppData().config.learning.overviewForceColumn == 0 ? (mediaQuery.size.width ~/ 300) : AppData().config.learning.overviewForceColumn),
+                                height: mediaQuery.size.width / (AppData().config.learning.overviewForceColumn == 0 ? (mediaQuery.size.width ~/ 300) : AppData().config.learning.overviewForceColumn),
                               ),
                             );
                           }
@@ -898,7 +899,7 @@ class WordLookupLayout extends StatelessWidget {
         threshold: 4~/(lookfor.length * 0.5 + 1) // 输入越多 容差越小
       )); // 从BK树找
 
-      for(WordItem word in context.read<Global>().wordData.words) {
+      for(WordItem word in AppData().wordData.words) {
         if(match.contains(word)) continue;
         if(word.arabic.removeAracicExtensionPart().contains(lookfor.removeAracicExtensionPart())) {
           match.add(word);
@@ -913,7 +914,7 @@ class WordLookupLayout extends StatelessWidget {
         getLevenshtein(lookfor.removeAracicExtensionPart(), a.arabic.removeAracicExtensionPart()) - getLevenshtein(lookfor.removeAracicExtensionPart(), b.arabic.removeAracicExtensionPart())
       );
     } else {
-      for(WordItem word in context.read<Global>().wordData.words) {
+      for(WordItem word in AppData().wordData.words) {
         if(match.contains(word)) continue;
         if(word.chinese.contains(lookfor)) {
           match.add(word);
@@ -931,7 +932,7 @@ class WordLookupLayout extends StatelessWidget {
     }
     
     context.read<Global>().uiLogger.finer("单词检索结果: $match");
-    if(!context.read<Global>().globalConfig.learning.wordLookupRealtime){
+    if(!AppData().config.learning.wordLookupRealtime){
       Future.delayed(Durations.medium1, () {
         if(context.mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
@@ -943,15 +944,15 @@ class WordLookupLayout extends StatelessWidget {
 
     return GridView.builder(
       itemCount: match.length,
-      gridDelegate: context.read<Global>().globalConfig.learning.overviewForceColumn == 0 ? SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: mediaQuery.size.width ~/ 300) : SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: context.read<Global>().globalConfig.learning.overviewForceColumn), 
+      gridDelegate: AppData().config.learning.overviewForceColumn == 0 ? SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: mediaQuery.size.width ~/ 300) : SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: AppData().config.learning.overviewForceColumn), 
       itemBuilder: (context, index) {
         return Container(
           margin: EdgeInsets.all(8.0),
           child: WordCard(
             word: match[index],
             useMask: false,
-            width: mediaQuery.size.width / (context.read<Global>().globalConfig.learning.overviewForceColumn == 0 ? (mediaQuery.size.width ~/ 300) : context.read<Global>().globalConfig.learning.overviewForceColumn),
-            height: mediaQuery.size.width / (context.read<Global>().globalConfig.learning.overviewForceColumn == 0 ? (mediaQuery.size.width ~/ 300) : context.read<Global>().globalConfig.learning.overviewForceColumn),
+            width: mediaQuery.size.width / (AppData().config.learning.overviewForceColumn == 0 ? (mediaQuery.size.width ~/ 300) : AppData().config.learning.overviewForceColumn),
+            height: mediaQuery.size.width / (AppData().config.learning.overviewForceColumn == 0 ? (mediaQuery.size.width ~/ 300) : AppData().config.learning.overviewForceColumn),
           ),
         );
       }

@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:ui';
 
+import 'package:arabic_learning/funcs/fsrs_func.dart';
 import 'package:arabic_learning/vars/config_structure.dart' show ClassItem, SourceItem, WordItem, ClassSelection;
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -39,15 +40,16 @@ import 'package:arabic_learning/funcs/utili.dart';
 Future<ClassSelection> popSelectClasses(BuildContext context, {bool withCache = false, bool withReviewChoose = true, List<SourceItem>? forceSelectRange}) async {
   context.read<Global>().uiLogger.info("弹出课程选择（ClassSelectPage），withCache: $withCache");
   final List<ClassItem> beforeSelectedClasses = [];
+  AppData appData = AppData();
   if(withCache) {
     if(forceSelectRange != null) throw Exception("popSelectClasses不允许forceSelectRange时使用withCache");
-    final String tpcPrefs = context.read<Global>().prefs.getString("tempConfig") ?? jsonEncode(StaticsVar.tempConfig);
+    final String tpcPrefs = appData.storage.getString("tempConfig") ?? jsonEncode(StaticsVar.tempConfig);
     final List<List<String>> cacheList = (jsonDecode(tpcPrefs)["SelectedClasses"] as List)
         .cast<List>()
         .map((e) => e.cast<String>().toList())
         .toList();
     for(List<String> cachedClass in cacheList) {
-      for(SourceItem sourceItem in context.read<Global>().wordData.classes){
+      for(SourceItem sourceItem in appData.wordData.classes){
         if(sourceItem.sourceJsonFileName != cachedClass[0]){
           continue;
         }
@@ -60,21 +62,23 @@ Future<ClassSelection> popSelectClasses(BuildContext context, {bool withCache = 
     }
     context.read<Global>().uiLogger.fine("已缓存课程选择: $beforeSelectedClasses");
   }
+
   ClassSelection? selectedClasses = await showModalBottomSheet<ClassSelection>(
     context: context,
     shape: RoundedRectangleBorder(side: BorderSide(width: 1.0, color: Theme.of(context).colorScheme.onSurface.withAlpha(150)), borderRadius: StaticsVar.br),
     isDismissible: false,
-    isScrollControlled: context.read<Global>().isWideScreen,
+    isScrollControlled: appData.isWideScreen,
     enableDrag: true,
     builder: (BuildContext context) {
       return ClassSelectPage(beforeSelectedClasses: beforeSelectedClasses, withReviewChoose: withReviewChoose);
     }
   );
+
   if(withCache && selectedClasses != null && context.mounted) {
-    final String tpcPrefs = context.read<Global>().prefs.getString("tempConfig") ?? jsonEncode(StaticsVar.tempConfig);
+    final String tpcPrefs = appData.storage.getString("tempConfig") ?? jsonEncode(StaticsVar.tempConfig);
     Map<String, dynamic> tpcMap = jsonDecode(tpcPrefs);
     tpcMap["SelectedClasses"] = selectedClasses;
-    context.read<Global>().prefs.setString("tempConfig", jsonEncode(tpcMap));
+    appData.storage.setString("tempConfig", jsonEncode(tpcMap));
     context.read<Global>().uiLogger.info("课程选择缓存完成");
   }
   if(context.mounted) context.read<Global>().uiLogger.fine("选择的课程: $selectedClasses");
@@ -99,7 +103,7 @@ List<Widget> classesSelectionList(BuildContext context, Function (ClassItem) onC
   if(forceSelectRange != null) {
     sourcesList = forceSelectRange;
   } else {
-    sourcesList = context.read<Global>().wordData.classes;
+    sourcesList = AppData().wordData.classes;
   }
   List<Widget> widgetList = [];
   for (SourceItem source in sourcesList) {
@@ -507,7 +511,7 @@ class WordCard extends StatelessWidget {
           icon: const Icon(Icons.volume_up, size: 24.0),
           label: FittedBox(child: Text(word.arabic, style: TextStyle(fontSize: 64.0, fontFamily: context.read<Global>().arFont))),
           onPressed: (){
-            playTextToSpeech(word.arabic, context);
+            playTextToSpeech(word.arabic);
           },
         ),
         Stack(
@@ -627,7 +631,7 @@ class ClassSelectPage extends StatelessWidget {
     final MediaQueryData mediaQuery = MediaQuery.of(context);
     ClassSelection classSelection = ClassSelection(
       selectedClass: beforeSelectedClasses.toList(), 
-      countInReview: context.read<Global>().globalFSRS.config.enabled
+      countInReview: FSRS().config.enabled
     );
     void addClass(ClassItem classInfo) {
       classSelection.selectedClass.add(classInfo);
@@ -665,7 +669,7 @@ class ClassSelectPage extends StatelessWidget {
                   Switch(
                     value: classSelection.countInReview, 
                     onChanged: (value){
-                      if(value == true && !context.read<Global>().globalFSRS.config.enabled) {
+                      if(value == true && !FSRS().config.enabled) {
                         ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("请先启用复习系统")));
                         return ;
                       }
@@ -799,7 +803,7 @@ class _ChoiceQuestions extends State<ChoiceQuestions> {
     // showingMode 0: 1 Row, 1: 2 Rows, 2: 4 Rows
     if(showingMode == -1){
       context.read<Global>().uiLogger.fine("未指定布局，开始计算");
-      showingMode = calculateButtonBoxLayout(widget.choices, mediaQuery.size.width, context.read<Global>().isWideScreen);
+      showingMode = calculateButtonBoxLayout(widget.choices, mediaQuery.size.width);
       context.read<Global>().uiLogger.info("最终采用布局方案: $showingMode");
     }
     return Material(
@@ -825,11 +829,12 @@ class _ChoiceQuestions extends State<ChoiceQuestions> {
                       setLocalState(() {
                         playing = true;
                       });
-                      late List<dynamic> temp;
-                      temp = await playTextToSpeech(widget.mainWord, context);
-                      if(!temp[0] && context.mounted) {
-                        alart(context, temp[1]);
+                      try {
+                        await playTextToSpeech(widget.mainWord);
+                      } catch (e) {
+                        if(context.mounted) alart(context, e.toString());
                       }
+                      
                       setLocalState(() {
                         playing = false;
                       });
@@ -1035,7 +1040,7 @@ class _ListeningQuestion extends State<ListeningQuestion> {
     int showingMode = widget.bottonLayout;
     if(showingMode == -1){
       context.read<Global>().uiLogger.fine("未指定布局，开始计算");
-      showingMode = calculateButtonBoxLayout(widget.choices, mediaQuery.size.width, context.read<Global>().isWideScreen);
+      showingMode = calculateButtonBoxLayout(widget.choices, mediaQuery.size.width);
       context.read<Global>().uiLogger.info("最终采用布局方案: $showingMode");
     }
     return Material(
@@ -1060,11 +1065,12 @@ class _ListeningQuestion extends State<ListeningQuestion> {
                       setLocalState(() {
                         playing = true;
                       });
-                      late List<dynamic> temp;
-                      temp = await playTextToSpeech(widget.mainWord, context);
-                      if(!temp[0] && context.mounted) {
-                        alart(context, temp[1]);
+                      try {
+                        await playTextToSpeech(widget.mainWord);
+                      } catch (e) {
+                        if(context.mounted) alart(context, e.toString());
                       }
+                      
                       setLocalState(() {
                         playing = false;
                       });

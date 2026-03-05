@@ -26,7 +26,7 @@ class _ForeListeningSettingPage extends State<ForeListeningSettingPage> {
   Widget build(BuildContext context) {
     context.read<Global>().uiLogger.info("构建 ForeListeningSettingPage");
     MediaQueryData mediaQuery = MediaQuery.of(context);
-    int wordCount = getSelectedWords(context.read<Global>().wordData, selectedClasses.selectedClass).length;
+    int wordCount = getSelectedWords(AppData().wordData, selectedClasses.selectedClass).length;
     return Scaffold(
       appBar: AppBar(
         title: Text('自主听写预设置'),
@@ -49,7 +49,7 @@ class _ForeListeningSettingPage extends State<ForeListeningSettingPage> {
                   IconButton(
                     onPressed: () {
                       context.read<Global>().uiLogger.info("进行听写发音测试");
-                      playTextToSpeech("وَ", context);
+                      playTextToSpeech("وَ");
                     }, 
                     icon: Icon(Icons.volume_up, size: 100)
                   ),
@@ -210,7 +210,7 @@ class _ForeListeningSettingPage extends State<ForeListeningSettingPage> {
                       playTimes: playTimes, 
                       interval: interval, 
                       intervalBetweenWords: intervalBetweenWords, 
-                      words: getSelectedWords(context.read<Global>().wordData, selectedClasses.selectedClass, doShuffle: true)
+                      words: getSelectedWords(AppData().wordData, selectedClasses.selectedClass, doShuffle: true)
                     )
                   )
                 );
@@ -398,7 +398,7 @@ class _MainListeningPageState extends State<MainListeningPage> {
           counter = "-";
         });
         if(!context.mounted) return;
-        await playTextToSpeech(x.arabic, context, speed: widget.playRate);
+        await playTextToSpeech(x.arabic, speed: widget.playRate);
         // await Future.delayed(Duration(seconds: 1));
         setState((){
           state = "播放间隔中...";

@@ -61,7 +61,7 @@ class SharedPreferences {
   }
 
   Future<bool> setString(String key, String value) async {
-    logger.finer("设置键$key,值$value");
+    // logger.finest("设置键$key,值$value");
     if (type) {
       return prefs.setString(key, value);
     } else {

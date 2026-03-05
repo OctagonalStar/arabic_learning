@@ -18,7 +18,7 @@ class ForeFSRSSettingPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     context.read<Global>().uiLogger.info("构建 ForeFSRSSettingPage");
-    final FSRS fsrs = context.read<Global>().globalFSRS;
+    final FSRS fsrs = FSRS();
     if(fsrs.config.enabled && !forceChoosing) {
       return MainFSRSPage(fsrs: fsrs);
     }
@@ -235,7 +235,7 @@ class ForeFSRSSettingPage extends StatelessWidget {
                   shape: RoundedRectangleBorder(borderRadius: StaticsVar.br)
                 ),
                 onPressed: (){
-                  fsrs.createScheduler(prefs: context.read<Global>().prefs);
+                  fsrs.createScheduler(prefs: AppData().storage);
                   alart(context, "设置完成，重新进入规律学习页面即可开始", onConfirmed: (){Navigator.popUntil(context, (route) => route.isFirst);});
                 }, 
                 icon: Icon(Icons.done),
@@ -357,7 +357,8 @@ class _FSRSReviewCardPage extends State<FSRSReviewCardPage> {
   Widget build(BuildContext context) {
     context.read<Global>().uiLogger.info("构建 FSRSReviewCardPage");
     MediaQueryData mediaQuery = MediaQuery.of(context);
-    final List<WordItem> wordData = context.read<Global>().wordData.words;
+    AppData appData = AppData();
+    final List<WordItem> wordData = appData.wordData.words;
     late final int correct;
 
     // 防止重建后选项丢失
@@ -366,9 +367,9 @@ class _FSRSReviewCardPage extends State<FSRSReviewCardPage> {
         options = const ["记得很清楚", "还记得", "回忆困难", "忘了"];
         correct = -1;
       } else {
-        List<WordItem> optionWords = getRandomWords(4, context.read<Global>().wordData, include: wordData[widget.wordID], preferClass: !widget.fsrs.config.preferSimilar, rnd: widget.rnd);
+        List<WordItem> optionWords = getRandomWords(4, appData.wordData, include: wordData[widget.wordID], preferClass: !widget.fsrs.config.preferSimilar, rnd: widget.rnd);
         options = List.generate(4, (int index) => optionWords[index].chinese, growable: false);
-        correct  = options!.indexOf(context.read<Global>().wordData.words[widget.wordID].chinese);
+        correct  = options!.indexOf(appData.wordData.words[widget.wordID].chinese);
       }
     }
     
@@ -466,7 +467,7 @@ class _FSRSLearningPageState extends State<FSRSLearningPage> {
   void initState() {
     final Random rnd = Random();
     for(WordItem word in widget.words) {
-      List<WordItem> optionWords = getRandomWords(4, context.read<Global>().wordData, include: word, preferClass: !widget.fsrs.config.preferSimilar, rnd: rnd);
+      List<WordItem> optionWords = getRandomWords(4, AppData().wordData, include: word, preferClass: !widget.fsrs.config.preferSimilar, rnd: rnd);
       List<String> option = List.generate(4, (int index) => optionWords[index].chinese, growable: false);
       options.add(option);
     }
