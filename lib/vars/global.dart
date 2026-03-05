@@ -19,7 +19,6 @@ class Global with ChangeNotifier {
   final Logger logger = Logger("Global");
   
   bool backupFontLoaded = false;
-  bool inited = false; //是否初始化完成
   String? arFont;
   String? zhFont;
   bool updateLogRequire = false; //是否需要显示更新日志
@@ -35,9 +34,7 @@ class Global with ChangeNotifier {
 
 
   Future<bool> init() async {
-    logger.info("类收到初始化请求，当前初始化状态为 $inited");
-    if(inited) return false;
-    logger.info("开始类初始化");
+    logger.info("开始全局控制类初始化");
 
     AppData appData = AppData();
     await appData.init();
@@ -50,7 +47,6 @@ class Global with ChangeNotifier {
       await updateSetting();
     }
 
-    inited = true;
     logger.info("初始化完成");
     return true;
   }

@@ -67,7 +67,7 @@ void main() async {
   // await global.init();
   runApp(
     ChangeNotifierProvider(
-      create: (context) => Global()..init(),
+      create: (context) => Global(),
       child: MyApp(),
     ),
   );
@@ -75,31 +75,39 @@ void main() async {
 
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
+
   @override
   Widget build(BuildContext context) {
-    context.read<Global>().uiLogger.info("收到应用层构建请求");
-    return context.watch<Global>().inited? 
-      MaterialApp(
-        title: StaticsVar.appName,
-        themeMode: ThemeMode.system,
-        theme: context.read<Global>().themeData,
-        home: AppData().config.egg.stella
-          ? Stack(
-            children: [
-              Container(
-                decoration: BoxDecoration(
-                  image: DecorationImage(
-                    image: MemoryImage(AppData().stella!),
-                    fit: BoxFit.cover,
+    context.read<Global>().uiLogger.warning("收到应用层构建请求");
+    return FutureBuilder(
+        future: context.read<Global>().init(),
+        initialData: false,
+        builder: (context, asyncSnapshot) {
+          if(!(asyncSnapshot.data??false)) {
+            return Material(child: Container(width: double.infinity, height: double.infinity, color: Colors.black ,child: Center(child: CircularProgressIndicator())));    
+          }
+          return MaterialApp(
+            title: StaticsVar.appName,
+            themeMode: ThemeMode.system,
+            theme: context.read<Global>().themeData,
+            home: AppData().config.egg.stella
+              ? Stack(
+                children: [
+                  Container(
+                    decoration: BoxDecoration(
+                      image: DecorationImage(
+                        image: MemoryImage(AppData().stella!),
+                        fit: BoxFit.cover,
+                      ),
+                    ),
                   ),
-                ),
-              ),
-              const MyHomePage(),
-            ],
-          )
-          : const MyHomePage(),
-      )
-      : Material(child: Container(width: double.infinity, height: double.infinity, color: Colors.black ,child: Center(child: CircularProgressIndicator())));    
+                  const MyHomePage(),
+                ],
+              )
+              : const MyHomePage(),
+          );
+        }
+      );
   }
 }
 
