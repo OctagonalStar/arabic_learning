@@ -43,7 +43,6 @@ class _DataSyncPage extends State<DataSyncPage> {
       ),
       body: ListView(
         children: [
-          TextContainer(text: "该功能还处在预览阶段", style: TextStyle(color: Colors.redAccent)),
           SettingItem(
             title: "远程",
             padding: EdgeInsets.all(8.0),

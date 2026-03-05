@@ -46,7 +46,8 @@ class _LocalPKSelectPage extends State<LocalPKSelectPage> {
       appBar: AppBar(title: Text("局域网联机")),
       body: Column(
         children: [
-          SizedBox(height: mediaQuery.size.height * 0.05),
+          TextContainer(text: "该功能还处在预览阶段，出现问题请及时提交反馈", style: TextStyle(color: Colors.redAccent)),
+          SizedBox(height: mediaQuery.size.height * 0.02),
           ElevatedButton.icon(
             style: ElevatedButton.styleFrom(
               fixedSize: Size(mediaQuery.size.width * 0.8, mediaQuery.size.height * 0.1),

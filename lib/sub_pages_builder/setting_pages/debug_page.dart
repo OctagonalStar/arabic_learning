@@ -113,6 +113,12 @@ class _DebugPage extends State<DebugPage> {
                 ),
               )
             ],
+          ),
+          ExpansionTile(
+            title: Text("调试信息"),
+            children: [
+              TextContainer(text: "Storage Type: ${AppData().storage.type ? "SharedPreferences" : "IndexDB"}"),
+            ],
           )
         ],
       ),
