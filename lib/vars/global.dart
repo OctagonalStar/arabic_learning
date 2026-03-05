@@ -38,9 +38,11 @@ class Global with ChangeNotifier {
 
     AppData appData = AppData();
     await appData.init();
+    FSRS().init();
 
     if(appData.isFirstStart) {
       logger.info("首次启动检测为真");
+      appData.initStorageValue();
       await refreshApp();
     } else {
       conveySetting();
@@ -175,9 +177,11 @@ class AppData {
     storage = await SharedPreferences.getInstance();
     basePath = (await path_provider.getApplicationDocumentsDirectory()) as io.Directory;
 
-    wordData = DictData.buildFromMap(jsonDecode(storage.getString("wordData")!));
-    if(!BKSearch.isReady) BKSearch.init(wordData.words);
-    FSRS().init();
+    if(!isFirstStart) {
+      wordData = DictData.buildFromMap(jsonDecode(storage.getString("wordData")!));
+      if(!BKSearch.isReady) BKSearch.init(wordData.words);
+      FSRS().init();
+    }
     inited = true;
   }
 

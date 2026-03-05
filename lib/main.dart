@@ -86,25 +86,28 @@ class MyApp extends StatelessWidget {
           if(!(asyncSnapshot.data??false)) {
             return Material(child: Container(width: double.infinity, height: double.infinity, color: Colors.black ,child: Center(child: CircularProgressIndicator())));    
           }
-          return MaterialApp(
-            title: StaticsVar.appName,
-            themeMode: ThemeMode.system,
-            theme: context.read<Global>().themeData,
-            home: AppData().config.egg.stella
-              ? Stack(
-                children: [
-                  Container(
-                    decoration: BoxDecoration(
-                      image: DecorationImage(
-                        image: MemoryImage(AppData().stella!),
-                        fit: BoxFit.cover,
+          return Consumer<Global>(
+            builder: (context, global, child) => MaterialApp(
+              title: StaticsVar.appName,
+              themeMode: ThemeMode.system,
+              theme: global.themeData,
+              home: AppData().config.egg.stella
+                ? Stack(
+                  children: [
+                    Container(
+                      decoration: BoxDecoration(
+                        image: DecorationImage(
+                          image: MemoryImage(AppData().stella!),
+                          fit: BoxFit.cover,
+                        ),
                       ),
                     ),
-                  ),
-                  const MyHomePage(),
-                ],
-              )
-              : const MyHomePage(),
+                    child!,
+                  ],
+                )
+                : child,
+            ),
+            child: const MyHomePage(),
           );
         }
       );
@@ -121,7 +124,6 @@ class MyHomePage extends StatefulWidget {
 
 
 class _MyHomePageState extends State<MyHomePage> {
-  late List<Widget> _pageList;
   final PageController _pageController = PageController(initialPage: 0);
   final TextEditingController controller = TextEditingController();
 
@@ -177,7 +179,12 @@ class _MyHomePageState extends State<MyHomePage> {
               setState(() {});
             },
             // physics: const NeverScrollableScrollPhysics(), // 禁用滑动
-            children: _pageList,
+            children: [
+              HomePage(),
+              LearningPage(),
+              TestPage(),
+              SettingPage()
+            ],
           ),
         ),
       ],
@@ -197,7 +204,12 @@ class _MyHomePageState extends State<MyHomePage> {
             onPageChanged: (index) {
               setState(() {});
             },
-            children: _pageList,
+            children: [
+              HomePage(),
+              LearningPage(),
+              TestPage(),
+              SettingPage()
+            ],
           ),
         ),
         // 底部导航栏
@@ -261,7 +273,7 @@ class _MyHomePageState extends State<MyHomePage> {
                 child: ListView(
                     children: [
                       FutureBuilder(
-                        future: rootBundle.loadString('assets/help/audio.md'),
+                        future: rootBundle.loadString('assets/help/announce.md'),
                         initialData: "加载中...",
                         builder: (context, asyncSnapshot) {
                           return MarkdownBody(data: asyncSnapshot.data!);
@@ -367,12 +379,6 @@ class _MyHomePageState extends State<MyHomePage> {
       });
     }
 
-    _pageList = [
-      HomePage(),
-      LearningPage(),
-      TestPage(),
-      SettingPage()
-    ];
     return Scaffold(
       backgroundColor: AppData().config.egg.stella ? Colors.transparent : null,
       appBar: AppBar(
