@@ -10,7 +10,9 @@ _flutter.loader.load({
     },
     onEntrypointLoaded: async function (engineInitializer) {
         loading.textContent = "正在加载中(Step 2)...长时间无响应请尝试删除缓存或更换浏览器";
-        const appRunner = await engineInitializer.initializeEngine();
+        const appRunner = await engineInitializer.initializeEngine({
+            'fontFallbackBaseUrl': 'https://fonts.gstatic.cn/s/',
+        });
 
         loading.textContent = "加载完成正在进入...";
         await appRunner.runApp();
