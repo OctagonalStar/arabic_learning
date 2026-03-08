@@ -175,7 +175,9 @@ class AppData {
   Future<void> init() async {
     if(inited) return;
     storage = await SharedPreferences.getInstance();
-    basePath = (await path_provider.getApplicationDocumentsDirectory()) as io.Directory;
+    if(!kIsWeb) {
+      basePath = (await path_provider.getApplicationDocumentsDirectory()) as io.Directory;
+    }
 
     if(!isFirstStart) {
       wordData = DictData.buildFromMap(jsonDecode(storage.getString("wordData")!));
