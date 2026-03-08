@@ -1,6 +1,6 @@
 // dart format off
 // cSpell:disable
-// ignore_for_file: always_put_required_named_parameters_first
+// ignore_for_file: unnecessary_string_escapes, always_put_required_named_parameters_first
 // ignore_for_file: constant_identifier_names
 // ignore_for_file: sort_constructors_first
 
