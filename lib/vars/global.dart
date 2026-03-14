@@ -111,8 +111,8 @@ class Global with ChangeNotifier {
   Future<void> refreshApp() async {
     logger.info("应用设置中");
     AppData appData = AppData();
-    if(AppData().config.audio.audioSource == 2) await appData.loadTTS(AppData().config.audio.playRate);
-    if(AppData().config.egg.stella) await appData.loadEggs();
+    if(appData.config.audio.audioSource == 2) await appData.loadTTS(appData.config.audio.playRate);
+    if(appData.config.egg.stella) await appData.loadEggs();
     changeLoggerBehavior();
     updateTheme();
     notifyListeners();
@@ -195,7 +195,7 @@ class AppData {
 
   // load TTS model if any
   Future<void> loadTTS(double playRate) async {
-    if(kIsWeb || vitsTTS != null || modelTTSDownloaded) return;
+    if(kIsWeb || vitsTTS != null || !modelTTSDownloaded) return;
     logger.info("TTS: 加载本地TTS中");
     sherpa_onnx.initBindings();
     final vits = sherpa_onnx.OfflineTtsVitsModelConfig(

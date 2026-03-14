@@ -46,6 +46,12 @@ class PKServer with ChangeNotifier{
   bool get connected => _connection?.connectionState == RTCPeerConnectionState.RTCPeerConnectionStateConnected;
   String? connectpwd;
 
+  @override
+  void dispose() {
+    disconnect();
+    super.dispose();
+  }
+
   Future<void> initHost(bool isHoster, BuildContext context, {String? offer}) async {
     isServer = isHoster;
 
@@ -108,7 +114,7 @@ class PKServer with ChangeNotifier{
     };
     
     // 增加超时保护（某些网络下可能收不到完成信号）
-    return completer.future.timeout(const Duration(minutes: 1), onTimeout: () async {
+    return completer.future.timeout(const Duration(seconds: 15), onTimeout: () async {
       logger.info("ICE 收集超时，尝试使用当前收集到的 Candidate");
       String sdp = (await _connection!.getLocalDescription())!.sdp!;
       sdp = optimizeSdp(sdp);
@@ -239,7 +245,7 @@ class PKServer with ChangeNotifier{
     if(message == "ping") {
       logger.finer("[$packageid] 回复心跳包");
       _channel!.send(RTCDataChannelMessage("pong"));
-      Future.delayed(Duration(seconds: 1), (){
+      Future.delayed(Duration(seconds: 5), (){
         if(_channel?.state == RTCDataChannelState.RTCDataChannelOpen) {
           logger.finer("发送心跳包");
           _channel!.send(RTCDataChannelMessage("ping"));
@@ -377,9 +383,6 @@ class PKServer with ChangeNotifier{
         if(data["tookenTime"] != null) {
           pkState.sideTookenTime = data["tookenTime"];
           over = true;
-        }
-        if(pkState.selfTookenTime != null && pkState.sideTookenTime != null) {
-          disconnect();
         }
         notifyListeners();
       }
