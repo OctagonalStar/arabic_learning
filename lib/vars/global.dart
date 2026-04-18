@@ -349,4 +349,49 @@ class AppData {
     BKSearch.init(wordData.words); // 重新建树
     logger.info("词汇导入完成");
   }
-}
+
+  /// 原地迁移旧格式词汇数据，为 meanings[0].source == "" 的词补充正确的来源信息。
+  ///
+  /// 旧数据是扁平格式（单条 meaning，source 为空字符串），
+  /// 但 SourceItem → ClassItem → wordIndexs 结构仍然保存了词汇与词典的映射关系，
+  /// 因此可以在不重读 JSON 文件的情况下完成迁移。
+  ///
+  /// 返回值：本次迁移的词数（0 表示无需迁移）
+  int migrateOldWordData() {
+    logger.info("开始旧词汇数据迁移");
+    int migratedCount = 0;
+
+    for (final SourceItem src in wordData.classes) {
+      for (final ClassItem classItem in src.subClasses) {
+        for (final int wordIndex in classItem.wordIndexs) {
+          if (wordIndex >= wordData.words.length) continue;
+          final WordItem word = wordData.words[wordIndex];
+          // 只迁移旧格式：meanings 只有一条且 source 为空
+          if (word.meanings.length == 1 && word.meanings[0].source.isEmpty) {
+            wordData.words[wordIndex] = WordItem(
+              arabic: word.arabic,
+              id: word.id,
+              meanings: List.unmodifiable([
+                WordMeaning(
+                  chinese: word.meanings[0].chinese,
+                  explanation: word.meanings[0].explanation,
+                  className: classItem.className,
+                  source: src.sourceJsonFileName,
+                )
+              ]),
+            );
+            migratedCount++;
+          }
+        }
+      }
+    }
+
+    if (migratedCount > 0) {
+      storage.setString("wordData", jsonEncode(wordData.toMap()));
+      logger.info("旧词汇数据迁移完成，共迁移 $migratedCount 个词");
+    } else {
+      logger.info("无需迁移旧词汇数据");
+    }
+    return migratedCount;
+  }
+}
