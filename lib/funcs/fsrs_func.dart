@@ -164,6 +164,7 @@ class FSRSConfig {
   final bool selfEvaluate;
   final int pushAmount;
   final bool reinforceMemory;
+  final List<String> selectedSources;
 
   const FSRSConfig({
     bool? enabled,
@@ -176,7 +177,8 @@ class FSRSConfig {
     bool? preferSimilar,
     bool? selfEvaluate,
     int? pushAmount,
-    bool? reinforceMemory
+    bool? reinforceMemory,
+    List<String>? selectedSources
   }) :
     enabled = enabled??false,
     cards = cards??const [],
@@ -187,7 +189,8 @@ class FSRSConfig {
     preferSimilar = preferSimilar??false,
     selfEvaluate = selfEvaluate??false,
     pushAmount = pushAmount??0,
-    reinforceMemory = reinforceMemory??false;
+    reinforceMemory = reinforceMemory??false,
+    selectedSources = selectedSources??const [];
   
   Map<String, dynamic> toMap(){
     return {
@@ -201,7 +204,8 @@ class FSRSConfig {
       "preferSimilar": preferSimilar,
       "selfEvaluate": selfEvaluate,
       "pushAmount": pushAmount,
-      "reinforceMemory": reinforceMemory
+      "reinforceMemory": reinforceMemory,
+      "selectedSources": selectedSources
     };
   }
 
@@ -216,7 +220,8 @@ class FSRSConfig {
     bool? preferSimilar,
     bool? selfEvaluate,
     int? pushAmount,
-    bool? reinforceMemory
+    bool? reinforceMemory,
+    List<String>? selectedSources
   }) {
     return FSRSConfig(
       enabled: enabled??this.enabled,
@@ -229,7 +234,8 @@ class FSRSConfig {
       preferSimilar: preferSimilar??this.preferSimilar,
       selfEvaluate: selfEvaluate??this.selfEvaluate,
       pushAmount: pushAmount??this.pushAmount,
-      reinforceMemory: reinforceMemory??this.reinforceMemory
+      reinforceMemory: reinforceMemory??this.reinforceMemory,
+      selectedSources: selectedSources??this.selectedSources
     );
   }
 
@@ -246,7 +252,8 @@ class FSRSConfig {
         preferSimilar: configData["preferSimilar"],
         selfEvaluate: configData["selfEvaluate"],
         pushAmount: configData["pushAmount"],
-        reinforceMemory: configData["reinforceMemory"]
+        reinforceMemory: configData["reinforceMemory"],
+        selectedSources: configData["selectedSources"] == null ? const [] : List<String>.from(configData["selectedSources"])
       );
     }
     return FSRSConfig(enabled: false);

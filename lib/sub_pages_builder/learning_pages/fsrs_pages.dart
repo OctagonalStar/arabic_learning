@@ -241,6 +241,91 @@ class ForeFSRSSettingPage extends StatelessWidget {
                   children: [
                     Row(
                       children: [
+                        Expanded(child: Text("限制复习词库", style: Theme.of(context).textTheme.bodyLarge)),
+                        TextButton(
+                           onPressed: () { 
+                             showDialog(
+                               context: context,
+                               builder: (context) {
+                                 return StatefulBuilder(
+                                   builder: (context, setLocalState) {
+                                     return AlertDialog(
+                                       title: Text("选择复习词库"),
+                                       content: SingleChildScrollView(
+                                         child: Column(
+                                           mainAxisSize: MainAxisSize.min,
+                                           children: AppData().wordData.classes.map((source) {
+                                             bool selected = fsrs.config.selectedSources.contains(source.sourceJsonFileName);
+                                             return CheckboxListTile(
+                                               title: Text(source.sourceJsonFileName),
+                                               value: selected,
+                                               onChanged: (val) {
+                                                 setLocalState(() {
+                                                   if (val == true) {
+                                                     List<String> newSelection = List.from(fsrs.config.selectedSources)..add(source.sourceJsonFileName);
+                                                     fsrs.config = fsrs.config.copyWith(selectedSources: newSelection);
+                                                   } else {
+                                                     List<String> newSelection = List.from(fsrs.config.selectedSources)..remove(source.sourceJsonFileName);
+                                                     fsrs.config = fsrs.config.copyWith(selectedSources: newSelection);
+                                                   }
+                                                   fsrs.save();
+                                                 });
+                                                 setState(() {});
+                                               }
+                                             );
+                                           }).toList()
+                                         )
+                                       ),
+                                       actions: [
+                                         TextButton(
+                                           onPressed: () {
+                                             setLocalState(() {
+                                               fsrs.config = fsrs.config.copyWith(selectedSources: AppData().wordData.classes.map((s) => s.sourceJsonFileName).toList());
+                                               fsrs.save();
+                                             });
+                                             setState(() {});
+                                           }, 
+                                           child: Text("全选")
+                                         ),
+                                         TextButton(
+                                           onPressed: () {
+                                             setLocalState(() {
+                                               fsrs.config = fsrs.config.copyWith(selectedSources: []);
+                                               fsrs.save();
+                                             });
+                                             setState(() {});
+                                           }, 
+                                           child: Text("清除")
+                                         ),
+                                         TextButton(onPressed: ()=>Navigator.pop(context), child: Text("完成", style: TextStyle(fontWeight: FontWeight.bold))),
+                                       ]
+                                     );
+                                   }
+                                 );
+                               }
+                             );
+                           },
+                           child: Text(fsrs.config.selectedSources.isEmpty ? "全部词库" : "已选 ${fsrs.config.selectedSources.length} 个"),
+                        )
+                      ],
+                    ),
+                    Text("限制复习词库 选择后，复习将仅抽取选中词库内的卡片，并仅从选中词库中获取每日推送。"),
+                    Text("不选则默认从全部已导入词库中抽取。")
+                  ],
+                ),
+              ),
+              Container(
+                decoration: BoxDecoration(
+                  borderRadius: StaticsVar.br,
+                  color: Theme.of(context).colorScheme.onPrimary
+                ),
+                margin: EdgeInsets.all(8.0),
+                padding: EdgeInsets.all(8.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
                         Expanded(child: Text("强化记忆循环", style: Theme.of(context).textTheme.bodyLarge)),
                         Switch(
                           value: fsrs.config.reinforceMemory, 
@@ -331,8 +416,25 @@ class _MainFSRSPageState extends State<MainFSRSPage> {
   }
 
   void _extendQueue() {
+    final AppData appData = AppData();
+    Set<int> allowedWordIds = {};
+    bool hasRestrictedClasses = widget.fsrs.config.selectedSources.isNotEmpty;
+    if (hasRestrictedClasses) {
+      for (var source in appData.wordData.classes) {
+        if (widget.fsrs.config.selectedSources.contains(source.sourceJsonFileName)) {
+          for (var subclass in source.subClasses) {
+            allowedWordIds.addAll(subclass.wordIndexs);
+          }
+        }
+      }
+    }
+
     final List<int> uniqueIds = widget.fsrs.config.cards
-        .where((card) => widget.fsrs.willDueIn(card) < 1)
+        .where((card) {
+          if (widget.fsrs.willDueIn(card) >= 1) return false;
+          if (hasRestrictedClasses && !allowedWordIds.contains(card.cardId)) return false;
+          return true;
+        })
         .map((card) => card.cardId)
         .toList();
         
@@ -596,7 +698,8 @@ class _FSRSLearningPageState extends State<FSRSLearningPage> {
     final Random rnd = Random();
     for(WordItem word in widget.words) {
       List<WordItem> optionWords = getRandomWords(4, AppData().wordData, include: word, preferClass: !widget.fsrs.config.preferSimilar, rnd: rnd);
-      List<String> option = List.generate(4, (int index) => optionWords[index].chinese, growable: false);
+      // 使用 getDisplayChinese 确保选项文本与用户选中词库一致
+      List<String> option = List.generate(4, (int index) => getDisplayChinese(optionWords[index]), growable: false);
       options.add(option);
     }
     super.initState();

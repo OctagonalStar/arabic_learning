@@ -10,7 +10,7 @@ import 'package:path_provider/path_provider.dart' as path_provider;
 
 import 'package:arabic_learning/vars/statics_var.dart';
 import 'package:arabic_learning/package_replacement/storage.dart';
-import 'package:arabic_learning/vars/config_structure.dart' show ClassItem, SourceItem, Config, DictData, WordItem;
+import 'package:arabic_learning/vars/config_structure.dart' show ClassItem, SourceItem, Config, DictData, WordItem, WordMeaning;
 import 'package:arabic_learning/package_replacement/fake_dart_io.dart' if (dart.library.io) 'dart:io' as io;
 import 'package:arabic_learning/package_replacement/fake_sherpa_onnx.dart' if (dart.library.io) 'package:sherpa_onnx/sherpa_onnx.dart' as sherpa_onnx;
 
@@ -298,27 +298,44 @@ class AppData {
         }
 
         if (existingIndex != -1) {
-          // If it already exists globally, just add it to this class
+          // 已存在该词：尝试追加来自新词库的释义
+          WordItem existing = existData.words[existingIndex];
+          bool alreadyHasThisSource = existing.meanings
+              .any((m) => m.source == sourceName && m.className == className);
+          if (!alreadyHasThisSource) {
+            existData.words[existingIndex] = existing.addMeaning(WordMeaning(
+              chinese: word["chinese"],
+              explanation: word["explanation"],
+              className: className,
+              source: sourceName,
+            ));
+          }
           if(!exClass.wordIndexs.contains(existingIndex)) {
             exClass.wordIndexs.add(existingIndex);
           }
           continue;
         }
 
+        // 全新词：构造含 source 的 WordMeaning
         exClass.wordIndexs.add(counter);
         existData.words.add(
           WordItem(
-            arabic: word["arabic"], 
-            chinese: word["chinese"], 
-            explanation: word["explanation"], 
-            className: className, 
-            id: counter
+            arabic: word["arabic"],
+            meanings: List.unmodifiable([
+              WordMeaning(
+                chinese: word["chinese"],
+                explanation: word["explanation"],
+                className: className,
+                source: sourceName,
+              )
+            ]),
+            id: counter,
           )
         );
         rawWordMap[newRaw] = counter;
         pureWordMap[newPure] = counter;
         chineseList.add(word["chinese"]);
-        counter ++;
+        counter++;
       }
       exSource.subClasses.add(exClass);
     }

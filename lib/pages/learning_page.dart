@@ -100,7 +100,9 @@ class LearningPage extends StatelessWidget {
             shape: RoundedRectangleBorder(borderRadius: StaticsVar.br),
           ),
           onPressed: (){
-            if(AppData().wordData.words.isEmpty) {
+            final AppData appData = AppData();
+            final FSRS fsrs = FSRS();
+            if(appData.wordData.words.isEmpty) {
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(content: Text("词库为空，无法推送！请先导入词库"), duration: Duration(seconds: 1),),
               );
@@ -111,10 +113,36 @@ class LearningPage extends StatelessWidget {
             final Set<WordItem> pushWords = {};
             final Random rnd = Random(seed);
             int tries = 0;
-            while(pushWords.length < FSRS().config.pushAmount && tries < FSRS().config.pushAmount * 10){
-              int chosen = rnd.nextInt(AppData().wordData.words.length);
-              if(!FSRS().isContained(chosen)) {
-                pushWords.add(AppData().wordData.words.elementAt(chosen));
+            
+            List<int> validWordIds = [];
+            final bool hasRestrictedClasses = fsrs.config.selectedSources.isNotEmpty;
+            if (hasRestrictedClasses) {
+              for (var source in appData.wordData.classes) {
+                if (fsrs.config.selectedSources.contains(source.sourceJsonFileName)) {
+                  for (var subclass in source.subClasses) {
+                    validWordIds.addAll(subclass.wordIndexs);
+                  }
+                }
+              }
+            }
+
+            // Exclude already added cards
+            if (hasRestrictedClasses) {
+              validWordIds.removeWhere((id) => fsrs.isContained(id));
+            }
+
+            while(pushWords.length < fsrs.config.pushAmount && tries < fsrs.config.pushAmount * 10) {
+              int chosen;
+              if (hasRestrictedClasses) {
+                if (validWordIds.isEmpty) break; // no more valid words to push
+                int rndIdx = rnd.nextInt(validWordIds.length);
+                chosen = validWordIds[rndIdx];
+              } else {
+                chosen = rnd.nextInt(appData.wordData.words.length);
+              }
+
+              if(!fsrs.isContained(chosen)) {
+                pushWords.add(appData.wordData.words.elementAt(chosen));
               }
               tries++;
             }
