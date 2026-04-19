@@ -1,0 +1,48 @@
+name: Build & Release Dev APK
+
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout 代码
+        uses: actions/checkout@v4
+
+      - name: 配置 Java 环境
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'zulu'
+          java-version: '17'  
+      - name: 配置 Flutter 环境
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.41.2'  
+          channel: 'stable'
+          cache: true  
+
+      - name: 安装依赖
+        run: flutter pub get
+
+      - name: 代码分析
+        run: flutter analyze --no-fatal-infos
+
+      - name: 构建 APK
+        run: flutter build apk --release
+    
+      - name: 发布 GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: dev-${{ github.run_number }}  
+          name: "Dev Build #${{ github.run_number }}"
+          body: |
+            自动构建版本
+            - 分支：${{ github.ref_name }}
+            - Commit：${{ github.sha }}
+          files: build/app/outputs/flutter-apk/app-release.apk
+          prerelease: true  
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
