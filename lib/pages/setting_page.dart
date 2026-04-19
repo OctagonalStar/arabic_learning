@@ -259,6 +259,61 @@ class _SettingPage extends State<SettingPage> {
           ),
         ],
       ),
+      // ── 旧数据迁移按钮（仅当存在未迁移词汇时需要点击）────────────
+      Builder(builder: (context) {
+        // 统计有多少词仍是未带 source 的旧格式
+        final int pendingCount = AppData().wordData.words
+            .where((w) => w.meanings.length == 1 && w.meanings[0].source.isEmpty)
+            .length;
+        if (pendingCount == 0) return const SizedBox.shrink();
+        return ElevatedButton.icon(
+          style: ElevatedButton.styleFrom(
+            minimumSize: Size.fromHeight(mediaQuery.size.height * 0.07),
+            backgroundColor: Theme.of(context).colorScheme.tertiaryContainer,
+            shape: BeveledRectangleBorder(),
+          ),
+          icon: const Icon(Icons.upgrade),
+          label: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text("迁移旧词库数据（一词多义兼容）"),
+              Text(
+                "检测到 $pendingCount 个词缺少来源信息，点击自动补充。",
+                style: TextStyle(fontSize: 10.0, color: Colors.grey.shade600),
+              ),
+            ],
+          ),
+          onPressed: () async {
+            final bool? confirmed = await showDialog<bool>(
+              context: context,
+              builder: (ctx) => AlertDialog(
+                title: const Text("迁移旧词库数据"),
+                content: Text(
+                  "检测到 $pendingCount 个词的来源信息需要补充。\n\n"
+                  "此操作会根据现有分类结构自动填充来源字段，"
+                  "无需重新导入词库文件，且不会丢失任何词汇。\n\n"
+                  "确定要继续吗？",
+                ),
+                actions: [
+                  TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text("取消")),
+                  FilledButton(onPressed: () => Navigator.pop(ctx, true), child: const Text("确定")),
+                ],
+              ),
+            );
+            if (confirmed != true) return;
+            final int count = AppData().migrateOldWordData();
+            if (!context.mounted) return;
+            setState(() {}); // 刷新页面隐藏按钮
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(count > 0 ? "迁移完成，共补充了 $count 个词的来源信息。" : "无需迁移，数据已是最新格式。"),
+                duration: const Duration(seconds: 3),
+              ),
+            );
+          },
+        );
+      }),
       ElevatedButton(
         style: ElevatedButton.styleFrom(
           minimumSize: Size.fromHeight(mediaQuery.size.height * 0.08),
