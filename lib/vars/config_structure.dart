@@ -721,28 +721,94 @@ class ClassItem {
   }
 }
 
+/// 单个释义条目，包含中文、解释、所属课程和来源词典
+@immutable
+class WordMeaning {
+  /// 中文含义
+  final String chinese;
+
+  /// 补充解释
+  final String explanation;
+
+  /// 所属子课程名称
+  final String className;
+
+  /// 词典来源（SourceItem.sourceJsonFileName）
+  final String source;
+
+  const WordMeaning({
+    required this.chinese,
+    required this.explanation,
+    required this.className,
+    required this.source,
+  });
+
+  Map<String, dynamic> toMap() {
+    return {
+      "chinese": chinese,
+      "explanation": explanation,
+      "className": className,
+      "source": source,
+    };
+  }
+
+  static WordMeaning buildFromMap(Map<String, dynamic> m) {
+    return WordMeaning(
+      chinese: m["chinese"] ?? "",
+      explanation: m["explanation"] ?? "",
+      className: m["className"] ?? "",
+      source: m["source"] ?? "",
+    );
+  }
+}
+
 @immutable
 class WordItem {
   final String arabic;
-  final String chinese;
-  final String explanation;
-  final String className;
+
+  /// 所有来源的释义列表（一词多义）
+  final List<WordMeaning> meanings;
+
   final int id;
 
   const WordItem({
     required this.arabic,
-    required this.chinese,
-    required this.explanation,
-    required this.className,
-    required this.id
+    required this.meanings,
+    required this.id,
   });
 
-  Map<String, String> toMap(){
+  // ── 向后兼容 getter，旧代码无需修改 ─────────────────────────
+  /// 主释义的中文（取 meanings[0]）
+  String get chinese => meanings.isNotEmpty ? meanings[0].chinese : '';
+
+  /// 主释义的解释（取 meanings[0]）
+  String get explanation => meanings.isNotEmpty ? meanings[0].explanation : '';
+
+  /// 主释义的课程（取 meanings[0]）
+  String get className => meanings.isNotEmpty ? meanings[0].className : '';
+
+  // ── 多义辅助方法 ──────────────────────────────────────────────
+  /// 按词典来源获取对应的释义，找不到时返回 null
+  WordMeaning? getMeaningForSource(String sourceFileName) {
+    for (final m in meanings) {
+      if (m.source == sourceFileName) return m;
+    }
+    return null;
+  }
+
+  /// 返回一个追加了新义项的新实例（immutable 模式）
+  WordItem addMeaning(WordMeaning meaning) {
+    return WordItem(
+      arabic: arabic,
+      meanings: List.unmodifiable([...meanings, meaning]),
+      id: id,
+    );
+  }
+
+  Map<String, dynamic> toMap() {
     return {
       "arabic": arabic,
-      "chinese": chinese,
-      "explanation": explanation,
-      "subClass": className
+      "meanings": meanings.map((m) => m.toMap()).toList(),
     };
   }
 
@@ -750,15 +816,25 @@ class WordItem {
   String toString() {
     return jsonEncode(toMap());
   }
-  
-  static WordItem buildFromMap(Map<String, dynamic> word, int id){
-    return WordItem(
-      arabic: word["arabic"], 
-      chinese: word["chinese"], 
-      explanation: word["explanation"], 
-      className: word["subClass"],
-      id: id
-    );
+
+  /// 支持新格式（含 meanings 列表）和旧格式（chinese/explanation/subClass 扁平字段）
+  static WordItem buildFromMap(Map<String, dynamic> word, int id) {
+    if (word.containsKey("meanings") && word["meanings"] is List) {
+      // 新格式
+      final List<WordMeaning> meanings = (word["meanings"] as List)
+          .map((m) => WordMeaning.buildFromMap(m as Map<String, dynamic>))
+          .toList();
+      return WordItem(arabic: word["arabic"], meanings: List.unmodifiable(meanings), id: id);
+    } else {
+      // 旧格式 fallback：封装为单元素列表（source 字段留空，由外层补充）
+      final meaning = WordMeaning(
+        chinese: word["chinese"] ?? "",
+        explanation: word["explanation"] ?? "",
+        className: word["subClass"] ?? "",
+        source: "",
+      );
+      return WordItem(arabic: word["arabic"], meanings: List.unmodifiable([meaning]), id: id);
+    }
   }
 }
 

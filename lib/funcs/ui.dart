@@ -2,7 +2,7 @@ import 'dart:convert';
 import 'dart:ui';
 
 import 'package:arabic_learning/funcs/fsrs_func.dart';
-import 'package:arabic_learning/vars/config_structure.dart' show ClassItem, SourceItem, WordItem, ClassSelection;
+import 'package:arabic_learning/vars/config_structure.dart' show ClassItem, SourceItem, WordItem, WordMeaning, ClassSelection;
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -211,6 +211,19 @@ void alart(BuildContext context, String e, {Function? onConfirmed, Duration dela
 }
 
 /// 弹出详解页面
+/// 根据 FSRS 当前选中词库，优先返回对应词库的中文释义；
+/// 如未限制词库或找不到对应释义，则使用 meanings[0]（主释义）。
+String getDisplayChinese(WordItem word) {
+  final selectedSources = FSRS().config.selectedSources;
+  if (selectedSources.isNotEmpty) {
+    for (final source in selectedSources) {
+      final meaning = word.getMeaningForSource(source);
+      if (meaning != null) return meaning.chinese;
+    }
+  }
+  return word.chinese;
+}
+
 void viewAnswer(BuildContext context, WordItem wordData) async {
   context.read<Global>().uiLogger.info("弹出详解页面");
   MediaQueryData mediaQuery = MediaQuery.of(context);
@@ -493,7 +506,7 @@ class _ChooseButtonBoxState extends State<ChooseButtonBox> {
 /// [height] :限定高度，默认自动
 /// 
 /// [useMask] :是否显示高斯遮罩
-class WordCard extends StatelessWidget {
+class WordCard extends StatefulWidget {
   final WordItem word;
   final double? width;
   final double? height;
@@ -501,14 +514,37 @@ class WordCard extends StatelessWidget {
   const WordCard({super.key, required this.word, this.width, this.height, this.useMask = true});
 
   @override
+  State<WordCard> createState() => _WordCardState();
+}
+
+class _WordCardState extends State<WordCard> {
+  late final PageController _meaningController;
+  int _currentPage = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    _meaningController = PageController();
+  }
+
+  @override
+  void dispose() {
+    _meaningController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     MediaQueryData mediaQuery = MediaQuery.of(context);
-    bool hide = useMask;
-    double useWidth = width ?? mediaQuery.size.width * 0.9;
-    double useHeight = height ?? mediaQuery.size.height * 0.5;
+    double useWidth = widget.width ?? mediaQuery.size.width * 0.9;
+    double useHeight = widget.height ?? mediaQuery.size.height * 0.5;
+    final meanings = widget.word.meanings;
+    final bool hasMultiple = meanings.length > 1;
+
     return Column(
       mainAxisAlignment: MainAxisAlignment.start,
       children: [
+        // ── 顶部：阿拉伯语发音区（固定，不参与分页）──────────────────
         ElevatedButton.icon(
           style: ElevatedButton.styleFrom(
             fixedSize: Size(useWidth, useHeight * 0.3),
@@ -517,69 +553,140 @@ class WordCard extends StatelessWidget {
             padding: const EdgeInsets.all(16.0),
           ),
           icon: const Icon(Icons.volume_up, size: 24.0),
-          label: FittedBox(child: Text(word.arabic, style: TextStyle(fontSize: 64.0, fontFamily: context.read<Global>().arFont))),
-          onPressed: (){
-            playTextToSpeech(word.arabic);
+          label: FittedBox(child: Text(widget.word.arabic, style: TextStyle(fontSize: 64.0, fontFamily: context.read<Global>().arFont))),
+          onPressed: () {
+            playTextToSpeech(widget.word.arabic);
           },
         ),
+        // ── 底部：释义区（多义时横向分页，单义时保持原样）────────────
         Stack(
           children: [
-            Container(
+            SizedBox(
               width: useWidth,
               height: useHeight * 0.6,
-              decoration: BoxDecoration(
-                color: Theme.of(context).colorScheme.onInverseSurface.withAlpha(150),
-                borderRadius: BorderRadius.vertical(bottom: Radius.circular(25.0)),
+              child: PageView.builder(
+                controller: _meaningController,
+                physics: hasMultiple ? const BouncingScrollPhysics() : const NeverScrollableScrollPhysics(),
+                itemCount: meanings.length,
+                onPageChanged: (index) => setState(() => _currentPage = index),
+                itemBuilder: (context, pageIndex) {
+                  final WordMeaning meaning = meanings[pageIndex];
+                  return Container(
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).colorScheme.onInverseSurface.withAlpha(150),
+                      borderRadius: BorderRadius.vertical(bottom: Radius.circular(25.0)),
+                    ),
+                    child: Column(
+                      children: [
+                        // 来源标签行（仅多义时显示）
+                        if (hasMultiple)
+                          Container(
+                            height: useHeight * 0.09,
+                            width: useWidth,
+                            decoration: BoxDecoration(
+                              color: Theme.of(context).colorScheme.primaryContainer.withAlpha(180),
+                            ),
+                            child: Center(
+                              child: FittedBox(
+                                fit: BoxFit.scaleDown,
+                                child: Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Icon(Icons.library_books_outlined, size: 14),
+                                    SizedBox(width: 4),
+                                    Text(
+                                      meaning.source.isNotEmpty ? meaning.source : "主词库",
+                                      style: TextStyle(fontSize: 12, fontWeight: FontWeight.w500),
+                                    ),
+                                    SizedBox(width: 8),
+                                    // 页面指示器小圆点（可点击）
+                                    Row(
+                                      children: List.generate(meanings.length, (dotIndex) {
+                                        return GestureDetector(
+                                          onTap: () {
+                                            _meaningController.animateToPage(
+                                              dotIndex,
+                                              duration: Durations.medium2,
+                                              curve: Curves.easeInOut,
+                                            );
+                                          },
+                                          child: Padding(
+                                            padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 8),
+                                            child: AnimatedContainer(
+                                              duration: Durations.short4,
+                                              width: dotIndex == _currentPage ? 10 : 6,
+                                              height: dotIndex == _currentPage ? 10 : 6,
+                                              decoration: BoxDecoration(
+                                                shape: BoxShape.circle,
+                                                color: dotIndex == _currentPage
+                                                    ? Theme.of(context).colorScheme.primary
+                                                    : Theme.of(context).colorScheme.outline,
+                                              ),
+                                            ),
+                                          ),
+                                        );
+                                      }),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ),
+                        // 中文行
+                        Row(
+                          children: [
+                            Container(
+                              height: useHeight * (hasMultiple ? 0.12 : 0.14),
+                              width: useWidth * 0.2,
+                              decoration: BoxDecoration(
+                                color: Theme.of(context).colorScheme.onSecondary.withAlpha(150),
+                              ),
+                              child: Center(child: Text("中文", style: TextStyle(fontSize: 16))),
+                            ),
+                            Expanded(child: FittedBox(fit: BoxFit.scaleDown, child: Text(meaning.chinese, style: TextStyle(fontSize: 24))))
+                          ],
+                        ),
+                        Divider(height: 0),
+                        // 解释行
+                        Row(
+                          children: [
+                            Container(
+                              height: useHeight * (hasMultiple ? 0.23 : 0.32),
+                              width: useWidth * 0.2,
+                              decoration: BoxDecoration(
+                                color: Theme.of(context).colorScheme.onPrimary.withAlpha(150),
+                              ),
+                              child: Center(child: Text("解释", style: TextStyle(fontSize: 18))),
+                            ),
+                            Expanded(child: Text(meaning.explanation, style: TextStyle(fontSize: 16), textAlign: TextAlign.center, maxLines: 3))
+                          ],
+                        ),
+                        Divider(height: 0),
+                        // 归属课程行
+                        Row(
+                          children: [
+                            Container(
+                              height: useHeight * 0.14,
+                              width: useWidth * 0.2,
+                              decoration: BoxDecoration(
+                                color: Theme.of(context).colorScheme.onSecondary.withAlpha(150),
+                                borderRadius: BorderRadius.only(bottomLeft: Radius.circular(25.0))
+                              ),
+                              child: FittedBox(fit: BoxFit.scaleDown, child: Text("归属课程", style: TextStyle(fontSize: 16))),
+                            ),
+                            Expanded(child: FittedBox(fit: BoxFit.scaleDown, child: Text(meaning.className, style: TextStyle(fontSize: 18), textAlign: TextAlign.center)))
+                          ],
+                        ),
+                      ],
+                    ),
+                  );
+                },
               ),
-              child: Column(
-                children: [
-                  Row(
-                    children: [
-                      Container(
-                        height: useHeight*0.14,
-                        width: useWidth*0.2,
-                        decoration: BoxDecoration(
-                          color: Theme.of(context).colorScheme.onSecondary.withAlpha(150),
-                        ),
-                        child: Center(child: Text("中文", style: TextStyle(fontSize: 16),)),
-                      ),
-                      Expanded(child: FittedBox(fit: BoxFit.scaleDown, child: Text(word.chinese, style: TextStyle(fontSize: 24))))
-                    ],
-                  ),
-                  Divider(height: 0),
-                  Row(
-                    children: [
-                      Container(
-                        height: useHeight*0.32,
-                        width: useWidth*0.2,
-                        decoration: BoxDecoration(
-                          color: Theme.of(context).colorScheme.onPrimary.withAlpha(150),
-                        ),
-                        child: Center(child: Text("解释", style: TextStyle(fontSize: 18))),
-                      ),
-                      Expanded(child: Text(word.explanation, style: TextStyle(fontSize: 16), textAlign: TextAlign.center, maxLines: 3))
-                    ],
-                  ),
-                  Divider(height: 0),
-                  Row(
-                    children: [
-                      Container(
-                        height: useHeight*0.14,
-                        width: useWidth*0.2,
-                        decoration: BoxDecoration(
-                          color: Theme.of(context).colorScheme.onSecondary.withAlpha(150),
-                          borderRadius: BorderRadius.only(bottomLeft: Radius.circular(25.0))
-                        ),
-                        child: FittedBox(fit: BoxFit.scaleDown, child: Text("归属课程", style: TextStyle(fontSize: 16))),
-                      ),
-                      Expanded(child: FittedBox(fit: BoxFit.scaleDown, child: Text(word.className, style: TextStyle(fontSize: 18), textAlign: TextAlign.center)))
-                    ],
-                  )
-                ],
-              )
             ),
+            // ── 遮罩层（useMask 时显示，点击揭开） ─────────────────────
             StatefulBuilder(
               builder: (context, setLocalState) {
+                bool hide = widget.useMask;
                 return TweenAnimationBuilder<double>(
                   tween: Tween(
                     begin: 1.0,
@@ -591,7 +698,7 @@ class WordCard extends StatelessWidget {
                     return ClipRRect(
                       borderRadius: BorderRadiusGeometry.vertical(bottom: Radius.circular(25.0)),
                       child: BackdropFilter(
-                        filter: ImageFilter.blur(sigmaX: 15.0 * value,sigmaY: 15.0 * value),
+                        filter: ImageFilter.blur(sigmaX: 15.0 * value, sigmaY: 15.0 * value),
                         enabled: true,
                         child: value == 0.0 ? null : ElevatedButton(
                           style: ElevatedButton.styleFrom(
@@ -600,11 +707,11 @@ class WordCard extends StatelessWidget {
                             shadowColor: Colors.transparent,
                             shape: RoundedRectangleBorder(borderRadius: BorderRadiusGeometry.vertical(bottom: Radius.circular(25.0)))
                           ),
-                          onPressed: (){
+                          onPressed: () {
                             setLocalState(() {
                               hide = false;
-                            },);
-                          }, 
+                            });
+                          },
                           child: hide ? Text("点此查看释义") : SizedBox()
                         ),
                       ),
@@ -619,6 +726,7 @@ class WordCard extends StatelessWidget {
     );
   }
 }
+
 
 // Page Widget 可复用的页面Widget
 

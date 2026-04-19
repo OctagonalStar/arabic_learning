@@ -575,6 +575,7 @@ class _ConcludePageState extends State<ConcludePage> {
   }
 }
 
+
 @immutable
 class TestItem {
   /// 测试单词
@@ -601,7 +602,7 @@ class TestItem {
     this.correctIndex
   });
 
-  static TestItem buildTestItem(WordItem word, int testType, DictData wordData,bool preferSimilar,Random rnd){
+  static TestItem buildTestItem(WordItem word, int testType, DictData wordData, bool preferSimilar, Random rnd){
     if(testType == 0 || testType == 3){
       return TestItem(testWord: word, testType: testType);
     } else {
@@ -609,7 +610,8 @@ class TestItem {
       return TestItem(
         testWord: word, 
         testType: testType,
-        options: List.generate(4, (int index) => ((testType == 2 || (testType == 4 && rnd.nextBool())) ? optionWords[index].chinese : optionWords[index].arabic), growable: false),
+        // 使用 getDisplayChinese 确保选项文本与用户选中词库一致
+        options: List.generate(4, (int index) => ((testType == 2 || (testType == 4 && rnd.nextBool())) ? getDisplayChinese(optionWords[index]) : optionWords[index].arabic), growable: false),
         correctIndex: optionWords.indexOf(word)
       );
     }
@@ -913,7 +915,7 @@ class WordLookupLayout extends StatelessWidget {
     double itemWidth = mediaQuery.size.width / crossAxisCount;
 
     if(lookfor.isArabic()) {
-      WordItem dummyWord = WordItem(arabic: lookfor, chinese: lookfor, explanation: "", id: 0, className: "");
+      WordItem dummyWord = WordItem(arabic: lookfor, meanings: [WordMeaning(chinese: lookfor, explanation: "", className: "", source: "")], id: 0);
       
       Map<int, List<WordItem>> tiers = BKSearch.searchWithTiers(dummyWord);
       
