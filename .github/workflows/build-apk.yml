@@ -36,7 +36,7 @@ jobs:
           keytool -genkeypair \
             -alias androiddebugkey \
             -keypass android \
-            -keystore /home/ runner/.android/debug.keystore \
+            -keystore /home/runner/.android/debug.keystore \
             -storepass android \
             -dname "CN=Android Debug,O=Android,C=US" \
             -keyalg RSA \
