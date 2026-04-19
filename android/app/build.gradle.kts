@@ -38,14 +38,26 @@ android {
         multiDexEnabled = true
     }
 
-    signingConfigs {
-        create("release") {
+signingConfigs {
+    create("release") {
+        if (keystorePropertiesFile.exists()) {
+            // 本地开发环境：使用 key.properties 里的真实签名密钥
             keyAlias = keystoreProperties["keyAlias"] as String
             keyPassword = keystoreProperties["keyPassword"] as String
             storeFile = keystoreProperties["storeFile"]?.let { file(it) }
             storePassword = keystoreProperties["storePassword"] as String
+        } else {
+            // CI 环境：退回到 debug 签名，这样 APK 仍然可以安装
+            // debug 签名的 keystore 是 Android SDK 自带的，永远存在
+            val debugKeystorePath = System.getProperty("user.home") + 
+                "/.android/debug.keystore"
+            storeFile = file(debugKeystorePath)
+            storePassword = "android"
+            keyAlias = "androiddebugkey"
+            keyPassword = "android"
         }
     }
+}
 
     buildTypes {
         release {
