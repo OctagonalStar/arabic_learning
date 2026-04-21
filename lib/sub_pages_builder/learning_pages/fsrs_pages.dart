@@ -578,6 +578,7 @@ class FSRSReviewCardPage extends StatefulWidget {
 
 class _FSRSReviewCardPage extends State<FSRSReviewCardPage> {
   List<String>? options;
+  int correct = -1;          // 正确选项下标（-1 = 自评模式）
   bool choosed = false;
   final DateTime start = DateTime.now();
   late final DateTime end;
@@ -588,17 +589,17 @@ class _FSRSReviewCardPage extends State<FSRSReviewCardPage> {
     MediaQueryData mediaQuery = MediaQuery.of(context);
     AppData appData = AppData();
     final List<WordItem> wordData = appData.wordData.words;
-    late final int correct;
 
-    // 防止重建后选项丢失
+    // 防止重建后选项丢失（options 和 correct 都是 State 字段，只初始化一次）
     if(options == null){
       if(widget.fsrs.config.selfEvaluate) {
         options = const ["记得很清楚", "还记得", "回忆困难", "忘了"];
         correct = -1;
       } else {
         List<WordItem> optionWords = getRandomWords(4, appData.wordData, include: wordData[widget.wordID], preferClass: !widget.fsrs.config.preferSimilar, rnd: widget.rnd);
-        options = List.generate(4, (int index) => optionWords[index].chinese, growable: false);
-        correct  = options!.indexOf(appData.wordData.words[widget.wordID].chinese);
+        final String target = getDisplayChinese(wordData[widget.wordID]);
+        options = List.generate(4, (int index) => getDisplayChinese(optionWords[index]), growable: false);
+        correct = options!.indexOf(target);
       }
     }
     

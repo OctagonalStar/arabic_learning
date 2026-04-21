@@ -520,11 +520,24 @@ class WordCard extends StatefulWidget {
 class _WordCardState extends State<WordCard> {
   late final PageController _meaningController;
   int _currentPage = 0;
+  // 遮罩状态必须放在 State 字段，而不能放在 StatefulBuilder.builder 内
+  // 否则每次 rebuild 都会被 widget.useMask 重置
+  late bool _hide;
 
   @override
   void initState() {
     super.initState();
     _meaningController = PageController();
+    _hide = widget.useMask;
+  }
+
+  @override
+  void didUpdateWidget(WordCard oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // 当 useMask 从 true 变为 false（外部控制揭开）时同步更新
+    if (oldWidget.useMask && !widget.useMask) {
+      _hide = false;
+    }
   }
 
   @override
@@ -684,42 +697,36 @@ class _WordCardState extends State<WordCard> {
               ),
             ),
             // ── 遮罩层（useMask 时显示，点击揭开） ─────────────────────
-            StatefulBuilder(
-              builder: (context, setLocalState) {
-                bool hide = widget.useMask;
-                return TweenAnimationBuilder<double>(
-                  tween: Tween(
-                    begin: 1.0,
-                    end: hide ? 1.0 : 0.0
-                  ),
-                  duration: Durations.extralong2,
-                  curve: StaticsVar.curve,
-                  builder: (context, value, child) {
-                    return ClipRRect(
-                      borderRadius: BorderRadiusGeometry.vertical(bottom: Radius.circular(25.0)),
-                      child: BackdropFilter(
-                        filter: ImageFilter.blur(sigmaX: 15.0 * value, sigmaY: 15.0 * value),
-                        enabled: true,
-                        child: value == 0.0 ? null : ElevatedButton(
-                          style: ElevatedButton.styleFrom(
-                            fixedSize: Size(useWidth, useHeight * 0.6),
-                            backgroundColor: Colors.transparent,
-                            shadowColor: Colors.transparent,
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadiusGeometry.vertical(bottom: Radius.circular(25.0)))
+            TweenAnimationBuilder<double>(
+              tween: Tween(begin: 1.0, end: _hide ? 1.0 : 0.0),
+              duration: Durations.extralong2,
+              curve: StaticsVar.curve,
+              builder: (context, value, child) {
+                return ClipRRect(
+                  borderRadius: BorderRadiusGeometry.vertical(bottom: Radius.circular(25.0)),
+                  child: BackdropFilter(
+                    filter: ImageFilter.blur(sigmaX: 15.0 * value, sigmaY: 15.0 * value),
+                    enabled: true,
+                    child: value == 0.0
+                        ? null
+                        : ElevatedButton(
+                            style: ElevatedButton.styleFrom(
+                              fixedSize: Size(useWidth, useHeight * 0.6),
+                              backgroundColor: Colors.transparent,
+                              shadowColor: Colors.transparent,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadiusGeometry.vertical(bottom: Radius.circular(25.0)),
+                              ),
+                            ),
+                            onPressed: _hide
+                                ? () => setState(() { _hide = false; })
+                                : null,
+                            child: _hide ? const Text("点此查看释义") : const SizedBox.shrink(),
                           ),
-                          onPressed: () {
-                            setLocalState(() {
-                              hide = false;
-                            });
-                          },
-                          child: hide ? Text("点此查看释义") : SizedBox()
-                        ),
-                      ),
-                    );
-                  },
+                  ),
                 );
-              }
-            )
+              },
+            ),
           ],
         )
       ],

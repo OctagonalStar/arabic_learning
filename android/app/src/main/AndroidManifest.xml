@@ -2,7 +2,7 @@
     <application
         android:enableOnBackInvokedCallback="true"
         android:fitsSystemWindows="true"
-        android:label="Ar学"
+        android:label="Ar学Revised"
         android:name="${applicationName}"
         android:icon="@mipmap/launcher_icon">
         <activity

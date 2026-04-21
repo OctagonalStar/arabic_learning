@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:arabic_learning/vars/statics_var.dart';
+import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
@@ -259,61 +260,8 @@ class _SettingPage extends State<SettingPage> {
           ),
         ],
       ),
-      // ── 旧数据迁移按钮（仅当存在未迁移词汇时需要点击）────────────
-      Builder(builder: (context) {
-        // 统计有多少词仍是未带 source 的旧格式
-        final int pendingCount = AppData().wordData.words
-            .where((w) => w.meanings.length == 1 && w.meanings[0].source.isEmpty)
-            .length;
-        if (pendingCount == 0) return const SizedBox.shrink();
-        return ElevatedButton.icon(
-          style: ElevatedButton.styleFrom(
-            minimumSize: Size.fromHeight(mediaQuery.size.height * 0.07),
-            backgroundColor: Theme.of(context).colorScheme.tertiaryContainer,
-            shape: BeveledRectangleBorder(),
-          ),
-          icon: const Icon(Icons.upgrade),
-          label: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text("迁移旧词库数据（一词多义兼容）"),
-              Text(
-                "检测到 $pendingCount 个词缺少来源信息，点击自动补充。",
-                style: TextStyle(fontSize: 10.0, color: Colors.grey.shade600),
-              ),
-            ],
-          ),
-          onPressed: () async {
-            final bool? confirmed = await showDialog<bool>(
-              context: context,
-              builder: (ctx) => AlertDialog(
-                title: const Text("迁移旧词库数据"),
-                content: Text(
-                  "检测到 $pendingCount 个词的来源信息需要补充。\n\n"
-                  "此操作会根据现有分类结构自动填充来源字段，"
-                  "无需重新导入词库文件，且不会丢失任何词汇。\n\n"
-                  "确定要继续吗？",
-                ),
-                actions: [
-                  TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text("取消")),
-                  FilledButton(onPressed: () => Navigator.pop(ctx, true), child: const Text("确定")),
-                ],
-              ),
-            );
-            if (confirmed != true) return;
-            final int count = AppData().migrateOldWordData();
-            if (!context.mounted) return;
-            setState(() {}); // 刷新页面隐藏按钮
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text(count > 0 ? "迁移完成，共补充了 $count 个词的来源信息。" : "无需迁移，数据已是最新格式。"),
-                duration: const Duration(seconds: 3),
-              ),
-            );
-          },
-        );
-      }),
+      // ── 旧数据迁移按钮（仅当存在未迁移词汇时显示）────────────────
+      const _MigrateButton(),
       ElevatedButton(
         style: ElevatedButton.styleFrom(
           minimumSize: Size.fromHeight(mediaQuery.size.height * 0.08),
@@ -544,5 +492,161 @@ class _SettingPage extends State<SettingPage> {
         ),
       ),
     ];
+  }
+}
+
+// ── 旧词库迁移按钮（独立 StatefulWidget，自管理进度状态）────────────
+class _MigrateButton extends StatefulWidget {
+  const _MigrateButton();
+  @override
+  State<_MigrateButton> createState() => _MigrateButtonState();
+}
+
+class _MigrateButtonState extends State<_MigrateButton> {
+  bool _working = false;
+  String _status = "";
+
+  /// 统计当前有多少词是旧格式（source 为空）
+  int get _pendingCount => AppData().wordData.words
+      .where((w) => w.meanings.length == 1 && w.meanings[0].source.isEmpty)
+      .length;
+
+  Future<void> _doMigrate() async {
+    setState(() { _working = true; _status = "正在连接在线词库..."; });
+
+    // 1. 收集已导入的词库文件名集合
+    final Set<String> importedSources = AppData().wordData.classes
+        .map((s) => s.sourceJsonFileName)
+        .toSet();
+
+    // 2. 尝试从 GitHub 获取在线词库列表
+    List<Map<String, String>> toReimport = []; // [{name, download_url}]
+    try {
+      final Dio dio = Dio();
+      final response = await dio.getUri(
+        Uri.parse("https://api.github.com/repos/${StaticsVar.onlineDictOwner}/Arabiclearning/contents/词库"),
+      );
+      if (response.statusCode == 200) {
+        final List<dynamic> files = response.data as List<dynamic>;
+        for (final f in files) {
+          if (f["type"] == "file" && importedSources.contains(f["name"] as String)) {
+            toReimport.add({"name": f["name"] as String, "url": f["download_url"] as String});
+          }
+        }
+      }
+    } catch (_) {
+      // 网络失败时 fallback
+      toReimport.clear();
+    }
+
+    if (toReimport.isEmpty) {
+      // ── Fallback：无网络或在线没有对应词库，原地填充 source 字段 ──
+      if (!mounted) return;
+      setState(() { _status = "网络不可用，正在原地迁移..."; });
+      final int count = AppData().migrateOldWordData();
+      if (!mounted) return;
+      setState(() { _working = false; _status = ""; });
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text(count > 0 ? "原地迁移完成，补充了 $count 个词的来源信息。" : "无需迁移，数据已是最新格式。"),
+        duration: const Duration(seconds: 4),
+      ));
+      return;
+    }
+
+    // 3. 逐个重新下载并导入（dataFormater 对已存在的词只追加 meaning，不改索引）
+    final Dio dio = Dio();
+    int reimportedCount = 0;
+    for (int i = 0; i < toReimport.length; i++) {
+      final item = toReimport[i];
+      if (!mounted) return;
+      setState(() { _status = "重新导入 ${item['name']} (${i + 1}/${toReimport.length})..."; });
+      try {
+        final res = await dio.getUri(Uri.parse(item["url"]!));
+        if (res.statusCode == 200) {
+          AppData().importDictData(
+            jsonDecode(res.data is String ? res.data : jsonEncode(res.data)) as Map<String, dynamic>,
+            item["name"]!,
+          );
+          reimportedCount++;
+        }
+      } catch (e) {
+        AppData().logger.warning("重新导入 ${item['name']} 失败: $e");
+      }
+    }
+
+    if (!mounted) return;
+    setState(() { _working = false; _status = ""; });
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+      content: Text("在线重新导入完成，共更新了 $reimportedCount 个词库，一词多义已更新。"),
+      duration: const Duration(seconds: 4),
+    ));
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final int pending = _pendingCount;
+    // 迁移完成后隐藏按钮
+    if (pending == 0 && !_working) return const SizedBox.shrink();
+
+    final MediaQueryData mediaQuery = MediaQuery.of(context);
+
+    if (_working) {
+      return Container(
+        height: mediaQuery.size.height * 0.07,
+        alignment: Alignment.center,
+        color: Theme.of(context).colorScheme.tertiaryContainer.withAlpha(180),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2)),
+            const SizedBox(width: 12),
+            Text(_status, style: const TextStyle(fontSize: 13)),
+          ],
+        ),
+      );
+    }
+
+    return ElevatedButton.icon(
+      style: ElevatedButton.styleFrom(
+        minimumSize: Size.fromHeight(mediaQuery.size.height * 0.08),
+        backgroundColor: Theme.of(context).colorScheme.tertiaryContainer,
+        shape: const BeveledRectangleBorder(),
+      ),
+      icon: const Icon(Icons.cloud_sync),
+      label: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text("更新旧词库数据（兼容一词多义）"),
+          Text(
+            "检测到 $pending 个词缺少来源信息，点击从在线词库重新导入以支持多义。",
+            style: TextStyle(fontSize: 10.0, color: Colors.grey.shade600),
+          ),
+        ],
+      ),
+      onPressed: () async {
+        final bool? confirmed = await showDialog<bool>(
+          context: context,
+          builder: (ctx) => AlertDialog(
+            title: const Text("更新旧词库数据"),
+            content: Text(
+              "检测到 $pending 个词缺少来源信息。\n\n"
+              "将优先联网重新下载已导入的词库（约 ${AppData().wordData.classes.length} 个），"
+              "以自动补充一词多义数据。\n\n"
+              "• FSRS 复习记录完全保留\n"
+              "• 词汇索引不会改变\n"
+              "• 无网络时自动原地迁移\n\n"
+              "确定继续？",
+            ),
+            actions: [
+              TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text("取消")),
+              FilledButton(onPressed: () => Navigator.pop(ctx, true), child: const Text("确定")),
+            ],
+          ),
+        );
+        if (confirmed != true) return;
+        await _doMigrate();
+      },
+    );
   }
 }
