@@ -30,6 +30,19 @@ jobs:
       - name: 代码分析
         run: flutter analyze --no-fatal-infos
 
+      - name: 生成 Debug Keystore
+        run: |
+          mkdir -p /home/runner/.android
+          keytool -genkeypair \
+            -alias androiddebugkey \
+            -keypass android \
+            -keystore /home/runner/.android/debug.keystore \
+            -storepass android \
+            -dname "CN=Android Debug,O=Android,C=US" \
+            -keyalg RSA \
+            -keysize 2048 \
+            -validity 10000
+
       - name: 构建 APK
         run: flutter build apk --release
     
