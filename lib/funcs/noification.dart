@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:math';
+import 'package:flutter/material.dart';
 
 import 'package:arabic_learning/vars/config_structure.dart';
 import 'package:arabic_learning/vars/statics_var.dart';
@@ -77,6 +78,7 @@ Future<bool> sendNotification() async {
 // 独立 Isolate 后台任务
 @pragma('vm:entry-point') 
 void callbackDispatcher() {
+  WidgetsFlutterBinding.ensureInitialized();
   Workmanager().executeTask((task, inputData) async {
     return await sendNotification();
   });
