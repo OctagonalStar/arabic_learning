@@ -19,6 +19,8 @@ import 'package:arabic_learning/sub_pages_builder/setting_pages/model_download_p
 import 'package:arabic_learning/sub_pages_builder/setting_pages/questions_setting_page.dart' show QuestionsSettingPage;
 import 'package:arabic_learning/sub_pages_builder/setting_pages/sync_page.dart' show DataSyncPage;
 import 'package:arabic_learning/package_replacement/fake_dart_io.dart' if (dart.library.io) 'dart:io' as io;
+import 'package:arabic_learning/vars/config_structure.dart' show AiConfig;
+import 'package:arabic_learning/pages/quiz_bank_page.dart' show QuizBankPage;
 
 class SettingPage extends StatefulWidget { 
   const SettingPage({super.key});
@@ -50,6 +52,10 @@ class _SettingPage extends State<SettingPage> {
             SettingItem(
               title: "音频设置", 
               children: audioSetting(context), 
+            ),
+            SettingItem(
+              title: "AI 练习设置",
+              children: aiSetting(context),
             ),
             SettingItem(
               title: "关于", 
@@ -490,6 +496,141 @@ class _SettingPage extends State<SettingPage> {
             )
           ],
         ),
+      ),
+    ];
+  }
+
+  // ── AI 练习配置 ──────────────────────────────────────────────────────────────────────────
+  List<Widget> aiSetting(BuildContext context) {
+    final MediaQueryData mq = MediaQuery.of(context);
+    AppData appData = AppData();
+    AiConfig ai = appData.config.ai;
+
+    void saveAi(AiConfig newAi) {
+      appData.config = appData.config.copyWith(ai: newAi);
+      context.read<Global>().updateSetting(refresh: false);
+    }
+
+    return [
+      Padding(
+        padding: const EdgeInsets.symmetric(vertical: 4),
+        child: StatefulBuilder(builder: (ctx, ss) {
+          final ctrl = TextEditingController(text: ai.baseUrl);
+          ctrl.selection = TextSelection.collapsed(offset: ctrl.text.length);
+          return TextField(
+            controller: ctrl,
+            decoration: InputDecoration(
+              labelText: 'API 地址（Base URL）',
+              hintText: 'https://api.openai.com',
+              border: OutlineInputBorder(borderRadius: StaticsVar.br),
+              suffixIcon: IconButton(
+                icon: const Icon(Icons.done),
+                onPressed: () { ai = ai.copyWith(baseUrl: ctrl.text.trim()); saveAi(ai); },
+              ),
+            ),
+            keyboardType: TextInputType.url,
+            onSubmitted: (v) { ai = ai.copyWith(baseUrl: v.trim()); saveAi(ai); },
+          );
+        }),
+      ),
+      Padding(
+        padding: const EdgeInsets.symmetric(vertical: 4),
+        child: StatefulBuilder(builder: (ctx, ss) {
+          bool obscure = true;
+          final ctrl = TextEditingController(text: ai.apiKey);
+          return StatefulBuilder(builder: (ctx2, ss2) {
+            return TextField(
+              controller: ctrl,
+              obscureText: obscure,
+              decoration: InputDecoration(
+                labelText: 'API Key',
+                hintText: 'sk-...',
+                border: OutlineInputBorder(borderRadius: StaticsVar.br),
+                suffixIcon: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    IconButton(
+                      icon: Icon(obscure ? Icons.visibility : Icons.visibility_off),
+                      onPressed: () => ss2(() => obscure = !obscure),
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.done),
+                      onPressed: () { ai = ai.copyWith(apiKey: ctrl.text.trim()); saveAi(ai); },
+                    ),
+                  ],
+                ),
+              ),
+              onSubmitted: (v) { ai = ai.copyWith(apiKey: v.trim()); saveAi(ai); },
+            );
+          });
+        }),
+      ),
+      Padding(
+        padding: const EdgeInsets.symmetric(vertical: 4),
+        child: StatefulBuilder(builder: (ctx, ss) {
+          final ctrl = TextEditingController(text: ai.model);
+          ctrl.selection = TextSelection.collapsed(offset: ctrl.text.length);
+          return TextField(
+            controller: ctrl,
+            decoration: InputDecoration(
+              labelText: '模型名称',
+              hintText: 'gpt-4o-mini / gemini-2.0-flash',
+              border: OutlineInputBorder(borderRadius: StaticsVar.br),
+              suffixIcon: IconButton(
+                icon: const Icon(Icons.done),
+                onPressed: () { ai = ai.copyWith(model: ctrl.text.trim()); saveAi(ai); },
+              ),
+            ),
+            onSubmitted: (v) { ai = ai.copyWith(model: v.trim()); saveAi(ai); },
+          );
+        }),
+      ),
+      StatefulBuilder(builder: (ctx, ss) {
+        int count = ai.defaultQuestionCount;
+        return Row(
+          children: [
+            const Icon(Icons.format_list_numbered),
+            const SizedBox(width: 8),
+            const Expanded(child: Text('每次出题数量')),
+            Slider(
+              min: 1, max: 10, divisions: 9,
+              value: count.toDouble(),
+              label: '$count 题',
+              onChanged: (v) => ss(() => count = v.round()),
+              onChangeEnd: (v) { ai = ai.copyWith(defaultQuestionCount: v.round()); saveAi(ai); },
+            ),
+            SizedBox(width: 32, child: Text('$count', textAlign: TextAlign.center)),
+          ],
+        );
+      }),
+      StatefulBuilder(builder: (ctx, ss) {
+        int batchSize = ai.readingBatchSize;
+        return Row(
+          children: [
+            const Icon(Icons.auto_stories),
+            const SizedBox(width: 8),
+            const Expanded(child: Text('阅读每批词汇量')),
+            Slider(
+              min: 10, max: 50, divisions: 8,
+              value: batchSize.toDouble(),
+              label: '$batchSize 词/篇',
+              onChanged: (v) => ss(() => batchSize = v.round()),
+              onChangeEnd: (v) { ai = ai.copyWith(readingBatchSize: v.round()); saveAi(ai); },
+            ),
+            SizedBox(width: 40, child: Text('$batchSize 词', textAlign: TextAlign.center, style: const TextStyle(fontSize: 12))),
+          ],
+        );
+      }),
+      const SizedBox(height: 8),
+      ElevatedButton.icon(
+        style: ElevatedButton.styleFrom(
+          minimumSize: Size(mq.size.width, 52),
+          shape: RoundedRectangleBorder(borderRadius: StaticsVar.br),
+        ),
+        onPressed: () => Navigator.push(
+          context, MaterialPageRoute(builder: (_) => const QuizBankPage())),
+        icon: const Icon(Icons.library_books),
+        label: const Text('查看 AI 题库'),
       ),
     ];
   }

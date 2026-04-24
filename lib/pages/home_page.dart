@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 
 import 'package:arabic_learning/funcs/ui.dart';
 import 'package:arabic_learning/funcs/utili.dart';
+import 'package:arabic_learning/pages/ai_quiz_page.dart' show AiQuizPage;
 import 'package:arabic_learning/pages/setting_page.dart';
 import 'package:arabic_learning/vars/config_structure.dart';
 import 'package:arabic_learning/vars/global.dart';
@@ -170,7 +171,7 @@ class _DailyWord extends State<DailyWord> {
       dailyWord = data.arabic;
     }
 
-    return ElevatedButton(
+    final mainCard = ElevatedButton(
       onPressed: () async {
         if(playing) return;
         if(appData.wordCount != 0) {
@@ -208,7 +209,7 @@ class _DailyWord extends State<DailyWord> {
           FittedBox(
             fit: BoxFit.scaleDown,
             child: Column(
-              children: AppData().wordCount == 0 ? [Text("当前未导入词库数据\n请点此以跳转设置页面导入")]
+              children: appData.wordCount == 0 ? [Text("当前未导入词库数据\n请点此以跳转设置页面导入")]
                 : [
                 Text(
                   data.arabic,
@@ -227,6 +228,28 @@ class _DailyWord extends State<DailyWord> {
           ),
         ],
       ),
+    );
+
+    if (appData.wordCount == 0) return mainCard;
+
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        mainCard,
+        const SizedBox(height: 6),
+        OutlinedButton.icon(
+          style: OutlinedButton.styleFrom(
+            minimumSize: Size(mediaQuery.size.width * 0.9, 44),
+            shape: RoundedRectangleBorder(borderRadius: StaticsVar.br),
+          ),
+          icon: const Icon(Icons.auto_awesome, size: 18),
+          label: const Text('AI 练习每日一词'),
+          onPressed: () => Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => AiQuizPage(word: data)),
+          ),
+        ),
+      ],
     );
   }
 }

@@ -10,6 +10,8 @@ import 'package:arabic_learning/vars/global.dart';
 import 'package:arabic_learning/funcs/ui.dart';
 import 'package:arabic_learning/funcs/utili.dart';
 import 'package:arabic_learning/funcs/fsrs_func.dart';
+import 'package:arabic_learning/pages/ai_quiz_page.dart' show AiQuizPage;
+import 'package:arabic_learning/pages/ai_reading_page.dart' show AiReadingPage;
 
 class ForeFSRSSettingPage extends StatelessWidget {
   final bool forceChoosing;
@@ -529,6 +531,10 @@ class _MainFSRSPageState extends State<MainFSRSPage> {
           // 扩充了还是不够，说明真的穷尽了
           if (arrayIndex >= queue.length) {
             if (arrayIndex == queue.length) {
+              final reviewedWords = queue.toSet()
+                  .where((id) => id < AppData().wordData.words.length)
+                  .map((id) => AppData().wordData.words[id])
+                  .toList();
               return Center(
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
@@ -542,7 +548,65 @@ class _MainFSRSPageState extends State<MainFSRSPage> {
                       onPressed: _refresh,
                       icon: Icon(Icons.refresh),
                       label: Text("全盘刷新"),
-                    )
+                    ),
+                    if (reviewedWords.isNotEmpty) ...[
+                      const SizedBox(height: 12),
+                      OutlinedButton.icon(
+                        icon: const Icon(Icons.auto_awesome),
+                        label: const Text('AI 练习本次复习词汇'),
+                        onPressed: () {
+                          showModalBottomSheet(
+                            context: context,
+                            isScrollControlled: true,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadiusGeometry.vertical(top: Radius.circular(20))),
+                            builder: (ctx) => DraggableScrollableSheet(
+                              initialChildSize: 0.5,
+                              minChildSize: 0.3,
+                              maxChildSize: 0.85,
+                              expand: false,
+                              builder: (ctx2, scrollCtrl) => Column(
+                                crossAxisAlignment: CrossAxisAlignment.stretch,
+                                children: [
+                                  const Padding(
+                                    padding: EdgeInsets.fromLTRB(20, 16, 20, 8),
+                                    child: Text('选择单词开始 AI 练习',
+                                        style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                                  ),
+                                  Expanded(
+                                    child: ListView.builder(
+                                      controller: scrollCtrl,
+                                      itemCount: reviewedWords.length,
+                                      itemBuilder: (_, i) => ListTile(
+                                        title: Text(
+                                          reviewedWords[i].arabic,
+                                          textDirection: TextDirection.rtl,
+                                          style: const TextStyle(
+                                              fontFamily: 'Traditional Arabic', fontSize: 22),
+                                        ),
+                                        subtitle: Text(reviewedWords[i].chinese),
+                                        onTap: () {
+                                          Navigator.pop(ctx);
+                                          Navigator.push(context, MaterialPageRoute(
+                                            builder: (_) => AiQuizPage(word: reviewedWords[i])));
+                                        },
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+                      const SizedBox(height: 8),
+                      OutlinedButton.icon(
+                        icon: const Icon(Icons.menu_book),
+                        label: const Text('AI 阅读理解'),
+                        onPressed: () => Navigator.push(context, MaterialPageRoute(
+                          builder: (_) => AiReadingPage(words: reviewedWords))),
+                      ),
+                    ],
                   ],
                 ),
               );
@@ -648,7 +712,9 @@ class _FSRSReviewCardPage extends State<FSRSReviewCardPage> {
                     shape: RoundedRectangleBorder(borderRadius: StaticsVar.br)
                   ),
                   onPressed: (){
-                    viewAnswer(context, wordData[widget.wordID]);
+                    viewAnswer(context, wordData[widget.wordID],
+                      onAiPressed: () => Navigator.push(context, MaterialPageRoute(
+                        builder: (_) => AiQuizPage(word: wordData[widget.wordID]))));
                     setState(() {
                       choosed = true;
                       end = DateTime.now();
@@ -810,7 +876,9 @@ class _FSRSLearningPageState extends State<FSRSLearningPage> {
                             shape: RoundedRectangleBorder(borderRadius: StaticsVar.br),
                           ),
                           onPressed: (){
-                            viewAnswer(context, widget.words[index]);
+                            viewAnswer(context, widget.words[index],
+                              onAiPressed: () => Navigator.push(context, MaterialPageRoute(
+                                builder: (_) => AiQuizPage(word: widget.words[index]))));
                           }, 
                           icon: Icon(Icons.tips_and_updates),
                           label: Text(value == 0.0 ? "提示" : "查看详解"),

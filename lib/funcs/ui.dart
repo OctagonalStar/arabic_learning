@@ -224,7 +224,7 @@ String getDisplayChinese(WordItem word) {
   return word.chinese;
 }
 
-void viewAnswer(BuildContext context, WordItem wordData) async {
+void viewAnswer(BuildContext context, WordItem wordData, {VoidCallback? onAiPressed}) async {
   context.read<Global>().uiLogger.info("弹出详解页面");
   MediaQueryData mediaQuery = MediaQuery.of(context);
   showBottomSheet(
@@ -241,14 +241,41 @@ void viewAnswer(BuildContext context, WordItem wordData) async {
           mainAxisSize: MainAxisSize.min,
           children: [
             WordCard(word: wordData, useMask: false),
-            ElevatedButton(
-              onPressed: () {Navigator.pop(context);}, 
-              style: ElevatedButton.styleFrom(
-                fixedSize: Size(mediaQuery.size.width * 0.8, mediaQuery.size.height * 0.1),
-                shape: RoundedRectangleBorder(borderRadius: StaticsVar.br)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
+              child: Row(
+                children: [
+                  if (onAiPressed != null) ...[
+                    Expanded(
+                      child: OutlinedButton.icon(
+                        style: OutlinedButton.styleFrom(
+                          fixedSize: Size(double.infinity, mediaQuery.size.height * 0.08),
+                          shape: RoundedRectangleBorder(borderRadius: StaticsVar.br),
+                        ),
+                        icon: const Icon(Icons.auto_awesome, size: 18),
+                        label: const Text('AI 练习'),
+                        onPressed: () {
+                          Navigator.pop(context);
+                          onAiPressed();
+                        },
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                  ],
+                  Expanded(
+                    flex: onAiPressed != null ? 1 : 2,
+                    child: ElevatedButton(
+                      onPressed: () { Navigator.pop(context); }, 
+                      style: ElevatedButton.styleFrom(
+                        fixedSize: Size(double.infinity, mediaQuery.size.height * 0.08),
+                        shape: RoundedRectangleBorder(borderRadius: StaticsVar.br),
+                      ),
+                      child: const Text("我知道了"),
+                    ),
+                  ),
+                ],
               ),
-              child: Text("我知道了"),
-            )
+            ),
           ],
         ),
       );
@@ -697,35 +724,49 @@ class _WordCardState extends State<WordCard> {
               ),
             ),
             // ── 遮罩层（useMask 时显示，点击揭开） ─────────────────────
-            TweenAnimationBuilder<double>(
-              tween: Tween(begin: 1.0, end: _hide ? 1.0 : 0.0),
+            // 用 AnimatedOpacity 控制整体淡出，BackdropFilter sigma 固定
+            // 避免 blur 值从 15→0 时产生的突变感
+            AnimatedOpacity(
+              opacity: _hide ? 1.0 : 0.0,
               duration: Durations.extralong2,
               curve: StaticsVar.curve,
-              builder: (context, value, child) {
-                return ClipRRect(
+              child: IgnorePointer(
+                // 当遮罩完全隐藏后忽略所有点击事件，避免透明遮罩拦截下层手势
+                ignoring: !_hide,
+                child: ClipRRect(
                   borderRadius: BorderRadiusGeometry.vertical(bottom: Radius.circular(25.0)),
                   child: BackdropFilter(
-                    filter: ImageFilter.blur(sigmaX: 15.0 * value, sigmaY: 15.0 * value),
-                    enabled: true,
-                    child: value == 0.0
-                        ? null
-                        : ElevatedButton(
-                            style: ElevatedButton.styleFrom(
-                              fixedSize: Size(useWidth, useHeight * 0.6),
-                              backgroundColor: Colors.transparent,
-                              shadowColor: Colors.transparent,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadiusGeometry.vertical(bottom: Radius.circular(25.0)),
+                    filter: ImageFilter.blur(sigmaX: 15.0, sigmaY: 15.0),
+                    child: GestureDetector(
+                      // HitTestBehavior.opaque 确保透明区域也能接收点击
+                      behavior: HitTestBehavior.opaque,
+                      onTap: _hide ? () => setState(() { _hide = false; }) : null,
+                      child: SizedBox(
+                        width: useWidth,
+                        height: useHeight * 0.6,
+                        child: Center(
+                          child: AnimatedOpacity(
+                            opacity: _hide ? 1.0 : 0.0,
+                            duration: Durations.medium4,
+                            curve: Curves.easeOut,
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                              decoration: BoxDecoration(
+                                color: Theme.of(context).colorScheme.surface.withAlpha(160),
+                                borderRadius: BorderRadius.circular(16),
+                              ),
+                              child: const Text(
+                                "点此查看释义",
+                                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
                               ),
                             ),
-                            onPressed: _hide
-                                ? () => setState(() { _hide = false; })
-                                : null,
-                            child: _hide ? const Text("点此查看释义") : const SizedBox.shrink(),
                           ),
+                        ),
+                      ),
+                    ),
                   ),
-                );
-              },
+                ),
+              ),
             ),
           ],
         )

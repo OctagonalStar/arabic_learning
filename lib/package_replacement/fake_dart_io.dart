@@ -13,6 +13,8 @@ class File {
 
   Future<void> writeAsBytes(List<int> content) async {}
 
+  Future<void> writeAsString(String content) async {}
+
   Future readAsBytes() async {}
 
   Future<String> readAsString() async {return "";}

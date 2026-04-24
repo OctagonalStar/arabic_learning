@@ -33,6 +33,9 @@ class Config {
 
   /// 彩蛋设置类
   final EggConfig egg;
+
+  /// AI 练习配置类
+  final AiConfig ai;
   
   const Config({
     String? user, 
@@ -43,7 +46,8 @@ class Config {
     LearningConfig? learning,
     QuizConfig? quiz,
     SyncConfig? webSync,
-    EggConfig? egg
+    EggConfig? egg,
+    AiConfig? ai
   }) : // 空值合并
     user = user??"", 
     lastVersion = lastVersion??StaticsVar.appVersion,
@@ -53,7 +57,8 @@ class Config {
     learning = learning??const LearningConfig(),
     quiz = quiz??const QuizConfig(),
     webSync = webSync??const SyncConfig(),
-    egg = egg??const EggConfig();
+    egg = egg??const EggConfig(),
+    ai = ai??const AiConfig();
 
   /// 将设置转为Map格式
   Map<String, dynamic> toMap() {
@@ -67,7 +72,8 @@ class Config {
       "learning": learning.toMap(),
       "quiz": quiz.toMap(),
       "sync": webSync.toMap(),
-      "eggs": egg.toMap()
+      "eggs": egg.toMap(),
+      "ai": ai.toMap()
     };
   }
 
@@ -88,7 +94,8 @@ class Config {
       learning: LearningConfig.buildFromMap(setting["learning"]),
       quiz: QuizConfig.buildFromMap(setting["quiz"]),
       webSync: SyncConfig.buildFromMap(setting["sync"]),
-      egg: EggConfig.buildFromMap(setting["eggs"])
+      egg: EggConfig.buildFromMap(setting["eggs"]),
+      ai: AiConfig.buildFromMap(setting["ai"] as Map<String, dynamic>?)
     );
   }
 
@@ -101,7 +108,8 @@ class Config {
     LearningConfig? learning,
     QuizConfig? quiz,
     SyncConfig? webSync,
-    EggConfig? egg
+    EggConfig? egg,
+    AiConfig? ai
   }) {
     return Config(
       user: user??this.user, 
@@ -112,9 +120,9 @@ class Config {
       learning: learning??this.learning,
       quiz: quiz??this.quiz,
       webSync: webSync??this.webSync,
-      egg: egg??this.egg
+      egg: egg??this.egg,
+      ai: ai??this.ai
     );
-    
   }
 }
 
@@ -835,6 +843,74 @@ class WordItem {
       );
       return WordItem(arabic: word["arabic"], meanings: List.unmodifiable([meaning]), id: id);
     }
+  }
+}
+
+// ── AI 练习配置 ──────────────────────────────────────────────────────────────
+@immutable
+class AiConfig {
+  /// OpenAI 兼容接口地址（不含路径，如 https://api.openai.com）
+  final String baseUrl;
+
+  /// 用户自填 API Key
+  final String apiKey;
+
+  /// 模型名称，如 gpt-4o-mini / gemini-2.0-flash
+  final String model;
+
+  /// 默认出题数量（1-10）
+  final int defaultQuestionCount;
+
+  /// 阅读理解每批词汇量（10-50，默认25）
+  final int readingBatchSize;
+
+  const AiConfig({
+    String? baseUrl,
+    String? apiKey,
+    String? model,
+    int? defaultQuestionCount,
+    int? readingBatchSize,
+  })  : baseUrl = baseUrl ?? 'https://api.openai.com',
+        apiKey = apiKey ?? '',
+        model = model ?? 'gpt-4o-mini',
+        defaultQuestionCount = defaultQuestionCount ?? 3,
+        readingBatchSize = readingBatchSize ?? 25;
+
+  Map<String, dynamic> toMap() {
+    return {
+      'baseUrl': baseUrl,
+      'apiKey': apiKey,
+      'model': model,
+      'defaultQuestionCount': defaultQuestionCount,
+      'readingBatchSize': readingBatchSize,
+    };
+  }
+
+  static AiConfig buildFromMap(Map<String, dynamic>? setting) {
+    if (setting == null) return const AiConfig();
+    return AiConfig(
+      baseUrl: setting['baseUrl'] as String?,
+      apiKey: setting['apiKey'] as String?,
+      model: setting['model'] as String?,
+      defaultQuestionCount: setting['defaultQuestionCount'] as int?,
+      readingBatchSize: setting['readingBatchSize'] as int?,
+    );
+  }
+
+  AiConfig copyWith({
+    String? baseUrl,
+    String? apiKey,
+    String? model,
+    int? defaultQuestionCount,
+    int? readingBatchSize,
+  }) {
+    return AiConfig(
+      baseUrl: baseUrl ?? this.baseUrl,
+      apiKey: apiKey ?? this.apiKey,
+      model: model ?? this.model,
+      defaultQuestionCount: defaultQuestionCount ?? this.defaultQuestionCount,
+      readingBatchSize: readingBatchSize ?? this.readingBatchSize,
+    );
   }
 }
 
