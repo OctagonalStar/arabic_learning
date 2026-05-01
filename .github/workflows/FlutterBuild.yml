@@ -12,7 +12,7 @@ jobs:
     name: Build Android APK
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
@@ -30,17 +30,17 @@ jobs:
       - run: flutter pub get
       - run: flutter build apk --release --obfuscate --split-per-abi --split-debug-info=symbols
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: android-arm-v7a-apk
           path: build/app/outputs/flutter-apk/app-armeabi-v7a-release.apk
       
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: android-arm-v8a-apk
           path: build/app/outputs/flutter-apk/app-arm64-v8a-release.apk
       
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: android-x86_64-apk
           path: build/app/outputs/flutter-apk/app-x86_64-release.apk
@@ -49,7 +49,7 @@ jobs:
     name: Build Windows App
     runs-on: windows-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
@@ -60,7 +60,7 @@ jobs:
       - run: flutter pub get
       - run: flutter build windows
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: windows-build
           path: build/windows/x64/runner/Release
@@ -69,7 +69,7 @@ jobs:
     name: Build macOS App
     runs-on: macos-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
@@ -83,7 +83,7 @@ jobs:
       - name: Post handling
         run: hdiutil create -volname arabic_learning -srcfolder build/macos/Build/Products/Release/arabic_learning.app -ov -format UDZO arabic_learning.dmg
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: macos-build
           path: arabic_learning.dmg
@@ -92,7 +92,7 @@ jobs:
     name: Build Flutter Web
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - uses: subosito/flutter-action@v2
         with:
           flutter-version: '3.41.0'
@@ -100,7 +100,7 @@ jobs:
       - run: flutter build web --release --base-href /arabic_learning/
 
       # 上传 Web 构建结果
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: web-build
           path: build/web
@@ -114,7 +114,7 @@ jobs:
     needs: build-web
     if: github.ref == 'refs/heads/main' # 仅 main 分支部署
     steps:
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         with:
           name: web-build
           path: build/web
@@ -134,23 +134,23 @@ jobs:
     permissions:
       contents: write
     steps:
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         with:
           name: android-arm-v7a-apk
           path: .
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         with:
           name: android-arm-v8a-apk
           path: .
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         with:
           name: android-x86_64-apk
           path: .
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         with:
           name: windows-build
           path: ./windows
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         with:
           name: macos-build
           path: ./macos
@@ -161,7 +161,7 @@ jobs:
           zip -r macos.zip macos/
 
       - name: Create GitHub Release
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         with:
           files: |
             app-armeabi-v7a-release.apk
