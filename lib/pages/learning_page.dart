@@ -1,5 +1,3 @@
-import 'dart:math';
-
 import 'package:arabic_learning/funcs/fsrs_func.dart';
 import 'package:arabic_learning/sub_pages_builder/setting_pages/questions_setting_page.dart' show QuestionsSettingPage;
 import 'package:arabic_learning/vars/config_structure.dart';
@@ -104,60 +102,59 @@ class LearningPage extends StatelessWidget {
             final FSRS fsrs = FSRS();
             if(appData.wordData.words.isEmpty) {
               ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text("词库为空，无法推送！请先导入词库"), duration: Duration(seconds: 1),),
+                const SnackBar(content: Text("词库为空，无法推送！请先导入词库"), duration: Duration(seconds: 1)),
               );
               return;
             }
-            final DateTime now = DateTime.now();
-            final int seed = now.year * 10000 + now.month * 100 + now.day;
-            final Set<WordItem> pushWords = {};
-            final Random rnd = Random(seed);
-            int tries = 0;
-            
-            List<int> validWordIds = [];
+
             final bool hasRestrictedClasses = fsrs.config.selectedSources.isNotEmpty;
+
+            // 1. 收集候选词 ID（受限词库 or 全部词库）
+            List<int> candidateIds;
             if (hasRestrictedClasses) {
-              for (var source in appData.wordData.classes) {
+              candidateIds = [];
+              for (final source in appData.wordData.classes) {
                 if (fsrs.config.selectedSources.contains(source.sourceJsonFileName)) {
-                  for (var subclass in source.subClasses) {
-                    validWordIds.addAll(subclass.wordIndexs);
+                  for (final subclass in source.subClasses) {
+                    candidateIds.addAll(subclass.wordIndexs);
                   }
                 }
               }
+            } else {
+              candidateIds = List.generate(appData.wordData.words.length, (i) => i);
             }
 
-            // Exclude already added cards
-            if (hasRestrictedClasses) {
-              validWordIds.removeWhere((id) => fsrs.isContained(id));
-            }
+            // 2. 过滤掉已加入 FSRS 的词，得到全部可推送的新词
+            final List<int> availableIds = candidateIds
+                .where((id) => !fsrs.isContained(id))
+                .toList();
 
-            while(pushWords.length < fsrs.config.pushAmount && tries < fsrs.config.pushAmount * 10) {
-              int chosen;
-              if (hasRestrictedClasses) {
-                if (validWordIds.isEmpty) break; // no more valid words to push
-                int rndIdx = rnd.nextInt(validWordIds.length);
-                chosen = validWordIds[rndIdx];
-              } else {
-                chosen = rnd.nextInt(appData.wordData.words.length);
-              }
-
-              if(!fsrs.isContained(chosen)) {
-                pushWords.add(appData.wordData.words.elementAt(chosen));
-              }
-              tries++;
-            }
-            if(pushWords.isEmpty) {
+            if(availableIds.isEmpty) {
               ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text("今日的推送已完成"), duration: Duration(seconds: 1),),
+                const SnackBar(
+                  content: Text("所有单词均已加入复习队列，暂无新词可推送"),
+                  duration: Duration(seconds: 2),
+                ),
               );
               return;
             }
-            context.read<Global>().uiLogger.info("跳转: LearningPage => FSRSLearningPage");
+
+            // 3. 随机打乱，取前 min(pushAmount, available) 个
+            availableIds.shuffle();
+            final int count = availableIds.length < fsrs.config.pushAmount
+                ? availableIds.length
+                : fsrs.config.pushAmount;
+            final List<WordItem> pushWords = availableIds
+                .take(count)
+                .map((id) => appData.wordData.words[id])
+                .toList();
+
+            context.read<Global>().uiLogger.info("跳转: LearningPage => FSRSLearningPage，推送 $count 个新词");
             Navigator.push(
-              context, 
+              context,
               MaterialPageRoute(
-                builder: (context) => FSRSLearningPage(fsrs: FSRS(), words: pushWords.toList())
-              )
+                builder: (context) => FSRSLearningPage(fsrs: FSRS(), words: pushWords),
+              ),
             );
           },
           icon: Icon(Icons.push_pin, size: 24),

@@ -645,7 +645,123 @@ class _FSRSReviewCardPage extends State<FSRSReviewCardPage> {
   int correct = -1;          // 正确选项下标（-1 = 自评模式）
   bool choosed = false;
   final DateTime start = DateTime.now();
-  late final DateTime end;
+  DateTime? end;
+
+  void _markChoosed() {
+    if (!choosed) {
+      choosed = true;
+      end = DateTime.now();
+    }
+  }
+
+  void _openAiQuiz(BuildContext context, WordItem word) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => AiQuizPage(word: word)),
+    );
+  }
+
+  void _goNext() {
+    widget.controller.nextPage(duration: Durations.medium2, curve: StaticsVar.curve);
+  }
+
+  bool? _onSelfRatingSelected(BuildContext context, int value) {
+    if (choosed) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('该页面不允许多次选择'),
+          duration: Duration(seconds: 1),
+        ),
+      );
+      return null;
+    }
+
+    setState(_markChoosed);
+    context.read<Global>().updateLearningStreak();
+    widget.fsrs.produceCard(
+      widget.wordID,
+      forceRate: (const [Rating.easy, Rating.good, Rating.hard, Rating.again]).elementAt(value),
+    );
+    return true;
+  }
+
+  Widget _buildRevealedCardActions(BuildContext context, WordItem word) {
+    return Wrap(
+      alignment: WrapAlignment.end,
+      spacing: 8,
+      runSpacing: 8,
+      children: [
+        ElevatedButton.icon(
+          style: ElevatedButton.styleFrom(
+            backgroundColor: Theme.of(context).colorScheme.surface.withAlpha(230),
+            foregroundColor: Theme.of(context).colorScheme.primary,
+            shape: RoundedRectangleBorder(borderRadius: StaticsVar.br),
+          ),
+          onPressed: () => _openAiQuiz(context, word),
+          icon: const Icon(Icons.auto_awesome, size: 18),
+          label: const Text('AI 练习'),
+        ),
+        if (choosed)
+          ElevatedButton.icon(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Theme.of(context).colorScheme.primaryContainer.withAlpha(230),
+              foregroundColor: Theme.of(context).colorScheme.onPrimaryContainer,
+              shape: RoundedRectangleBorder(borderRadius: StaticsVar.br),
+            ),
+            onPressed: _goNext,
+            icon: const Icon(Icons.arrow_downward, size: 18),
+            label: const Text('下一题'),
+          ),
+      ],
+    );
+  }
+
+  Widget _buildSelfEvaluateReview(BuildContext context, MediaQueryData mediaQuery, WordItem word) {
+    return Material(
+      child: SafeArea(
+        top: false,
+        bottom: false,
+        child: Column(
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(8, 6, 8, 0),
+              child: TextContainer(
+                text: "单词ID: ${widget.wordID}${choosed ? " 用时: ${end!.difference(start).inMilliseconds}毫秒" : ""}",
+                animated: true,
+              ),
+            ),
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(12, 8, 12, 8),
+                child: LayoutBuilder(
+                  builder: (context, constraints) {
+                    return Center(
+                      child: WordCard(
+                        word: word,
+                        width: constraints.maxWidth,
+                        height: constraints.maxHeight / 0.9,
+                        useMask: !choosed,
+                        revealedAction: _buildRevealedCardActions(context, word),
+                      ),
+                    );
+                  },
+                ),
+              ),
+            ),
+            Padding(
+              padding: EdgeInsets.fromLTRB(0, 0, 0, max(mediaQuery.padding.bottom, 8.0)),
+              child: ChooseButtons(
+                options: options!,
+                settingShowingMode: mediaQuery.size.width >= 720 ? 0 : 1,
+                isShowAnimation: false,
+                onSelected: (value) => _onSelfRatingSelected(context, value),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -666,33 +782,28 @@ class _FSRSReviewCardPage extends State<FSRSReviewCardPage> {
         correct = options!.indexOf(target);
       }
     }
+
+    if (widget.fsrs.config.selfEvaluate) {
+      return _buildSelfEvaluateReview(context, mediaQuery, wordData[widget.wordID]);
+    }
     
     return Material(
       child: ChoiceQuestions(
-        mainWord: widget.fsrs.config.selfEvaluate ? "[selfEvaluate]" : wordData[widget.wordID].arabic, 
-        midWidget: widget.fsrs.config.selfEvaluate ? WordCard(word: wordData[widget.wordID], width: mediaQuery.size.width * 0.8, height: mediaQuery.size.height * 0.4, useMask: !choosed) : null,
+        mainWord: wordData[widget.wordID].arabic,
         choices: options!, 
         allowAudio: true, 
-        allowAnitmation: !widget.fsrs.config.selfEvaluate,
+        allowAnitmation: true,
         allowMutipleSelect: false,
-        hint: "单词ID: ${widget.wordID}${choosed ? " 用时: ${end.difference(start).inMilliseconds}毫秒" : ""}",
+        hint: "单词ID: ${widget.wordID}${choosed ? " 用时: ${end!.difference(start).inMilliseconds}毫秒" : ""}",
         onSelected: (value) {
-          setState(() {
-            choosed = true;
-            end =  DateTime.now();
-          });
+          setState(_markChoosed);
           context.read<Global>().updateLearningStreak();
-          if(widget.fsrs.config.selfEvaluate) {
-            widget.fsrs.produceCard(widget.wordID, forceRate: (const [Rating.easy, Rating.good, Rating.hard, Rating.again]).elementAt(value));
+          if(correct == value) {
+            widget.fsrs.produceCard(widget.wordID, duration: end!.difference(start).inMilliseconds, isCorrect: true);
             return true;
           } else {
-            if(correct == value) {
-              widget.fsrs.produceCard(widget.wordID, duration: end.difference(start).inMilliseconds, isCorrect: true);
-              return true;
-            } else {
-              widget.fsrs.produceCard(widget.wordID, duration: end.difference(start).inMilliseconds, isCorrect: false);
-              return false;
-            }
+            widget.fsrs.produceCard(widget.wordID, duration: end!.difference(start).inMilliseconds, isCorrect: false);
+            return false;
           }
         },
         bottomWidget: TweenAnimationBuilder<double>(
@@ -715,10 +826,7 @@ class _FSRSReviewCardPage extends State<FSRSReviewCardPage> {
                     viewAnswer(context, wordData[widget.wordID],
                       onAiPressed: () => Navigator.push(context, MaterialPageRoute(
                         builder: (_) => AiQuizPage(word: wordData[widget.wordID]))));
-                    setState(() {
-                      choosed = true;
-                      end = DateTime.now();
-                    });
+                    setState(_markChoosed);
                   }, 
                   icon: Icon(Icons.tips_and_updates),
                   label: Text(value == 0.0 ? "忘了？" : "详解"),

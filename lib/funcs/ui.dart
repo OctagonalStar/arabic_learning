@@ -538,7 +538,8 @@ class WordCard extends StatefulWidget {
   final double? width;
   final double? height;
   final bool useMask;
-  const WordCard({super.key, required this.word, this.width, this.height, this.useMask = true});
+  final Widget? revealedAction;
+  const WordCard({super.key, required this.word, this.width, this.height, this.useMask = true, this.revealedAction});
 
   @override
   State<WordCard> createState() => _WordCardState();
@@ -768,6 +769,24 @@ class _WordCardState extends State<WordCard> {
                 ),
               ),
             ),
+            if (widget.revealedAction != null)
+              Positioned(
+                left: 12,
+                right: 12,
+                bottom: 12,
+                child: AnimatedOpacity(
+                  opacity: _hide ? 0.0 : 1.0,
+                  duration: Durations.medium4,
+                  curve: StaticsVar.curve,
+                  child: IgnorePointer(
+                    ignoring: _hide,
+                    child: Align(
+                      alignment: Alignment.bottomRight,
+                      child: widget.revealedAction!,
+                    ),
+                  ),
+                ),
+              ),
           ],
         )
       ],

@@ -846,17 +846,135 @@ class WordItem {
   }
 }
 
+// ── AI 服务商预设 ──────────────────────────────────────────────────────────────
+
+class AiPreset {
+  final String name;
+  final String baseUrl;
+  final AiApiMode mode;
+  final String defaultModel;
+  final String hint;
+  const AiPreset({
+    required this.name,
+    required this.baseUrl,
+    required this.mode,
+    required this.defaultModel,
+    this.hint = '',
+  });
+}
+
+// baseUrl 均已含版本路径，代码层不再自动追加 /v1
+const List<AiPreset> kAiPresets = [
+  AiPreset(name: 'OpenAI', baseUrl: 'https://api.openai.com/v1', mode: AiApiMode.openaiCompatible, defaultModel: 'gpt-4o-mini', hint: '官方 OpenAI 接口'),
+  AiPreset(name: 'DeepSeek', baseUrl: 'https://api.deepseek.com/v1', mode: AiApiMode.openaiCompatible, defaultModel: 'deepseek-chat', hint: '国内高性价比首选'),
+  AiPreset(name: 'SiliconFlow 硅基流动', baseUrl: 'https://api.siliconflow.cn/v1', mode: AiApiMode.openaiCompatible, defaultModel: 'Qwen/Qwen2.5-7B-Instruct', hint: '多模型聚合平台'),
+  AiPreset(name: 'OpenRouter', baseUrl: 'https://openrouter.ai/api/v1', mode: AiApiMode.openaiCompatible, defaultModel: 'openai/gpt-4o-mini', hint: '多模型路由聚合'),
+  AiPreset(name: '智谱 AI (GLM)', baseUrl: 'https://open.bigmodel.cn/api/paas/v4', mode: AiApiMode.openaiCompatible, defaultModel: 'glm-4-flash', hint: '清华·智谱 GLM 系列'),
+  AiPreset(name: '火山引擎 (Ark)', baseUrl: 'https://ark.volces.com/api/v3', mode: AiApiMode.openaiCompatible, defaultModel: 'doubao-pro-4k', hint: '字节跳动豆包'),
+  AiPreset(name: '阿里云百炼', baseUrl: 'https://dashscope.aliyuncs.com/compatible-mode/v1', mode: AiApiMode.openaiCompatible, defaultModel: 'qwen-turbo', hint: '阿里·通义千问'),
+  AiPreset(name: '百度文心一言', baseUrl: 'https://qianfan.baidubce.com/v2', mode: AiApiMode.openaiCompatible, defaultModel: 'ernie-4.0-8k', hint: '百度文心大模型'),
+  AiPreset(name: 'Gemini (原生接口)', baseUrl: 'https://generativelanguage.googleapis.com', mode: AiApiMode.geminiNative, defaultModel: 'gemini-2.0-flash', hint: 'Google Gemini 原生'),
+  AiPreset(name: 'Gemini (OpenAI 兼容)', baseUrl: 'https://generativelanguage.googleapis.com/v1beta/openai', mode: AiApiMode.openaiCompatible, defaultModel: 'gemini-2.0-flash', hint: 'Google Gemini · OpenAI 兼容路径'),
+];
+
 // ── AI 练习配置 ──────────────────────────────────────────────────────────────
+enum AiApiMode {
+  openaiCompatible,
+  geminiNative,
+  webAutomation,
+}
+
+extension AiApiModeExt on AiApiMode {
+  String get label {
+    switch (this) {
+      case AiApiMode.openaiCompatible: return 'OpenAI 兼容接口';
+      case AiApiMode.geminiNative:     return 'Gemini 原生接口';
+      case AiApiMode.webAutomation:    return '网页自动化 (Web)';
+    }
+  }
+
+  static AiApiMode fromString(String val) {
+    return AiApiMode.values.firstWhere(
+      (e) => e.name == val,
+      orElse: () => AiApiMode.openaiCompatible,
+    );
+  }
+}
+
+@immutable
+class AiEndpoint {
+  final String id;
+  final String name;
+  final AiApiMode mode;
+  final String baseUrl;
+  final String apiKey;
+  final String model;
+
+  const AiEndpoint({
+    required this.id,
+    required this.name,
+    required this.mode,
+    required this.baseUrl,
+    required this.apiKey,
+    required this.model,
+  });
+
+  Map<String, dynamic> toMap() {
+    return {
+      'id': id,
+      'name': name,
+      'mode': mode.name,
+      'baseUrl': baseUrl,
+      'apiKey': apiKey,
+      'model': model,
+    };
+  }
+
+  /// 旧数据向后兼容：若 baseUrl 不含版本路径（如 /v1、/v4），自动追加 /v1
+  static String _migrateBaseUrl(String url) {
+    final trimmed = url.trimRight();
+    if (trimmed.isEmpty) return trimmed;
+    // 已含 /v\d+ 路径片段则不修改
+    if (RegExp(r'/v\d+').hasMatch(trimmed)) return trimmed;
+    return '$trimmed/v1';
+  }
+
+  static AiEndpoint buildFromMap(Map<String, dynamic> data) {
+    return AiEndpoint(
+      id: data['id'] ?? DateTime.now().millisecondsSinceEpoch.toString(),
+      name: data['name'] ?? 'Unnamed',
+      mode: AiApiModeExt.fromString(data['mode'] ?? ''),
+      baseUrl: _migrateBaseUrl(data['baseUrl'] ?? ''),
+      apiKey: data['apiKey'] ?? '',
+      model: data['model'] ?? '',
+    );
+  }
+
+  AiEndpoint copyWith({
+    String? name,
+    AiApiMode? mode,
+    String? baseUrl,
+    String? apiKey,
+    String? model,
+  }) {
+    return AiEndpoint(
+      id: this.id,
+      name: name ?? this.name,
+      mode: mode ?? this.mode,
+      baseUrl: baseUrl ?? this.baseUrl,
+      apiKey: apiKey ?? this.apiKey,
+      model: model ?? this.model,
+    );
+  }
+}
+
 @immutable
 class AiConfig {
-  /// OpenAI 兼容接口地址（不含路径，如 https://api.openai.com）
-  final String baseUrl;
+  /// 选中的 AI 节点 ID
+  final String selectedEndpointId;
 
-  /// 用户自填 API Key
-  final String apiKey;
-
-  /// 模型名称，如 gpt-4o-mini / gemini-2.0-flash
-  final String model;
+  /// 所有保存的节点配置
+  final List<AiEndpoint> endpoints;
 
   /// 默认出题数量（1-10）
   final int defaultQuestionCount;
@@ -865,22 +983,52 @@ class AiConfig {
   final int readingBatchSize;
 
   const AiConfig({
-    String? baseUrl,
-    String? apiKey,
-    String? model,
+    String? selectedEndpointId,
+    List<AiEndpoint>? endpoints,
     int? defaultQuestionCount,
     int? readingBatchSize,
-  })  : baseUrl = baseUrl ?? 'https://api.openai.com',
-        apiKey = apiKey ?? '',
-        model = model ?? 'gpt-4o-mini',
+  })  : selectedEndpointId = selectedEndpointId ?? 'default_openai',
+        endpoints = endpoints ?? const [
+          AiEndpoint(
+            id: 'default_openai',
+            name: 'OpenAI',
+            mode: AiApiMode.openaiCompatible,
+            baseUrl: 'https://api.openai.com/v1',
+            apiKey: '',
+            model: 'gpt-4o-mini',
+          )
+        ],
         defaultQuestionCount = defaultQuestionCount ?? 3,
         readingBatchSize = readingBatchSize ?? 25;
 
+  /// 获取当前选中的配置节点
+  AiEndpoint get currentEndpoint {
+    try {
+      return endpoints.firstWhere((e) => e.id == selectedEndpointId);
+    } catch (_) {
+      return endpoints.isNotEmpty ? endpoints.first : const AiEndpoint(
+        id: 'fallback',
+        name: 'Fallback',
+        mode: AiApiMode.openaiCompatible,
+        baseUrl: '',
+        apiKey: '',
+        model: '',
+      );
+    }
+  }
+
+  // 兼容旧版访问方式（临时）
+  @Deprecated('Use currentEndpoint.baseUrl instead')
+  String get baseUrl => currentEndpoint.baseUrl;
+  @Deprecated('Use currentEndpoint.apiKey instead')
+  String get apiKey => currentEndpoint.apiKey;
+  @Deprecated('Use currentEndpoint.model instead')
+  String get model => currentEndpoint.model;
+
   Map<String, dynamic> toMap() {
     return {
-      'baseUrl': baseUrl,
-      'apiKey': apiKey,
-      'model': model,
+      'selectedEndpointId': selectedEndpointId,
+      'endpoints': endpoints.map((e) => e.toMap()).toList(),
       'defaultQuestionCount': defaultQuestionCount,
       'readingBatchSize': readingBatchSize,
     };
@@ -888,26 +1036,50 @@ class AiConfig {
 
   static AiConfig buildFromMap(Map<String, dynamic>? setting) {
     if (setting == null) return const AiConfig();
+
+    // 兼容旧格式（如果没有 endpoints 但有 baseUrl/apiKey）
+    List<AiEndpoint>? parsedEndpoints;
+    String? parsedSelectedId;
+
+    if (setting.containsKey('endpoints')) {
+      final list = setting['endpoints'] as List<dynamic>;
+      parsedEndpoints = list.map((e) => AiEndpoint.buildFromMap(e as Map<String, dynamic>)).toList();
+      parsedSelectedId = setting['selectedEndpointId'] as String?;
+    } else if (setting.containsKey('baseUrl') || setting.containsKey('apiKey')) {
+      // 老版本数据迁移
+      final oldBaseUrl = setting['baseUrl'] as String? ?? 'https://api.openai.com';
+      final oldApiKey = setting['apiKey'] as String? ?? '';
+      final oldModel = setting['model'] as String? ?? 'gpt-4o-mini';
+      
+      final defaultEp = AiEndpoint(
+        id: 'migrated_default',
+        name: '旧版迁移配置',
+        mode: AiApiMode.openaiCompatible,
+        baseUrl: oldBaseUrl,
+        apiKey: oldApiKey,
+        model: oldModel,
+      );
+      parsedEndpoints = [defaultEp];
+      parsedSelectedId = 'migrated_default';
+    }
+
     return AiConfig(
-      baseUrl: setting['baseUrl'] as String?,
-      apiKey: setting['apiKey'] as String?,
-      model: setting['model'] as String?,
+      selectedEndpointId: parsedSelectedId,
+      endpoints: parsedEndpoints,
       defaultQuestionCount: setting['defaultQuestionCount'] as int?,
       readingBatchSize: setting['readingBatchSize'] as int?,
     );
   }
 
   AiConfig copyWith({
-    String? baseUrl,
-    String? apiKey,
-    String? model,
+    String? selectedEndpointId,
+    List<AiEndpoint>? endpoints,
     int? defaultQuestionCount,
     int? readingBatchSize,
   }) {
     return AiConfig(
-      baseUrl: baseUrl ?? this.baseUrl,
-      apiKey: apiKey ?? this.apiKey,
-      model: model ?? this.model,
+      selectedEndpointId: selectedEndpointId ?? this.selectedEndpointId,
+      endpoints: endpoints ?? this.endpoints,
       defaultQuestionCount: defaultQuestionCount ?? this.defaultQuestionCount,
       readingBatchSize: readingBatchSize ?? this.readingBatchSize,
     );

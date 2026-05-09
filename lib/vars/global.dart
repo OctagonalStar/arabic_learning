@@ -73,7 +73,11 @@ class Global with ChangeNotifier {
     logger.info("保存配置文件中");
     if(settingData != null) AppData().config = Config.buildFromMap(settingData);
     AppData().storage.setString("settingData", jsonEncode(AppData().config.toMap()));
-    if(refresh) await refreshApp();
+    if (refresh) {
+      await refreshApp();
+    } else {
+      notifyListeners();
+    }
   }
 
   Future<void> loadFont() async {
@@ -394,4 +398,4 @@ class AppData {
     }
     return migratedCount;
   }
-}
+}

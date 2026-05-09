@@ -19,7 +19,7 @@ import 'package:arabic_learning/sub_pages_builder/setting_pages/model_download_p
 import 'package:arabic_learning/sub_pages_builder/setting_pages/questions_setting_page.dart' show QuestionsSettingPage;
 import 'package:arabic_learning/sub_pages_builder/setting_pages/sync_page.dart' show DataSyncPage;
 import 'package:arabic_learning/package_replacement/fake_dart_io.dart' if (dart.library.io) 'dart:io' as io;
-import 'package:arabic_learning/vars/config_structure.dart' show AiConfig;
+import 'package:arabic_learning/vars/config_structure.dart' show AiConfig, AiEndpoint, AiApiMode, kAiPresets;
 import 'package:arabic_learning/pages/quiz_bank_page.dart' show QuizBankPage;
 
 class SettingPage extends StatefulWidget { 
@@ -506,16 +506,48 @@ class _SettingPage extends State<SettingPage> {
     AppData appData = AppData();
     AiConfig ai = appData.config.ai;
 
-    void saveAi(AiConfig newAi) {
-      appData.config = appData.config.copyWith(ai: newAi);
+    /// 更新当前选中 endpoint 的某个字段后保存
+    void saveEndpoint(AiEndpoint updatedEndpoint) {
+      final newEndpoints = ai.endpoints.map((e) {
+        return e.id == ai.selectedEndpointId ? updatedEndpoint : e;
+      }).toList();
+      ai = ai.copyWith(endpoints: newEndpoints);
+      appData.config = appData.config.copyWith(ai: ai);
       context.read<Global>().updateSetting(refresh: false);
     }
 
+    // 匹配当前 baseUrl 是否与某个预设对应
+    String? matchedPreset = _matchPresetName(ai.currentEndpoint.baseUrl);
+
     return [
+      // ── 服务商预设选择器 ────────────────────────────────────────────────
+      Card(
+        margin: const EdgeInsets.symmetric(vertical: 4),
+        elevation: 0,
+        shape: RoundedRectangleBorder(
+          borderRadius: StaticsVar.br,
+          side: BorderSide(color: Theme.of(context).colorScheme.outlineVariant),
+        ),
+        child: ListTile(
+          leading: const Icon(Icons.cloud_outlined),
+          title: const Text('选择服务商'),
+          subtitle: Text(
+            matchedPreset ?? '自定义',
+            style: TextStyle(
+              color: Theme.of(context).colorScheme.primary,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          trailing: const Icon(Icons.arrow_forward_ios, size: 16),
+          onTap: () => _showPresetPicker(context, ai, saveEndpoint),
+        ),
+      ),
+
       Padding(
         padding: const EdgeInsets.symmetric(vertical: 4),
         child: StatefulBuilder(builder: (ctx, ss) {
-          final ctrl = TextEditingController(text: ai.baseUrl);
+          final endpoint = ai.currentEndpoint;
+          final ctrl = TextEditingController(text: endpoint.baseUrl);
           ctrl.selection = TextSelection.collapsed(offset: ctrl.text.length);
           return TextField(
             controller: ctrl,
@@ -525,11 +557,11 @@ class _SettingPage extends State<SettingPage> {
               border: OutlineInputBorder(borderRadius: StaticsVar.br),
               suffixIcon: IconButton(
                 icon: const Icon(Icons.done),
-                onPressed: () { ai = ai.copyWith(baseUrl: ctrl.text.trim()); saveAi(ai); },
+                onPressed: () => saveEndpoint(ai.currentEndpoint.copyWith(baseUrl: ctrl.text.trim())),
               ),
             ),
             keyboardType: TextInputType.url,
-            onSubmitted: (v) { ai = ai.copyWith(baseUrl: v.trim()); saveAi(ai); },
+            onSubmitted: (v) => saveEndpoint(ai.currentEndpoint.copyWith(baseUrl: v.trim())),
           );
         }),
       ),
@@ -537,7 +569,8 @@ class _SettingPage extends State<SettingPage> {
         padding: const EdgeInsets.symmetric(vertical: 4),
         child: StatefulBuilder(builder: (ctx, ss) {
           bool obscure = true;
-          final ctrl = TextEditingController(text: ai.apiKey);
+          final endpoint = ai.currentEndpoint;
+          final ctrl = TextEditingController(text: endpoint.apiKey);
           return StatefulBuilder(builder: (ctx2, ss2) {
             return TextField(
               controller: ctrl,
@@ -555,12 +588,12 @@ class _SettingPage extends State<SettingPage> {
                     ),
                     IconButton(
                       icon: const Icon(Icons.done),
-                      onPressed: () { ai = ai.copyWith(apiKey: ctrl.text.trim()); saveAi(ai); },
+                      onPressed: () => saveEndpoint(ai.currentEndpoint.copyWith(apiKey: ctrl.text.trim())),
                     ),
                   ],
                 ),
               ),
-              onSubmitted: (v) { ai = ai.copyWith(apiKey: v.trim()); saveAi(ai); },
+              onSubmitted: (v) => saveEndpoint(ai.currentEndpoint.copyWith(apiKey: v.trim())),
             );
           });
         }),
@@ -568,20 +601,21 @@ class _SettingPage extends State<SettingPage> {
       Padding(
         padding: const EdgeInsets.symmetric(vertical: 4),
         child: StatefulBuilder(builder: (ctx, ss) {
-          final ctrl = TextEditingController(text: ai.model);
+          final endpoint = ai.currentEndpoint;
+          final ctrl = TextEditingController(text: endpoint.model);
           ctrl.selection = TextSelection.collapsed(offset: ctrl.text.length);
           return TextField(
             controller: ctrl,
             decoration: InputDecoration(
               labelText: '模型名称',
-              hintText: 'gpt-4o-mini / gemini-2.0-flash',
+              hintText: 'gpt-4o-mini / gemini-3-flash-preview',
               border: OutlineInputBorder(borderRadius: StaticsVar.br),
               suffixIcon: IconButton(
                 icon: const Icon(Icons.done),
-                onPressed: () { ai = ai.copyWith(model: ctrl.text.trim()); saveAi(ai); },
+                onPressed: () => saveEndpoint(ai.currentEndpoint.copyWith(model: ctrl.text.trim())),
               ),
             ),
-            onSubmitted: (v) { ai = ai.copyWith(model: v.trim()); saveAi(ai); },
+            onSubmitted: (v) => saveEndpoint(ai.currentEndpoint.copyWith(model: v.trim())),
           );
         }),
       ),
@@ -593,11 +627,15 @@ class _SettingPage extends State<SettingPage> {
             const SizedBox(width: 8),
             const Expanded(child: Text('每次出题数量')),
             Slider(
-              min: 1, max: 10, divisions: 9,
+              min: 1, max: 20, divisions: 9,
               value: count.toDouble(),
               label: '$count 题',
               onChanged: (v) => ss(() => count = v.round()),
-              onChangeEnd: (v) { ai = ai.copyWith(defaultQuestionCount: v.round()); saveAi(ai); },
+              onChangeEnd: (v) {
+                ai = ai.copyWith(defaultQuestionCount: v.round());
+                appData.config = appData.config.copyWith(ai: ai);
+                context.read<Global>().updateSetting(refresh: false);
+              },
             ),
             SizedBox(width: 32, child: Text('$count', textAlign: TextAlign.center)),
           ],
@@ -615,7 +653,11 @@ class _SettingPage extends State<SettingPage> {
               value: batchSize.toDouble(),
               label: '$batchSize 词/篇',
               onChanged: (v) => ss(() => batchSize = v.round()),
-              onChangeEnd: (v) { ai = ai.copyWith(readingBatchSize: v.round()); saveAi(ai); },
+              onChangeEnd: (v) {
+                ai = ai.copyWith(readingBatchSize: v.round());
+                appData.config = appData.config.copyWith(ai: ai);
+                context.read<Global>().updateSetting(refresh: false);
+              },
             ),
             SizedBox(width: 40, child: Text('$batchSize 词', textAlign: TextAlign.center, style: const TextStyle(fontSize: 12))),
           ],
@@ -633,6 +675,103 @@ class _SettingPage extends State<SettingPage> {
         label: const Text('查看 AI 题库'),
       ),
     ];
+  }
+
+  /// 根据 baseUrl 匹配预设名称，用于在 UI 上展示当前服务商
+  String? _matchPresetName(String baseUrl) {
+    final trimmed = baseUrl.trimRight();
+    for (final p in kAiPresets) {
+      if (p.baseUrl == trimmed) return p.name;
+    }
+    return null;
+  }
+
+  /// 弹出服务商预设选择面板
+  void _showPresetPicker(
+    BuildContext context,
+    AiConfig ai,
+    void Function(AiEndpoint) saveEndpoint,
+  ) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (ctx) {
+        final current = ai.currentEndpoint.baseUrl.trimRight();
+        return DraggableScrollableSheet(
+          initialChildSize: 0.55,
+          minChildSize: 0.4,
+          maxChildSize: 0.85,
+          expand: false,
+          builder: (_, scrollCtrl) => Column(
+            children: [
+              const SizedBox(height: 8),
+              Container(
+                width: 40, height: 4,
+                decoration: BoxDecoration(
+                  color: Colors.grey.shade300,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+              const SizedBox(height: 12),
+              const Text('选择 AI 服务商', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+              const Divider(height: 16),
+              Expanded(
+                child: ListView(
+                  controller: scrollCtrl,
+                  children: [
+                    ...kAiPresets.map((preset) {
+                      final isSelected = preset.baseUrl == current;
+                      return ListTile(
+                        leading: Icon(
+                          isSelected ? Icons.radio_button_checked : Icons.radio_button_unchecked,
+                          color: isSelected ? Theme.of(context).colorScheme.primary : null,
+                        ),
+                        title: Text(preset.name,
+                          style: isSelected
+                            ? TextStyle(color: Theme.of(context).colorScheme.primary, fontWeight: FontWeight.bold)
+                            : null,
+                        ),
+                        subtitle: Text(preset.hint, style: const TextStyle(fontSize: 12)),
+                        trailing: Text(
+                          preset.mode == AiApiMode.geminiNative ? 'Gemini 原生' : 'OpenAI 兼容',
+                          style: TextStyle(fontSize: 11, color: Colors.grey.shade600),
+                        ),
+                        onTap: () {
+                          saveEndpoint(ai.currentEndpoint.copyWith(
+                            name: preset.name,
+                            baseUrl: preset.baseUrl,
+                            mode: preset.mode,
+                            model: preset.defaultModel,
+                          ));
+                          Navigator.pop(ctx);
+                        },
+                      );
+                    }),
+                    // 自定义选项
+                    ListTile(
+                      leading: Icon(
+                        _matchPresetName(ai.currentEndpoint.baseUrl) == null
+                          ? Icons.radio_button_checked
+                          : Icons.radio_button_unchecked,
+                        color: _matchPresetName(ai.currentEndpoint.baseUrl) == null
+                          ? Theme.of(context).colorScheme.primary : null,
+                      ),
+                      title: const Text('其他 OpenAI 兼容接口'),
+                      subtitle: const Text('手动填写 Base URL', style: TextStyle(fontSize: 12)),
+                      onTap: () => Navigator.pop(ctx),
+                    ),
+                    const SizedBox(height: 16),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
   }
 }
 

@@ -5,6 +5,7 @@ import 'package:arabic_learning/vars/global.dart';
 import 'package:arabic_learning/vars/statics_var.dart';
 import 'package:arabic_learning/sub_pages_builder/test_pages/listening_test_page.dart' show ForeListeningSettingPage;
 import 'package:arabic_learning/sub_pages_builder/test_pages/local_pk_page.dart' show LocalPKSelectPage;
+import 'package:arabic_learning/sub_pages_builder/test_pages/ai_test_setup_page.dart' show AiTestSetupPage;
 
 class TestPage extends StatelessWidget {
   const TestPage({super.key});
@@ -53,6 +54,28 @@ class TestPage extends StatelessWidget {
               context, 
               MaterialPageRoute(
                 builder: (context) => ForeListeningSettingPage()
+              )
+            );
+          },
+        ),
+        SizedBox(height: mediaQuery.size.height * 0.05),
+        ElevatedButton.icon(
+          icon: Icon(Icons.auto_awesome, size: 36.0),
+          label: FittedBox(child: Text('AI 练习', style: TextStyle(fontSize: 34.0))),
+          style: ElevatedButton.styleFrom(
+            backgroundColor: Theme.of(context).colorScheme.primaryContainer.withAlpha(200),
+            foregroundColor: Theme.of(context).colorScheme.onPrimaryContainer,
+            fixedSize: Size(mediaQuery.size.width * 0.8, mediaQuery.size.height * 0.1),
+            shape: RoundedRectangleBorder(
+              borderRadius: StaticsVar.br,
+            ),
+          ),
+          onPressed: () {
+            context.read<Global>().uiLogger.info("跳转: TestPage => AiTestSetupPage");
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => const AiTestSetupPage()
               )
             );
           },

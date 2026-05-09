@@ -1,7 +1,7 @@
 import 'dart:convert';
 
 import 'package:arabic_learning/funcs/quiz_bank.dart';
-import 'package:arabic_learning/vars/config_structure.dart' show AiConfig, WordItem;
+import 'package:arabic_learning/vars/config_structure.dart' show AiConfig, AiEndpoint, AiApiMode, WordItem;
 import 'package:arabic_learning/vars/global.dart' show AppData;
 import 'package:dio/dio.dart';
 import 'package:logging/logging.dart';
@@ -248,7 +248,8 @@ class AiService {
     int? count,
   }) async {
     final AiConfig cfg = AppData().config.ai;
-    if (cfg.apiKey.trim().isEmpty) {
+    final AiEndpoint endpoint = cfg.currentEndpoint;
+    if (endpoint.apiKey.trim().isEmpty && endpoint.mode != AiApiMode.webAutomation) {
       throw const AiException(AiErrorType.noApiKey, 'API key is empty');
     }
 
@@ -275,7 +276,8 @@ class AiService {
     QuizDifficulty difficulty = QuizDifficulty.medium,
   }) async {
     final AiConfig cfg = AppData().config.ai;
-    if (cfg.apiKey.trim().isEmpty) {
+    final AiEndpoint endpoint = cfg.currentEndpoint;
+    if (endpoint.apiKey.trim().isEmpty && endpoint.mode != AiApiMode.webAutomation) {
       throw const AiException(AiErrorType.noApiKey, 'API key is empty');
     }
 
@@ -299,21 +301,32 @@ class AiService {
 
   // ── 内部：HTTP 调用 ────────────────────────────────────────────────────────
   Future<String> _callApi(AiConfig cfg, String systemPrompt, String userPrompt) async {
+    final AiEndpoint endpoint = cfg.currentEndpoint;
+
+    if (endpoint.mode == AiApiMode.webAutomation) {
+      throw const AiException(AiErrorType.unknown, 'WebAutomation mode is not fully implemented yet.');
+    }
+
     _cancelToken = CancelToken();
+
+    if (endpoint.mode == AiApiMode.geminiNative) {
+      return _callGeminiNative(endpoint, systemPrompt, userPrompt);
+    }
+
     final Dio dio = Dio(BaseOptions(
-      baseUrl: '${cfg.baseUrl.trimRight()}/v1',
+      baseUrl: endpoint.baseUrl.trimRight(),
       connectTimeout: const Duration(seconds: 15),
       receiveTimeout: const Duration(seconds: 90),
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': 'Bearer ${cfg.apiKey}',
+        'Authorization': 'Bearer ${endpoint.apiKey}',
       },
     ));
     try {
       final Response<dynamic> response = await dio.post(
         '/chat/completions',
         data: {
-          'model': cfg.model,
+          'model': endpoint.model,
           'temperature': 0.7,
           'max_tokens': 2048,
           'messages': [
@@ -329,6 +342,55 @@ class AiService {
     } catch (e) {
       if (e is AiException) rethrow;
       _logger.severe('AI 请求发生未知错误: $e');
+      throw AiException(AiErrorType.unknown, e.toString());
+    }
+  }
+
+  Future<String> _callGeminiNative(AiEndpoint endpoint, String systemPrompt, String userPrompt) async {
+    String baseUrl = endpoint.baseUrl.trimRight();
+    if (baseUrl.isEmpty) {
+      baseUrl = 'https://generativelanguage.googleapis.com';
+    }
+    
+    final Dio dio = Dio(BaseOptions(
+      baseUrl: baseUrl,
+      connectTimeout: const Duration(seconds: 15),
+      receiveTimeout: const Duration(seconds: 90),
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    ));
+
+    try {
+      final Response<dynamic> response = await dio.post(
+        '/v1beta/models/${endpoint.model}:generateContent?key=${endpoint.apiKey}',
+        data: {
+          'system_instruction': {
+            'parts': [
+              {'text': systemPrompt}
+            ]
+          },
+          'contents': [
+            {
+              'parts': [
+                {'text': userPrompt}
+              ]
+            }
+          ],
+          'generationConfig': {
+            'temperature': 0.7,
+            'maxOutputTokens': 2048,
+          }
+        },
+        cancelToken: _cancelToken,
+      );
+      
+      return _extractGeminiContent(response.data);
+    } on DioException catch (e) {
+      throw _mapDioError(e);
+    } catch (e) {
+      if (e is AiException) rethrow;
+      _logger.severe('Gemini AI 请求发生未知错误: $e');
       throw AiException(AiErrorType.unknown, e.toString());
     }
   }
@@ -355,6 +417,16 @@ class AiService {
       return (body['choices'] as List<dynamic>)[0]['message']['content'] as String;
     } catch (e) {
       throw const AiException(AiErrorType.parseError, 'Failed to extract content');
+    }
+  }
+
+  String _extractGeminiContent(dynamic data) {
+    try {
+      final Map<String, dynamic> body =
+          (data is String ? jsonDecode(data) : data) as Map<String, dynamic>;
+      return (body['candidates'] as List<dynamic>)[0]['content']['parts'][0]['text'] as String;
+    } catch (e) {
+      throw const AiException(AiErrorType.parseError, 'Failed to extract Gemini content');
     }
   }
 
