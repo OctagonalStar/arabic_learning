@@ -229,15 +229,18 @@ class _SettingPage extends State<SettingPage> {
                   if (result != null) {
                     String jsonString;
                     PlatformFile platformFile = result.files.first;
-                    if (platformFile.bytes != null){
-                      jsonString = utf8.decode(platformFile.bytes!);
-                    } else if (platformFile.path != null && !kIsWeb) {
-                      jsonString = await io.File(platformFile.path!).readAsString();
-                    } else {
+                    try {
+                      jsonString = await platformFile.xFile.readAsString();
+                    } catch(e) {
                       if (!context.mounted) return;
-                      context.read<Global>().uiLogger.warning("文件导入错误: bytes和path均为null");
-                      alart(context, "文件 \"${platformFile.name}\" \n无法读取：bytes和path均为null。");
-                      return;
+                      if (platformFile.path != null && !kIsWeb) {
+                        context.read<Global>().uiLogger.warning("文件导入错误: 常规方式读取失败:\n$e\n尝试路经读取");
+                        jsonString = await io.File(platformFile.path!).readAsString();
+                      } else {
+                        context.read<Global>().uiLogger.severe("文件导入错误: $e");
+                        alart(context, "文件 \"${platformFile.name}\" \n无法读取：$e。");
+                        return;
+                      }
                     }
                     if (!context.mounted) return;
                     try{
