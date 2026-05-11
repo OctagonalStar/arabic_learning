@@ -35,25 +35,16 @@ class Config {
   final EggConfig egg;
   
   const Config({
-    String? user, 
-    int? lastVersion, 
-    DebugConfig? debug,
-    RegularConfig? regular,
-    AudioConfig? audio,
-    LearningConfig? learning,
-    QuizConfig? quiz,
-    SyncConfig? webSync,
-    EggConfig? egg
-  }) : // 空值合并
-    user = user??"", 
-    lastVersion = lastVersion??StaticsVar.appVersion,
-    debug = debug??const DebugConfig(),
-    regular = regular??const RegularConfig(),
-    audio = audio??const AudioConfig(),
-    learning = learning??const LearningConfig(),
-    quiz = quiz??const QuizConfig(),
-    webSync = webSync??const SyncConfig(),
-    egg = egg??const EggConfig();
+    this.user = "", 
+    this.lastVersion = StaticsVar.appVersion, 
+    this.debug = const DebugConfig(),
+    this.regular = const RegularConfig(),
+    this.audio = const AudioConfig(),
+    this.learning = const LearningConfig(),
+    this.quiz = const QuizConfig(),
+    this.webSync = const SyncConfig(),
+    this.egg = const EggConfig()
+  });
 
   /// 将设置转为Map格式
   Map<String, dynamic> toMap() {
@@ -138,11 +129,9 @@ class DebugConfig {
   final int internalLevel;
   
   const DebugConfig({
-    bool? enableInternalLog, 
-    int? internalLevel
-  }): 
-    enableInternalLog = enableInternalLog??false,
-    internalLevel = internalLevel??0;
+    this.enableInternalLog = false, 
+    this.internalLevel = 0
+  });
 
   Map<String, dynamic> toMap() {
     return {
@@ -203,15 +192,11 @@ class RegularConfig {
   final bool hideAppDownloadButton;
 
   const RegularConfig({
-    int? theme,
-    int? font,
-    bool? darkMode,
-    bool? hideAppDownloadButton
-  }):
-    theme = theme??9,
-    font = font??0,
-    darkMode = darkMode??false,
-    hideAppDownloadButton = hideAppDownloadButton??false;
+    this.theme = 9,
+    this.font = 0,
+    this.darkMode = false,
+    this.hideAppDownloadButton = false
+  });
 
   Map<String, dynamic> toMap() {
     return {
@@ -260,12 +245,14 @@ class AudioConfig {
   /// 播放速度
   final double playRate;
 
+  /// 自动播放发音
+  final bool autoPlay;
+
   const AudioConfig({
-    int? audioSource,
-    double? playRate
-  }):
-    audioSource = audioSource??0,
-    playRate = playRate??1.0;
+    this.audioSource = 0,
+    this.playRate = 1.0,
+    this.autoPlay = false
+  });
 
   Map<String, dynamic> toMap(){
     return {
@@ -308,15 +295,11 @@ class LearningConfig {
   final bool wordLookupRealtime;
 
   const LearningConfig({
-    int? startDate,
-    int? lastDate,
-    int? overviewForceColumn,
-    bool? wordLookupRealtime
-  }):
-    startDate = startDate??0,
-    lastDate = lastDate??0,
-    overviewForceColumn = overviewForceColumn??0,
-    wordLookupRealtime = wordLookupRealtime??true;
+    this.startDate = 0,
+    this.lastDate = 0,
+    this.overviewForceColumn = 0,
+    this.wordLookupRealtime = true
+  });
 
   Map<String, dynamic> toMap(){
     return {
@@ -354,77 +337,6 @@ class LearningConfig {
 
 @immutable
 class QuizConfig {
-  /// 混合学习配置类
-  final SubQuizConfig zhar;
-
-  /// 阿译中专项配置类
-  final SubQuizConfig ar;
-
-  /// 中译阿专项配置类
-  final SubQuizConfig zh;
-
-  const QuizConfig({
-    SubQuizConfig? zhar,
-    SubQuizConfig? ar,
-    SubQuizConfig? zh
-  }):
-    zhar = zhar??const SubQuizConfig(
-      questionSections: [1, 2], 
-      shuffleGlobally: true, 
-      shuffleInternaly: false, 
-      shuffleExternaly: false, 
-      modifyAllowed: true,
-      preferSimilar: false
-    ),
-    ar = ar??const SubQuizConfig(
-      questionSections: [2], 
-      shuffleGlobally: true, 
-      shuffleInternaly: false, 
-      shuffleExternaly: false, 
-      modifyAllowed: false,
-      preferSimilar: false
-    ),
-    zh = zh??const SubQuizConfig(
-      questionSections: [1], 
-      shuffleGlobally: true, 
-      shuffleInternaly: false, 
-      shuffleExternaly: false, 
-      modifyAllowed: false,
-      preferSimilar: false
-    );
-
-  Map<String, dynamic> toMap(){
-    return {
-      "zh_ar": zhar.toMap(),
-      "ar": ar.toMap(),
-      "zh": zh.toMap()
-    };
-  }
-
-  static QuizConfig buildFromMap(Map<String, dynamic>? setting) {
-    if(setting == null) return QuizConfig();
-    return QuizConfig(
-      zhar: SubQuizConfig.buildFromMap(setting["zh_ar"]),
-      ar: SubQuizConfig.buildFromMap(setting["ar"]),
-      zh: SubQuizConfig.buildFromMap(setting["zh"])
-    );
-  }
-
-  QuizConfig copyWith({
-    SubQuizConfig? zhar,
-    SubQuizConfig? ar,
-    SubQuizConfig? zh,
-  }) {
-    return QuizConfig(
-      zhar: zhar ?? this.zhar,
-      ar: ar ?? this.ar,
-      zh: zh ?? this.zh,
-    );
-  }
-}
-
-@immutable
-class SubQuizConfig {
   /// 包含的题型
   /// ```
   /// 0: 单词卡片
@@ -460,13 +372,14 @@ class SubQuizConfig {
   /// 相比于同课程的单词，更偏向于相似的单词
   final bool preferSimilar;
 
-  const SubQuizConfig ({
-    required this.questionSections,
-    required this.shuffleGlobally,
-    required this.shuffleInternaly,
-    required this.shuffleExternaly,
-    required this.modifyAllowed,
-    required this.preferSimilar
+    
+  const QuizConfig ({
+    this.questionSections = const [1, 2],
+    this.shuffleGlobally = true,
+    this.shuffleInternaly = false,
+    this.shuffleExternaly = false,
+    this.modifyAllowed = true,
+    this.preferSimilar = false
   });
 
   Map<String, dynamic> toMap(){
@@ -480,9 +393,15 @@ class SubQuizConfig {
     };
   }
 
-  static SubQuizConfig buildFromMap(Map<String, dynamic>? setting){
+  static QuizConfig buildFromMap(Map<String, dynamic>? setting){
     if(setting == null) throw Exception("no data for quiz load");
-    return SubQuizConfig(
+    
+    // 旧版本兼容
+    if(setting.containsKey("zh_ar")){
+      return QuizConfig.buildFromMap(setting["zh_ar"]);
+    }
+
+    return QuizConfig(
       questionSections: List<int>.generate(setting["questionSections"].length, (index) => setting["questionSections"][index]), 
       shuffleGlobally: setting["shuffleGlobally"], 
       shuffleInternaly: setting["shuffleInternaly"], 
@@ -492,7 +411,7 @@ class SubQuizConfig {
     );
   }
 
-  SubQuizConfig copyWith({
+  QuizConfig copyWith({
     List<int>? questionSections,
     bool? shuffleGlobally,
     bool? shuffleInternaly,
@@ -500,7 +419,7 @@ class SubQuizConfig {
     bool? modifyAllowed,
     bool? preferSimilar
   }) {
-    return SubQuizConfig(
+    return QuizConfig(
       questionSections: questionSections ?? this.questionSections,
       shuffleGlobally: shuffleGlobally ?? this.shuffleGlobally,
       shuffleInternaly: shuffleInternaly ?? this.shuffleInternaly,
@@ -516,8 +435,8 @@ class EggConfig {
   final bool stella;
 
   const EggConfig({
-    bool? stella
-  }):stella = stella??false;
+    this.stella = false
+  });
 
   Map<String, dynamic> toMap(){
     return {
@@ -550,11 +469,9 @@ class SyncConfig {
   final SyncAccountConfig account;
 
   const SyncConfig({
-    bool? enabled,
-    SyncAccountConfig? account
-  }):
-    enabled = enabled??false,
-    account = account??const SyncAccountConfig();
+    this.enabled = false,
+    this.account = const SyncAccountConfig()
+  });
 
   Map<String,dynamic> toMap(){
     return {
@@ -594,13 +511,10 @@ class SyncAccountConfig {
   final String passWord;
 
   const SyncAccountConfig({
-    String? uri,
-    String? userName,
-    String? passWord
-  }):
-    uri = uri??"",
-    userName = userName??"",
-    passWord = passWord??"";
+    this.uri = "",
+    this.userName = "",
+    this.passWord = ""
+  });
 
   Map<String, dynamic> toMap(){
     return {

@@ -56,7 +56,7 @@ class _InLearningPageState extends State<InLearningPage> {
   @override
   void initState() {
     // 加载测试词
-    final SubQuizConfig questionsSetting = AppData().config.quiz.zhar;
+    final QuizConfig questionsSetting = AppData().config.quiz;
     List<List<TestItem>> questionsInSections = List.generate(questionsSetting.questionSections.length, (_) => []);
 
     for(int sectionIndex = 0; sectionIndex < questionsSetting.questionSections.length; sectionIndex++) {
