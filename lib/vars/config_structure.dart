@@ -258,6 +258,7 @@ class AudioConfig {
     return {
       "useBackupSource": audioSource,
       "playRate": playRate,
+      "autoPlay": autoPlay
     };
   }
 
@@ -265,17 +266,20 @@ class AudioConfig {
     if(setting == null) return AudioConfig();
     return AudioConfig(
       audioSource: setting["useBackupSource"],
-      playRate: setting["playRate"]
+      playRate: setting["playRate"],
+      autoPlay: setting["autoPlay"]??false
     );
   }
 
   AudioConfig copyWith({
     int? audioSource,
     double? playRate,
+    bool? autoPlay
   }) {
     return AudioConfig(
       audioSource: audioSource ?? this.audioSource,
       playRate: playRate ?? this.playRate,
+      autoPlay: autoPlay ?? this.autoPlay
     );
   }
 }
