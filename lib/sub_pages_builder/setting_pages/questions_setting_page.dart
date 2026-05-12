@@ -20,9 +20,7 @@ class _QuestionsSettingPage extends State<QuestionsSettingPage> {
   void _updateConfig() {
     AppData().config = AppData().config.copyWith(
       quiz: AppData().config.quiz.copyWith(
-        zhar: AppData().config.quiz.zhar.copyWith(
-          questionSections: selectedTypes!.cast<int>()
-        )
+        questionSections: selectedTypes!.cast<int>()
       )
     );
   }
@@ -30,8 +28,8 @@ class _QuestionsSettingPage extends State<QuestionsSettingPage> {
   @override
   Widget build(BuildContext context) {
     context.read<Global>().uiLogger.info("构建 QuestionsSettingPage:$selectedTypes");
-    late final SubQuizConfig section;
-    section = AppData().config.quiz.zhar;
+    late final QuizConfig section;
+    section = AppData().config.quiz;
     MediaQueryData mediaQuery = MediaQuery.of(context);
     selectedTypes ??= List.from(section.questionSections);
     List<Widget> listTiles = [];
@@ -106,9 +104,7 @@ class _QuestionsSettingPage extends State<QuestionsSettingPage> {
                     setState(() {
                       AppData().config = AppData().config.copyWith(
                         quiz: AppData().config.quiz.copyWith(
-                          zhar: AppData().config.quiz.zhar.copyWith(
-                            shuffleInternaly: value
-                          )
+                          shuffleInternaly: value
                         )
                       );
                     });
@@ -126,9 +122,7 @@ class _QuestionsSettingPage extends State<QuestionsSettingPage> {
                     setState(() {
                       AppData().config = AppData().config.copyWith(
                         quiz: AppData().config.quiz.copyWith(
-                          zhar: AppData().config.quiz.zhar.copyWith(
-                            shuffleExternaly: value
-                          )
+                          shuffleExternaly: value
                         )
                       );
                     });
@@ -146,9 +140,7 @@ class _QuestionsSettingPage extends State<QuestionsSettingPage> {
                     setState(() {
                       AppData().config = AppData().config.copyWith(
                         quiz: AppData().config.quiz.copyWith(
-                          zhar: AppData().config.quiz.zhar.copyWith(
-                            shuffleGlobally: value
-                          )
+                          shuffleGlobally: value
                         )
                       );
                     });
@@ -166,9 +158,7 @@ class _QuestionsSettingPage extends State<QuestionsSettingPage> {
                     setState(() {
                       AppData().config = AppData().config.copyWith(
                         quiz: AppData().config.quiz.copyWith(
-                          zhar: AppData().config.quiz.zhar.copyWith(
-                            preferSimilar: value
-                          )
+                          preferSimilar: value
                         )
                       );
                     });

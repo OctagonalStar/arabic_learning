@@ -1,7 +1,7 @@
 import 'dart:math';
 
 import 'package:arabic_learning/funcs/fsrs_func.dart' show FSRS;
-import 'package:arabic_learning/funcs/utili.dart' show BKSearch, StringExtensions, getLevenshtein, getRandomWords;
+import 'package:arabic_learning/funcs/utili.dart' show BKSearch, StringExtensions, getLevenshtein, getRandomWords, playTextToSpeech;
 import 'package:arabic_learning/vars/config_structure.dart';
 import 'package:flutter/material.dart';
 import 'package:fsrs/fsrs.dart' show Rating;
@@ -37,6 +37,9 @@ class _InLearningPageState extends State<InLearningPage> {
   late final DateTime startTime;
   bool finished = false;
   final PageController controller = PageController(initialPage: 0);
+  final bool isAutoPlay = AppData().config.audio.autoPlay;
+  final List<TestItem> playedList = [];
+
 
   void onSolve({required WordItem targetWord, 
                 required bool isCorrect, 
@@ -56,7 +59,7 @@ class _InLearningPageState extends State<InLearningPage> {
   @override
   void initState() {
     // 加载测试词
-    final SubQuizConfig questionsSetting = AppData().config.quiz.zhar;
+    final QuizConfig questionsSetting = AppData().config.quiz;
     List<List<TestItem>> questionsInSections = List.generate(questionsSetting.questionSections.length, (_) => []);
 
     for(int sectionIndex = 0; sectionIndex < questionsSetting.questionSections.length; sectionIndex++) {
@@ -209,6 +212,12 @@ class _InLearningPageState extends State<InLearningPage> {
                 );
               } else if(testItem.testType == 1 || testItem.testType == 2) {
                 // ar-zh choose questions
+                if(isAutoPlay && testItem.testType == 2 && !playedList.contains(testItem)) {
+                  context.read<Global>().uiLogger.fine("自动播放单词发音: [${testItem.testWord.arabic}]");
+                  playTextToSpeech(testItem.testWord.arabic);
+                  playedList.add(testItem);
+                }
+
                 return ChoiceQuestions(
                   mainWord: testItem.testType == 1 ? testItem.testWord.chinese :  testItem.testWord.arabic, 
                   choices: testItem.options!, 
