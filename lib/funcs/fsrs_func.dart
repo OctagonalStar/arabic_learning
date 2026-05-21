@@ -149,6 +149,15 @@ class FSRS {
     logger.fine("计算得分: hard");
     return Rating.hard;
   }
+
+  DateTime? getCardBirthday(int wordId) {
+    try {
+      return config.reviewLogs.firstWhere((ReviewLog rvl) => rvl.cardId == wordId).reviewDateTime;
+    } catch (e) {
+      logger.severe("wordID: $wordId card not found or has more than one");
+      return null;
+    }
+  }
 }
 
 @immutable
