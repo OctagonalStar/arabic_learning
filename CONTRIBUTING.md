@@ -36,6 +36,8 @@
 
 待审查通过后，你的提交就会被合并。
 
+---
+
 ## 你必须做到的
 
 请在你进行提交和PR时关注以下的问题:
@@ -44,7 +46,7 @@
 
 这个项目设置了必须要有GPG验证了是你的更改后才能进行合并。
 
-> 如果你不知道GPG是什么，请参照[这篇文章](https://docs.github.com/zh/authentication/managing-commit-signature-verification/about-commit-signature-verification)
+> 如果你不知道GPG是什么，请参照[这篇文章](https://docs.github.com/authentication/managing-commit-signature-verification/about-commit-signature-verification)
 
 ### DCO签名
 
@@ -53,6 +55,8 @@
 协议内容详见 [DCO.md](DCO.md)
 
 你可以通过 `git commit -s` 对提交进行签署。
+
+---
 
 ## 其他的事项
 
@@ -67,18 +71,17 @@
 - 对于一个类，请使用大写字母或者下划线开头
 - 对于一个函数，请使用小写字母开头
 
-违反此规定的PR会要求进行相应修改后即可
+---
 
-#### 存储单词数据的变量
+### 关于AI辅助生成代码
 
-在应用中，存储单个阿拉伯语单词数据的变量使用`word`为变量名`Map<String, dynamic>`为其类型，内部详细结构如下
+> 该定义仅对此项目生效
 
-``` dart
-Map<String, dynamic> word = {"arabic": "{Arabic}",
-                             "chinese": "{Chinese}",
-                             "explanation": "{explanation}",
-                             "subClass": "{className}",
-                             "learningProgress": "{times}", //int
-                             "id": "{id}" // int getSelectedWords函数结果中会有，并且所有面向用户的界面中调用的数据都应具有此键值对。
-                            };
-```
+定义: 通过 **自然语言** 请求或指导 **大语言模型(LLM)** 生成贡献中的 **编程语言代码** ，并且 **由人工的编写代码** 占贡献中 **40%** 以下的，即认为是 **AI辅助生成代码** 。
+
+要求: 我并不反对通过AI辅助生成代码，但**十分希望**通过AI辅助生成的贡献能做到以下几点：
+
+1. 尊重他人，避免出现有侮辱性的部分。（要是出现了这类问题，**请不要拿AI做挡箭牌**）
+2. 注意不要在代码中泄露你的Key。（当然，如果你想让别人也免费用的话，那就另说了）
+3. 先在你自己的环境下确保你的代码能正常运行。
+4. AI也会犯错，在你请求核查之前请先自己理解并排查可能的问题。
