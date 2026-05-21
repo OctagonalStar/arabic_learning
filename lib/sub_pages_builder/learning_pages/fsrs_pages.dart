@@ -341,9 +341,9 @@ class _MainFSRSPageState extends State<MainFSRSPage> {
     if (widget.fsrs.config.reinforceMemory) {
       queue.addAll([
         for (int i = 0; i < 3; i++) ...uniqueIds
-      ]);
+      ]..shuffle());
     } else {
-      queue.addAll(uniqueIds);
+      queue.addAll(uniqueIds..shuffle());
     }
   }
 
