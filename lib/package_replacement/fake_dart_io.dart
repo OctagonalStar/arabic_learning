@@ -5,7 +5,7 @@ class File {
     // nothing
     return "";
   }
-  bool existsSync() {return true;}
+  bool existsSync() {return false;}
 
   void deleteSync() {}
 
