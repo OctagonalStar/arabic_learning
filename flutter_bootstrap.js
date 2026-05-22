@@ -33,7 +33,7 @@ addEventListener("message", eventListener);
 if (!window._flutter) {
   window._flutter = {};
 }
-_flutter.buildConfig = {"engineRevision":"3452d735bd38224ef2db85ca763d862d6326b17f","builds":[{"compileTarget":"dart2js","renderer":"canvaskit","mainJsPath":"main.dart.js"},{}]};
+_flutter.buildConfig = {"engineRevision":"4c525dac5ebe5971c5708ef73558ed8edcf4a362","builds":[{"compileTarget":"dart2js","renderer":"canvaskit","mainJsPath":"main.dart.js"},{}]};
 
 
 const loading = document.createElement('div');
@@ -41,7 +41,7 @@ document.body.appendChild(loading);
 loading.textContent = "正在加载中(Step 1)...\n若长时间无响应请尝试更换网络";
 _flutter.loader.load({
     serviceWorkerSettings: {
-        serviceWorkerVersion: "1987826702" /* Flutter's service worker is deprecated and will be removed in a future Flutter release. */,
+        serviceWorkerVersion: "4216315272" /* Flutter's service worker is deprecated and will be removed in a future Flutter release. */,
     },
     onEntrypointLoaded: async function (engineInitializer) {
         loading.textContent = "正在加载中(Step 2)...长时间无响应请尝试删除缓存或更换浏览器";
