@@ -323,6 +323,7 @@ class _MainFSRSPageState extends State<MainFSRSPage> {
   List<int> queue = [];
   final PageController controller = PageController();
   final Random sharedRnd = Random();
+  final int initalReviewNum = FSRS().getWillDueCount();
 
   @override
   void initState() {
@@ -341,9 +342,9 @@ class _MainFSRSPageState extends State<MainFSRSPage> {
     if (widget.fsrs.config.reinforceMemory) {
       queue.addAll([
         for (int i = 0; i < 3; i++) ...uniqueIds
-      ]);
+      ]..shuffle());
     } else {
-      queue.addAll(uniqueIds);
+      queue.addAll(uniqueIds..shuffle());
     }
   }
 
@@ -367,10 +368,35 @@ class _MainFSRSPageState extends State<MainFSRSPage> {
   Widget build(BuildContext context) {
     context.read<Global>().uiLogger.info("构建 MainFSRSPage, 动态队列长度: ${queue.length}");
     MediaQueryData mediaQuery = MediaQuery.of(context);
+    void Function(void Function()) refreshProgress =(_)=>();
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text("规律学习"),
+        title: Column(
+          children: [
+            Text("复习"),
+            if(queue.isNotEmpty) StatefulBuilder(
+              builder: (context, setLocalState) {
+                refreshProgress = setLocalState;
+                context.read<Global>().uiLogger.fine("刷新复习进度条");
+                return TweenAnimationBuilder(
+                  tween: Tween<double>(
+                    begin: 0,
+                    end: (initalReviewNum-widget.fsrs.getWillDueCount())/initalReviewNum
+                  ), 
+                  duration: Durations.medium2, 
+                  builder: (context, value, child) {
+                    return LinearProgressIndicator(
+                    value: value,
+                    minHeight: 15,
+                    borderRadius: StaticsVar.br,
+                  );
+                }
+                );
+              }
+            )
+          ],
+        ),
         actions: [
           IconButton(
             icon: Icon(Icons.refresh),
@@ -394,6 +420,9 @@ class _MainFSRSPageState extends State<MainFSRSPage> {
         scrollDirection: Axis.vertical,
         controller: controller,
         physics: const PageScrollPhysics(),
+        onPageChanged: (value) {
+          refreshProgress(()=>());
+        },
         itemBuilder: (context, index) {
           // Page 0: 引导页
           if (index == 0) {

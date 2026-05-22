@@ -113,11 +113,13 @@ class LearningPage extends StatelessWidget {
             int tries = 0;
             while(pushWords.length < FSRS().config.pushAmount && tries < FSRS().config.pushAmount * 10){
               int chosen = rnd.nextInt(AppData().wordData.words.length);
-              if(!FSRS().isContained(chosen)) {
+              DateTime? cardBirthday = FSRS().getCardBirthday(chosen);
+              if(cardBirthday == null || cardBirthday.difference(DateTime.now()).inDays == 0) {
                 pushWords.add(AppData().wordData.words.elementAt(chosen));
               }
               tries++;
             }
+            pushWords.removeWhere((WordItem item) => FSRS().isContained(item.id));
             if(pushWords.isEmpty) {
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(content: Text("今日的推送已完成"), duration: Duration(seconds: 1),),

@@ -83,7 +83,7 @@ class _QuestionsSettingPage extends State<QuestionsSettingPage> {
             if(!AppData().isWideScreen) TextContainer(text: "长按可拖动排序", style: TextStyle(color: Colors.grey), animated: true),
             Expanded(
               child: ReorderableListView(
-                onReorder: (oldIndex, newIndex) {
+                onReorderItem: (oldIndex, newIndex) {
                   context.read<Global>().uiLogger.info("重排题型项目: $oldIndex => $newIndex");
                   setState(() {
                     if(oldIndex < newIndex) newIndex--; // 修正索引
