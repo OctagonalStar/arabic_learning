@@ -429,6 +429,8 @@ class ChooseButtonBox extends StatefulWidget {
 }
 class _ChooseButtonBoxState extends State<ChooseButtonBox> {
   Color? color;
+  bool isChoosed = false;
+
   @override
   Widget build(BuildContext context) {
     color ??= widget.cl ?? Theme.of(context).colorScheme.primaryContainer.withAlpha(150);
@@ -443,6 +445,8 @@ class _ChooseButtonBoxState extends State<ChooseButtonBox> {
       child: ElevatedButton(
         onPressed: () {
           setState(() {
+            if(isChoosed) return;
+            isChoosed = true;
             bool? ans = widget.chose(widget.index);
             if(ans != null) {
               if(widget.isAnimated) {
@@ -464,7 +468,7 @@ class _ChooseButtonBoxState extends State<ChooseButtonBox> {
                 }
               }
             } else {
-              color = Theme.of(context).colorScheme.onPrimary.withAlpha(150);
+              color = Theme.of(context).colorScheme.primaryContainer.withAlpha(150);
             }
           });
         },
