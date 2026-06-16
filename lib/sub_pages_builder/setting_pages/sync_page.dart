@@ -240,16 +240,15 @@ class _DataSyncPage extends State<DataSyncPage> {
                   ElevatedButton(
                     onPressed: () async {
                       context.read<Global>().uiLogger.info("导入软件数据");
-                      FilePickerResult? result = await FilePicker.pickFiles(
-                        allowMultiple: false,
+                      PlatformFile? result = await FilePicker.pickFile(
                         type: FileType.custom,
                         allowedExtensions: ['json'],
                       );
                       if (result != null) {
                         String jsonString;
-                        PlatformFile platformFile = result.files.first;
-                        if (platformFile.bytes != null){
-                          jsonString = utf8.decode(platformFile.bytes!);
+                        PlatformFile platformFile = result;
+                        if ((await platformFile.readAsBytes()).isNotEmpty){
+                          jsonString = utf8.decode(await platformFile.readAsBytes());
                         } else if (platformFile.path != null && !kIsWeb) {
                           jsonString = await io.File(platformFile.path!).readAsString();
                         } else {
