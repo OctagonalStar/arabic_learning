@@ -10,6 +10,11 @@ set(BINARY_NAME "arabic_learning")
 # versions of CMake.
 cmake_policy(VERSION 3.14...3.25)
 
+# Add /await flag for coroutine support
+if(MSVC)
+  add_compile_options(/await)
+endif()
+
 # Define build configuration option.
 get_property(IS_MULTICONFIG GLOBAL PROPERTY GENERATOR_IS_MULTI_CONFIG)
 if(IS_MULTICONFIG)
