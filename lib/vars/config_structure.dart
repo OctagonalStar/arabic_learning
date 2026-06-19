@@ -31,8 +31,6 @@ class Config {
   /// 同步设置类
   final SyncConfig webSync;
 
-  /// 彩蛋设置类
-  final EggConfig egg;
   
   const Config({
     this.user = "", 
@@ -42,8 +40,7 @@ class Config {
     this.audio = const AudioConfig(),
     this.learning = const LearningConfig(),
     this.quiz = const QuizConfig(),
-    this.webSync = const SyncConfig(),
-    this.egg = const EggConfig()
+    this.webSync = const SyncConfig()
   });
 
   /// 将设置转为Map格式
@@ -57,8 +54,7 @@ class Config {
       "audio": audio.toMap(),
       "learning": learning.toMap(),
       "quiz": quiz.toMap(),
-      "sync": webSync.toMap(),
-      "eggs": egg.toMap()
+      "sync": webSync.toMap()
     };
   }
 
@@ -78,8 +74,7 @@ class Config {
       audio: AudioConfig.buildFromMap(setting["audio"]),
       learning: LearningConfig.buildFromMap(setting["learning"]),
       quiz: QuizConfig.buildFromMap(setting["quiz"]),
-      webSync: SyncConfig.buildFromMap(setting["sync"]),
-      egg: EggConfig.buildFromMap(setting["eggs"])
+      webSync: SyncConfig.buildFromMap(setting["sync"])
     );
   }
 
@@ -91,8 +86,7 @@ class Config {
     AudioConfig? audio,
     LearningConfig? learning,
     QuizConfig? quiz,
-    SyncConfig? webSync,
-    EggConfig? egg
+    SyncConfig? webSync
   }) {
     return Config(
       user: user??this.user, 
@@ -102,8 +96,7 @@ class Config {
       audio: audio??this.audio,
       learning: learning??this.learning,
       quiz: quiz??this.quiz,
-      webSync: webSync??this.webSync,
-      egg: egg??this.egg
+      webSync: webSync??this.webSync
     );
     
   }
@@ -430,36 +423,6 @@ class QuizConfig {
       shuffleExternaly: shuffleExternaly ?? this.shuffleExternaly,
       modifyAllowed: modifyAllowed ?? this.modifyAllowed,
       preferSimilar: preferSimilar?? this.preferSimilar
-    );
-  }
-}
-
-@immutable
-class EggConfig {
-  final bool stella;
-
-  const EggConfig({
-    this.stella = false
-  });
-
-  Map<String, dynamic> toMap(){
-    return {
-      "stella": stella
-    };
-  }
-
-  static EggConfig buildFromMap(Map<String, dynamic>? setting) {
-    if(setting == null) return EggConfig();
-    return EggConfig(
-      stella: setting["stella"]
-    );
-  }
-
-  EggConfig copyWith({
-    bool? stella,
-  }) {
-    return EggConfig(
-      stella: stella ?? this.stella,
     );
   }
 }

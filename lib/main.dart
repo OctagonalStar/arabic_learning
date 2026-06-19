@@ -91,23 +91,8 @@ class MyApp extends StatelessWidget {
               title: StaticsVar.appName,
               themeMode: ThemeMode.system,
               theme: global.themeData,
-              home: AppData().config.egg.stella
-                ? Stack(
-                  children: [
-                    Container(
-                      decoration: BoxDecoration(
-                        image: DecorationImage(
-                          image: MemoryImage(AppData().stella!),
-                          fit: BoxFit.cover,
-                        ),
-                      ),
-                    ),
-                    child!,
-                  ],
-                )
-                : child,
-            ),
-            child: const MyHomePage(),
+              home: const MyHomePage()
+            )
           );
         }
       );
@@ -387,7 +372,6 @@ class _MyHomePageState extends State<MyHomePage> {
     }
 
     return Scaffold(
-      backgroundColor: AppData().config.egg.stella ? Colors.transparent : null,
       appBar: AppBar(
         centerTitle: true,
         backgroundColor: Theme.of(context).colorScheme.inversePrimary.withAlpha(150),
