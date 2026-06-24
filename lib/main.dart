@@ -18,6 +18,7 @@ import 'package:arabic_learning/pages/home_page.dart';
 import 'package:arabic_learning/pages/learning_page.dart'show LearningPage;
 import 'package:arabic_learning/pages/setting_page.dart'show SettingPage;
 import 'package:arabic_learning/pages/test_page.dart' show TestPage;
+import 'package:arabic_learning/pages/leading_page.dart' show PolicyPage;
 import 'package:workmanager/workmanager.dart' show Workmanager, Constraints;
 
 void main() async {
@@ -91,23 +92,8 @@ class MyApp extends StatelessWidget {
               title: StaticsVar.appName,
               themeMode: ThemeMode.system,
               theme: global.themeData,
-              home: AppData().config.egg.stella
-                ? Stack(
-                  children: [
-                    Container(
-                      decoration: BoxDecoration(
-                        image: DecorationImage(
-                          image: MemoryImage(AppData().stella!),
-                          fit: BoxFit.cover,
-                        ),
-                      ),
-                    ),
-                    child!,
-                  ],
-                )
-                : child,
-            ),
-            child: const MyHomePage(),
+              home: const MyHomePage()
+            )
           );
         }
       );
@@ -125,7 +111,6 @@ class MyHomePage extends StatefulWidget {
 
 class _MyHomePageState extends State<MyHomePage> {
   final PageController _pageController = PageController(initialPage: 0);
-  final TextEditingController controller = TextEditingController();
 
   // 判断是否为桌面端的阈值（可根据需要调整）
   static const double _desktopBreakpoint = 600;
@@ -261,7 +246,6 @@ class _MyHomePageState extends State<MyHomePage> {
   @override
   void dispose(){
     _pageController.dispose();
-    controller.dispose();
     super.dispose();
   }
 
@@ -271,74 +255,9 @@ class _MyHomePageState extends State<MyHomePage> {
     final global = context.watch<Global>();
     
     if(AppData().isFirstStart) {
-      context.read<Global>().uiLogger.info("构建首次启动页面");
-      return Scaffold(
-        body: PopScope(
-          child: Column(
-            children: [
-              Expanded(
-                child: ListView(
-                    children: [
-                      FutureBuilder(
-                        future: rootBundle.loadString('assets/help/announce.md'),
-                        initialData: "加载中...",
-                        builder: (context, asyncSnapshot) {
-                          return MarkdownBody(data: asyncSnapshot.data!);
-                        }
-                      ),
-                      SizedBox(height: MediaQuery.of(context).size.height),
-                      TextField(
-                        controller: controller,
-                        decoration: InputDecoration(
-                          labelText: "请输入你的名字",
-                          prefixIcon: Icon(Icons.edit),
-                        ),
-                      )
-                    ],
-                ),
-              ),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                children: [
-                  ElevatedButton(
-                    style: ElevatedButton.styleFrom(
-                      shape: RoundedRectangleBorder(borderRadius: StaticsVar.br)
-                    ),
-                    onPressed: () async {
-                      await SystemChannels.platform.invokeMethod('SystemNavigator.pop');
-                      SystemNavigator.pop();
-                      return;
-                    },
-                    child: const Text('我有异议', style: TextStyle(color: Colors.redAccent, fontWeight: FontWeight.bold, fontSize: 24)),
-                  ),
-                  ElevatedButton(
-                    style: ElevatedButton.styleFrom(
-                      shape: RoundedRectangleBorder(borderRadius: StaticsVar.br)
-                    ),
-                    onPressed: () async {
-                      if(controller.text.isNotEmpty){
-                        context.read<Global>().uiLogger.info("用户同意协议，签署名：${controller.text}");
-                        AppData().config = AppData().config.copyWith(user: controller.text);
-                        context.read<Global>().updateSetting(refresh: true);
-                      } else {
-                        context.read<Global>().uiLogger.info("用户未填写名称");
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text('使用该软件前你应当仔细阅读并理解条款'),
-                            duration: Duration(seconds: 2),
-                          ),
-                        );
-                        return;
-                      }
-                    },
-                    child: const Text('我没异议', style: TextStyle(color: Colors.redAccent, fontWeight: FontWeight.bold, fontSize: 24)),
-                  )
-                ],
-              ),
-            ],
-          ),
-        ),
-      );
+      return PolicyPage(isUpdate: false);
+    } else if (AppData().config.lastTermVersion != StaticsVar.termVersion) {
+      return PolicyPage(isUpdate: true);
     }
 
     if(io.Platform.isAndroid) {
@@ -387,7 +306,6 @@ class _MyHomePageState extends State<MyHomePage> {
     }
 
     return Scaffold(
-      backgroundColor: AppData().config.egg.stella ? Colors.transparent : null,
       appBar: AppBar(
         centerTitle: true,
         backgroundColor: Theme.of(context).colorScheme.inversePrimary.withAlpha(150),

@@ -112,7 +112,6 @@ class Global with ChangeNotifier {
     logger.info("应用设置中");
     AppData appData = AppData();
     if(appData.config.audio.audioSource == 2) await appData.loadTTS(appData.config.audio.playRate);
-    if(appData.config.egg.stella) await appData.loadEggs();
     changeLoggerBehavior();
     updateTheme();
     notifyListeners();
@@ -217,13 +216,6 @@ class AppData {
 
     vitsTTS = sherpa_onnx.OfflineTts(config);
     logger.info("TTS: 本地TTS加载完成");
-  }
-
-  Future<void> loadEggs() async {
-    if(stella == null){
-      final rawString = await rootBundle.loadString("assets/eggs/s.txt");
-      stella = base64Decode(rawString);
-    }
   }
 
   /// Non-Format Data:

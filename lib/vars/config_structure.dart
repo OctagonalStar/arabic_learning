@@ -12,6 +12,8 @@ class Config {
   /// 上次使用时的版本号
   final int lastVersion;
   
+  /// 上次签署的条款号
+  final int lastTermVersion;
 
   /// 调试设置类
   final DebugConfig debug;
@@ -31,19 +33,17 @@ class Config {
   /// 同步设置类
   final SyncConfig webSync;
 
-  /// 彩蛋设置类
-  final EggConfig egg;
   
   const Config({
     this.user = "", 
+    this.lastTermVersion = 0,
     this.lastVersion = StaticsVar.appVersion, 
     this.debug = const DebugConfig(),
     this.regular = const RegularConfig(),
     this.audio = const AudioConfig(),
     this.learning = const LearningConfig(),
     this.quiz = const QuizConfig(),
-    this.webSync = const SyncConfig(),
-    this.egg = const EggConfig()
+    this.webSync = const SyncConfig()
   });
 
   /// 将设置转为Map格式
@@ -51,14 +51,13 @@ class Config {
     return {
       "User": user,
       "LastVersion": lastVersion,
-      
+      "LastTermVersion": lastTermVersion,
       "Debug": debug.toMap(),
       "regular": regular.toMap(),
       "audio": audio.toMap(),
       "learning": learning.toMap(),
       "quiz": quiz.toMap(),
-      "sync": webSync.toMap(),
-      "eggs": egg.toMap()
+      "sync": webSync.toMap()
     };
   }
 
@@ -73,37 +72,37 @@ class Config {
     return Config(
       user: setting["User"],
       lastVersion: setting["LastVersion"],
+      lastTermVersion: setting["LastTermVersion"]??0,
       debug: DebugConfig.buildFromMap(setting["Debug"]),
       regular: RegularConfig.buildFromMap(setting["regular"]),
       audio: AudioConfig.buildFromMap(setting["audio"]),
       learning: LearningConfig.buildFromMap(setting["learning"]),
       quiz: QuizConfig.buildFromMap(setting["quiz"]),
-      webSync: SyncConfig.buildFromMap(setting["sync"]),
-      egg: EggConfig.buildFromMap(setting["eggs"])
+      webSync: SyncConfig.buildFromMap(setting["sync"])
     );
   }
 
   Config copyWith({
     String? user, 
     int? lastVersion, 
+    int? lastTermVersion,
     DebugConfig? debug,
     RegularConfig? regular,
     AudioConfig? audio,
     LearningConfig? learning,
     QuizConfig? quiz,
-    SyncConfig? webSync,
-    EggConfig? egg
+    SyncConfig? webSync
   }) {
     return Config(
       user: user??this.user, 
       lastVersion: lastVersion??this.lastVersion,
+      lastTermVersion: lastTermVersion??this.lastTermVersion,
       debug: debug??this.debug,
       regular: regular??this.regular,
       audio: audio??this.audio,
       learning: learning??this.learning,
       quiz: quiz??this.quiz,
-      webSync: webSync??this.webSync,
-      egg: egg??this.egg
+      webSync: webSync??this.webSync
     );
     
   }
@@ -430,36 +429,6 @@ class QuizConfig {
       shuffleExternaly: shuffleExternaly ?? this.shuffleExternaly,
       modifyAllowed: modifyAllowed ?? this.modifyAllowed,
       preferSimilar: preferSimilar?? this.preferSimilar
-    );
-  }
-}
-
-@immutable
-class EggConfig {
-  final bool stella;
-
-  const EggConfig({
-    this.stella = false
-  });
-
-  Map<String, dynamic> toMap(){
-    return {
-      "stella": stella
-    };
-  }
-
-  static EggConfig buildFromMap(Map<String, dynamic>? setting) {
-    if(setting == null) return EggConfig();
-    return EggConfig(
-      stella: setting["stella"]
-    );
-  }
-
-  EggConfig copyWith({
-    bool? stella,
-  }) {
-    return EggConfig(
-      stella: stella ?? this.stella,
     );
   }
 }
