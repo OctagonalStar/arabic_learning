@@ -72,7 +72,7 @@ class Config {
     return Config(
       user: setting["User"],
       lastVersion: setting["LastVersion"],
-      lastTermVersion: setting["LastTermVersion"],
+      lastTermVersion: setting["LastTermVersion"]??0,
       debug: DebugConfig.buildFromMap(setting["Debug"]),
       regular: RegularConfig.buildFromMap(setting["regular"]),
       audio: AudioConfig.buildFromMap(setting["audio"]),
