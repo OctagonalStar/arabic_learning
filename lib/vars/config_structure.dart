@@ -12,6 +12,8 @@ class Config {
   /// 上次使用时的版本号
   final int lastVersion;
   
+  /// 上次签署的条款号
+  final int lastTermVersion;
 
   /// 调试设置类
   final DebugConfig debug;
@@ -34,6 +36,7 @@ class Config {
   
   const Config({
     this.user = "", 
+    this.lastTermVersion = 0,
     this.lastVersion = StaticsVar.appVersion, 
     this.debug = const DebugConfig(),
     this.regular = const RegularConfig(),
@@ -48,7 +51,7 @@ class Config {
     return {
       "User": user,
       "LastVersion": lastVersion,
-      
+      "LastTermVersion": lastTermVersion,
       "Debug": debug.toMap(),
       "regular": regular.toMap(),
       "audio": audio.toMap(),
@@ -69,6 +72,7 @@ class Config {
     return Config(
       user: setting["User"],
       lastVersion: setting["LastVersion"],
+      lastTermVersion: setting["LastTermVersion"],
       debug: DebugConfig.buildFromMap(setting["Debug"]),
       regular: RegularConfig.buildFromMap(setting["regular"]),
       audio: AudioConfig.buildFromMap(setting["audio"]),
@@ -81,6 +85,7 @@ class Config {
   Config copyWith({
     String? user, 
     int? lastVersion, 
+    int? lastTermVersion,
     DebugConfig? debug,
     RegularConfig? regular,
     AudioConfig? audio,
@@ -91,6 +96,7 @@ class Config {
     return Config(
       user: user??this.user, 
       lastVersion: lastVersion??this.lastVersion,
+      lastTermVersion: lastTermVersion??this.lastTermVersion,
       debug: debug??this.debug,
       regular: regular??this.regular,
       audio: audio??this.audio,
