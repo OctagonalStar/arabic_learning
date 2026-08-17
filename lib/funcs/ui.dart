@@ -1135,3 +1135,128 @@ class _ListeningQuestion extends State<ListeningQuestion> {
     );
   }
 }
+
+// 有关设置的Widget
+class SettingRedirctButton extends StatelessWidget {
+  const SettingRedirctButton({
+    super.key,
+    required this.title,
+    required this.target,
+    this.icon = Icons.settings
+  });
+
+  final String title;
+  final IconData icon;
+  final Widget target;
+
+  @override
+  Widget build(BuildContext context) {
+    MediaQueryData mediaQuery = MediaQuery.of(context);
+    return ElevatedButton(
+      style: ElevatedButton.styleFrom(
+        minimumSize: Size.fromHeight(mediaQuery.size.height * 0.08),
+        backgroundColor: Theme.of(
+          context,
+        ).colorScheme.onPrimary.withAlpha(150),
+        shape: BeveledRectangleBorder(),
+      ),
+      onPressed: () {
+        context.read<Global>().uiLogger.info(
+          "跳转: SettingPage => ${target.toString()}",
+        );
+        Navigator.of(context).push(
+          MaterialPageRoute(
+            builder: (context) => target,
+          ),
+        );
+      },
+      child: Row(
+        children: [
+          Icon(icon),
+          Expanded(child: Text(title)),
+          Icon(Icons.arrow_forward_ios),
+        ],
+      ),
+    );
+  }
+}
+
+class SettingRow extends StatelessWidget {
+  const SettingRow({
+    super.key,
+    required this.leading,
+    required this.end,
+    this.icon = Icons.settings,
+    this.note,
+  });
+
+  final String leading;
+  final String? note;
+  final IconData icon;
+  final Widget end;
+
+  @override
+  Widget build(BuildContext context) {
+    MediaQueryData mediaQuery = MediaQuery.of(context);
+    return Row(
+      children: [
+        SizedBox(width: mediaQuery.size.width * 0.02),
+        Icon(icon, size: 24.0),
+        SizedBox(width: mediaQuery.size.width * 0.01),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(leading),
+              if(note != null) Text(
+                note!,
+                style: TextStyle(fontSize: 12.0, color: Colors.grey),
+              ),
+            ],
+          ),
+        ),
+        end,
+        SizedBox(width: mediaQuery.size.width * 0.02)
+      ],
+    );
+  }
+}
+
+class SettingItem extends StatelessWidget {
+  final String title;
+  final EdgeInsetsGeometry? padding;
+  final List<Widget> children;
+  const SettingItem({super.key, required this.title, required this.children, this.padding});
+
+  @override
+  Widget build(BuildContext context) {
+    context.read<Global>().uiLogger.info("构建 SettingItem: $title");
+    MediaQueryData mediaQuery = MediaQuery.of(context);
+    List<Container> decoratedContainers = List.generate(children.length, (int index) {
+      return Container(
+        width: mediaQuery.size.width * 0.90,
+        padding: padding,
+        margin: EdgeInsets.all(4.0),
+        decoration: BoxDecoration(
+          color: Theme.of(context).colorScheme.onPrimary.withAlpha(150),
+          borderRadius: BorderRadius.vertical(top: Radius.circular(index == 0 ? 25.0 : 5.0), bottom: Radius.circular(index == children.length-1 ? 25.0 : 5.0)),
+        ),
+        clipBehavior: Clip.antiAlias,
+        child: children[index],
+      );
+    });
+
+    return Column(
+      mainAxisAlignment: MainAxisAlignment.start,
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        TextContainer(text: title),
+        Center(
+          child: Column(
+            children: decoratedContainers,
+          ),
+        ),
+      ]
+    );
+  }
+}

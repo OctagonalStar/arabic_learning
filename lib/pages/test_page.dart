@@ -5,7 +5,7 @@ import 'package:arabic_learning/vars/global.dart';
 import 'package:arabic_learning/vars/statics_var.dart';
 import 'package:arabic_learning/sub_pages_builder/test_pages/listening_test_page.dart' show ForeListeningSettingPage;
 import 'package:arabic_learning/sub_pages_builder/test_pages/local_pk_page.dart' show LocalPKSelectPage;
-
+import 'package:arabic_learning/sub_pages_builder/test_pages/reading_test_page.dart' show ReadingTestLeading;
 class TestPage extends StatelessWidget {
   const TestPage({super.key});
   @override
@@ -16,25 +16,50 @@ class TestPage extends StatelessWidget {
       mainAxisAlignment: MainAxisAlignment.start,
       children: [
         SizedBox(height: mediaQuery.size.height * 0.05),
-        ElevatedButton.icon(
-          icon: Icon(Icons.connect_without_contact, size: 36.0),
-          label: FittedBox(child: Text('联机', style: TextStyle(fontSize: 34.0))),
-          style: ElevatedButton.styleFrom(
-            backgroundColor: Theme.of(context).colorScheme.onPrimary.withAlpha(150),
-            fixedSize: Size(mediaQuery.size.width * 0.8, mediaQuery.size.height * 0.15),
-            shape: RoundedRectangleBorder(
-              borderRadius: StaticsVar.br,
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+          children: [
+            ElevatedButton.icon(
+              icon: Icon(Icons.connect_without_contact, size: 36.0),
+              label: FittedBox(child: Text('联机', style: TextStyle(fontSize: 34.0))),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Theme.of(context).colorScheme.onPrimary.withAlpha(150),
+                fixedSize: Size(mediaQuery.size.width * 0.4, mediaQuery.size.height * 0.15),
+                shape: RoundedRectangleBorder(
+                  borderRadius: StaticsVar.br,
+                ),
+              ),
+              onPressed: () {
+                context.read<Global>().uiLogger.info("跳转: TestPage => LocalPKSelectPage");
+                Navigator.push(
+                  context, 
+                  MaterialPageRoute(
+                    builder: (context) => LocalPKSelectPage()
+                  )
+                );
+              },
             ),
-          ),
-          onPressed: () {
-            context.read<Global>().uiLogger.info("跳转: TestPage => LocalPKSelectPage");
-            Navigator.push(
-              context, 
-              MaterialPageRoute(
-                builder: (context) => LocalPKSelectPage()
-              )
-            );
-          },
+            ElevatedButton.icon(
+              icon: Icon(Icons.chrome_reader_mode, size: 36.0),
+              label: FittedBox(child: Text('阅读测试', style: TextStyle(fontSize: 34.0))),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Theme.of(context).colorScheme.onPrimary.withAlpha(150),
+                fixedSize: Size(mediaQuery.size.width * 0.45, mediaQuery.size.height * 0.15),
+                shape: RoundedRectangleBorder(
+                  borderRadius: StaticsVar.br,
+                ),
+              ),
+              onPressed: () {
+                context.read<Global>().uiLogger.info("跳转: TestPage => ReadingTestLeading");
+                Navigator.push(
+                  context, 
+                  MaterialPageRoute(
+                    builder: (context) => ReadingTestLeading()
+                  )
+                );
+              },
+            ),
+          ],
         ),
         SizedBox(height: mediaQuery.size.height * 0.05),
         ElevatedButton.icon(

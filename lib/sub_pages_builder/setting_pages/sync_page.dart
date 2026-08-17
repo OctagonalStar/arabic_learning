@@ -6,7 +6,6 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import 'package:arabic_learning/funcs/ui.dart';
-import 'package:arabic_learning/sub_pages_builder/setting_pages/item_widget.dart';
 import 'package:arabic_learning/funcs/sync.dart';
 import 'package:arabic_learning/vars/config_structure.dart';
 import 'package:arabic_learning/vars/global.dart';
