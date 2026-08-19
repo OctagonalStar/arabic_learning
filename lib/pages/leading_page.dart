@@ -77,7 +77,7 @@ class _PolicyPage extends State<PolicyPage> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             children: [
-              ElevatedButton(
+              Button(
                 onPressed: () async {
                   await SystemChannels.platform.invokeMethod('SystemNavigator.pop');
                   SystemNavigator.pop();
@@ -85,7 +85,7 @@ class _PolicyPage extends State<PolicyPage> {
                 },
                 child: const Text('不同意', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 24)),
               ),
-              ElevatedButton(
+              Button(
                 onPressed: () {
                   if(widget.isUpdate) {
                     context.read<Global>().uiLogger.info("用户已同意条款更新");

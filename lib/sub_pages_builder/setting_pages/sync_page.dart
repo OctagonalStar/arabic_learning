@@ -53,10 +53,7 @@ class _DataSyncPage extends State<DataSyncPage> {
                   Expanded(
                     child: Text("WebDAV账户"),
                   ),
-                  ElevatedButton(
-                    style: ElevatedButton.styleFrom(
-                      shape: RoundedRectangleBorder(borderRadius: StaticsVar.br)
-                    ),
+                  Button(
                     onPressed: () async {
                       await popAccountSetting(context);
                       setState(() {});
@@ -114,7 +111,7 @@ class _DataSyncPage extends State<DataSyncPage> {
                   ),
                   isUploading 
                   ? CircularProgressIndicator()
-                  :ElevatedButton(
+                  :Button(
                     onPressed: () async {
                       context.read<Global>().uiLogger.info("用户上传数据");
                       setState(() {
@@ -152,7 +149,7 @@ class _DataSyncPage extends State<DataSyncPage> {
                   ),
                   isDownloading 
                   ? CircularProgressIndicator()
-                  : ElevatedButton(
+                  : Button(
                     onPressed: () async {
                       context.read<Global>().uiLogger.info("用户恢复数据");
                       setState(() {
@@ -196,7 +193,7 @@ class _DataSyncPage extends State<DataSyncPage> {
                       ],
                     ),
                   ),
-                  ElevatedButton(
+                  Button(
                     onPressed: () async {
                       try{
                         if(await FilePicker.saveFile(
@@ -237,7 +234,7 @@ class _DataSyncPage extends State<DataSyncPage> {
                       ],
                     ),
                   ),
-                  ElevatedButton(
+                  Button(
                     onPressed: () async {
                       context.read<Global>().uiLogger.info("导入软件数据");
                       PlatformFile? result = await FilePicker.pickFile(
@@ -344,7 +341,7 @@ Future<void> popAccountSetting(BuildContext context) async {
           ],
         ),
         actions: [
-          ElevatedButton(
+          Button(
             onPressed: () {
               uriController.clear();
               accountController.clear();
@@ -352,7 +349,7 @@ Future<void> popAccountSetting(BuildContext context) async {
             },
             child: Text("清空"),
           ),
-          ElevatedButton(
+          Button(
             onPressed: () {
               uriController.dispose();
               accountController.dispose();
@@ -361,7 +358,7 @@ Future<void> popAccountSetting(BuildContext context) async {
             },
             child: Text("取消"),
           ),
-          ElevatedButton(
+          Button(
             onPressed: (){
               try{
                 Uri.parse(uriController.text);
