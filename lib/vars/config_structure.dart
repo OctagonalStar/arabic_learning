@@ -375,14 +375,22 @@ class QuizConfig {
   /// 相比于同课程的单词，更偏向于相似的单词
   final bool preferSimilar;
 
-    
+  /// 阅读测试使用API时的API地址。保留位置
+  final String apiAddr;
+
+  /// 阅读测试使用的APIKey。保留位置
+  final String apiKey;
+
+
   const QuizConfig ({
     this.questionSections = const [1, 2],
     this.shuffleGlobally = true,
     this.shuffleInternaly = false,
     this.shuffleExternaly = false,
     this.modifyAllowed = true,
-    this.preferSimilar = false
+    this.preferSimilar = false,
+    this.apiAddr = "",
+    this.apiKey = ""
   });
 
   Map<String, dynamic> toMap(){
@@ -392,7 +400,9 @@ class QuizConfig {
       "shuffleInternaly": shuffleInternaly,
       "shuffleExternaly": shuffleExternaly,
       "modifyAllowed": modifyAllowed,
-      "preferSimilar": preferSimilar
+      "preferSimilar": preferSimilar,
+      "apiAddr": apiAddr,
+      "apiKey": apiKey
     };
   }
 
@@ -410,7 +420,9 @@ class QuizConfig {
       shuffleInternaly: setting["shuffleInternaly"], 
       shuffleExternaly: setting["shuffleExternaly"], 
       modifyAllowed: setting["modifyAllowed"],
-      preferSimilar: setting["preferSimilar"] ?? false
+      preferSimilar: setting["preferSimilar"] ?? false,
+      apiAddr: setting["apiAddr"] ?? "",
+      apiKey: setting["apiKey"] ?? ""
     );
   }
 
@@ -649,6 +661,37 @@ class WordItem {
   }
 }
 
+@immutable
+class ReadingData {
+  final List<ReadingUnit> units;
+
+  const ReadingData({required this.units});
+
+  Map<String, dynamic> toMap(){
+    List<Map<String, dynamic>> units = [];
+    for(ReadingUnit x in this.units){
+      units.add(x.toMap());
+    }
+    return {
+      "units": units
+    };
+  }
+
+  static ReadingData buildFromMap(Map<String, dynamic> data){
+    List<ReadingUnit> units = [];
+    for(Map<String, dynamic> x in data["units"]){
+      units.add(ReadingUnit.buildFromMap(x));
+    }
+    return ReadingData(units: units);
+  }
+
+  ReadingData copyWith({
+    List<ReadingUnit>? units
+  }){
+    return ReadingData(units: units ?? this.units);
+  }
+}
+
 class ClassSelection {
   List<ClassItem> selectedClass;
   bool countInReview;
@@ -657,4 +700,131 @@ class ClassSelection {
     required this.selectedClass,
     required this.countInReview
   });
+}
+
+@immutable
+class ReadingUnit {
+  /// 1:阅读 2:完形
+  final int type;
+
+  final String title;
+
+  final String passage;
+
+  final int difficulty;
+
+  final bool tashkeel;
+
+  final List<ReadingQuestion> questions;
+
+  final List<int> corrects;
+
+  const ReadingUnit({
+    required this.type,
+    required this.title,
+    required this.passage,
+    required this.difficulty,
+    required this.tashkeel,
+    required this.questions,
+    required this.corrects
+  });
+
+  Map<String, dynamic> toMap({bool export = false}){
+    List<Map<String, dynamic>> questionsList = [];
+    for(ReadingQuestion x in questions){
+      questionsList.add(x.toMap());
+    }
+    return {
+      "type": type,
+      "title": title,
+      "passage": passage,
+      "difficulty": difficulty,
+      "tashkeel": tashkeel,
+      "questions": questionsList,
+      if(!export) "corrects": corrects
+    };
+  } 
+
+  static ReadingUnit buildFromMap(Map<String, dynamic> unit){
+    List<ReadingQuestion> questions = [];
+    for(Map<String, dynamic> x in unit["questions"]){
+      questions.add(ReadingQuestion.buildFromMap(x));
+    }
+    return ReadingUnit(
+      type: unit["type"], 
+      title: unit["title"], 
+      passage: unit["passage"], 
+      difficulty: unit["difficulty"], 
+      tashkeel: unit["tashkeel"], 
+      questions: questions, 
+      corrects: unit["corrects"]
+    );
+  }
+
+  ReadingUnit copyWith({
+    int? type,
+    String? title,
+    String? passage,
+    int? difficulty,
+    bool? tashkeel,
+    List<ReadingQuestion>? questions,
+    List<int>? corrects 
+  }){
+    return ReadingUnit(
+      type: type ?? this.type, 
+      title: title ?? this.title, 
+      passage: passage ?? this.passage, 
+      difficulty: difficulty ?? this.difficulty, 
+      tashkeel: tashkeel ?? this.tashkeel, 
+      questions: questions ?? this.questions, 
+      corrects: corrects ?? this.corrects
+    );
+  }
+}
+
+@immutable
+class ReadingQuestion {
+  final String riddle;
+  final List<String> answers;
+  final String type;
+  final String analysis;
+
+  const ReadingQuestion({
+    required this.riddle,
+    required this.answers,
+    required this.type,
+    required this.analysis
+  });
+
+  Map<String, dynamic> toMap(){
+    return {
+      "riddle": riddle,
+      "answers": answers,
+      "type": type,
+      "analysis": analysis
+    };
+  }
+
+  static ReadingQuestion buildFromMap(Map<String, dynamic> question){
+    return ReadingQuestion(
+      riddle: question["riddle"], 
+      answers: question["answers"], 
+      type: question["type"], 
+      analysis: question["analysis"]
+    );
+  }
+
+  ReadingQuestion copyWith({
+    String? riddle,
+    List<String>? answers,
+    String? type,
+    String? analysis
+  }){
+    return ReadingQuestion(
+      riddle: riddle ?? this.riddle, 
+      answers: answers ?? this.answers, 
+      type: type ?? this.type, 
+      analysis: analysis ?? this.analysis
+    );
+  }
 }
