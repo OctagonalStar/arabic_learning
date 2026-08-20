@@ -507,10 +507,11 @@ class WordCard extends StatelessWidget {
         Button(
           size: Size(useWidth, useHeight * 0.3),
           icon: const Icon(Icons.volume_up, size: 24.0),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadiusGeometry.vertical(top: Radius.circular(25.0))),
           onPressed: (){
             playTextToSpeech(word.arabic);
           },
-          child: FittedBox(child: Text(word.arabic, style: TextStyle(fontSize: 64.0, fontFamily: context.read<Global>().arFont))),
+          child: FittedBox(fit: BoxFit.scaleDown ,child: Text(word.arabic, style: TextStyle(fontSize: 64.0, fontFamily: context.read<Global>().arFont))),
         ),
         Stack(
           children: [
