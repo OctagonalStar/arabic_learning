@@ -2,6 +2,7 @@ import 'dart:math';
 
 import 'package:arabic_learning/funcs/ui.dart';
 import 'package:arabic_learning/funcs/utili.dart';
+import 'package:arabic_learning/vars/config_structure.dart';
 import 'package:arabic_learning/vars/statics_var.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart' show Clipboard, ClipboardData;
@@ -25,6 +26,80 @@ class QuestionConfig {
 
   /// 发音符号
   bool tashkeel = false;
+}
+
+class ReadingUnitButton extends StatelessWidget {
+  final ReadingUnit unit;
+  const ReadingUnitButton({super.key, required this.unit});
+
+  @override
+  Widget build(BuildContext context) {
+    MediaQueryData mediaQuery = MediaQuery.of(context);
+    List<String> tags = [];
+    for(ReadingQuestion question in unit.questions){
+      if(!tags.contains(question.type)) tags.add(question.type);
+    }
+
+    late Color difficultyColor;
+    switch(unit.difficulty){
+      case >= 9 :{
+        difficultyColor = Colors.black87;
+        break;
+      }
+      case >= 7 :{
+        difficultyColor = Colors.deepPurple;
+        break;
+      }
+      case >= 5 :{
+        difficultyColor = Colors.red;
+        break;
+      }
+      case >= 3 :{
+        difficultyColor = Colors.lime;
+        break;
+      }
+      case >= 1 :{
+        difficultyColor = Colors.teal;
+        break;
+      }
+      case >= 0 : {
+        difficultyColor = Colors.cyan;
+        break;
+      }
+    }
+
+    return ElevatedButton(
+      style: ElevatedButton.styleFrom(
+        backgroundColor: Theme.of(context).colorScheme.onPrimary.withAlpha(150),
+        fixedSize: Size(600, 400),
+        shape: RoundedRectangleBorder(borderRadius: StaticsVar.br),
+      ),
+      onPressed: () {
+        // TODO
+      }, 
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Row(
+            children: [
+              Container(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: AlignmentGeometry.centerLeft,
+                    end: AlignmentGeometry.centerRight,
+                    colors: [
+                      difficultyColor,
+                      Colors.transparent
+                    ]
+                  )
+                ),
+              )
+            ],
+          )
+        ],
+      )
+    );
+  }
 }
 
 class ReadingTestLeading extends StatefulWidget {
