@@ -54,7 +54,9 @@ class _DebugPage extends State<DebugPage> {
                     AppData().config = AppData().config.copyWith(
                       debug: AppData().config.debug.copyWith(enableInternalLog: value)
                     );
-                    context.read<Global>().updateSetting();
+                    setState(() {
+                      context.read<Global>().updateSetting();
+                    });
                   }
                 )
               ],

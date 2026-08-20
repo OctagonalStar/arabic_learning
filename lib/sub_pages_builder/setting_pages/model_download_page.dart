@@ -36,13 +36,9 @@ class _ModelDownload extends State<ModelDownload> {
         children: [
           TextContainer(text: "使用基于ViTS的文本转语音模型\n下载后会占用本地约60MB的存储空间"),
           TextContainer(text: "一旦开始下载，请勿退出此页面; 若在解压时提示软件无响应，属于正常情况，请选择等待", style: TextStyle(color: Colors.redAccent),),
-          ElevatedButton.icon(
+          Button(
             icon: Icon(progress > 3 ? Icons.download_done : Icons.download),
-            label: Text(progresMap[progress]),
-            style: ElevatedButton.styleFrom(
-              fixedSize: Size(double.infinity, 100),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadiusGeometry.circular(25.0))
-            ),
+            size: Size(double.infinity, 100),
             onPressed: () async{
               var basePath = await getApplicationDocumentsDirectory();
               if(io.File("${basePath.path}/${StaticsVar.modelPath}/ar_JO-kareem-medium.onnx").existsSync() && context.mounted){
@@ -102,6 +98,7 @@ class _ModelDownload extends State<ModelDownload> {
                 io.File('${basePath.path}/arabicLearning/tts/temp.tar.bz2').delete();
               }
             }, 
+            child: Text(progresMap[progress]),
           ),
           SizedBox(height: 20),
           LinearProgressIndicator(

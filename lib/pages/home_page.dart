@@ -170,7 +170,7 @@ class _DailyWord extends State<DailyWord> {
       dailyWord = data.arabic;
     }
 
-    return ElevatedButton(
+    return Button(
       onPressed: () async {
         if(playing) return;
         if(appData.wordCount != 0) {
@@ -190,12 +190,9 @@ class _DailyWord extends State<DailyWord> {
           Navigator.of(context).push(MaterialPageRoute(builder: (context) => Scaffold(appBar: AppBar(title: Text("设置")) , body: SettingPage())));
         }
       },
-      style: ElevatedButton.styleFrom(
-        backgroundColor: Theme.of(context).colorScheme.onPrimary.withAlpha(150),
-        shadowColor: Theme.of(context).colorScheme.surfaceBright.withAlpha(150),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.vertical(bottom: Radius.circular(25.0))),
-        fixedSize: Size(mediaQuery.size.width * 0.9, mediaQuery.size.height * 0.3),
-      ),
+      backgroundColor: Theme.of(context).colorScheme.onPrimary.withAlpha(150),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.vertical(bottom: Radius.circular(25.0))),
+      size: Size(mediaQuery.size.width * 0.9, mediaQuery.size.height * 0.3),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         crossAxisAlignment: CrossAxisAlignment.center,

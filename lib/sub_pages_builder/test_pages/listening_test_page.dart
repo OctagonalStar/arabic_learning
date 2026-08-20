@@ -58,14 +58,9 @@ class _ForeListeningSettingPage extends State<ForeListeningSettingPage> {
                 ],
               )
             ),
-            ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                padding: EdgeInsets.all(16.0),
-                minimumSize: Size.fromHeight(mediaQuery.size.height * 0.1),
-                shape: RoundedRectangleBorder(
-                  borderRadius: StaticsVar.br,
-                ),
-              ),
+            Button(
+              padding: EdgeInsets.all(16.0),
+              size: Size.fromHeight(mediaQuery.size.height * 0.1),
               onPressed: () async {
                 selectedClasses = await popSelectClasses(context, withCache: false, withReviewChoose: false);
                 setState(() {});
@@ -186,16 +181,10 @@ class _ForeListeningSettingPage extends State<ForeListeningSettingPage> {
                 ],
               ),
             ),
-            ElevatedButton.icon(
-              style: ElevatedButton.styleFrom(
-                padding: EdgeInsets.all(16.0),
-                fixedSize: Size.fromHeight(100.0),
-                shape: RoundedRectangleBorder(
-                  borderRadius: StaticsVar.br,
-                ),
-              ),
+            Button(
+              padding: EdgeInsets.all(16.0),
+              size: Size.fromHeight(100.0),
               icon: Icon(Icons.rocket_launch, size: 32.0,),
-              label: Text("听写，启动！", style: TextStyle(fontSize: 24.0),),
               onPressed: () {
                 if(selectedClasses.selectedClass.isEmpty) {
                   alart(context, "是哪个小可爱没选课程就来听写了");
@@ -216,6 +205,7 @@ class _ForeListeningSettingPage extends State<ForeListeningSettingPage> {
                   )
                 );
               },
+              child: Text("听写，启动！", style: TextStyle(fontSize: 24.0),),
             ),
           ],
         )
@@ -316,18 +306,13 @@ class _MainListeningPageState extends State<MainListeningPage> {
                 children: list,
               ),
             ),
-            ElevatedButton.icon(
+            Button(
               icon: Icon(Icons.arrow_back, size: 32.0,),
-              label: Text("返回主页"),
-              style: ElevatedButton.styleFrom(
-                fixedSize: Size(mediaQuery.size.width * 0.9, mediaQuery.size.height * 0.1),
-                shape: RoundedRectangleBorder(
-                  borderRadius: StaticsVar.br,
-                ),
-              ),
+              size: Size(mediaQuery.size.width * 0.9, mediaQuery.size.height * 0.1),
               onPressed: () {
                 Navigator.popUntil(context, (Route route) {return route.isFirst;});
               },
+              child: Text("返回主页"),
             )
           ],
         )
@@ -362,16 +347,10 @@ class _MainListeningPageState extends State<MainListeningPage> {
               TextContainer(text: "当前播放数/总数: $index/${(widget.words.length * widget.playTimes)}",textAlign: TextAlign.center,),
               TextContainer(text: state, style: TextStyle(fontSize: 32.0), size: Size(mediaQuery.size.width * 0.8, mediaQuery.size.height * 0.4),textAlign: TextAlign.center,),
               TextContainer(text: counter, style: TextStyle(fontSize: 36.0, color: Colors.redAccent), size: Size(mediaQuery.size.width * 0.6, mediaQuery.size.height * 0.1),textAlign: TextAlign.center,),
-              ElevatedButton.icon(
+              Button(
                 icon: Icon(stage == 1 ? Icons.flag : Icons.play_arrow, size: 32.0,),
-                label: Text(stage == 1 ? "标记当前单词" : (stage == 2 ? "查看答案" : "开始听写(20秒倒计时)")),
-                style: ElevatedButton.styleFrom(
-                  padding: EdgeInsets.all(16.0),
-                  fixedSize: Size.fromHeight(mediaQuery.size.height * 0.15),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: StaticsVar.br,
-                  ),
-                ),
+                padding: EdgeInsets.all(16.0),
+                size: Size.fromHeight(mediaQuery.size.height * 0.15),
                 onPressed: (){
                   if(stage == 1) {
                     marks.add((index / widget.playTimes).floor());
@@ -385,7 +364,9 @@ class _MainListeningPageState extends State<MainListeningPage> {
                     });
                     circlePlay(context);
                   }
-                })
+                },
+                child: Text(stage == 1 ? "标记当前单词" : (stage == 2 ? "查看答案" : "开始听写(20秒倒计时)")),
+              )
             ],
           ),
         )

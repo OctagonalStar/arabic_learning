@@ -289,10 +289,7 @@ class _MyHomePageState extends State<MyHomePage> {
                   height: MediaQuery.of(context).size.height * 0.8,
                   child: Markdown(data: changeLog)
                 ),
-                ElevatedButton(
-                  style: ElevatedButton.styleFrom(
-                    fixedSize: Size(double.infinity, MediaQuery.of(context).size.height * 0.07)
-                  ),
+                Button(
                   onPressed: () {
                     Navigator.pop(context);
                   }, 
@@ -311,9 +308,9 @@ class _MyHomePageState extends State<MyHomePage> {
         backgroundColor: Theme.of(context).colorScheme.inversePrimary.withAlpha(150),
         title: Text(StaticsVar.appName),
         actions: [
-          if(kIsWeb && !AppData().config.regular.hideAppDownloadButton) ElevatedButton.icon(
+          if(kIsWeb && !AppData().config.regular.hideAppDownloadButton) Button(
             icon: Icon(Icons.add_to_home_screen),
-            label: Text('下载APP版本'),
+            child: Text('下载APP版本'),
             onPressed: () {
               launchUrl(Uri.parse("https://github.com/OctagonalStar/arabic_learning/releases/latest"));
             }

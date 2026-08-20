@@ -186,12 +186,9 @@ class _QuestionsSettingPage extends State<QuestionsSettingPage> {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   if(value > 0.3) ...List.generate(castMap.length, (i) {
-                    return ElevatedButton.icon(
-                      style: ElevatedButton.styleFrom(
-                        fixedSize: Size(70 + 150 * value, mediaQuery.size.height * 0.1 * value),
-                        backgroundColor: Theme.of(context).colorScheme.onPrimary,
-                        shape: i == 0 ? RoundedRectangleBorder(borderRadius: BorderRadiusGeometry.vertical(top: Radius.circular(25.0))) : BeveledRectangleBorder()
-                      ),
+                    return Button(
+                      size: Size(70 + 150 * value, mediaQuery.size.height * 0.1 * value),
+                      shape: i == 0 ? RoundedRectangleBorder(borderRadius: BorderRadiusGeometry.vertical(top: Radius.circular(25.0))) : BeveledRectangleBorder(),
                       onPressed: (){
                         context.read<Global>().uiLogger.info("添加题型类型: $i");
                         setState(() {
@@ -200,15 +197,13 @@ class _QuestionsSettingPage extends State<QuestionsSettingPage> {
                         });
                       }, 
                       icon: Icon(Icons.add),
-                      label: FittedBox(child: Text("添加 ${castMap[i]}")),
+                      child: FittedBox(child: Text("添加 ${castMap[i]}")),
                     );
                   }),
-                  ElevatedButton(
-                    style: ElevatedButton.styleFrom(
-                      fixedSize: Size(70 + 150 * value, 70),
-                      backgroundColor: Theme.of(context).colorScheme.onPrimary,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadiusGeometry.vertical(bottom: Radius.circular(25.0), top: value < 0.4 ? Radius.circular(25.0) : Radius.zero))
-                    ),
+                  Button(
+                    size: Size(70 + 150 * value, 70),
+                    backgroundColor: Theme.of(context).colorScheme.onPrimary,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadiusGeometry.vertical(bottom: Radius.circular(25.0), top: value < 0.4 ? Radius.circular(25.0) : Radius.zero)),
                     onPressed: (){
                       context.read<Global>().uiLogger.fine("切换题型悬浮按钮状态");
                       setState(() {

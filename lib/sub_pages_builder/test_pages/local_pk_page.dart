@@ -55,11 +55,8 @@ class _LocalPKSelectPage extends State<LocalPKSelectPage> {
         children: [
           TextContainer(text: "该功能还处在预览阶段，出现问题请及时提交反馈", style: TextStyle(color: Colors.redAccent)),
           SizedBox(height: mediaQuery.size.height * 0.02),
-          ElevatedButton.icon(
-            style: ElevatedButton.styleFrom(
-              fixedSize: Size(mediaQuery.size.width * 0.8, mediaQuery.size.height * 0.1),
-              shape: RoundedRectangleBorder(borderRadius: StaticsVar.br)
-            ),
+          Button(
+            size: Size(mediaQuery.size.width * 0.8, mediaQuery.size.height * 0.1),
             onPressed: (){
               Navigator.push(
                 context, 
@@ -72,7 +69,7 @@ class _LocalPKSelectPage extends State<LocalPKSelectPage> {
               );
             }, 
             icon: Icon(Icons.manage_accounts, size: 36),
-            label: Text("我做房主", style: TextStyle(fontSize: 24))
+            child: Text("我做房主", style: TextStyle(fontSize: 24))
           ),
           Divider(height: mediaQuery.size.height * 0.05, thickness: 3),
           Text("我加入联机", style: Theme.of(context).textTheme.headlineMedium),
@@ -88,7 +85,7 @@ class _LocalPKSelectPage extends State<LocalPKSelectPage> {
                 borderRadius: StaticsVar.br,
                 borderSide: BorderSide(color: Theme.of(context).colorScheme.outline),
               ),
-              suffix: ElevatedButton(
+              suffix: Button(
                 onPressed: () async {
                   connecting();
                 }, 
@@ -100,7 +97,7 @@ class _LocalPKSelectPage extends State<LocalPKSelectPage> {
             },
           ),
           SizedBox(height: mediaQuery.size.height * 0.02),
-          ElevatedButton.icon(
+          Button(
             onPressed: () async {
               if(isScaning){
                 await scannerController.stop();
@@ -120,7 +117,7 @@ class _LocalPKSelectPage extends State<LocalPKSelectPage> {
               });
             }, 
             icon: Icon(isScaning ? Icons.stop : Icons.qr_code_scanner),
-            label: Text(isScaning ? "停止扫描" : "扫描二维码")
+            child: Text(isScaning ? "停止扫描" : "扫描二维码")
           ),
           if(isScaning) SizedBox(
             width: mediaQuery.size.width * 0.8,
@@ -252,7 +249,7 @@ class _ServerHostWatingPage extends State<ServerHostWatingPage> {
                     borderRadius: StaticsVar.br,
                     borderSide: BorderSide(color: Theme.of(context).colorScheme.outline),
                   ),
-                  suffix: ElevatedButton(
+                  suffix: Button(
                     onPressed: () async {
                       if(isConnecting) return;
                       setState(() {
@@ -314,7 +311,7 @@ class _ServerHostWatingPage extends State<ServerHostWatingPage> {
             : Row(
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: [
-                ElevatedButton.icon(
+                Button(
                   onPressed: () {
                     if(isScaning) scannerController.stop();
                     setState(() {
@@ -322,14 +319,14 @@ class _ServerHostWatingPage extends State<ServerHostWatingPage> {
                     });
                   }, 
                   icon: Icon(isScaning ? Icons.stop : Icons.qr_code_scanner),
-                  label: Text(isScaning ? "停止扫描" : "扫描对方的二维码")
+                  child: Text(isScaning ? "停止扫描" : "扫描对方的二维码")
                 ),
-                ElevatedButton.icon(
+                Button(
                   onPressed: () {
                     Clipboard.setData(ClipboardData(text: context.read<PKServer>().connectpwd!));
                   }, 
                   icon: Icon(Icons.copy),
-                  label: Text("复制口令到剪切板")
+                  child: Text("复制口令到剪切板")
                 ),
               ],
             ),
@@ -365,7 +362,7 @@ class PKClassSelectionPage extends StatelessWidget {
             SizedBox(height: mediaQuery.size.height * 0.05),
             ...List.generate(context.read<PKServer>().selectableSource.length, (int index) => Text(context.read<PKServer>().selectableSource[index].sourceJsonFileName), growable: false),
             SizedBox(height: mediaQuery.size.height * 0.1),
-            ElevatedButton(
+            Button(
               onPressed: () async {
                 ClassSelection selection = await popSelectClasses(context, forceSelectRange: context.read<PKServer>().selectableSource, withCache: false, withReviewChoose: false);
                 if(!context.mounted || selection.selectedClass.isEmpty) return;
@@ -408,12 +405,12 @@ class ClientWatingPage extends StatelessWidget {
               size: min(mediaQuery.size.width, mediaQuery.size.height) * 0.8,
             ),
           ),
-          ElevatedButton.icon(
+          Button(
             onPressed: () {
               Clipboard.setData(ClipboardData(text: context.read<PKServer>().connectpwd!));
             },
             icon: Icon(Icons.copy),
-            label: Text("复制口令到剪切板")
+            child: Text("复制口令到剪切板")
           )],
 
           CircularProgressIndicator(),
@@ -462,11 +459,8 @@ class PKPreparePage extends StatelessWidget {
                       SizedBox(height: mediaQuery.size.height * 0.05),
                       context.watch<PKServer>().preparedP1
                       ? Text("已准备")
-                      : ElevatedButton(
-                        style: ElevatedButton.styleFrom(
-                          fixedSize: Size.fromHeight(mediaQuery.size.height * 0.1),
-                          shape: RoundedRectangleBorder(borderRadius: StaticsVar.br)
-                        ),
+                      : Button(
+                        size: Size.fromHeight(mediaQuery.size.height * 0.1),
                         onPressed: (){
                           context.read<PKServer>().setPrepare();
                         }, 
@@ -744,16 +738,13 @@ class PKConclue extends StatelessWidget {
           }
         ),
         Expanded(child: SizedBox()),
-        ElevatedButton.icon(
-          style: ElevatedButton.styleFrom(
-            fixedSize: Size(mediaQuery.size.width * 0.8, mediaQuery.size.height * 0.15),
-            shape: RoundedRectangleBorder(borderRadius: StaticsVar.br)
-          ),
+        Button(
+          size: Size(mediaQuery.size.width * 0.8, mediaQuery.size.height * 0.15),
           onPressed: () {
             Navigator.popUntil(context, (route) => route.isFirst);
           },
           icon: Icon(Icons.exit_to_app),
-          label: Text("退出"),
+          child: Text("退出"),
         )
       ]
     );
@@ -835,7 +826,7 @@ class PKErrorPage extends StatelessWidget {
             Icon(Icons.link_off, size: 64),
             TextContainer(text: "连接丢失"),
             TextContainer(text: "原因: ${context.read<PKServer>().exitMessage??"未知"}"),
-            ElevatedButton(
+            Button(
               onPressed: () => Navigator.pop(context), 
               child: Text("返回")
             )

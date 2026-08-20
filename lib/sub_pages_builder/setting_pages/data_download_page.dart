@@ -67,9 +67,8 @@ Future<List<Widget>> downloadList(BuildContext context) async{
             children: [
               Expanded(child: Text(f["name"])),
               inDownloading ? CircularProgressIndicator() 
-                            : ElevatedButton.icon(
+                            : Button(
                 icon: Icon(downloaded ? Icons.done : Icons.download),
-                label: Text(downloaded ? "已下载" : "下载"),
                 onPressed: () async { 
                   if(downloaded) return;
                   setLocalState(() {
@@ -100,6 +99,7 @@ Future<List<Widget>> downloadList(BuildContext context) async{
                     });
                   }
                 },
+                child: Text(downloaded ? "已下载" : "下载"),
               ),
             ],
           );

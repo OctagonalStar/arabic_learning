@@ -174,18 +174,9 @@ class _SettingPage extends State<SettingPage> {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                       children: [
-                        ElevatedButton.icon(
-                          style: ElevatedButton.styleFrom(
-                            fixedSize: Size(
-                              mediaQuery.size.width * 0.4,
-                              mediaQuery.size.height * 0.06,
-                            ),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.horizontal(
-                                left: Radius.circular(25.0),
-                              ),
-                            ),
-                          ),
+                        Button(
+                          size: Size(mediaQuery.size.width * 0.4,mediaQuery.size.height * 0.06),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.horizontal(left: Radius.circular(25.0))),
                           onPressed: () {
                             context.read<Global>().uiLogger.info(
                               "跳转: SettingPage => DownloadPage",
@@ -197,20 +188,11 @@ class _SettingPage extends State<SettingPage> {
                             );
                           },
                           icon: Icon(Icons.cloud_download),
-                          label: Text("线上下载"),
+                          child: Text("线上下载"),
                         ),
-                        ElevatedButton.icon(
-                          style: ElevatedButton.styleFrom(
-                            fixedSize: Size(
-                              mediaQuery.size.width * 0.4,
-                              mediaQuery.size.height * 0.06,
-                            ),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.horizontal(
-                                right: Radius.circular(25.0),
-                              ),
-                            ),
-                          ),
+                        Button(
+                          size: Size(mediaQuery.size.width * 0.4,mediaQuery.size.height * 0.06),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.horizontal(right: Radius.circular(25.0))),
                           onPressed: () async {
                             context.read<Global>().uiLogger.info("选择手动导入单词");
                             PlatformFile? result =
@@ -274,7 +256,7 @@ class _SettingPage extends State<SettingPage> {
                             }
                           },
                           icon: Icon(Icons.file_open),
-                          label: Text("文件导入"),
+                          child: Text("文件导入"),
                         ),
                       ],
                     ),
@@ -398,14 +380,9 @@ class _SettingPage extends State<SettingPage> {
               title: "关于",
               children: [
                 SettingRedirctButton(title: "调试信息", icon: Icons.bug_report, target: DebugPage()),
-                ElevatedButton(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Theme.of(
-                      context,
-                    ).colorScheme.onPrimary.withAlpha(150),
-                    minimumSize: Size.fromHeight(mediaQuery.size.height * 0.08),
-                    shape: BeveledRectangleBorder(),
-                  ),
+                Button(
+                  size: Size.fromHeight(mediaQuery.size.height * 0.08),
+                  shape: BeveledRectangleBorder(),
                   onPressed: () {
                     context.read<Global>().uiLogger.info("打开Github项目网站");
                     launchUrl(
