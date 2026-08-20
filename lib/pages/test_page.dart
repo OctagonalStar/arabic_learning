@@ -16,19 +16,38 @@ class TestPage extends StatelessWidget {
       mainAxisAlignment: MainAxisAlignment.start,
       children: [
         SizedBox(height: mediaQuery.size.height * 0.05),
-        Button(
-          icon: Icon(Icons.connect_without_contact, size: 36.0),
-          size: Size(mediaQuery.size.width * 0.8, mediaQuery.size.height * 0.15),
-          onPressed: () {
-            context.read<Global>().uiLogger.info("跳转: TestPage => LocalPKSelectPage");
-            Navigator.push(
-              context, 
-              MaterialPageRoute(
-                builder: (context) => LocalPKSelectPage()
-              )
-            );
-          },
-          child: FittedBox(child: Text('联机', style: TextStyle(fontSize: 34.0))),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+          children: [
+            Button(
+              icon: Icon(Icons.connect_without_contact, size: 36.0),
+              size: Size(mediaQuery.size.width * 0.4, mediaQuery.size.height * 0.15),
+              onPressed: () {
+                context.read<Global>().uiLogger.info("跳转: TestPage => LocalPKSelectPage");
+                Navigator.push(
+                  context, 
+                  MaterialPageRoute(
+                    builder: (context) => LocalPKSelectPage()
+                  )
+                );
+              },
+              child: FittedBox(child: Text('联机', style: TextStyle(fontSize: 34.0))),
+            ),
+            Button(
+              icon: Icon(Icons.multitrack_audio, size: 36.0),
+              size: Size(mediaQuery.size.width * 0.45, mediaQuery.size.height * 0.15),
+              onPressed: () {
+                context.read<Global>().uiLogger.info("跳转: TestPage => ReadingTestLeading");
+                Navigator.push(
+                  context, 
+                  MaterialPageRoute(
+                    builder: (context) => ReadingTestLeading()
+                  )
+                );
+              },
+              child: FittedBox(child: Text('阅读理解', style: TextStyle(fontSize: 34.0))),
+            ),
+          ],
         ),
         SizedBox(height: mediaQuery.size.height * 0.05),
         Button(
