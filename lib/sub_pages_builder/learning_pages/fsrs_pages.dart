@@ -259,26 +259,21 @@ class ForeFSRSSettingPage extends StatelessWidget {
                   ],
                 ),
               ),
-              ElevatedButton.icon(
-                style: ElevatedButton.styleFrom(
-                  fixedSize: Size.fromHeight(100),
-                  shape: RoundedRectangleBorder(borderRadius: StaticsVar.br)
-                ),
+              Button(
+                size: Size.fromHeight(100),
                 onPressed: (){
                   fsrs.createScheduler(prefs: AppData().storage);
                   alart(context, "设置完成，重新进入规律学习页面即可开始", onConfirmed: (){Navigator.popUntil(context, (route) => route.isFirst);});
                 }, 
                 icon: Icon(Icons.done),
-                label: Text("确认"),
+                child: Text("确认"),
               ),
               if (fsrs.config.enabled) Padding(
                 padding: const EdgeInsets.only(top: 8.0, bottom: 8.0),
-                child: ElevatedButton.icon(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Theme.of(context).colorScheme.errorContainer,
-                    fixedSize: Size.fromHeight(80),
-                    shape: RoundedRectangleBorder(borderRadius: StaticsVar.br)
-                  ),
+                child: Button(
+                  backgroundColor: Theme.of(context).colorScheme.errorContainer,
+                  size: Size.fromHeight(80),
+                  shape: RoundedRectangleBorder(borderRadius: StaticsVar.br),
                   onPressed: (){
                     showDialog(
                       context: context, 
@@ -300,7 +295,7 @@ class ForeFSRSSettingPage extends StatelessWidget {
                     );
                   },
                   icon: Icon(Icons.delete_forever, color: Theme.of(context).colorScheme.error),
-                  label: Text("重置并停用", style: TextStyle(color: Theme.of(context).colorScheme.error)),
+                  child: Text("重置并停用", style: TextStyle(color: Theme.of(context).colorScheme.error)),
                 ),
               )
             ]
@@ -465,10 +460,10 @@ class _MainFSRSPageState extends State<MainFSRSPage> {
                       size: Size(mediaQuery.size.width * 0.8, mediaQuery.size.height * 0.4),
                       textAlign: TextAlign.center,
                     ),
-                    ElevatedButton.icon(
+                    Button(
                       onPressed: _refresh,
                       icon: Icon(Icons.refresh),
-                      label: Text("全盘刷新"),
+                      child: Text("全盘刷新"),
                     )
                   ],
                 ),
@@ -568,11 +563,9 @@ class _FSRSReviewCardPage extends State<FSRSReviewCardPage> {
             return Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                if(!widget.fsrs.config.selfEvaluate) ElevatedButton.icon(
-                  style: ElevatedButton.styleFrom(
-                    fixedSize: Size(mediaQuery.size.width * 0.9 - mediaQuery.size.width * 0.5 * value, mediaQuery.size.height * 0.1),
-                    shape: RoundedRectangleBorder(borderRadius: StaticsVar.br)
-                  ),
+                if(!widget.fsrs.config.selfEvaluate) Button(
+                  size: Size(mediaQuery.size.width * 0.9 - mediaQuery.size.width * 0.5 * value, mediaQuery.size.height * 0.1),
+                  shape: RoundedRectangleBorder(borderRadius: StaticsVar.br),
                   onPressed: (){
                     viewAnswer(context, wordData[widget.wordID]);
                     setState(() {
@@ -581,19 +574,16 @@ class _FSRSReviewCardPage extends State<FSRSReviewCardPage> {
                     });
                   }, 
                   icon: Icon(Icons.tips_and_updates),
-                  label: Text(value == 0.0 ? "忘了？" : "详解"),
+                  child: Text(value == 0.0 ? "忘了？" : "详解"),
                 ),
                 SizedBox(width: mediaQuery.size.width*0.02*value, height: mediaQuery.size.height * 0.1),
-                if(value > 0.3) ElevatedButton.icon(
-                  style: ElevatedButton.styleFrom(
-                    fixedSize: Size(mediaQuery.size.width * (widget.fsrs.config.selfEvaluate ? 0.8 : 0.5) * value, mediaQuery.size.height * 0.1),
-                    shape: RoundedRectangleBorder(borderRadius: StaticsVar.br)
-                  ),
+                if(value > 0.3) Button(
+                  size: Size(mediaQuery.size.width * (widget.fsrs.config.selfEvaluate ? 0.8 : 0.5) * value, mediaQuery.size.height * 0.1),
                   onPressed: () {
                     widget.controller.nextPage(duration: Durations.medium2, curve: StaticsVar.curve);
                   },
                   icon: Icon(Icons.arrow_downward),
-                  label: FittedBox(fit: BoxFit.contain, child: Text("下一题")),
+                  child: FittedBox(fit: BoxFit.contain, child: Text("下一题")),
                 )
               ],
             );
@@ -667,13 +657,9 @@ class _FSRSLearningPageState extends State<FSRSLearningPage> {
                 children: [
                   WordCard(word: widget.words[index]),
                   Expanded(child: SizedBox()),
-                  ElevatedButton.icon(
-                    style: ElevatedButton.styleFrom(
-                      fixedSize: Size(mediaQuery.size.width * 0.8, mediaQuery.size.height * 0.15),
-                      shape: RoundedRectangleBorder(borderRadius: StaticsVar.br)
-                    ),
+                  Button(
+                    size: Size(mediaQuery.size.width * 0.8, mediaQuery.size.height * 0.15),
                     icon: Icon(index == widget.words.length-1 ? Icons.arrow_forward : Icons.arrow_downward),
-                    label: Text(index == widget.words.length-1 ? "开始答题" : "下一个"),
                     onPressed: (){
                       if(index == widget.words.length-1) {
                         controllerHor.nextPage(duration: Durations.medium2, curve: StaticsVar.curve);
@@ -681,6 +667,7 @@ class _FSRSLearningPageState extends State<FSRSLearningPage> {
                       controllerLearning.nextPage(duration: Durations.medium2, curve: StaticsVar.curve);
                       }
                     }, 
+                    child: Text(index == widget.words.length-1 ? "开始答题" : "下一个"),
                   ),
                   SizedBox(height: mediaQuery.size.height * 0.02)
                 ],
@@ -729,23 +716,17 @@ class _FSRSLearningPageState extends State<FSRSLearningPage> {
                     return Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        ElevatedButton.icon(
-                          style: ElevatedButton.styleFrom(
-                            fixedSize: Size(mediaQuery.size.width * 0.9 - mediaQuery.size.width * 0.5 * value, mediaQuery.size.height * 0.1),
-                            shape: RoundedRectangleBorder(borderRadius: StaticsVar.br),
-                          ),
+                        Button(
+                          size: Size(mediaQuery.size.width * 0.9 - mediaQuery.size.width * 0.5 * value, mediaQuery.size.height * 0.1),
                           onPressed: (){
                             viewAnswer(context, widget.words[index]);
                           }, 
                           icon: Icon(Icons.tips_and_updates),
-                          label: Text(value == 0.0 ? "提示" : "查看详解"),
+                          child: Text(value == 0.0 ? "提示" : "查看详解"),
                         ),
                         SizedBox(width: mediaQuery.size.width * 0.02 * value),
-                        if(value > 0.2) ElevatedButton.icon(
-                          style: ElevatedButton.styleFrom(
-                            fixedSize: Size(mediaQuery.size.width * 0.5 * value, mediaQuery.size.height * 0.1),
-                            shape: RoundedRectangleBorder(borderRadius: StaticsVar.br)
-                          ),
+                        if(value > 0.2) Button(
+                          size: Size(mediaQuery.size.width * 0.5 * value, mediaQuery.size.height * 0.1),
                           onPressed: () {
                             if(index == widget.words.length-1) {
                               controllerHor.nextPage(duration: Durations.medium2, curve: StaticsVar.curve);
@@ -753,7 +734,7 @@ class _FSRSLearningPageState extends State<FSRSLearningPage> {
                             controllerQuestions.nextPage(duration: Durations.medium2, curve: StaticsVar.curve);
                           },
                           icon: Icon(index == widget.words.length-1 ? Icons.done_all : Icons.arrow_downward),
-                          label: FittedBox(child: Text(index == widget.words.length-1 ? "完成学习" : "下一题")),
+                          child: FittedBox(child: Text(index == widget.words.length-1 ? "完成学习" : "下一题")),
                         )
                       ],
                     );
@@ -766,12 +747,12 @@ class _FSRSLearningPageState extends State<FSRSLearningPage> {
             child: Column(
               children: [
                 TextContainer(text: "该课程学习已完成\n已加入复习计划\n请过几个小时后再次进入规律学习页面复习课程"),
-                ElevatedButton.icon(
+                Button(
                   onPressed: (){
                     Navigator.popUntil(context, (route)=>route.isFirst);
                   }, 
-                  label: Text("确认"),
                   icon: Icon(Icons.done_all),
+                  child: Text("确认"),
                 )
               ],
             )

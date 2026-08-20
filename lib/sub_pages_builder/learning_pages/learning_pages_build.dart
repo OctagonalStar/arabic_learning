@@ -109,7 +109,7 @@ class _InLearningPageState extends State<InLearningPage> {
           title: (((controller.hasClients ? controller.page?.ceil() : 0) ?? 0)+1) >= testList.length ? Center(child: Text("学习完成"))
           : Row(
             children: [
-              ElevatedButton(
+              Button(
                 onPressed: (){
                   showDialog(
                     context: context, 
@@ -196,18 +196,15 @@ class _InLearningPageState extends State<InLearningPage> {
                 return WordCardQuestion(
                   word: testItem.testWord,
                   hint: "尝试自行回忆以下单词",
-                  bottomWidget: ElevatedButton.icon(
-                    style: ElevatedButton.styleFrom(
-                      fixedSize: Size(mediaQuery.size.width * 0.8, mediaQuery.size.height * 0.1),
-                      shape: RoundedRectangleBorder(borderRadius: StaticsVar.br)
-                    ),
+                  bottomWidget: Button(
+                    size: Size(mediaQuery.size.width * 0.8, mediaQuery.size.height * 0.1),
                     onPressed: (){
                       controller.nextPage(duration: Durations.medium2, curve: StaticsVar.curve);
                       correctCount++;
                       setState(() {});
                     },
                     icon: Icon(Icons.arrow_forward),
-                    label: Text("下一题"),
+                    child: Text("下一题"),
                   ),
                 );
               } else if(testItem.testType == 1 || testItem.testType == 2) {
@@ -353,16 +350,9 @@ class BottomTip extends StatelessWidget {
         return Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                fixedSize: Size(mediaQuery.size.width * (0.8 - (0.45 * value)), mediaQuery.size.height * 0.1),
-                backgroundColor: Theme.of(context).colorScheme.secondaryContainer,
-                foregroundColor: Theme.of(context).colorScheme.onSurface,
-                shadowColor: Colors.transparent,
-                shape: RoundedRectangleBorder(
-                  borderRadius: StaticsVar.br,
-                ),
-              ),
+            Button(
+              size: Size(mediaQuery.size.width * (0.8 - (0.45 * value)), mediaQuery.size.height * 0.1),
+              backgroundColor: Theme.of(context).colorScheme.secondaryContainer,
               onPressed: onTipClicked, 
               child: FittedBox(
                 fit: BoxFit.contain,
@@ -377,14 +367,9 @@ class BottomTip extends StatelessWidget {
               )
             ),
             SizedBox(width: mediaQuery.size.width * 0.05 * value),
-            if(value != 0.0) ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                fixedSize: Size(mediaQuery.size.width * (0.45 * value), mediaQuery.size.height * 0.1),
-                backgroundColor: Theme.of(context).colorScheme.primaryContainer,
-                foregroundColor: Theme.of(context).colorScheme.onSurface,
-                shadowColor: Colors.transparent,
-                shape: RoundedRectangleBorder(borderRadius: StaticsVar.br),
-              ),
+            if(value != 0.0) Button(
+              size: Size(mediaQuery.size.width * (0.45 * value), mediaQuery.size.height * 0.1),
+              backgroundColor: Theme.of(context).colorScheme.primaryContainer,
               onPressed: onNextClicked,
               child: FittedBox(
                 fit: BoxFit.contain,
@@ -568,11 +553,8 @@ class _ConcludePageState extends State<ConcludePage> {
             ),
           ),
           Expanded(child: SizedBox()),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(
-              fixedSize: Size(mediaQuery.size.width, mediaQuery.size.height * 0.1),
-              shape: RoundedRectangleBorder(borderRadius: StaticsVar.br)
-            ),
+          Button(
+            size: Size(mediaQuery.size.width, mediaQuery.size.height * 0.1),
             onPressed: (){
               Navigator.pop(context, true);
             },
@@ -671,7 +653,7 @@ class _WordCardOverViewPage extends State<WordCardOverViewPage> {
                         borderRadius: StaticsVar.br,
                         borderSide: BorderSide(color: Theme.of(context).colorScheme.outline),
                       ),
-                      suffix: ElevatedButton(
+                      suffix: Button(
                         onPressed: () => setState(() {}), 
                         child: Text("查找")
                       ),
@@ -745,11 +727,8 @@ class _WordCardOverViewPage extends State<WordCardOverViewPage> {
                                   )
                                 ],
                               ),
-                              ElevatedButton.icon(
-                                style: ElevatedButton.styleFrom(
-                                  shape: RoundedRectangleBorder(borderRadius: StaticsVar.br),
-                                  fixedSize: Size(mediaQuery.size.width * 0.6, 100)
-                                ),
+                              Button(
+                                size: Size(mediaQuery.size.width * 0.6, 100),
                                 onPressed: (){
                                   setState(() {
                                     AppData().config = AppData().config.copyWith(
@@ -763,7 +742,7 @@ class _WordCardOverViewPage extends State<WordCardOverViewPage> {
                                   Navigator.pop(context);
                                 }, 
                                 icon: Icon(Icons.done),
-                                label: Text("确认"),
+                                child: Text("确认"),
                               )
                             ],
                           );

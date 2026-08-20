@@ -9,7 +9,6 @@ import 'package:provider/provider.dart';
 import 'package:arabic_learning/funcs/ui.dart';
 import 'package:arabic_learning/funcs/utili.dart';
 import 'package:arabic_learning/vars/global.dart';
-import 'package:arabic_learning/vars/statics_var.dart';
 import 'package:arabic_learning/sub_pages_builder/learning_pages/fsrs_pages.dart' show FSRSLearningPage, ForeFSRSSettingPage;
 import 'package:arabic_learning/sub_pages_builder/learning_pages/learning_pages_build.dart';
 
@@ -29,48 +28,35 @@ class LearningPage extends StatelessWidget {
           children: [
             Column(
               children: [
-                ElevatedButton(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Theme.of(context).colorScheme.onPrimary.withAlpha(150),
-                    fixedSize: Size(mediaQuery.size.width * 0.4, mediaQuery.size.height * 0.15),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadiusGeometry.vertical(top: Radius.circular(25.0))),
-                  ),
+                Button(
+                  backgroundColor: Theme.of(context).colorScheme.onPrimary.withAlpha(150),
+                  size: Size(mediaQuery.size.width * 0.4, mediaQuery.size.height * 0.15),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadiusGeometry.vertical(top: Radius.circular(25.0))),
                   onPressed: () {
                     shiftToStudy(context);
                   },
+                  icon: Icon(Icons.task_alt),
+                  iconDirection: AxisDirection.up,
                   child: FittedBox(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(Icons.task_alt),
-                        Text('学习',style: TextStyle(fontSize: 40.0, fontWeight: FontWeight.bold)),
-                      ],
-                    ),
+                    child: Text('学习',style: TextStyle(fontSize: 40.0, fontWeight: FontWeight.bold)),
                   ),
                 ),
-                ElevatedButton.icon(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Theme.of(context).colorScheme.onSecondary.withAlpha(150),
-                    fixedSize: Size(mediaQuery.size.width * 0.4, mediaQuery.size.height * 0.1),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadiusGeometry.vertical(bottom: Radius.circular(25.0)))
-                  ),
+                Button(
+                  backgroundColor: Theme.of(context).colorScheme.onSecondary.withAlpha(150),
+                  size: Size(mediaQuery.size.width * 0.4, mediaQuery.size.height * 0.1),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadiusGeometry.vertical(bottom: Radius.circular(25.0))),
                   onPressed: (){
                     context.read<Global>().uiLogger.info("跳转: SettingPage => QuestionsSettingPage");
                     Navigator.of(context).push(MaterialPageRoute(builder: (context) => QuestionsSettingPage()));
                   }, 
                   icon: Icon(Icons.quiz),
-                  label: Text("配置题型"),
+                  child: Text("配置题型"),
                 )
               ],
             ),
-            ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Theme.of(context).colorScheme.onPrimary.withAlpha(150),
-                fixedSize: Size(mediaQuery.size.width * 0.4, mediaQuery.size.height * 0.25),
-                shape: RoundedRectangleBorder(
-                  borderRadius: StaticsVar.br,
-                ),
-              ),
+            Button(
+              backgroundColor: Theme.of(context).colorScheme.onPrimary.withAlpha(150),
+              size: Size(mediaQuery.size.width * 0.4, mediaQuery.size.height * 0.25),
               onPressed: (){
                 context.read<Global>().uiLogger.info("跳转: LearningPage => ForeFSRSSettingPage");
                 Navigator.push(
@@ -93,12 +79,9 @@ class LearningPage extends StatelessWidget {
           ],
         ),
         SizedBox(height: mediaQuery.size.height * 0.05),
-        if(FSRS().config.pushAmount != 0) ElevatedButton.icon(
-          style: ElevatedButton.styleFrom(
-            backgroundColor: Theme.of(context).colorScheme.onPrimary.withAlpha(150),
-            fixedSize: Size(mediaQuery.size.width * 0.8, mediaQuery.size.height * 0.15),
-            shape: RoundedRectangleBorder(borderRadius: StaticsVar.br),
-          ),
+        if(FSRS().config.pushAmount != 0) Button(
+          backgroundColor: Theme.of(context).colorScheme.onPrimary.withAlpha(150),
+          size: Size(mediaQuery.size.width * 0.8, mediaQuery.size.height * 0.15),
           onPressed: (){
             if(AppData().wordData.words.isEmpty) {
               ScaffoldMessenger.of(context).showSnackBar(
@@ -135,15 +118,12 @@ class LearningPage extends StatelessWidget {
             );
           },
           icon: Icon(Icons.push_pin, size: 24),
-          label: FittedBox(child: Text("学习推送单词", style: TextStyle(fontSize: 40.0))),
+          child: FittedBox(child: Text("学习推送单词", style: TextStyle(fontSize: 40.0))),
         ),
         SizedBox(height: mediaQuery.size.height * 0.05),
-        ElevatedButton.icon(
-          style: ElevatedButton.styleFrom(
-            backgroundColor: Theme.of(context).colorScheme.onPrimary.withAlpha(150),
-            fixedSize: Size(mediaQuery.size.width * 0.8, mediaQuery.size.height * 0.2),
-            shape: RoundedRectangleBorder(borderRadius: StaticsVar.br),
-          ),
+        Button(
+          backgroundColor: Theme.of(context).colorScheme.onPrimary.withAlpha(150),
+          size: Size(mediaQuery.size.width * 0.8, mediaQuery.size.height * 0.2),
           onPressed: (){
             context.read<Global>().uiLogger.info("跳转: LearningPage => WordCardOverViewPage");
             Navigator.push(
@@ -154,7 +134,7 @@ class LearningPage extends StatelessWidget {
             );
           },
           icon: Icon(Icons.abc, size: 24),
-          label: Text("词汇总览", style: TextStyle(fontSize: 40.0)),
+          child: Text("词汇总览", style: TextStyle(fontSize: 40.0)),
         ),
       ]
     );

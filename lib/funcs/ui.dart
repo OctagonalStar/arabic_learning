@@ -228,12 +228,9 @@ void viewAnswer(BuildContext context, WordItem wordData) async {
           mainAxisSize: MainAxisSize.min,
           children: [
             WordCard(word: wordData, useMask: false),
-            ElevatedButton(
-              onPressed: () {Navigator.pop(context);}, 
-              style: ElevatedButton.styleFrom(
-                fixedSize: Size(mediaQuery.size.width * 0.8, mediaQuery.size.height * 0.1),
-                shape: RoundedRectangleBorder(borderRadius: StaticsVar.br)
-              ),
+            Button(
+              onPressed: () => Navigator.pop(context), 
+              size:  Size(mediaQuery.size.width * 0.8, mediaQuery.size.height * 0.1),
               child: Text("我知道了"),
             )
           ],
@@ -442,7 +439,7 @@ class _ChooseButtonBoxState extends State<ChooseButtonBox> {
         color: color,
         borderRadius: StaticsVar.br,
       ),
-      child: ElevatedButton(
+      child: Button(
         onPressed: () {
           setState(() {
             if(isChoosed) return;
@@ -472,14 +469,8 @@ class _ChooseButtonBoxState extends State<ChooseButtonBox> {
             }
           });
         },
-        style: ElevatedButton.styleFrom(
-          fixedSize: Size(widget.width?? 200, widget.height?? 50),
-          backgroundColor: Colors.transparent,
-          shadowColor: Colors.transparent,
-          shape: RoundedRectangleBorder(
-            borderRadius: StaticsVar.br,
-          ),
-        ),
+        size: Size(widget.width ?? 200, widget.height ?? 50),
+        backgroundColor: Colors.transparent,
         child: widget.child,
       ),
     );
@@ -513,18 +504,13 @@ class WordCard extends StatelessWidget {
     return Column(
       mainAxisAlignment: MainAxisAlignment.start,
       children: [
-        ElevatedButton.icon(
-          style: ElevatedButton.styleFrom(
-            fixedSize: Size(useWidth, useHeight * 0.3),
-            backgroundColor: Theme.of(context).colorScheme.onPrimary.withAlpha(150),
-            shape: RoundedRectangleBorder(borderRadius: BorderRadiusGeometry.vertical(top: Radius.circular(25.0))),
-            padding: const EdgeInsets.all(16.0),
-          ),
+        Button(
+          size: Size(useWidth, useHeight * 0.3),
           icon: const Icon(Icons.volume_up, size: 24.0),
-          label: FittedBox(child: Text(word.arabic, style: TextStyle(fontSize: 64.0, fontFamily: context.read<Global>().arFont))),
           onPressed: (){
             playTextToSpeech(word.arabic);
           },
+          child: FittedBox(child: Text(word.arabic, style: TextStyle(fontSize: 64.0, fontFamily: context.read<Global>().arFont))),
         ),
         Stack(
           children: [
@@ -597,13 +583,10 @@ class WordCard extends StatelessWidget {
                       child: BackdropFilter(
                         filter: ImageFilter.blur(sigmaX: 15.0 * value,sigmaY: 15.0 * value),
                         enabled: true,
-                        child: value == 0.0 ? null : ElevatedButton(
-                          style: ElevatedButton.styleFrom(
-                            fixedSize: Size(useWidth, useHeight * 0.6),
-                            backgroundColor: Colors.transparent,
-                            shadowColor: Colors.transparent,
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadiusGeometry.vertical(bottom: Radius.circular(25.0)))
-                          ),
+                        child: value == 0.0 ? null : Button(
+                          size: Size(useWidth, useHeight * 0.6),
+                          backgroundColor: Colors.transparent,
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadiusGeometry.vertical(bottom: Radius.circular(25.0))),
                           onPressed: (){
                             setLocalState(() {
                               hide = false;
@@ -620,6 +603,62 @@ class WordCard extends StatelessWidget {
           ],
         )
       ],
+    );
+  }
+}
+
+class Button extends StatelessWidget {
+  final Widget? child;
+  final void Function()? onPressed;
+  final Widget? icon;
+  final AxisDirection iconDirection;
+  final Size? size;
+  final Color? backgroundColor;
+  final EdgeInsetsGeometry padding;
+  final OutlinedBorder? shape;
+
+  const Button({
+    super.key,
+    this.child,
+    this.icon,
+    this.onPressed,
+    this.backgroundColor,
+    this.shape,
+    this.size,
+    this.iconDirection = AxisDirection.left,
+    this.padding = const EdgeInsetsGeometry.all(16.0),
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return ElevatedButton(
+      style: ElevatedButton.styleFrom(
+        backgroundColor: backgroundColor ?? Theme.of(context).colorScheme.onPrimary,
+        fixedSize: size,
+        shape: shape ?? RoundedRectangleBorder(borderRadius: StaticsVar.br)
+      ),
+      onPressed: onPressed,
+      child: icon==null 
+          ? child
+          : [AxisDirection.left, AxisDirection.right].contains(iconDirection)
+          ? Row(
+            mainAxisSize: MainAxisSize.min,
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              if(iconDirection == AxisDirection.left) icon!,
+              ?child,
+              if(iconDirection == AxisDirection.right) icon!
+            ],
+          )
+          : Column(
+            mainAxisSize: MainAxisSize.min,
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              if(iconDirection == AxisDirection.up) icon!,
+              ?child,
+              if(iconDirection == AxisDirection.down) icon!
+            ],
+          )
     );
   }
 }
@@ -694,11 +733,8 @@ class ClassSelectPage extends StatelessWidget {
               );
             }
           ),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(
-              fixedSize: Size(mediaQuery.size.width, mediaQuery.size.height * 0.08),
-              shape: ContinuousRectangleBorder(borderRadius: StaticsVar.br),
-            ),
+          Button(
+            size: Size(mediaQuery.size.width, mediaQuery.size.height * 0.08),
             child: Text('确认'),
             onPressed: () {
               Navigator.pop(context, classSelection);
@@ -826,13 +862,9 @@ class _ChoiceQuestions extends State<ChoiceQuestions> {
             Expanded(
               child: widget.midWidget ?? StatefulBuilder(
                 builder: (context, setLocalState) {
-                  return ElevatedButton.icon(
+                  return Button(
                     icon: Icon(widget.allowAudio ? (playing ? Icons.multitrack_audio : Icons.volume_up) : Icons.short_text, size: 24.0),
-                    label: FittedBox(fit: BoxFit.contain ,child: Text(widget.mainWord, style: TextStyle(fontSize: 72.0, fontFamily: widget.mainWord.isArabic() ? context.read<Global>().arFont : null))),
-                    style: ElevatedButton.styleFrom(
-                      fixedSize: Size.fromWidth(mediaQuery.size.width * 0.8),
-                      shape: RoundedRectangleBorder(borderRadius: StaticsVar.br),
-                    ),
+                    size: Size.fromWidth(mediaQuery.size.width * 0.8),
                     onPressed: () async {
                       if (playing || !widget.allowAudio) {
                         context.read<Global>().uiLogger.warning("${playing ? "正在播放" : "不准许音频"}，中断TTS");
@@ -851,6 +883,7 @@ class _ChoiceQuestions extends State<ChoiceQuestions> {
                         playing = false;
                       });
                     },
+                    child: FittedBox(fit: BoxFit.contain ,child: Text(widget.mainWord, style: TextStyle(fontSize: 72.0, fontFamily: widget.mainWord.isArabic() ? context.read<Global>().arFont : null))),
                   );
                 }
               ),
@@ -1001,15 +1034,12 @@ class _SpellQuestion extends State<SpellQuestion> {
             ),
           ),
           SizedBox(height: mediaQuery.size.height * 0.05),
-          ElevatedButton(
+          Button(
             onPressed: () {
               context.read<Global>().uiLogger.info("提交单词检查: [${controller.text}]");
               check(controller.text);
             }, 
-            style: ElevatedButton.styleFrom(
-              fixedSize: Size(mediaQuery.size.width * 0.4, mediaQuery.size.height * 0.1),
-              shape: RoundedRectangleBorder(borderRadius: StaticsVar.br)
-            ),
+            size: Size(mediaQuery.size.width * 0.4, mediaQuery.size.height * 0.1),
             child: Text("提交"),
           ),
           Expanded(child: SizedBox()),
@@ -1069,12 +1099,8 @@ class _ListeningQuestion extends State<ListeningQuestion> {
             Expanded(
               child: StatefulBuilder(
                 builder: (context, setLocalState) {
-                  return IconButton(
-                    icon: Icon(playing ? Icons.multitrack_audio : Icons.volume_up, size: 60,),
-                    style: ElevatedButton.styleFrom(
-                      fixedSize: Size.fromWidth(mediaQuery.size.width * 0.8),
-                      shape: RoundedRectangleBorder(borderRadius: StaticsVar.br),
-                    ),
+                  return Button(
+                    size: Size.fromWidth(mediaQuery.size.width * 0.8),
                     onPressed: () async {
                       if (playing) {
                         context.read<Global>().uiLogger.warning("正在播放，中断TTS");
@@ -1093,6 +1119,7 @@ class _ListeningQuestion extends State<ListeningQuestion> {
                         playing = false;
                       });
                     },
+                    child: Icon(playing ? Icons.multitrack_audio : Icons.volume_up, size: 60,),
                   );
                 }
               ),

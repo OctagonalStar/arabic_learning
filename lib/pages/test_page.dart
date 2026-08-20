@@ -1,8 +1,8 @@
+import 'package:arabic_learning/funcs/ui.dart' show Button;
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import 'package:arabic_learning/vars/global.dart';
-import 'package:arabic_learning/vars/statics_var.dart';
 import 'package:arabic_learning/sub_pages_builder/test_pages/listening_test_page.dart' show ForeListeningSettingPage;
 import 'package:arabic_learning/sub_pages_builder/test_pages/local_pk_page.dart' show LocalPKSelectPage;
 
@@ -16,16 +16,9 @@ class TestPage extends StatelessWidget {
       mainAxisAlignment: MainAxisAlignment.start,
       children: [
         SizedBox(height: mediaQuery.size.height * 0.05),
-        ElevatedButton.icon(
+        Button(
           icon: Icon(Icons.connect_without_contact, size: 36.0),
-          label: FittedBox(child: Text('联机', style: TextStyle(fontSize: 34.0))),
-          style: ElevatedButton.styleFrom(
-            backgroundColor: Theme.of(context).colorScheme.onPrimary.withAlpha(150),
-            fixedSize: Size(mediaQuery.size.width * 0.8, mediaQuery.size.height * 0.15),
-            shape: RoundedRectangleBorder(
-              borderRadius: StaticsVar.br,
-            ),
-          ),
+          size: Size(mediaQuery.size.width * 0.8, mediaQuery.size.height * 0.15),
           onPressed: () {
             context.read<Global>().uiLogger.info("跳转: TestPage => LocalPKSelectPage");
             Navigator.push(
@@ -35,18 +28,12 @@ class TestPage extends StatelessWidget {
               )
             );
           },
+          child: FittedBox(child: Text('联机', style: TextStyle(fontSize: 34.0))),
         ),
         SizedBox(height: mediaQuery.size.height * 0.05),
-        ElevatedButton.icon(
+        Button(
           icon: Icon(Icons.multitrack_audio, size: 36.0),
-          label: FittedBox(child: Text('自主听写', style: TextStyle(fontSize: 34.0))),
-          style: ElevatedButton.styleFrom(
-            backgroundColor: Theme.of(context).colorScheme.onPrimary.withAlpha(150),
-            fixedSize: Size(mediaQuery.size.width * 0.8, mediaQuery.size.height * 0.1),
-            shape: RoundedRectangleBorder(
-              borderRadius: StaticsVar.br,
-            ),
-          ),
+          size: Size(mediaQuery.size.width * 0.8, mediaQuery.size.height * 0.1),
           onPressed: () {
             context.read<Global>().uiLogger.info("跳转: TestPage => ForeListeningSettingPage");
             Navigator.push(
@@ -56,6 +43,7 @@ class TestPage extends StatelessWidget {
               )
             );
           },
+          child: FittedBox(child: Text('自主听写', style: TextStyle(fontSize: 34.0))),
         ),
       ],
     );

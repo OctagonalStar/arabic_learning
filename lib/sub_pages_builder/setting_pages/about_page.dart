@@ -41,10 +41,8 @@ class AboutPage extends StatelessWidget {
           ),
           TextContainer(text: "LICENSE"),
           TextContainer(text: "Copyright (C) <2025>  <OctagonalStar>\n该软件通过GNU GENERAL PUBLIC LICENSE (Version 3)协议授权给 \"${AppData().config.user}\"，协议内容详见开放源代码许可页面"),
-          ElevatedButton.icon(
-            style: ElevatedButton.styleFrom(
-              fixedSize: Size.fromHeight(MediaQuery.of(context).size.height * 0.1)
-            ),
+          Button(
+            size: Size.fromHeight(MediaQuery.of(context).size.height * 0.1),
             onPressed: () {
               context.read<Global>().uiLogger.info("跳转: AboutPage => OpenSourceLicensePage");
               Navigator.push(
@@ -55,7 +53,7 @@ class AboutPage extends StatelessWidget {
               );
             }, 
             icon: Icon(Icons.balance),
-            label: Text("开放源代码许可"),
+            child: Text("开放源代码许可"),
           )
         ],
       ),
