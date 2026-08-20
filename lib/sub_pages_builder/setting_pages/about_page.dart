@@ -62,7 +62,7 @@ class AboutPage extends StatelessWidget {
               borderRadius: StaticsVar.br,
             ),
             child: FutureBuilder(
-              future: rootBundle.loadString('assets/help/TermsOfUse.md'),
+              future: rootBundle.loadString('assets/help/PrivacyPolicy.md'),
               initialData: "加载中...",
               builder: (context, asyncSnapshot) {
                 return MarkdownBody(data: asyncSnapshot.data!);
