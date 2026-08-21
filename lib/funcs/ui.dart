@@ -354,12 +354,10 @@ class ChooseButtons extends StatelessWidget {
           width: settingShowingMode == 0 ? mediaQuery.size.width * 0.2 : settingShowingMode == 1 ? mediaQuery.size.width * 0.45 : mediaQuery.size.width * 0.85,
           height: settingShowingMode == 0 ? mediaQuery.size.height * 0.15 : settingShowingMode == 1 ? mediaQuery.size.height * 0.12 : mediaQuery.size.height * 0.09,
           isAnimated: isShowAnimation,
-          child: Expanded(
-            child: FittedBox(
-              child: Text(
-                options[i],
-                style: TextStyle(fontSize: 36, fontFamily:options[i].isArabic() ? context.read<Global>().arFont : null),
-              ),
+          child: FittedBox(
+            child: Text(
+              options[i],
+              style: TextStyle(fontSize: 36, fontFamily:options[i].isArabic() ? context.read<Global>().arFont : null),
             ),
           ),
         ),
@@ -513,7 +511,7 @@ class WordCard extends StatelessWidget {
           onPressed: (){
             playTextToSpeech(word.arabic);
           },
-          child: FittedBox(fit: BoxFit.scaleDown ,child: Text(word.arabic, style: TextStyle(fontSize: 64.0, fontFamily: context.read<Global>().arFont))),
+          child: Expanded(child: FittedBox(fit: BoxFit.scaleDown ,child: Text(word.arabic, style: TextStyle(fontSize: 64.0, fontFamily: context.read<Global>().arFont)))),
         ),
         Stack(
           children: [
@@ -619,6 +617,7 @@ class Button extends StatelessWidget {
   final Color? backgroundColor;
   final EdgeInsetsGeometry padding;
   final OutlinedBorder? shape;
+  final MainAxisAlignment alignment;
 
   const Button({
     super.key,
@@ -630,6 +629,7 @@ class Button extends StatelessWidget {
     this.size,
     this.iconDirection = AxisDirection.left,
     this.padding = const EdgeInsetsGeometry.all(16.0),
+    this.alignment = MainAxisAlignment.spaceEvenly
   });
 
   @override
@@ -646,7 +646,7 @@ class Button extends StatelessWidget {
           : [AxisDirection.left, AxisDirection.right].contains(iconDirection)
           ? Row(
             mainAxisSize: MainAxisSize.min,
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            mainAxisAlignment: alignment,
             children: [
               if(iconDirection == AxisDirection.left) icon!,
               ?child,
@@ -655,7 +655,7 @@ class Button extends StatelessWidget {
           )
           : Column(
             mainAxisSize: MainAxisSize.min,
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            mainAxisAlignment: alignment,
             children: [
               if(iconDirection == AxisDirection.up) icon!,
               ?child,
