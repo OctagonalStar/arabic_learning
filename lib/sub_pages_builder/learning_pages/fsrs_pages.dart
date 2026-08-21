@@ -583,7 +583,7 @@ class _FSRSReviewCardPage extends State<FSRSReviewCardPage> {
                     widget.controller.nextPage(duration: Durations.medium2, curve: StaticsVar.curve);
                   },
                   icon: Icon(Icons.arrow_downward),
-                  child: FittedBox(fit: BoxFit.contain, child: Text("下一题")),
+                  child: Expanded(child: FittedBox(fit: BoxFit.contain, child: Text("下一题"))),
                 )
               ],
             );
@@ -734,7 +734,7 @@ class _FSRSLearningPageState extends State<FSRSLearningPage> {
                             controllerQuestions.nextPage(duration: Durations.medium2, curve: StaticsVar.curve);
                           },
                           icon: Icon(index == widget.words.length-1 ? Icons.done_all : Icons.arrow_downward),
-                          child: FittedBox(child: Text(index == widget.words.length-1 ? "完成学习" : "下一题")),
+                          child: Expanded(child: FittedBox(child: Text(index == widget.words.length-1 ? "完成学习" : "下一题"))),
                         )
                       ],
                     );

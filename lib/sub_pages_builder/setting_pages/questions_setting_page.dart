@@ -197,7 +197,7 @@ class _QuestionsSettingPage extends State<QuestionsSettingPage> {
                         });
                       }, 
                       icon: Icon(Icons.add),
-                      child: FittedBox(child: Text("添加 ${castMap[i]}")),
+                      child: Expanded(child: FittedBox(child: Text("添加 ${castMap[i]}"))),
                     );
                   }),
                   Button(
@@ -210,13 +210,8 @@ class _QuestionsSettingPage extends State<QuestionsSettingPage> {
                         floatButtonFlod = !floatButtonFlod;
                       });
                     }, 
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(value > 0.5 ?  Icons.deselect : Icons.add), 
-                        if(value > 0.5) FittedBox(child: Text("收起"))
-                      ],
-                    ),
+                    icon: Icon(value > 0.5 ?  Icons.deselect : Icons.add),
+                    child: value > 0.5 ? Expanded(child: FittedBox(child: Text("收起"))) : null,
                   )
                 ],
               ),

@@ -37,8 +37,10 @@ class LearningPage extends StatelessWidget {
                   },
                   icon: Icon(Icons.task_alt),
                   iconDirection: AxisDirection.up,
-                  child: FittedBox(
-                    child: Text('学习',style: TextStyle(fontSize: 40.0, fontWeight: FontWeight.bold)),
+                  child: Expanded(
+                    child: FittedBox(
+                      child: Text('学习',style: TextStyle(fontSize: 40.0, fontWeight: FontWeight.bold)),
+                    ),
                   ),
                 ),
                 Button(
@@ -66,14 +68,13 @@ class LearningPage extends StatelessWidget {
                   )
                 );
               },
-              child: FittedBox(
-                fit: BoxFit.contain,
-                child: Column(
-                  children: [
-                    Icon(Icons.history_edu),
-                    Text("复习",style: TextStyle(fontSize: 40.0, fontWeight: FontWeight.bold)),
-                  ],
-                )
+              icon: Icon(Icons.history_edu),
+              iconDirection: AxisDirection.up,
+              child: Expanded(
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  child: Text("复习",style: TextStyle(fontSize: 40.0, fontWeight: FontWeight.bold))
+                ),
               ),
             ),
           ],
@@ -118,7 +119,7 @@ class LearningPage extends StatelessWidget {
             );
           },
           icon: Icon(Icons.push_pin, size: 24),
-          child: FittedBox(child: Text("学习推送单词", style: TextStyle(fontSize: 40.0))),
+          child: Expanded(child: FittedBox(child: Text("学习推送单词", style: TextStyle(fontSize: 40.0)))),
         ),
         SizedBox(height: mediaQuery.size.height * 0.05),
         Button(
