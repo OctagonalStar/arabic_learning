@@ -354,10 +354,12 @@ class ChooseButtons extends StatelessWidget {
           width: settingShowingMode == 0 ? mediaQuery.size.width * 0.2 : settingShowingMode == 1 ? mediaQuery.size.width * 0.45 : mediaQuery.size.width * 0.85,
           height: settingShowingMode == 0 ? mediaQuery.size.height * 0.15 : settingShowingMode == 1 ? mediaQuery.size.height * 0.12 : mediaQuery.size.height * 0.09,
           isAnimated: isShowAnimation,
-          child: FittedBox(
-            child: Text(
-              options[i],
-              style: TextStyle(fontSize: 36, fontFamily:options[i].isArabic() ? context.read<Global>().arFont : null),
+          child: Expanded(
+            child: FittedBox(
+              child: Text(
+                options[i],
+                style: TextStyle(fontSize: 36, fontFamily:options[i].isArabic() ? context.read<Global>().arFont : null),
+              ),
             ),
           ),
         ),
@@ -884,7 +886,7 @@ class _ChoiceQuestions extends State<ChoiceQuestions> {
                         playing = false;
                       });
                     },
-                    child: FittedBox(fit: BoxFit.contain ,child: Text(widget.mainWord, style: TextStyle(fontSize: 72.0, fontFamily: widget.mainWord.isArabic() ? context.read<Global>().arFont : null))),
+                    child: Expanded(child: FittedBox(fit: BoxFit.contain ,child: Text(widget.mainWord, style: TextStyle(fontSize: 72.0, fontFamily: widget.mainWord.isArabic() ? context.read<Global>().arFont : null)))),
                   );
                 }
               ),

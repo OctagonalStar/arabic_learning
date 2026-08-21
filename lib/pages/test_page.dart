@@ -28,7 +28,7 @@ class TestPage extends StatelessWidget {
               )
             );
           },
-          child: FittedBox(child: Text('联机', style: TextStyle(fontSize: 34.0))),
+          child: Expanded(child: FittedBox(child: Text('联机', style: TextStyle(fontSize: 34.0)))),
         ),
         SizedBox(height: mediaQuery.size.height * 0.05),
         Button(
@@ -43,7 +43,7 @@ class TestPage extends StatelessWidget {
               )
             );
           },
-          child: FittedBox(child: Text('自主听写', style: TextStyle(fontSize: 34.0))),
+          child: Expanded(child: FittedBox(child: Text('自主听写', style: TextStyle(fontSize: 34.0)))),
         ),
       ],
     );

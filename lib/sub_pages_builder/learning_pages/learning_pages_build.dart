@@ -354,15 +354,11 @@ class BottomTip extends StatelessWidget {
               size: Size(mediaQuery.size.width * (0.8 - (0.45 * value)), mediaQuery.size.height * 0.1),
               backgroundColor: Theme.of(context).colorScheme.secondaryContainer,
               onPressed: onTipClicked, 
-              child: FittedBox(
-                fit: BoxFit.contain,
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(Icons.view_list, size: 16.0, semanticLabel: "查看详解"),
-                    SizedBox(width: mediaQuery.size.width * 0.01),
-                    Text("查看详解"),
-                  ],
+              icon: Icon(Icons.view_list),
+              child: Expanded(
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  child: Text("查看详解"),
                 ),
               )
             ),
@@ -371,15 +367,18 @@ class BottomTip extends StatelessWidget {
               size: Size(mediaQuery.size.width * (0.45 * value), mediaQuery.size.height * 0.1),
               backgroundColor: Theme.of(context).colorScheme.primaryContainer,
               onPressed: onNextClicked,
-              child: FittedBox(
-                fit: BoxFit.contain,
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(isLast ? Icons.done : Icons.navigate_next, size: 16.0),
-                    SizedBox(width: mediaQuery.size.width * 0.01),
-                    Text(isLast ? "完成" : "下一个"),
-                  ],
+              icon: Icon(isLast ? Icons.done : Icons.navigate_next),
+              iconDirection: AxisDirection.right,
+              child: Expanded(
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      SizedBox(width: mediaQuery.size.width * 0.01),
+                      Text(isLast ? "完成" : "下一个"),
+                    ],
+                  ),
                 ),
               ),
             )
