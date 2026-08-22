@@ -648,18 +648,30 @@ class Button extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             mainAxisAlignment: alignment,
             children: [
-              if(iconDirection == AxisDirection.left) icon!,
+              if(iconDirection == AxisDirection.left) Padding(
+                padding: const EdgeInsets.all(8.0),
+                child: icon!,
+              ),
               ?child,
-              if(iconDirection == AxisDirection.right) icon!
+              if(iconDirection == AxisDirection.right) Padding(
+                padding: const EdgeInsets.all(8.0),
+                child: icon!,
+              )
             ],
           )
           : Column(
             mainAxisSize: MainAxisSize.min,
             mainAxisAlignment: alignment,
             children: [
-              if(iconDirection == AxisDirection.up) icon!,
+              if(iconDirection == AxisDirection.up) Padding(
+                padding: const EdgeInsets.all(8.0),
+                child: icon!,
+              ),
               ?child,
-              if(iconDirection == AxisDirection.down) icon!
+              if(iconDirection == AxisDirection.down) Padding(
+                padding: const EdgeInsets.all(8.0),
+                child: icon!,
+              )
             ],
           )
     );

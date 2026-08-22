@@ -372,13 +372,7 @@ class BottomTip extends StatelessWidget {
               child: Expanded(
                 child: FittedBox(
                   fit: BoxFit.scaleDown,
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      SizedBox(width: mediaQuery.size.width * 0.01),
-                      Text(isLast ? "完成" : "下一个"),
-                    ],
-                  ),
+                  child: Text(isLast ? "完成" : "下一个"),
                 ),
               ),
             )
