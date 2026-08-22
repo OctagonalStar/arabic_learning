@@ -430,7 +430,7 @@ class _ChooseButtonBoxState extends State<ChooseButtonBox> {
 
   @override
   Widget build(BuildContext context) {
-    color ??= widget.cl ?? Theme.of(context).colorScheme.primaryContainer.withAlpha(150);
+    color ??= widget.cl ?? Theme.of(context).colorScheme.primaryContainer;
     return AnimatedContainer(
       margin: EdgeInsets.all(8.0),
       duration: widget.isAnimated ? Durations.medium4 : Duration(),
@@ -465,7 +465,7 @@ class _ChooseButtonBoxState extends State<ChooseButtonBox> {
                 }
               }
             } else {
-              color = Theme.of(context).colorScheme.primaryContainer.withAlpha(150);
+              color = Theme.of(context).colorScheme.primaryContainer;
             }
           });
         },
@@ -519,7 +519,7 @@ class WordCard extends StatelessWidget {
               width: useWidth,
               height: useHeight * 0.6,
               decoration: BoxDecoration(
-                color: Theme.of(context).colorScheme.onInverseSurface.withAlpha(150),
+                color: Theme.of(context).colorScheme.onInverseSurface,
                 borderRadius: BorderRadius.vertical(bottom: Radius.circular(25.0)),
               ),
               child: Column(
@@ -581,10 +581,10 @@ class WordCard extends StatelessWidget {
                   builder: (context, value, child) {
                     return ClipRRect(
                       borderRadius: BorderRadiusGeometry.vertical(bottom: Radius.circular(25.0)),
-                      child: BackdropFilter(
+                      child: value == 0.0 ? null : BackdropFilter(
                         filter: ImageFilter.blur(sigmaX: 15.0 * value,sigmaY: 15.0 * value),
                         enabled: true,
-                        child: value == 0.0 ? null : Button(
+                        child: Button(
                           size: Size(useWidth, useHeight * 0.6),
                           backgroundColor: Colors.transparent,
                           shape: RoundedRectangleBorder(borderRadius: BorderRadiusGeometry.vertical(bottom: Radius.circular(25.0))),
