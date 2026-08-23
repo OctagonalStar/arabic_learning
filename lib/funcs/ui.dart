@@ -1,5 +1,5 @@
 import 'dart:convert';
-import 'dart:ui';
+import 'dart:ui' show ImageFilter;
 
 import 'package:arabic_learning/funcs/fsrs_func.dart';
 import 'package:arabic_learning/vars/config_structure.dart' show ClassItem, SourceItem, WordItem, ClassSelection;
@@ -165,7 +165,7 @@ List<Widget> classesSelectionList(BuildContext context, Function (ClassItem) onC
 /// 
 /// [context] :Widget树上的context
 /// 
-/// [e] :需要在窗口中显示的内容（文字）
+/// [msg] :需要在窗口中显示的内容（文字）
 /// 
 /// [onConfirmed] :在被确认后运行的函数
 /// 
@@ -178,15 +178,15 @@ List<Widget> classesSelectionList(BuildContext context, Function (ClassItem) onC
 ///   alart(context, "你点击了按钮"，onConfirmed: (){i++}, delayConfirm: Duration(seconds: 1));
 /// }
 /// ```
-void alart(BuildContext context, String e, {Function? onConfirmed, Duration delayConfirm = const Duration()}) {
-  context.read<Global>().uiLogger.info("构建弹出窗口: 携带信息: $e ;确认参数: ${onConfirmed != null}; 延迟: ${delayConfirm.inMilliseconds}");
+void alart(BuildContext context, String msg, {Function? onConfirmed, Duration delayConfirm = const Duration()}) {
+  context.read<Global>().uiLogger.info("构建弹出窗口: 携带信息: $msg ;确认参数: ${onConfirmed != null}; 延迟: ${delayConfirm.inMilliseconds}");
   showDialog(
     context: context, 
     requestFocus: true,
     builder: (BuildContext context) {
       return AlertDialog(
         title: Text("提示"),
-        content: Text(e),
+        content: Text(msg),
         actions: [
           FutureBuilder(
             future: Future.delayed(delayConfirm, (){return 0;}),
@@ -207,6 +207,20 @@ void alart(BuildContext context, String e, {Function? onConfirmed, Duration dela
         ],
       );
     }
+  );
+}
+
+void showSnackBar(BuildContext context, String msg, {Duration duration = const Duration(seconds: 3)}){
+  context.read<Global>().uiLogger.info("展示底部提示，携带信息: $msg ，持续时长: ${duration.inMilliseconds} 毫秒");
+  ScaffoldMessenger.of(context).showSnackBar(
+    SnackBar(
+      content: Text(msg),
+      duration: duration,
+    ),
+    snackBarAnimationStyle: AnimationStyle(
+      curve: StaticsVar.curve,
+      reverseCurve: StaticsVar.curve
+    )
   );
 }
 
@@ -430,7 +444,7 @@ class _ChooseButtonBoxState extends State<ChooseButtonBox> {
 
   @override
   Widget build(BuildContext context) {
-    color ??= widget.cl ?? Theme.of(context).colorScheme.primaryContainer.withAlpha(150);
+    color ??= widget.cl ?? Theme.of(context).colorScheme.primaryContainer;
     return AnimatedContainer(
       margin: EdgeInsets.all(8.0),
       duration: widget.isAnimated ? Durations.medium4 : Duration(),
@@ -465,12 +479,13 @@ class _ChooseButtonBoxState extends State<ChooseButtonBox> {
                 }
               }
             } else {
-              color = Theme.of(context).colorScheme.primaryContainer.withAlpha(150);
+              color = Theme.of(context).colorScheme.primaryContainer;
             }
           });
         },
         size: Size(widget.width ?? 200, widget.height ?? 50),
         backgroundColor: Colors.transparent,
+        shadowColor: Colors.transparent,
         child: widget.child,
       ),
     );
@@ -519,7 +534,7 @@ class WordCard extends StatelessWidget {
               width: useWidth,
               height: useHeight * 0.6,
               decoration: BoxDecoration(
-                color: Theme.of(context).colorScheme.onInverseSurface.withAlpha(150),
+                color: Theme.of(context).colorScheme.onInverseSurface,
                 borderRadius: BorderRadius.vertical(bottom: Radius.circular(25.0)),
               ),
               child: Column(
@@ -581,12 +596,13 @@ class WordCard extends StatelessWidget {
                   builder: (context, value, child) {
                     return ClipRRect(
                       borderRadius: BorderRadiusGeometry.vertical(bottom: Radius.circular(25.0)),
-                      child: BackdropFilter(
+                      child: value == 0.0 ? null : BackdropFilter(
                         filter: ImageFilter.blur(sigmaX: 15.0 * value,sigmaY: 15.0 * value),
                         enabled: true,
-                        child: value == 0.0 ? null : Button(
+                        child: Button(
                           size: Size(useWidth, useHeight * 0.6),
                           backgroundColor: Colors.transparent,
+                          shadowColor: Colors.transparent,
                           shape: RoundedRectangleBorder(borderRadius: BorderRadiusGeometry.vertical(bottom: Radius.circular(25.0))),
                           onPressed: (){
                             setLocalState(() {
@@ -615,6 +631,7 @@ class Button extends StatelessWidget {
   final AxisDirection iconDirection;
   final Size? size;
   final Color? backgroundColor;
+  final Color? shadowColor;
   final EdgeInsetsGeometry padding;
   final OutlinedBorder? shape;
   final MainAxisAlignment alignment;
@@ -627,6 +644,7 @@ class Button extends StatelessWidget {
     this.backgroundColor,
     this.shape,
     this.size,
+    this.shadowColor,
     this.iconDirection = AxisDirection.left,
     this.padding = const EdgeInsetsGeometry.all(16.0),
     this.alignment = MainAxisAlignment.spaceEvenly
@@ -637,6 +655,7 @@ class Button extends StatelessWidget {
     return ElevatedButton(
       style: ElevatedButton.styleFrom(
         backgroundColor: backgroundColor ?? Theme.of(context).colorScheme.onPrimary,
+        shadowColor: shadowColor,
         fixedSize: size,
         shape: shape ?? RoundedRectangleBorder(borderRadius: StaticsVar.br)
       ),
@@ -648,18 +667,30 @@ class Button extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             mainAxisAlignment: alignment,
             children: [
-              if(iconDirection == AxisDirection.left) icon!,
+              if(iconDirection == AxisDirection.left) Padding(
+                padding: const EdgeInsets.all(8.0),
+                child: icon!,
+              ),
               ?child,
-              if(iconDirection == AxisDirection.right) icon!
+              if(iconDirection == AxisDirection.right) Padding(
+                padding: const EdgeInsets.all(8.0),
+                child: icon!,
+              )
             ],
           )
           : Column(
             mainAxisSize: MainAxisSize.min,
             mainAxisAlignment: alignment,
             children: [
-              if(iconDirection == AxisDirection.up) icon!,
+              if(iconDirection == AxisDirection.up) Padding(
+                padding: const EdgeInsets.all(8.0),
+                child: icon!,
+              ),
               ?child,
-              if(iconDirection == AxisDirection.down) icon!
+              if(iconDirection == AxisDirection.down) Padding(
+                padding: const EdgeInsets.all(8.0),
+                child: icon!,
+              )
             ],
           )
     );
@@ -724,7 +755,7 @@ class ClassSelectPage extends StatelessWidget {
                     value: classSelection.countInReview, 
                     onChanged: (value){
                       if(value == true && !FSRS().config.enabled) {
-                        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("请先启用复习系统")));
+                        showSnackBar(context, "请先启用复习系统");
                         return ;
                       }
                       setLocalState(() {
@@ -899,12 +930,7 @@ class _ChoiceQuestions extends State<ChoiceQuestions> {
                 if(widget.allowMutipleSelect) return widget.onSelected(value);
                 if(choosed) {
                   if(widget.onDisAllowMutipleSelect != null) return widget.onDisAllowMutipleSelect!(value);
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('该页面不允许多次选择'),
-                      duration: Duration(seconds: 1),
-                    ),
-                  );
+                  showSnackBar(context, "该页面不允许多次选择");
                   return null;
                 } else {
                   choosed = true;
@@ -1135,12 +1161,7 @@ class _ListeningQuestion extends State<ListeningQuestion> {
                 if(widget.allowMutipleSelect) return widget.onSelected(value);
                 if(choosed) {
                   if(widget.onDisAllowMutipleSelect != null) return widget.onDisAllowMutipleSelect!(value);
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('该页面不允许多次选择'),
-                      duration: Duration(seconds: 1),
-                    ),
-                  );
+                  showSnackBar(context, "该页面不允许多次选择");
                   return null;
                 } else {
                   choosed = true;

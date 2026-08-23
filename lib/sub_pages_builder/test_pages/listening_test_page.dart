@@ -65,17 +65,9 @@ class _ForeListeningSettingPage extends State<ForeListeningSettingPage> {
                 selectedClasses = await popSelectClasses(context, withCache: false, withReviewChoose: false);
                 setState(() {});
               }, 
-              child: Column(
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.start,
-                    children: [
-                      Expanded(child: Text("2. 选择听写课程", style: TextStyle(fontSize: 18.0),)),
-                      Icon(Icons.arrow_forward),
-                    ],
-                  ),
-                ],
-              )
+              icon: Icon(Icons.arrow_forward_ios),
+              iconDirection: AxisDirection.right,
+              child: Expanded(child: Text("2. 选择听写课程"))
             ),
             Container(
               margin: EdgeInsets.all(16.0),

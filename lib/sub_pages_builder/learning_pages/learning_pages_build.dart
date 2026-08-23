@@ -372,13 +372,7 @@ class BottomTip extends StatelessWidget {
               child: Expanded(
                 child: FittedBox(
                   fit: BoxFit.scaleDown,
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      SizedBox(width: mediaQuery.size.width * 0.01),
-                      Text(isLast ? "完成" : "下一个"),
-                    ],
-                  ),
+                  child: Text(isLast ? "完成" : "下一个"),
                 ),
               ),
             )
@@ -936,9 +930,7 @@ class WordLookupLayout extends StatelessWidget {
     if(!AppData().config.learning.wordLookupRealtime){
       Future.delayed(Durations.medium1, () {
         if(context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text("检索到${match.length}个结果"), duration: Duration(seconds: 1),),
-          );
+          showSnackBar(context, "检索到${match.length}个结果");
         }
       }); 
     }

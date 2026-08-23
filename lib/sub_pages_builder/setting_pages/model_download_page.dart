@@ -90,7 +90,7 @@ class _ModelDownload extends State<ModelDownload> {
               if(!context.mounted) return;
               AppData().loadTTS(AppData().config.audio.playRate);
               context.read<Global>().uiLogger.info("模型下载完成");
-              ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("下载完成")));
+              showSnackBar(context, "下载完成");
               setState(() {
                 progress = 4;
               });

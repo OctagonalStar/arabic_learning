@@ -91,6 +91,8 @@
 
 ## 构建
 
+> 使用Flutter框架版本3.47.0
+
 ```bash
 flutter pub get
 flutter run

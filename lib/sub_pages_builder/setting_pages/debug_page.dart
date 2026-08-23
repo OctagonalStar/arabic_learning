@@ -1,4 +1,7 @@
+import 'package:arabic_learning/package_replacement/fake_dart_io.dart' if (dart.library.io) 'dart:io' as io;
+
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 
 import 'package:arabic_learning/funcs/ui.dart';
@@ -24,6 +27,21 @@ class _DebugPage extends State<DebugPage> {
   @override
   Widget build(BuildContext context) {
     context.read<Global>().uiLogger.info("构建 DebugPage");
+
+    List<String> debugInfo = [];
+
+    // 基础信息
+    debugInfo.add("Date Time: ${DateTime.now().toIso8601String()}");
+    debugInfo.add("Version Code: ${StaticsVar.appVersion}");
+    debugInfo.add("Host Name: ${io.Platform.localHostname}");
+    debugInfo.add("Device System: ${io.Platform.operatingSystem}");
+    debugInfo.add("Device System Version: ${io.Platform.operatingSystemVersion}");
+    debugInfo.add("Environment: ${io.Platform.environment}");
+    debugInfo.add("WideScreen: ${AppData().isWideScreen}");
+
+    // 存储类型
+    debugInfo.add("Storage Type: ${AppData().storage.type ? "SharedPreferences" : "IndexDB"}");
+
     return Scaffold(
       appBar: AppBar(
         title: Text("调试设置"),
@@ -125,7 +143,18 @@ class _DebugPage extends State<DebugPage> {
           ExpansionTile(
             title: Text("调试信息"),
             children: [
-              TextContainer(text: "Storage Type: ${AppData().storage.type ? "SharedPreferences" : "IndexDB"}"),
+              Row(
+                children: [
+                  Expanded(child: TextContainer(text: "调试信息中可能包含部分敏感信息，若要发给他人请先自行检查", style: TextStyle(color: Colors.redAccent))),
+                  Button(
+                    onPressed: () {
+                      Clipboard.setData(ClipboardData(text: debugInfo.join("\n")));
+                    },
+                    child: Icon(Icons.copy),
+                  )
+                ],
+              ),
+              TextContainer(text: debugInfo.join("\n")),
             ],
           )
         ],
