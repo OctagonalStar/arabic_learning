@@ -63,7 +63,7 @@ dependencies {
     implementation("androidx.multidex:multidex:2.0.1")
 }
 
-tasks.whileType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile>().configureEach {
+tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile>().configureEach {
     compileOptions {
         jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17)
     }
