@@ -19,12 +19,6 @@ android {
         targetCompatibility = JavaVersion.VERSION_17
     }
 
-    kotlin {
-        compileOptions {
-            jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17)
-        }
-    }
-
     defaultConfig {
         applicationId = "com.ayuban.arlearning"
         minSdk = flutter.minSdkVersion
@@ -67,4 +61,10 @@ dependencies {
     implementation("androidx.window:window-java:1.0.0")
     
     implementation("androidx.multidex:multidex:2.0.1")
+}
+
+tasks.whileType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile>().configureEach {
+    compileOptions {
+        jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17)
+    }
 }
