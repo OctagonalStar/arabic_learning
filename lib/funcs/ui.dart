@@ -1,5 +1,5 @@
 import 'dart:convert';
-import 'dart:ui';
+import 'dart:ui' show ImageFilter;
 
 import 'package:arabic_learning/funcs/fsrs_func.dart';
 import 'package:arabic_learning/vars/config_structure.dart' show ClassItem, SourceItem, WordItem, ClassSelection;
