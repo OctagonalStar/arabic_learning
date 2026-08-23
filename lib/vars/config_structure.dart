@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:typed_data' show Uint8List;
 
 import 'package:crypto/crypto.dart';
 import 'package:arabic_learning/vars/statics_var.dart' show StaticsVar;
@@ -719,6 +720,8 @@ class ReadingUnit {
 
   final List<int> corrects;
 
+  final List<String> tags;
+
   const ReadingUnit({
     required this.type,
     required this.title,
@@ -726,7 +729,8 @@ class ReadingUnit {
     required this.difficulty,
     required this.tashkeel,
     required this.questions,
-    required this.corrects
+    required this.corrects,
+    required this.tags
   });
 
   Map<String, dynamic> toMap({bool export = false}){
@@ -741,23 +745,27 @@ class ReadingUnit {
       "difficulty": difficulty,
       "tashkeel": tashkeel,
       "questions": questionsList,
+      "tags": tags,
       if(!export) "corrects": corrects
     };
   } 
 
-  static ReadingUnit buildFromMap(Map<String, dynamic> unit){
+  static ReadingUnit buildFromMap(Map<String, dynamic> unit, {int? type, bool? tashkeel}){
     List<ReadingQuestion> questions = [];
     for(Map<String, dynamic> x in unit["questions"]){
       questions.add(ReadingQuestion.buildFromMap(x));
     }
+    if(unit["type"] == null && type == null) throw Exception("Null Question Type");
+    if(unit["tashkeel"] == null && tashkeel == null) throw Exception("Null Tashkeel Type");
     return ReadingUnit(
-      type: unit["type"], 
+      type: unit["type"] ?? type, 
       title: unit["title"], 
       passage: unit["passage"], 
       difficulty: unit["difficulty"], 
-      tashkeel: unit["tashkeel"], 
+      tashkeel: unit["tashkeel"] ?? tashkeel, 
       questions: questions, 
-      corrects: unit["corrects"]
+      tags: List<String>.from(unit["tags"] ?? []),
+      corrects: List<int>.from(unit["corrects"] ?? [])
     );
   }
 
@@ -768,7 +776,8 @@ class ReadingUnit {
     int? difficulty,
     bool? tashkeel,
     List<ReadingQuestion>? questions,
-    List<int>? corrects 
+    List<int>? corrects ,
+    List<String>? tags
   }){
     return ReadingUnit(
       type: type ?? this.type, 
@@ -777,8 +786,20 @@ class ReadingUnit {
       difficulty: difficulty ?? this.difficulty, 
       tashkeel: tashkeel ?? this.tashkeel, 
       questions: questions ?? this.questions, 
-      corrects: corrects ?? this.corrects
+      corrects: corrects ?? this.corrects,
+      tags: tags ?? this.tags
     );
+  }
+
+  List<int> getHash() {
+    String test = "$type$title;$passage;$difficulty;$tashkeel";
+    for(ReadingQuestion x in questions){
+      test = "$test;${x.riddle}";
+    }
+    Uint8List bytes = utf8.encode(test);
+    Digest digest = sha1.convert(bytes);
+
+    return digest.bytes;
   }
 }
 
@@ -808,7 +829,7 @@ class ReadingQuestion {
   static ReadingQuestion buildFromMap(Map<String, dynamic> question){
     return ReadingQuestion(
       riddle: question["riddle"], 
-      answers: question["answers"], 
+      answers: List<String>.from(question["answers"]), 
       type: question["type"], 
       analysis: question["analysis"]
     );

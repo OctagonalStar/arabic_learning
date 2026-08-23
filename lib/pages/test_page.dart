@@ -5,7 +5,7 @@ import 'package:provider/provider.dart';
 import 'package:arabic_learning/vars/global.dart';
 import 'package:arabic_learning/sub_pages_builder/test_pages/listening_test_page.dart' show ForeListeningSettingPage;
 import 'package:arabic_learning/sub_pages_builder/test_pages/local_pk_page.dart' show LocalPKSelectPage;
-import 'package:arabic_learning/sub_pages_builder/test_pages/reading_test_page.dart' show ReadingTestLeading;
+import 'package:arabic_learning/sub_pages_builder/test_pages/reading_test_page.dart' show ReadingTestPage;
 class TestPage extends StatelessWidget {
   const TestPage({super.key});
   @override
@@ -41,7 +41,7 @@ class TestPage extends StatelessWidget {
                 Navigator.push(
                   context, 
                   MaterialPageRoute(
-                    builder: (context) => ReadingTestLeading()
+                    builder: (context) => ReadingTestPage()
                   )
                 );
               },

@@ -158,7 +158,6 @@ class AppData {
   Logger logger = Logger("AppData");
 
   List<String> internalLogCapture = [];
-  Uint8List? stella;
   bool isWideScreen = false;
   Config config = Config();
 

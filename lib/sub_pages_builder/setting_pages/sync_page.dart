@@ -197,7 +197,7 @@ class _DataSyncPage extends State<DataSyncPage> {
                       try{
                         if(await FilePicker.saveFile(
                           dialogTitle: "导出数据",
-                          lockParentWindow: true,
+                          windowsOptions: WindowsOptions(lockParentWindow: true),
                           fileName: "export.json",
                           bytes: utf8.encode(jsonEncode(AppData().storage.export())),
                         ) != null) {

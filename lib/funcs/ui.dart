@@ -635,8 +635,10 @@ class Button extends StatelessWidget {
       style: ElevatedButton.styleFrom(
         backgroundColor: backgroundColor ?? Theme.of(context).colorScheme.onPrimary,
         fixedSize: size,
+        padding: padding,
         shape: shape ?? RoundedRectangleBorder(borderRadius: StaticsVar.br)
       ),
+      clipBehavior: Clip.hardEdge,
       onPressed: onPressed,
       child: icon==null 
           ? child

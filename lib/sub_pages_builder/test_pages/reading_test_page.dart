@@ -1,8 +1,10 @@
+import 'dart:convert';
 import 'dart:math';
 
 import 'package:arabic_learning/funcs/ui.dart';
 import 'package:arabic_learning/funcs/utili.dart';
 import 'package:arabic_learning/vars/config_structure.dart';
+import 'package:arabic_learning/vars/global.dart';
 import 'package:arabic_learning/vars/statics_var.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart' show Clipboard, ClipboardData;
@@ -68,21 +70,26 @@ class ReadingUnitButton extends StatelessWidget {
       }
     }
 
-    return ElevatedButton(
-      style: ElevatedButton.styleFrom(
-        backgroundColor: Theme.of(context).colorScheme.onPrimary.withAlpha(150),
-        fixedSize: Size(600, 400),
-        shape: RoundedRectangleBorder(borderRadius: StaticsVar.br),
-      ),
-      onPressed: () {
-        // TODO
-      }, 
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Row(
+    int correctTime = 0;
+    for(int x in unit.corrects){
+      correctTime += x;
+    }
+
+    return Container(
+      margin: EdgeInsets.all(16.0),
+      width: mediaQuery.size.width,
+      child: Center(
+        child: Button(
+          size: Size(mediaQuery.size.width * 0.9, mediaQuery.size.height * 0.1),
+          onPressed: () {
+            // TODO
+          }, 
+          padding: EdgeInsetsGeometry.all(0.0),
+          child: Row(
             children: [
               Container(
+                width: mediaQuery.size.width * 0.2,
+                height: mediaQuery.size.height * 0.15,
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
                     begin: AlignmentGeometry.centerLeft,
@@ -91,25 +98,122 @@ class ReadingUnitButton extends StatelessWidget {
                       difficultyColor,
                       Colors.transparent
                     ]
-                  )
+                  ),
+                  borderRadius: StaticsVar.br
                 ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    SizedBox(width: mediaQuery.size.width * 0.02),
+                    Text(
+                      unit.difficulty.toString(), 
+                      style: TextStyle(fontSize: 64, shadows: [Shadow(blurRadius: 5, color: Colors.white)])
+                    ),
+                  ],
+                ),
+              ),
+              Column(
+                mainAxisAlignment: MainAxisAlignment.spaceAround,
+                children: [
+                  Text(
+                    unit.title,
+                    maxLines: 1,
+                    textDirection: unit.title.isArabic() ? TextDirection.rtl : TextDirection.ltr,
+                    style: Theme.of(context).primaryTextTheme.displayMedium,
+                  ),
+                  Wrap(
+                    alignment: WrapAlignment.start,
+                    spacing: 4.0,
+                    children: List.generate(tags.length, (index) => TagMark(tag: tags[index], color: Colors.indigo)),
+                  ),
+                ],
+              ),
+              Expanded(child: SizedBox()),
+              Column(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.all(16.0),
+                    child: Icon(Icons.arrow_forward_ios),
+                  ),
+                  Container(
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).colorScheme.primaryContainer
+                    ),
+                    padding: EdgeInsets.all(8.0),
+                    child: Text("历史正确率:${unit.corrects.isEmpty ? "无数据" : (correctTime/(unit.corrects.length * unit.questions.length)).toStringAsFixed(2)}",
+                      style: Theme.of(context).primaryTextTheme.bodyLarge),
+                  )
+                ],
               )
             ],
           )
-        ],
-      )
+        ),
+      ),
     );
   }
 }
 
-class ReadingTestLeading extends StatefulWidget {
-  const ReadingTestLeading({super.key});
+class TagMark extends StatelessWidget {
+  final String tag;
+  final Color color;
+  const TagMark({super.key, required this.tag, required this.color});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: color,
+        borderRadius: StaticsVar.br
+      ),
+      padding: EdgeInsets.all(4.0),
+      child: Text(tag, style: Theme.of(context).primaryTextTheme.labelMedium),
+    );
+  }
+}
+
+class ReadingTestPage extends StatefulWidget {
+  const ReadingTestPage({super.key});
+
+  @override
+  State<StatefulWidget> createState() => _ReadingTestPage();
+}
+
+class _ReadingTestPage extends State<ReadingTestPage> {
+  _ReadingTestPage();
+
+  @override
+  Widget build(BuildContext context) {
+    AppData appData = AppData();
+
+    return Scaffold(
+      appBar: AppBar(title: Text("阅读理解"), actions: [
+        IconButton(
+          onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (context) => ReadingTestAddLeading())), 
+          icon: Icon(Icons.add)
+        )
+      ]),
+      body: ListView.builder(
+        itemCount: appData.readingData.units.length + 1,
+        itemBuilder: (context, index) {
+          if(index == appData.readingData.units.length) {
+            return TextContainer(text: "没有更多阅读题了，请点击右上角加号添加");
+          }
+          return ReadingUnitButton(unit: appData.readingData.units[index]);
+        }
+      ),
+    );
+  }
+}
+
+class ReadingTestAddLeading extends StatefulWidget {
+  const ReadingTestAddLeading({super.key});
 
   @override
   State<StatefulWidget> createState() => _ReadingTestLeading();
 }
 
-class _ReadingTestLeading extends State<ReadingTestLeading> {
+class _ReadingTestLeading extends State<ReadingTestAddLeading> {
   final QuestionConfig qconfig = QuestionConfig();
 
   final PageController _pageController = PageController();
@@ -268,6 +372,7 @@ class _QuestionConfigPage extends State<QuestionConfigPage> {
     switch (qconfig.sourceType) {
       case 1 : {
         // TODO: AI API
+        break;
       }
       case 2 : {
         qconfig.theme = themeEditController.text == "" ? getRandomTheme() : themeEditController.text;
@@ -331,6 +436,28 @@ class _QuestionConfigPage extends State<QuestionConfigPage> {
               ),
             );
           }
+        );
+        break;
+      }
+      case 3: {
+        late ReadingUnit unit;
+        AppData appData = AppData();
+        try {
+          unit = ReadingUnit.buildFromMap(jsonDecode(themeEditController.text), type: qconfig.testType, tashkeel: qconfig.tashkeel);
+          if(unit.title.isEmpty) throw Exception("Unit Title is null");
+          if(unit.passage.isEmpty) throw Exception("Unit Passage is null");
+          if(unit.questions.isEmpty) throw Exception("Unit Questions is null");
+          if(appData.readingData.units.any((testunit) => testunit.getHash() == unit.getHash())) throw Exception("Unit already exist");
+        } catch (e) { 
+          alart(context, e.toString());
+          break;
+        }
+        appData.readingData.units.add(unit);
+        appData.saveReadingData();
+        alart(
+          context, 
+          "添加成功",
+          onConfirmed: () => Navigator.popUntil(context, (route) => route.isFirst),
         );
       }
     }
@@ -484,7 +611,6 @@ class _QuestionConfigPage extends State<QuestionConfigPage> {
           maxLines: 20,
           decoration: InputDecoration(
             hintText: "粘贴从AI工具中生成的文本",
-            icon: Icon(Icons.webhook),
             border: OutlineInputBorder(
               borderRadius: StaticsVar.br,
               borderSide: BorderSide(color: Theme.of(context).colorScheme.outline),
