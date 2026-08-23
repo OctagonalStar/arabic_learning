@@ -35,10 +35,14 @@ class LearningPage extends StatelessWidget {
                   onPressed: () {
                     shiftToStudy(context);
                   },
-                  icon: Icon(Icons.task_alt),
+                  icon: Padding(
+                    padding: const EdgeInsets.all(16.0),
+                    child: Icon(Icons.task_alt),
+                  ),
                   iconDirection: AxisDirection.up,
                   child: Expanded(
                     child: FittedBox(
+                      fit: BoxFit.scaleDown,
                       child: Text('学习',style: TextStyle(fontSize: 40.0, fontWeight: FontWeight.bold)),
                     ),
                   ),
@@ -68,7 +72,10 @@ class LearningPage extends StatelessWidget {
                   )
                 );
               },
-              icon: Icon(Icons.history_edu),
+              icon: Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Icon(Icons.history_edu),
+              ),
               iconDirection: AxisDirection.up,
               child: Expanded(
                 child: FittedBox(
