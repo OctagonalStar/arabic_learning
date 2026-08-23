@@ -96,7 +96,7 @@ class AIPrompt {
 ## 3. 输出JSON结构
 {
   "title": <String类型，文章标题，阿拉伯语>,
-  "passage": <String类型，文章内容，阿拉伯语>,
+  "passage": <String类型，文章内容，阿拉伯语，不得包含英文引号，可用Markdown语法>,
   "difficulty": <Int类型，严格符合上表标尺，尽量贴近输入的目标难度>,
   "questions": [
     {

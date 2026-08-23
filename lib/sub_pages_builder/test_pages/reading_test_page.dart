@@ -7,7 +7,8 @@ import 'package:arabic_learning/vars/config_structure.dart';
 import 'package:arabic_learning/vars/global.dart';
 import 'package:arabic_learning/vars/statics_var.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart' show Clipboard, ClipboardData;
+import 'package:flutter/services.dart' show Clipboard, ClipboardData, DeviceOrientation, SystemChrome;
+import 'package:flutter_markdown_plus/flutter_markdown_plus.dart';
 
 
 class QuestionConfig {
@@ -210,10 +211,10 @@ class ReadingTestAddLeading extends StatefulWidget {
   const ReadingTestAddLeading({super.key});
 
   @override
-  State<StatefulWidget> createState() => _ReadingTestLeading();
+  State<StatefulWidget> createState() => _ReadingTestAddLeading();
 }
 
-class _ReadingTestLeading extends State<ReadingTestAddLeading> {
+class _ReadingTestAddLeading extends State<ReadingTestAddLeading> {
   final QuestionConfig qconfig = QuestionConfig();
 
   final PageController _pageController = PageController();
@@ -313,6 +314,129 @@ class _ReadingTestLeading extends State<ReadingTestAddLeading> {
             ),
           ),
           QuestionConfigPage(qconfig: qconfig),
+        ],
+      ),
+    );
+  }
+}
+
+class ReadingQuestionPage extends StatefulWidget {
+  final ReadingUnit unit;
+  const ReadingQuestionPage({super.key, required this.unit});
+
+  @override
+  State<StatefulWidget> createState() => _ReadingQuestionPage();
+}
+class _ReadingQuestionPage extends State<ReadingQuestionPage> {
+  _ReadingQuestionPage();
+
+  PageController pageController = PageController();
+  late List<int?> choose;
+  late List<List<String>> options;
+
+  @override
+  void initState() {
+    choose = List<int?>.generate(widget.unit.questions.length, (_) => null);
+
+    for(ReadingQuestion x in widget.unit.questions){
+      options.add(List<String>.from(x.answers)..shuffle());
+    }
+    
+    SystemChrome.setPreferredOrientations([
+      DeviceOrientation.landscapeLeft,
+      DeviceOrientation.landscapeRight
+    ]);
+    super.initState();
+  }
+
+  @override
+  void dispose() {
+    SystemChrome.setPreferredOrientations([
+      DeviceOrientation.portraitUp,
+      DeviceOrientation.portraitDown
+    ]);
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    MediaQueryData mediaQuery = MediaQuery.of(context);
+
+    return Scaffold(
+      appBar: AppBar(title: Text(widget.unit.title)),
+      body: Row(
+        children: [
+          SizedBox(
+            width: mediaQuery.size.width * 0.65,
+            height: mediaQuery.size.height,
+            child: Markdown(data: widget.unit.passage)
+          ),
+          Divider(),
+          Expanded(
+            child: PageView.builder(
+              controller: pageController,
+              itemCount: widget.unit.questions.length,
+              itemBuilder: (context, int index) {
+                return ListView(
+                  padding: EdgeInsets.all(16.0),
+                  children: [
+                    if(index != widget.unit.questions.length) TextContainer(text: widget.unit.questions[index].riddle),
+                    if(index != widget.unit.questions.length) ChooseButtons(
+                      options: options[index], 
+                      isShowAnimation: false,
+                      settingShowingMode: 4,
+                      onSelected: (int i) {
+                        choose[index] = i;
+                        return true;
+                      }
+                    ),
+                    if(index == widget.unit.questions.length) TextContainer(text: "检查答案"),
+                    if(index == widget.unit.questions.length) ...List.generate(
+                      widget.unit.questions.length,
+                      (int i) => TextContainer(
+                        text: "题目\n${widget.unit.questions[i].riddle}\n你的答案\n${choose[i]==null ? "未选择" : options[i][choose[i]!]}"
+                      )
+                    ),
+                    if(index == widget.unit.questions.length) Button(
+                      onPressed: () {
+                        // TODO
+                      },
+                      icon: Icon(Icons.done_all),
+                      child: Text("提交"),
+                    ),
+                    TweenAnimationBuilder(
+                      tween: Tween<double>(
+                        begin: 0,
+                        end: index == 0 ? 0.5 : 0
+                      ),
+                      duration: Durations.medium4,
+                      builder: (context, double i, child) {
+                        return  Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                          children: [
+                            if(index != 0) Button(
+                              size: Size.fromWidth(mediaQuery.size.width * 0.35 * i),
+                              icon: Icon(Icons.arrow_back_ios),
+                              iconDirection: AxisDirection.left,
+                              onPressed: () => pageController.previousPage(duration: Durations.medium4, curve: StaticsVar.curve),
+                              child: Text("上一题"),
+                            ),
+                            if(index != widget.unit.questions.length) Button(
+                              size: Size.fromWidth(mediaQuery.size.width * 0.35 * (1 - i)),
+                              icon: Icon(Icons.arrow_back_ios),
+                              iconDirection: AxisDirection.left,
+                              onPressed: () => pageController.nextPage(duration: Durations.medium4, curve: StaticsVar.curve),
+                              child: Text(index == widget.unit.questions.length-1 ? "检查答案" : "下一题"),
+                            ),
+                          ],
+                        );
+                      }
+                    )
+                  ],
+                );
+              }
+            ),
+          )
         ],
       ),
     );
