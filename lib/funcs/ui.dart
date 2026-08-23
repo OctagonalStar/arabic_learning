@@ -471,6 +471,7 @@ class _ChooseButtonBoxState extends State<ChooseButtonBox> {
         },
         size: Size(widget.width ?? 200, widget.height ?? 50),
         backgroundColor: Colors.transparent,
+        shadowColor: Colors.transparent,
         child: widget.child,
       ),
     );
@@ -587,6 +588,7 @@ class WordCard extends StatelessWidget {
                         child: Button(
                           size: Size(useWidth, useHeight * 0.6),
                           backgroundColor: Colors.transparent,
+                          shadowColor: Colors.transparent,
                           shape: RoundedRectangleBorder(borderRadius: BorderRadiusGeometry.vertical(bottom: Radius.circular(25.0))),
                           onPressed: (){
                             setLocalState(() {
@@ -615,6 +617,7 @@ class Button extends StatelessWidget {
   final AxisDirection iconDirection;
   final Size? size;
   final Color? backgroundColor;
+  final Color? shadowColor;
   final EdgeInsetsGeometry padding;
   final OutlinedBorder? shape;
   final MainAxisAlignment alignment;
@@ -627,6 +630,7 @@ class Button extends StatelessWidget {
     this.backgroundColor,
     this.shape,
     this.size,
+    this.shadowColor,
     this.iconDirection = AxisDirection.left,
     this.padding = const EdgeInsetsGeometry.all(16.0),
     this.alignment = MainAxisAlignment.spaceEvenly
@@ -637,6 +641,7 @@ class Button extends StatelessWidget {
     return ElevatedButton(
       style: ElevatedButton.styleFrom(
         backgroundColor: backgroundColor ?? Theme.of(context).colorScheme.onPrimary,
+        shadowColor: shadowColor,
         fixedSize: size,
         shape: shape ?? RoundedRectangleBorder(borderRadius: StaticsVar.br)
       ),
