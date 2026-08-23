@@ -85,9 +85,7 @@ class LearningPage extends StatelessWidget {
           size: Size(mediaQuery.size.width * 0.8, mediaQuery.size.height * 0.15),
           onPressed: (){
             if(AppData().wordData.words.isEmpty) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text("词库为空，无法推送！请先导入词库"), duration: Duration(seconds: 1),),
-              );
+              showSnackBar(context, "词库为空，无法推送！请先导入词库");
               return;
             }
             final DateTime now = DateTime.now();
@@ -105,9 +103,7 @@ class LearningPage extends StatelessWidget {
             }
             pushWords.removeWhere((WordItem item) => FSRS().isContained(item.id));
             if(pushWords.isEmpty) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text("今日的推送已完成"), duration: Duration(seconds: 1),),
-              );
+              showSnackBar(context, "今日的推送已完成");
               return;
             }
             context.read<Global>().uiLogger.info("跳转: LearningPage => FSRSLearningPage");

@@ -118,12 +118,7 @@ class _SettingPage extends State<SettingPage> {
                     onChanged: (value) {
                       context.read<Global>().uiLogger.info("更新字体设置: $value");
                       if (value == 2 && kIsWeb) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text("网页版加载中文字体需要较长时间，请先耐心等待"),
-                            duration: Duration(seconds: 3),
-                          ),
-                        );
+                        showSnackBar(context, "网页版加载中文字体需要较长时间，请先耐心等待");
                       }
                       AppData().config = AppData().config.copyWith(
                         regular: AppData().config.regular.copyWith(

@@ -165,7 +165,7 @@ List<Widget> classesSelectionList(BuildContext context, Function (ClassItem) onC
 /// 
 /// [context] :Widget树上的context
 /// 
-/// [e] :需要在窗口中显示的内容（文字）
+/// [msg] :需要在窗口中显示的内容（文字）
 /// 
 /// [onConfirmed] :在被确认后运行的函数
 /// 
@@ -178,15 +178,15 @@ List<Widget> classesSelectionList(BuildContext context, Function (ClassItem) onC
 ///   alart(context, "你点击了按钮"，onConfirmed: (){i++}, delayConfirm: Duration(seconds: 1));
 /// }
 /// ```
-void alart(BuildContext context, String e, {Function? onConfirmed, Duration delayConfirm = const Duration()}) {
-  context.read<Global>().uiLogger.info("构建弹出窗口: 携带信息: $e ;确认参数: ${onConfirmed != null}; 延迟: ${delayConfirm.inMilliseconds}");
+void alart(BuildContext context, String msg, {Function? onConfirmed, Duration delayConfirm = const Duration()}) {
+  context.read<Global>().uiLogger.info("构建弹出窗口: 携带信息: $msg ;确认参数: ${onConfirmed != null}; 延迟: ${delayConfirm.inMilliseconds}");
   showDialog(
     context: context, 
     requestFocus: true,
     builder: (BuildContext context) {
       return AlertDialog(
         title: Text("提示"),
-        content: Text(e),
+        content: Text(msg),
         actions: [
           FutureBuilder(
             future: Future.delayed(delayConfirm, (){return 0;}),
@@ -207,6 +207,20 @@ void alart(BuildContext context, String e, {Function? onConfirmed, Duration dela
         ],
       );
     }
+  );
+}
+
+void showSnackBar(BuildContext context, String msg, {Duration duration = const Duration(seconds: 3)}){
+  context.read<Global>().uiLogger.info("展示底部提示，携带信息: $msg ，持续时长: ${duration.inMilliseconds} 毫秒");
+  ScaffoldMessenger.of(context).showSnackBar(
+    SnackBar(
+      content: Text(msg),
+      duration: duration,
+    ),
+    snackBarAnimationStyle: AnimationStyle(
+      curve: StaticsVar.curve,
+      reverseCurve: StaticsVar.curve
+    )
   );
 }
 
@@ -741,7 +755,7 @@ class ClassSelectPage extends StatelessWidget {
                     value: classSelection.countInReview, 
                     onChanged: (value){
                       if(value == true && !FSRS().config.enabled) {
-                        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("请先启用复习系统")));
+                        showSnackBar(context, "请先启用复习系统");
                         return ;
                       }
                       setLocalState(() {
@@ -916,12 +930,7 @@ class _ChoiceQuestions extends State<ChoiceQuestions> {
                 if(widget.allowMutipleSelect) return widget.onSelected(value);
                 if(choosed) {
                   if(widget.onDisAllowMutipleSelect != null) return widget.onDisAllowMutipleSelect!(value);
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('该页面不允许多次选择'),
-                      duration: Duration(seconds: 1),
-                    ),
-                  );
+                  showSnackBar(context, "该页面不允许多次选择");
                   return null;
                 } else {
                   choosed = true;
@@ -1152,12 +1161,7 @@ class _ListeningQuestion extends State<ListeningQuestion> {
                 if(widget.allowMutipleSelect) return widget.onSelected(value);
                 if(choosed) {
                   if(widget.onDisAllowMutipleSelect != null) return widget.onDisAllowMutipleSelect!(value);
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('该页面不允许多次选择'),
-                      duration: Duration(seconds: 1),
-                    ),
-                  );
+                  showSnackBar(context, "该页面不允许多次选择");
                   return null;
                 } else {
                   choosed = true;
