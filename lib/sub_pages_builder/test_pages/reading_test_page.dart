@@ -195,7 +195,7 @@ class _ReadingTestPage extends State<ReadingTestPage> {
     return Scaffold(
       appBar: AppBar(title: Text("阅读理解"), actions: [
         IconButton(
-          onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (context) => ReadingTestAddLeading())), 
+          onPressed: () => Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => ReadingTestAddLeading())), 
           icon: Icon(Icons.add)
         )
       ]),
