@@ -131,7 +131,10 @@ class ReadingUnitButton extends StatelessWidget {
                     Wrap(
                       alignment: WrapAlignment.start,
                       spacing: 4.0,
-                      children: List.generate(tags.length, (index) => TagMark(tag: tags[index], color: Colors.indigo)),
+                      children: [
+                        TagMark(tag: unit.type == 1 ? "阅读理解" : "完形填空", color: Colors.teal),
+                        ...List.generate(tags.length, (index) => TagMark(tag: tags[index], color: Colors.indigo)),
+                      ]
                     ),
                   ],
                 ),
@@ -437,6 +440,14 @@ class _ReadingQuestionPage extends State<ReadingQuestionPage> {
                       padding: const EdgeInsets.all(8.0),
                       child: Button(
                         onPressed: () {
+                          int correctCount = 0;
+                          for(int i = 0;i < choose.length; i++){
+                            if(choose[i].value == null ? false : options[i][choose[i].value] == widget.unit.questions[i].answers[0]) {
+                              correctCount++;
+                            }
+                          }
+                          widget.unit.corrects.add(correctCount);
+                          AppData().saveReadingData();
                           Navigator.pushReplacement(
                             context, 
                             MaterialPageRoute(builder: (context) => ReadingResultPage(unit: widget.unit, selection: List<int?>.generate(choose.length, (index) => choose[index].value), options: options))
