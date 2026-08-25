@@ -435,7 +435,10 @@ class _ReadingQuestionPage extends State<ReadingQuestionPage> {
                       padding: const EdgeInsets.all(8.0),
                       child: Button(
                         onPressed: () {
-                          // TODO
+                          Navigator.pushReplacement(
+                            context, 
+                            MaterialPageRoute(builder: (context) => ReadingResultPage(unit: widget.unit, selection: List<int?>.generate(choose.length, (index) => choose[index].value), options: options))
+                          );
                         },
                         icon: Icon(Icons.done_all),
                         child: Text("提交"),
@@ -811,3 +814,129 @@ String buildPrompt({required QuestionConfig qc,required bool useSafe}) {
   return prompt;
 }
 
+class ReadingResultPage extends StatelessWidget {
+  final ReadingUnit unit;
+  final List<int?> selection;
+  final List<List<String>> options;
+  
+  static const Interval downProgress = Interval(0.066, 0.233, curve: StaticsVar.curve);
+  static const Interval slideProgress = Interval(0.233, 0.666, curve: StaticsVar.curve);
+  static const Interval correctProgress = Interval(0.666, 1, curve: StaticsVar.curve);
+
+
+  const ReadingResultPage({super.key, required this.unit, required this.selection, required this.options});
+
+  @override
+  Widget build(BuildContext context) {
+    MediaQueryData mediaQuery = MediaQuery.of(context);
+
+    List<bool> correctList = [];
+    for(int i = 0;i < selection.length; i++){
+      correctList.add(selection[i] == null ? false : options[i][selection[i]!] == unit.questions[i].answers[0]);
+    }
+    double sp = 0;
+    double cp = 0;
+    double dp = 0;
+
+    return Scaffold(
+      appBar: AppBar(title: Text("测试结果-${unit.title}")),
+      body: TweenAnimationBuilder<double>(
+        tween: Tween(
+          begin: 0.0,
+          end: 1.0
+        ), 
+        curve: Curves.linear,
+        duration: Duration(seconds: 3), 
+        builder: (context, t, child){
+          sp = slideProgress.transform(t);
+          cp = correctProgress.transform(t);
+          dp = downProgress.transform(t);
+    
+          return Column(
+            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+            children: [
+              RepaintBoundary(
+                child: Transform.translate(
+                  offset: Offset(0, -mediaQuery.size.height * 0.4 * (1-dp)),
+                  child: Opacity(
+                    opacity: dp,
+                    child: SizedBox(
+                      width: mediaQuery.size.width,
+                      height: mediaQuery.size.height * 0.3,
+                      child: Markdown(data: unit.passage, styleSheet: MarkdownStyleSheet(textScaler: TextScaler.linear(2)))
+                    ),
+                  ),
+                ),
+              ),
+              Divider(),
+              Expanded(
+                child: ListView(
+                  children: [
+                    ...List.generate(
+                      unit.questions.length,
+                      (int index) {
+                        return RepaintBoundary(
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Transform.translate(
+                                offset: Offset(-(mediaQuery.size.width * 0.4 * (1-(sp-1*index*(1-sp) < 0 ? 0 : sp-1*index*(1-sp)))), 0),
+                                child: TextContainer(
+                                  size: Size(mediaQuery.size.width * 0.4, mediaQuery.size.height * 0.2),
+                                  text: "问题: \n${unit.questions[index].riddle}\n你的答案: \n${selection[index] == null ? "未选择" : options[index][selection[index]!]}",
+                                ),
+                              ),
+                              Transform.translate(
+                                offset: Offset(mediaQuery.size.width * 0.5 * (1-(sp-1*index*(1-sp) < 0 ? 0 : sp-1*index*(1-sp))), 0),
+                                child: Container(
+                                  decoration: BoxDecoration(
+                                    color: Theme.of(context).colorScheme.onPrimary,
+                                    borderRadius: StaticsVar.br
+                                  ),
+                                  width: mediaQuery.size.width * 0.5, 
+                                  height: mediaQuery.size.height * 0.2,
+                                  padding: EdgeInsets.all(16.0),
+                                  child: Row(
+                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                    children: [
+                                      SizedBox(width: mediaQuery.size.width * 0.35, child: Text("正确答案: \n${unit.questions[index].answers[0]}\n解析: \n${unit.questions[index].analysis}", style: Theme.of(context).primaryTextTheme.bodyLarge)),
+                                      Expanded(
+                                        child: Opacity(
+                                          opacity: (cp-1*index*(1-cp) < 0 ? 0 : cp-1*index*(1-cp)),
+                                          child: Transform.scale(
+                                            scale: 1.5 - 0.5*(cp-1*index*(1-cp) < 0 ? 0 : cp-1*index*(1-cp)),
+                                            child: FittedBox(fit: BoxFit.scaleDown, child: Icon(correctList[index] ? Icons.check : Icons.clear, color: correctList[index] ? Colors.greenAccent : Colors.redAccent, size: 96))
+                                          ),
+                                        ),
+                                      )
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        );
+                      }
+                    ),
+                    RepaintBoundary(
+                      child: Opacity(
+                        opacity: dp,
+                        child: Button(
+                          size: Size.fromHeight(mediaQuery.size.height * 0.1),
+                          onPressed: () {
+                            Navigator.pop(context);
+                          },
+                          child: Text("返回"),
+                        ),
+                      ),
+                    )
+                  ]
+                ),
+              ),
+            ],
+          );
+        }
+      ),
+    );
+  }
+}
