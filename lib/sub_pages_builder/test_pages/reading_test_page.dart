@@ -118,23 +118,24 @@ class ReadingUnitButton extends StatelessWidget {
                   ],
                 ),
               ),
-              Column(
-                mainAxisAlignment: MainAxisAlignment.spaceAround,
-                children: [
-                  Text(
-                    unit.title,
-                    maxLines: 1,
-                    textDirection: unit.title.isArabic() ? TextDirection.rtl : TextDirection.ltr,
-                    style: Theme.of(context).primaryTextTheme.displayMedium,
-                  ),
-                  Wrap(
-                    alignment: WrapAlignment.start,
-                    spacing: 4.0,
-                    children: List.generate(tags.length, (index) => TagMark(tag: tags[index], color: Colors.indigo)),
-                  ),
-                ],
+              Expanded(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(
+                      unit.title,
+                      maxLines: 1,
+                      textDirection: unit.title.isArabic() ? TextDirection.rtl : TextDirection.ltr,
+                      style: Theme.of(context).primaryTextTheme.displayMedium,
+                    ),
+                    Wrap(
+                      alignment: WrapAlignment.start,
+                      spacing: 4.0,
+                      children: List.generate(tags.length, (index) => TagMark(tag: tags[index], color: Colors.indigo)),
+                    ),
+                  ],
+                ),
               ),
-              Expanded(child: SizedBox()),
               Column(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
@@ -397,7 +398,7 @@ class _ReadingQuestionPage extends State<ReadingQuestionPage> {
                             0: FixedColumnWidth(60),
                             1: FlexColumnWidth()
                           },
-                          children: List.generate(widget.unit.questions.length, (i) {
+                          children: List.generate(widget.unit.questions[index].answers.length, (i) {
                             return TableRow(
                               decoration: BoxDecoration(
                                 color: context.watch<SingleSelectionNotifier>().value == i ? Colors.greenAccent : null,
@@ -700,6 +701,10 @@ class _QuestionConfigPage extends State<QuestionConfigPage> {
 
   @override
   Widget build(BuildContext context) {
+    if(widget.qconfig.testType == 2 && widget.qconfig.questionAmount < 10){
+      widget.qconfig.questionAmount = 15;
+    }
+
     return ListView(
       children: [
         widget.qconfig.sourceType != 3 
@@ -863,11 +868,12 @@ String buildPrompt({required QuestionConfig qc,required bool useSafe}) {
   late List<String> questionTags;
   switch (qc.testType) {
     case 1 : questionTags = AIPrompt.readingQuestionTags;
-    case 2 : questionTags = []; // TODO
+    case 2 : questionTags = AIPrompt.readingFillTags;
   }
   String prompt = AIPrompt.basePrompt
                   .replaceAll("{QuestionType}", qc.testType == 1 ? "阅读理解" : "完形填空")
                   .replaceAll("{Theme}", qc.theme)
+                  .replaceAll("{Additional}", qc.testType == 1 ? "" : AIPrompt.readingFillAdditionalPrompt)
                   .replaceAll("{TargetDifficulty}", qc.difficulty.toString())
                   .replaceAll(" {Tashkeel} ", qc.tashkeel ? " 有完整发音符号的 " : "")
                   .replaceAll("{QuestionAmount}", qc.questionAmount.toString())

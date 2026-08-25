@@ -72,7 +72,7 @@ class AIPrompt {
   static const String basePrompt = """
 # 角色设定
 你是一个阿拉伯语 {QuestionType} 生成器。请**只输出**一个合法的JSON对象，不要输出任何其他文字。
-
+{Additional}
 # 任务简报
 以 {Theme} 为主题生成一篇完整的难度接近 {TargetDifficulty} 的 {Tashkeel} 阿拉伯语文章及相关的 {QuestionAmount} 个题目
 
@@ -111,6 +111,7 @@ class AIPrompt {
 """;
 
   static const List<String> readingQuestionTags = ["细节理解", "主旨概括", "词义猜测", "推理判断", "作者意图", "逻辑排序"];
+  static const List<String> readingFillTags = ["逻辑关系", "词汇辨析", "语法结构", "语境推理"];
   static const List<String> readingThemesEasy = [
     "家庭与家人",
     "学校与课堂",
@@ -152,4 +153,5 @@ class AIPrompt {
     "环境气候与可持续发展",
     "人工智能与伦理挑战"
   ];
+  static const String readingFillAdditionalPrompt = "完形填空题目留空部分使用双星号、阿拉伯语括号、阿拉伯语数字和空格标记:如 ذهب الطالب إلى **(  ١  )** في الصباح ";
 }
