@@ -376,22 +376,13 @@ class QuizConfig {
   /// 相比于同课程的单词，更偏向于相似的单词
   final bool preferSimilar;
 
-  /// 阅读测试使用API时的API地址。保留位置
-  final String apiAddr;
-
-  /// 阅读测试使用的APIKey。保留位置
-  final String apiKey;
-
-
   const QuizConfig ({
     this.questionSections = const [1, 2],
     this.shuffleGlobally = true,
     this.shuffleInternaly = false,
     this.shuffleExternaly = false,
     this.modifyAllowed = true,
-    this.preferSimilar = false,
-    this.apiAddr = "",
-    this.apiKey = ""
+    this.preferSimilar = false
   });
 
   Map<String, dynamic> toMap(){
@@ -401,9 +392,7 @@ class QuizConfig {
       "shuffleInternaly": shuffleInternaly,
       "shuffleExternaly": shuffleExternaly,
       "modifyAllowed": modifyAllowed,
-      "preferSimilar": preferSimilar,
-      "apiAddr": apiAddr,
-      "apiKey": apiKey
+      "preferSimilar": preferSimilar
     };
   }
 
@@ -421,9 +410,7 @@ class QuizConfig {
       shuffleInternaly: setting["shuffleInternaly"], 
       shuffleExternaly: setting["shuffleExternaly"], 
       modifyAllowed: setting["modifyAllowed"],
-      preferSimilar: setting["preferSimilar"] ?? false,
-      apiAddr: setting["apiAddr"] ?? "",
-      apiKey: setting["apiKey"] ?? ""
+      preferSimilar: setting["preferSimilar"] ?? false
     );
   }
 

@@ -6,6 +6,7 @@ import 'package:arabic_learning/funcs/utili.dart';
 import 'package:arabic_learning/vars/config_structure.dart';
 import 'package:arabic_learning/vars/global.dart';
 import 'package:arabic_learning/vars/statics_var.dart';
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart' show Clipboard, ClipboardData, DeviceOrientation, SystemChrome;
 import 'package:flutter_markdown_plus/flutter_markdown_plus.dart';
@@ -531,16 +532,57 @@ class _QuestionConfigPage extends State<QuestionConfigPage> {
   final TextEditingController themeEditController = TextEditingController();
   final TextEditingController apiAddressEditController = TextEditingController();
   final TextEditingController apiKeyEditController = TextEditingController();
+  final TextEditingController apiModelEditController = TextEditingController();
   final TextEditingController promptEditController = TextEditingController();
+  bool adding = false;
 
-  void processSummon(QuestionConfig qconfig) {
+  Future<void> processSummon(QuestionConfig qconfig) async {
+    if(adding == true) return;
+    setState(() {
+      adding = true;
+    });
+    qconfig.theme = themeEditController.text == "" ? getRandomTheme() : themeEditController.text;
     switch (qconfig.sourceType) {
       case 1 : {
-        // TODO: AI API
+        String prompt = buildPrompt(qc: qconfig, useSafe: true);
+        final Dio dio = Dio();
+        final Options baseopt = Options(
+          headers: {
+            "Authorization": "Bearer ${apiKeyEditController.text}",
+            "Content-Type": "application/json"
+          }
+        );
+        try {
+          final Response res = await dio.post(
+            "${apiAddressEditController.text}/chat/completions",
+            options: baseopt,
+            data: {
+              "model": apiModelEditController.text,
+              "messages": [
+                {"role": "system", "content": "你是一个阿拉伯语题目JSON生成器，只输出合法的JSON对象，不要使用Markdown代码块"},
+                {"role": "user", "content": prompt}
+              ],
+              "response_format": {"type": "json_object"},
+              "temperature": 0.7,
+              "stream": false
+            }
+          );
+          if(res.statusCode == 200) {
+            ReadingUnit unit = ReadingUnit.buildFromMap(jsonDecode(res.data["choices"][0]["message"]["content"]), type: qconfig.testType, tashkeel: qconfig.tashkeel);
+            if(unit.title.isEmpty || unit.passage.isEmpty || unit.questions.isEmpty) throw Exception("AI生成缺少部分内容");
+            
+            AppData().readingData.units.add(unit);
+            AppData().saveReadingData();
+            // ignore: use_build_context_synchronously
+            if(context.mounted) alart(context, "添加成功: ${unit.title}");
+          }
+        } catch (e) {
+          // ignore: use_build_context_synchronously
+          if(context.mounted) alart(context, "生成错误: $e");
+        }
         break;
       }
       case 2 : {
-        qconfig.theme = themeEditController.text == "" ? getRandomTheme() : themeEditController.text;
         promptEditController.text = buildPrompt(qc: qconfig,useSafe: false);
         showModalBottomSheet(
           context: context, 
@@ -626,6 +668,9 @@ class _QuestionConfigPage extends State<QuestionConfigPage> {
         );
       }
     }
+    setState(() {
+      adding = false;
+    });
   }
 
   String getRandomTheme(){
@@ -648,6 +693,8 @@ class _QuestionConfigPage extends State<QuestionConfigPage> {
     themeEditController.dispose();
     apiAddressEditController.dispose();
     apiKeyEditController.dispose();
+    apiModelEditController.dispose();
+    promptEditController.dispose();
     super.dispose();
   }
 
@@ -661,36 +708,54 @@ class _QuestionConfigPage extends State<QuestionConfigPage> {
           children: [
             if(widget.qconfig.sourceType == 1) SettingRow(
               leading: "API接口地址", 
-              end: TextField(
-                controller: apiAddressEditController,
-                textDirection: themeEditController.text.isArabic() ? TextDirection.rtl : TextDirection.ltr,
-                maxLines: 1,
-                decoration: InputDecoration(
-                  labelText: "API",
-                  icon: Icon(Icons.webhook),
-                  border: OutlineInputBorder(
-                    borderRadius: StaticsVar.br,
-                    borderSide: BorderSide(color: Theme.of(context).colorScheme.outline),
-                  ),
-                )
+              icon: Icons.webhook,
+              end: Expanded(
+                child: TextField(
+                  controller: apiAddressEditController,
+                  maxLines: 1,
+                  decoration: InputDecoration(
+                    border: OutlineInputBorder(
+                      borderRadius: StaticsVar.br,
+                      borderSide: BorderSide(color: Theme.of(context).colorScheme.outline),
+                    ),
+                  )
+                ),
               ),
-              note: "从你的AI提供商获取，要求兼容OpenAI标准，例如DeepSeek的API地址为 https://api.deepseek.com \n如果出错，可以在地址末尾加入 /v1 尝试"
+              note: "从你的AI提供商获取，要求兼容OpenAI标准，例如DeepSeek的API地址为 https://api.deepseek.com \n如果出错，可以在地址末尾加入 /v1 尝试\n注意：末尾不要有 / "
             ),
             if(widget.qconfig.sourceType == 1) SettingRow(
               leading: "API key", 
-              end: TextField(
-                controller: apiKeyEditController,
-                textDirection: themeEditController.text.isArabic() ? TextDirection.rtl : TextDirection.ltr,
-                maxLines: 1,
-                decoration: InputDecoration(
-                  icon: Icon(Icons.key),
-                  border: OutlineInputBorder(
-                    borderRadius: StaticsVar.br,
-                    borderSide: BorderSide(color: Theme.of(context).colorScheme.outline),
-                  ),
-                )
+              icon: Icons.key,
+              end: Expanded(
+                child: TextField(
+                  controller: apiKeyEditController,
+                  maxLines: 1,
+                  decoration: InputDecoration(
+                    border: OutlineInputBorder(
+                      borderRadius: StaticsVar.br,
+                      borderSide: BorderSide(color: Theme.of(context).colorScheme.outline),
+                    ),
+                  )
+                ),
               ),
               note: "你的API Key，注意，本软件不保存你的API Key，请自行妥善保管"
+            ),
+            if(widget.qconfig.sourceType == 1) SettingRow(
+              leading: "API模型", 
+              icon: Icons.webhook,
+              end: Expanded(
+                child: TextField(
+                  controller: apiModelEditController,
+                  maxLines: 1,
+                  decoration: InputDecoration(
+                    border: OutlineInputBorder(
+                      borderRadius: StaticsVar.br,
+                      borderSide: BorderSide(color: Theme.of(context).colorScheme.outline),
+                    ),
+                  )
+                ),
+              ),
+              note: "你要使用的AI模型名称，通常你的提供商会提供给你，例如: deepseek-v4-flash"
             ),
             SettingRow(
               icon: Icons.align_vertical_bottom,
@@ -783,12 +848,11 @@ class _QuestionConfigPage extends State<QuestionConfigPage> {
           )
         ),
         SizedBox(height: 20),
-        ElevatedButton.icon(
-          icon: Icon(Icons.check),
-          onPressed: (){
-            processSummon(widget.qconfig);
-          }, 
-          label: Text("确认")
+        Button(
+          size: Size.fromHeight(100),
+          icon: adding ? CircularProgressIndicator() : Icon(Icons.check),
+          onPressed: () => processSummon(widget.qconfig), 
+          child: Text(adding ? "添加中..." : "确认")
         )
       ],
     ) ;
