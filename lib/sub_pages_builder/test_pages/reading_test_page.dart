@@ -9,6 +9,7 @@ import 'package:arabic_learning/vars/statics_var.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart' show Clipboard, ClipboardData, DeviceOrientation, SystemChrome;
 import 'package:flutter_markdown_plus/flutter_markdown_plus.dart';
+import 'package:provider/provider.dart';
 
 
 class QuestionConfig {
@@ -83,7 +84,10 @@ class ReadingUnitButton extends StatelessWidget {
         child: Button(
           size: Size(mediaQuery.size.width * 0.9, mediaQuery.size.height * 0.1),
           onPressed: () {
-            // TODO
+            Navigator.push(
+              context, 
+              MaterialPageRoute(builder: (context) => ReadingQuestionPage(unit: unit))
+            );
           }, 
           padding: EdgeInsetsGeometry.all(0.0),
           child: Row(
@@ -331,12 +335,12 @@ class _ReadingQuestionPage extends State<ReadingQuestionPage> {
   _ReadingQuestionPage();
 
   PageController pageController = PageController();
-  late List<int?> choose;
-  late List<List<String>> options;
+  late List<SingleSelectionNotifier> choose;
+  List<List<String>> options = [];
 
   @override
   void initState() {
-    choose = List<int?>.generate(widget.unit.questions.length, (_) => null);
+    choose = List<SingleSelectionNotifier>.generate(widget.unit.questions.length, (_) => SingleSelectionNotifier());
 
     for(ReadingQuestion x in widget.unit.questions){
       options.add(List<String>.from(x.answers)..shuffle());
@@ -369,64 +373,98 @@ class _ReadingQuestionPage extends State<ReadingQuestionPage> {
           SizedBox(
             width: mediaQuery.size.width * 0.65,
             height: mediaQuery.size.height,
-            child: Markdown(data: widget.unit.passage)
+            child: Markdown(
+              data: widget.unit.passage,
+              styleSheet: MarkdownStyleSheet(textScaler: TextScaler.linear(3))
+            )
           ),
           Divider(),
           Expanded(
             child: PageView.builder(
               controller: pageController,
-              itemCount: widget.unit.questions.length,
+              itemCount: widget.unit.questions.length+1,
               itemBuilder: (context, int index) {
                 return ListView(
                   padding: EdgeInsets.all(16.0),
                   children: [
-                    if(index != widget.unit.questions.length) TextContainer(text: widget.unit.questions[index].riddle),
-                    if(index != widget.unit.questions.length) ChooseButtons(
-                      options: options[index], 
-                      isShowAnimation: false,
-                      settingShowingMode: 4,
-                      onSelected: (int i) {
-                        choose[index] = i;
-                        return true;
-                      }
+                    if(index != widget.unit.questions.length) TextContainer(text: widget.unit.questions[index].riddle, style: Theme.of(context).primaryTextTheme.headlineLarge),
+                    if(index != widget.unit.questions.length) ChangeNotifierProvider<SingleSelectionNotifier>.value(
+                      value: choose[index],
+                      builder: (context, child) {
+                        return Table(
+                          columnWidths: {
+                            0: FixedColumnWidth(60),
+                            1: FlexColumnWidth()
+                          },
+                          children: List.generate(widget.unit.questions.length, (i) {
+                            return TableRow(
+                              decoration: BoxDecoration(
+                                color: context.watch<SingleSelectionNotifier>().value == i ? Colors.greenAccent : null,
+                                borderRadius: StaticsVar.br
+                              ),
+                              children: [
+                                TextContainer(text: ["A", "B", "C", "D", "E", "F", "G"].elementAt(i)),
+                                Padding(
+                                  padding: const EdgeInsets.all(8.0),
+                                  child: Button(
+                                    onPressed: () {
+                                      if(context.read<SingleSelectionNotifier>().value == i) {
+                                        context.read<SingleSelectionNotifier>().changeTo(null);
+                                      } else {
+                                        context.read<SingleSelectionNotifier>().changeTo(i);
+                                      }
+                                    },
+                                    size: Size.fromWidth(mediaQuery.size.width * 0.2),
+                                    child: Text(options[index][i], style: Theme.of(context).primaryTextTheme.headlineMedium),
+                                  ),
+                                )
+                              ]
+                            );
+                          }),
+                        );
+                      },
                     ),
                     if(index == widget.unit.questions.length) TextContainer(text: "检查答案"),
                     if(index == widget.unit.questions.length) ...List.generate(
                       widget.unit.questions.length,
                       (int i) => TextContainer(
-                        text: "题目\n${widget.unit.questions[i].riddle}\n你的答案\n${choose[i]==null ? "未选择" : options[i][choose[i]!]}"
+                        text: "题目\n${widget.unit.questions[i].riddle}\n你的答案\n${choose[i].value==null ? "未选择" : options[i][choose[i].value]}"
                       )
                     ),
-                    if(index == widget.unit.questions.length) Button(
-                      onPressed: () {
-                        // TODO
-                      },
-                      icon: Icon(Icons.done_all),
-                      child: Text("提交"),
+                    if(index == widget.unit.questions.length) Padding(
+                      padding: const EdgeInsets.all(8.0),
+                      child: Button(
+                        onPressed: () {
+                          // TODO
+                        },
+                        icon: Icon(Icons.done_all),
+                        child: Text("提交"),
+                      ),
                     ),
                     TweenAnimationBuilder(
                       tween: Tween<double>(
                         begin: 0,
-                        end: index == 0 ? 0.5 : 0
+                        end: index == 0 ? 0 : 0.5
                       ),
                       duration: Durations.medium4,
+                      curve: StaticsVar.curve,
                       builder: (context, double i, child) {
                         return  Row(
                           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                           children: [
-                            if(index != 0) Button(
-                              size: Size.fromWidth(mediaQuery.size.width * 0.35 * i),
+                            if(index != 0 && i > 0.3) Button(
+                              size: Size.fromWidth(mediaQuery.size.width * 0.3 * i),
                               icon: Icon(Icons.arrow_back_ios),
                               iconDirection: AxisDirection.left,
                               onPressed: () => pageController.previousPage(duration: Durations.medium4, curve: StaticsVar.curve),
-                              child: Text("上一题"),
+                              child: Expanded(child: FittedBox(fit: BoxFit.scaleDown, child: Text("上一题"))),
                             ),
                             if(index != widget.unit.questions.length) Button(
-                              size: Size.fromWidth(mediaQuery.size.width * 0.35 * (1 - i)),
-                              icon: Icon(Icons.arrow_back_ios),
-                              iconDirection: AxisDirection.left,
+                              size: Size.fromWidth(mediaQuery.size.width * 0.3 * (1 - i)),
+                              icon: Icon(Icons.arrow_forward_ios),
+                              iconDirection: AxisDirection.right,
                               onPressed: () => pageController.nextPage(duration: Durations.medium4, curve: StaticsVar.curve),
-                              child: Text(index == widget.unit.questions.length-1 ? "检查答案" : "下一题"),
+                              child: Expanded(child: FittedBox(fit: BoxFit.scaleDown, child: Text(index == widget.unit.questions.length-1 ? "检查答案" : "下一题"))),
                             ),
                           ],
                         );
@@ -772,3 +810,4 @@ String buildPrompt({required QuestionConfig qc,required bool useSafe}) {
   }
   return prompt;
 }
+

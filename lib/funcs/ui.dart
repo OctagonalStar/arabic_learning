@@ -479,7 +479,9 @@ class _ChooseButtonBoxState extends State<ChooseButtonBox> {
                 }
               }
             } else {
-              color = Theme.of(context).colorScheme.primaryContainer;
+              setState(() {
+                color = Theme.of(context).colorScheme.primaryContainer;
+              });
             }
           });
         },

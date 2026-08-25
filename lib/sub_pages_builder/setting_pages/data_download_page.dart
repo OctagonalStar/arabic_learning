@@ -1,6 +1,6 @@
 import 'dart:convert';
 
-import 'package:arabic_learning/funcs/ui.dart' show Button, alart, showSnackBar;
+import 'package:arabic_learning/funcs/ui.dart' show Button, alart, showSnackBar, SettingItem;
 import 'package:arabic_learning/vars/config_structure.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
