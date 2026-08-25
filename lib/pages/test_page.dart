@@ -62,7 +62,7 @@ class TestPage extends StatelessWidget {
               )
             );
           },
-          child: FittedBox(child: Text('自主听写', style: TextStyle(fontSize: 34.0))),
+          child: Expanded(child: FittedBox(fit: BoxFit.scaleDown, child: Text('自主听写', style: TextStyle(fontSize: 34.0)))),
         ),
       ],
     );

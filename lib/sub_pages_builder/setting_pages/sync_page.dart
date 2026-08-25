@@ -202,17 +202,13 @@ class _DataSyncPage extends State<DataSyncPage> {
                           bytes: utf8.encode(jsonEncode(AppData().storage.export())),
                         ) != null) {
                           if(context.mounted) {
-                            ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                              content: Text("导出完成"),
-                            ));
+                            showSnackBar(context, "导出完成");
                           }
                         }
                       } catch (e){
                         if(!context.mounted) return;
                         context.read<Global>().uiLogger.severe(e);
-                        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                          content: Text("导出时发生错误: $e"),
-                        ));
+                        showSnackBar(context, "导出时发生错误: $e");
                       }
                     }, 
                     child: Text("导出")

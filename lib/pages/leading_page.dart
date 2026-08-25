@@ -95,12 +95,7 @@ class _PolicyPage extends State<PolicyPage> {
                     AppData().config = AppData().config.copyWith(user: controller.text, lastTermVersion: StaticsVar.termVersion);
                   } else {
                     context.read<Global>().uiLogger.info("用户未填写名称");
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('使用该软件前你应当仔细阅读并理解条款'),
-                        duration: Duration(seconds: 2),
-                      ),
-                    );
+                    showSnackBar(context, "使用该软件前你应当仔细阅读并理解条款");
                     return;
                   }
                   context.read<Global>().updateSetting(refresh: true);

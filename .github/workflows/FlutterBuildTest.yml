@@ -15,7 +15,7 @@ jobs:
         uses: subosito/flutter-action@v2
         with:
           channel: stable
-          flutter-version: '3.44.0'
+          flutter-version: '3.47.0'
 
       - run: flutter pub get
       - run: flutter build windows
@@ -32,10 +32,39 @@ jobs:
       - uses: actions/checkout@v6
       - uses: subosito/flutter-action@v2
         with:
-          flutter-version: '3.44.0'
+          flutter-version: '3.47.0'
       - run: flutter pub get
       - run: flutter build web --release
       - uses: actions/upload-artifact@v7
         with:
           name: web-build
           path: build/web
+  build-android:
+    name: Build Android APK
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          flutter-version: '3.44.0' #安卓端Gradle AGP 与大量插件冲突，暂保留为 3.44.0
+
+      - run: flutter pub get
+      - run: flutter build apk --debug --split-per-abi
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: android-arm-v7a-apk
+          path: build/app/outputs/flutter-apk/app-armeabi-v7a-release.apk
+      
+      - uses: actions/upload-artifact@v7
+        with:
+          name: android-arm-v8a-apk
+          path: build/app/outputs/flutter-apk/app-arm64-v8a-release.apk
+      
+      - uses: actions/upload-artifact@v7
+        with:
+          name: android-x86_64-apk
+          path: build/app/outputs/flutter-apk/app-x86_64-release.apk

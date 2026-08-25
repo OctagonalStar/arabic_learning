@@ -35,10 +35,16 @@ class LearningPage extends StatelessWidget {
                   onPressed: () {
                     shiftToStudy(context);
                   },
-                  icon: Icon(Icons.task_alt),
+                  icon: Padding(
+                    padding: const EdgeInsets.all(16.0),
+                    child: Icon(Icons.task_alt),
+                  ),
                   iconDirection: AxisDirection.up,
-                  child: FittedBox(
-                    child: Text('学习',style: TextStyle(fontSize: 40.0, fontWeight: FontWeight.bold)),
+                  child: Expanded(
+                    child: FittedBox(
+                      fit: BoxFit.scaleDown,
+                      child: Text('学习',style: TextStyle(fontSize: 40.0, fontWeight: FontWeight.bold)),
+                    ),
                   ),
                 ),
                 Button(
@@ -66,14 +72,16 @@ class LearningPage extends StatelessWidget {
                   )
                 );
               },
-              child: FittedBox(
-                fit: BoxFit.contain,
-                child: Column(
-                  children: [
-                    Icon(Icons.history_edu),
-                    Text("复习",style: TextStyle(fontSize: 40.0, fontWeight: FontWeight.bold)),
-                  ],
-                )
+              icon: Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Icon(Icons.history_edu),
+              ),
+              iconDirection: AxisDirection.up,
+              child: Expanded(
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  child: Text("复习",style: TextStyle(fontSize: 40.0, fontWeight: FontWeight.bold))
+                ),
               ),
             ),
           ],
@@ -84,9 +92,7 @@ class LearningPage extends StatelessWidget {
           size: Size(mediaQuery.size.width * 0.8, mediaQuery.size.height * 0.15),
           onPressed: (){
             if(AppData().wordData.words.isEmpty) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text("词库为空，无法推送！请先导入词库"), duration: Duration(seconds: 1),),
-              );
+              showSnackBar(context, "词库为空，无法推送！请先导入词库");
               return;
             }
             final DateTime now = DateTime.now();
@@ -104,9 +110,7 @@ class LearningPage extends StatelessWidget {
             }
             pushWords.removeWhere((WordItem item) => FSRS().isContained(item.id));
             if(pushWords.isEmpty) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text("今日的推送已完成"), duration: Duration(seconds: 1),),
-              );
+              showSnackBar(context, "今日的推送已完成");
               return;
             }
             context.read<Global>().uiLogger.info("跳转: LearningPage => FSRSLearningPage");
@@ -118,7 +122,7 @@ class LearningPage extends StatelessWidget {
             );
           },
           icon: Icon(Icons.push_pin, size: 24),
-          child: FittedBox(child: Text("学习推送单词", style: TextStyle(fontSize: 40.0))),
+          child: Expanded(child: FittedBox(child: Text("学习推送单词", style: TextStyle(fontSize: 40.0)))),
         ),
         SizedBox(height: mediaQuery.size.height * 0.05),
         Button(

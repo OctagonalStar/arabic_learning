@@ -1,6 +1,6 @@
 import 'dart:convert';
 
-import 'package:arabic_learning/funcs/ui.dart';
+import 'package:arabic_learning/funcs/ui.dart' show Button, alart, showSnackBar;
 import 'package:arabic_learning/vars/config_structure.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -80,9 +80,7 @@ Future<List<Widget>> downloadList(BuildContext context) async{
                     if(!context.mounted) return ;
                     if(response.statusCode == 200) {
                       AppData().importDictData(jsonDecode(response.data) as Map<String, dynamic>, f["name"]);
-                      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                        content: Text("下载成功: ${f["name"]}"),
-                      ));
+                      showSnackBar(context, "下载成功: ${f["name"]}");
                       setLocalState(() {
                         inDownloading = false;
                         downloaded = true;
@@ -90,9 +88,7 @@ Future<List<Widget>> downloadList(BuildContext context) async{
                     }
                   } catch (e) {
                     context.read<Global>().uiLogger.severe("词库[${f["name"]}]下载失败: $e");
-                    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                      content: Text("下载失败\n${e.toString()}"),
-                    ));
+                    alart(context, "下载失败\n${e.toString()}");
                     setLocalState(() {
                       inDownloading = false;
                       downloaded = false;

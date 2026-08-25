@@ -91,6 +91,10 @@
 
 ## 构建
 
+> 使用Flutter框架版本3.47.0
+>
+> 注意：Android端由于Flutter3.47.0更新提高了AGP版本需求（暂时）会导致大量第三方库出错，在相关库完成更新前请使用 Flutter3.44.0 进行编译。
+
 ```bash
 flutter pub get
 flutter run

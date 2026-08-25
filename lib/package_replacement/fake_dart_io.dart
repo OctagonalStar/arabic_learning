@@ -38,6 +38,14 @@ class Platform{
   static bool get isMacOS => false;
 
   static bool get isAndroid => false;
+
+  static String get localHostname => "Web";
+
+  static String get operatingSystem => "Web";
+
+  static String get operatingSystemVersion => "Web";
+
+  static Map<String, String> get environment => {};
 }
 
 class IdbFactory{
