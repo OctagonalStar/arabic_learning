@@ -124,6 +124,17 @@ int calculateButtonBoxLayout(List<String> possible, double width){
   }
 }
 
+class SingleSelectionNotifier with ChangeNotifier {
+  dynamic _value;
+
+  dynamic get value => _value;
+
+  void changeTo(dynamic value) {
+    _value = value;
+    notifyListeners();
+  }
+}
+
 @pragma('vm:entry-point') 
 void extractTarBz2((String inputPath, String outputPath) args) async {
   final inputPath = args.$1;

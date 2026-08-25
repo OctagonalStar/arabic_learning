@@ -1,7 +1,6 @@
-
 import 'dart:convert';
 
-import 'package:arabic_learning/funcs/ui.dart' show Button, alart, showSnackBar;
+import 'package:arabic_learning/funcs/ui.dart' show Button, alart, showSnackBar, SettingItem;
 import 'package:arabic_learning/vars/config_structure.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -9,7 +8,6 @@ import 'package:dio/dio.dart';
 
 import 'package:arabic_learning/vars/statics_var.dart';
 import 'package:arabic_learning/vars/global.dart';
-import 'package:arabic_learning/sub_pages_builder/setting_pages/item_widget.dart';
 
 class DownloadPage extends StatelessWidget {
   const DownloadPage({super.key});

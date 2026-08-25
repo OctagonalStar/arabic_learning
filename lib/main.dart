@@ -35,6 +35,11 @@ void main() async {
   logger.info("日志加载成功");
   WidgetsFlutterBinding.ensureInitialized();
 
+  SystemChrome.setPreferredOrientations([
+    DeviceOrientation.portraitUp,
+    DeviceOrientation.portraitDown
+  ]);
+
   if(io.Platform.isAndroid) {
     Workmanager().initialize(callbackDispatcher);
     Workmanager().registerPeriodicTask(

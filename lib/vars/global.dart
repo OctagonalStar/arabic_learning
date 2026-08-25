@@ -10,7 +10,7 @@ import 'package:path_provider/path_provider.dart' as path_provider;
 
 import 'package:arabic_learning/vars/statics_var.dart';
 import 'package:arabic_learning/package_replacement/storage.dart';
-import 'package:arabic_learning/vars/config_structure.dart' show ClassItem, SourceItem, Config, DictData, WordItem;
+import 'package:arabic_learning/vars/config_structure.dart' show ClassItem, Config, DictData, ReadingData, SourceItem, WordItem;
 import 'package:arabic_learning/package_replacement/fake_dart_io.dart' if (dart.library.io) 'dart:io' as io;
 import 'package:arabic_learning/package_replacement/fake_sherpa_onnx.dart' if (dart.library.io) 'package:sherpa_onnx/sherpa_onnx.dart' as sherpa_onnx;
 
@@ -71,8 +71,9 @@ class Global with ChangeNotifier {
   // 更新配置到存储中
   Future<void> updateSetting({Map<String, dynamic>? settingData, bool refresh = true}) async {
     logger.info("保存配置文件中");
-    if(settingData != null) AppData().config = Config.buildFromMap(settingData);
-    AppData().storage.setString("settingData", jsonEncode(AppData().config.toMap()));
+    AppData appData = AppData();
+    if(settingData != null) appData.config = Config.buildFromMap(settingData);
+    appData.storage.setString("settingData", jsonEncode(appData.config.toMap()));
     if(refresh) await refreshApp();
   }
 
@@ -157,7 +158,6 @@ class AppData {
   Logger logger = Logger("AppData");
 
   List<String> internalLogCapture = [];
-  Uint8List? stella;
   bool isWideScreen = false;
   Config config = Config();
 
@@ -165,6 +165,7 @@ class AppData {
   late final io.Directory basePath;
   late FSRS fsrs;
   late DictData wordData;
+  late ReadingData readingData;
   sherpa_onnx.OfflineTts? vitsTTS;
   
   int get wordCount => wordData.words.length;
@@ -180,6 +181,7 @@ class AppData {
 
     if(!isFirstStart) {
       wordData = DictData.buildFromMap(jsonDecode(storage.getString("wordData")!));
+      readingData = ReadingData.buildFromMap(jsonDecode(storage.getString("readingData") ?? "{\"units\": []}"));
       if(!BKSearch.isReady) BKSearch.init(wordData.words);
       FSRS().init();
     }
@@ -188,6 +190,7 @@ class AppData {
 
   Future<void> initStorageValue() async {
       await storage.setString("wordData", jsonEncode({"Words": [], "Classes": {}}));
+      await storage.setString("readingData", jsonEncode({"units": []}));
       wordData = DictData(words: [], classes: []);
       logger.info("配置表初始化完成");
   }
@@ -323,5 +326,9 @@ class AppData {
     storage.setString("wordData", jsonEncode(wordData.toMap()));
     BKSearch.init(wordData.words); // 重新建树
     logger.info("词汇导入完成");
+  }
+
+  void saveReadingData(){
+    storage.setString("readingData", jsonEncode(readingData.toMap()));
   }
 }

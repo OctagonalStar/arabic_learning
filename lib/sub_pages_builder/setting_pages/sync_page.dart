@@ -6,7 +6,6 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import 'package:arabic_learning/funcs/ui.dart';
-import 'package:arabic_learning/sub_pages_builder/setting_pages/item_widget.dart';
 import 'package:arabic_learning/funcs/sync.dart';
 import 'package:arabic_learning/vars/config_structure.dart';
 import 'package:arabic_learning/vars/global.dart';
@@ -198,7 +197,7 @@ class _DataSyncPage extends State<DataSyncPage> {
                       try{
                         if(await FilePicker.saveFile(
                           dialogTitle: "导出数据",
-                          lockParentWindow: true,
+                          windowsOptions: WindowsOptions(lockParentWindow: true),
                           fileName: "export.json",
                           bytes: utf8.encode(jsonEncode(AppData().storage.export())),
                         ) != null) {

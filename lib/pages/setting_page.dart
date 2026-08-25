@@ -10,8 +10,6 @@ import 'package:arabic_learning/funcs/ui.dart';
 import 'package:arabic_learning/vars/global.dart';
 import 'package:arabic_learning/sub_pages_builder/setting_pages/help_page.dart'
     show HelpPage;
-import 'package:arabic_learning/sub_pages_builder/setting_pages/item_widget.dart'
-    show SettingItem;
 import 'package:arabic_learning/sub_pages_builder/setting_pages/debug_page.dart'
     show DebugPage;
 import 'package:arabic_learning/sub_pages_builder/setting_pages/about_page.dart'
@@ -423,82 +421,3 @@ class _SettingPage extends State<SettingPage> {
   }
 }
 
-class SettingRedirctButton extends StatelessWidget {
-  const SettingRedirctButton({
-    super.key,
-    required this.title,
-    required this.target,
-    this.icon = Icons.settings
-  });
-
-  final String title;
-  final IconData icon;
-  final Widget target;
-
-  @override
-  Widget build(BuildContext context) {
-    MediaQueryData mediaQuery = MediaQuery.of(context);
-    return Button(
-      size: Size.fromHeight(mediaQuery.size.height * 0.08),
-      shape: BeveledRectangleBorder(),
-      onPressed: () {
-        context.read<Global>().uiLogger.info(
-          "跳转: SettingPage => ${target.toString()}",
-        );
-        Navigator.of(context).push(
-          MaterialPageRoute(
-            builder: (context) => target,
-          ),
-        );
-      },
-      child: Row(
-        children: [
-          Icon(icon),
-          Expanded(child: Text(title)),
-          Icon(Icons.arrow_forward_ios),
-        ],
-      ),
-    );
-  }
-}
-
-class SettingRow extends StatelessWidget {
-  const SettingRow({
-    super.key,
-    required this.leading,
-    required this.end,
-    this.icon = Icons.settings,
-    this.note,
-  });
-
-  final String leading;
-  final String? note;
-  final IconData icon;
-  final Widget end;
-
-  @override
-  Widget build(BuildContext context) {
-    MediaQueryData mediaQuery = MediaQuery.of(context);
-    return Row(
-      children: [
-        SizedBox(width: mediaQuery.size.width * 0.02),
-        Icon(icon, size: 24.0),
-        SizedBox(width: mediaQuery.size.width * 0.01),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(leading),
-              if(note != null) Text(
-                note!,
-                style: TextStyle(fontSize: 12.0, color: Colors.grey),
-              ),
-            ],
-          ),
-        ),
-        end,
-        SizedBox(width: mediaQuery.size.width * 0.02)
-      ],
-    );
-  }
-}
