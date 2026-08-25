@@ -153,5 +153,5 @@ class AIPrompt {
     "环境气候与可持续发展",
     "人工智能与伦理挑战"
   ];
-  static const String readingFillAdditionalPrompt = "完形填空题目留空部分使用双星号、阿拉伯语括号、阿拉伯语数字和空格标记:如 ذهب الطالب إلى **(  ١  )** في الصباح ";
+  static const String readingFillAdditionalPrompt = "完形填空题目留空部分使用双星号、阿拉伯语括号、阿拉伯语数字和空格标记:如 ذهب الطالب إلى **(  ١  )** في الصباح \n完形填空的题目`riddle`字段填写简体中文：「请使用适当的词语填写<题号>空」";
 }
