@@ -83,7 +83,7 @@ class ReadingUnitButton extends StatelessWidget {
       width: mediaQuery.size.width,
       child: Center(
         child: Button(
-          size: Size(mediaQuery.size.width * 0.9, mediaQuery.size.height * 0.1),
+          size: Size.fromWidth(mediaQuery.size.width * 0.9),
           onPressed: () {
             Navigator.push(
               context, 
@@ -95,7 +95,6 @@ class ReadingUnitButton extends StatelessWidget {
             children: [
               Container(
                 width: mediaQuery.size.width * 0.2,
-                height: mediaQuery.size.height * 0.15,
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
                     begin: AlignmentGeometry.centerLeft,
@@ -111,9 +110,12 @@ class ReadingUnitButton extends StatelessWidget {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     SizedBox(width: mediaQuery.size.width * 0.02),
-                    Text(
-                      unit.difficulty.toString(), 
-                      style: TextStyle(fontSize: 64, shadows: [Shadow(blurRadius: 5, color: Colors.white)])
+                    FittedBox(
+                      fit: BoxFit.contain,
+                      child: Text(
+                        unit.difficulty.toString(), 
+                        style: TextStyle(fontSize: 64, shadows: [Shadow(blurRadius: 5, color: Colors.white)])
+                      ),
                     ),
                   ],
                 ),
@@ -122,15 +124,19 @@ class ReadingUnitButton extends StatelessWidget {
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Text(
-                      unit.title,
-                      maxLines: 1,
-                      textDirection: unit.title.isArabic() ? TextDirection.rtl : TextDirection.ltr,
-                      style: Theme.of(context).primaryTextTheme.displayMedium,
+                    FittedBox(
+                      fit: BoxFit.scaleDown,
+                      child: Text(
+                        unit.title,
+                        maxLines: 1,
+                        textDirection: unit.title.isArabic() ? TextDirection.rtl : TextDirection.ltr,
+                        style: Theme.of(context).primaryTextTheme.headlineLarge,
+                      ),
                     ),
                     Wrap(
-                      alignment: WrapAlignment.start,
+                      alignment: WrapAlignment.center,
                       spacing: 4.0,
+                      runSpacing: 4.0,
                       children: [
                         TagMark(tag: unit.type == 1 ? "阅读理解" : "完形填空", color: Colors.teal),
                         ...List.generate(tags.length, (index) => TagMark(tag: tags[index], color: Colors.indigo)),
@@ -141,6 +147,7 @@ class ReadingUnitButton extends StatelessWidget {
               ),
               Column(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                mainAxisSize: MainAxisSize.max,
                 children: [
                   Padding(
                     padding: const EdgeInsets.all(16.0),
@@ -952,51 +959,67 @@ class ReadingResultPage extends StatelessWidget {
               Divider(),
               Expanded(
                 child: ListView(
+                  padding: EdgeInsets.all(8.0),
                   children: [
                     ...List.generate(
-                      unit.questions.length,
+                      unit.questions.length*2,
                       (int index) {
-                        return RepaintBoundary(
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Transform.translate(
-                                offset: Offset(-(mediaQuery.size.width * 0.4 * (1-(sp-1*index*(1-sp) < 0 ? 0 : sp-1*index*(1-sp)))), 0),
-                                child: TextContainer(
-                                  size: Size(mediaQuery.size.width * 0.4, mediaQuery.size.height * 0.2),
-                                  text: "问题: \n${unit.questions[index].riddle}\n你的答案: \n${selection[index] == null ? "未选择" : options[index][selection[index]!]}",
-                                ),
-                              ),
-                              Transform.translate(
-                                offset: Offset(mediaQuery.size.width * 0.5 * (1-(sp-1*index*(1-sp) < 0 ? 0 : sp-1*index*(1-sp))), 0),
-                                child: Container(
-                                  decoration: BoxDecoration(
-                                    color: Theme.of(context).colorScheme.onPrimary,
-                                    borderRadius: StaticsVar.br
-                                  ),
-                                  width: mediaQuery.size.width * 0.5, 
-                                  height: mediaQuery.size.height * 0.2,
-                                  padding: EdgeInsets.all(16.0),
-                                  child: Row(
-                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                    children: [
-                                      SizedBox(width: mediaQuery.size.width * 0.35, child: Text("正确答案: \n${unit.questions[index].answers[0]}\n解析: \n${unit.questions[index].analysis}", style: Theme.of(context).primaryTextTheme.bodyLarge)),
-                                      Expanded(
-                                        child: Opacity(
-                                          opacity: (cp-1*index*(1-cp) < 0 ? 0 : cp-1*index*(1-cp)),
-                                          child: Transform.scale(
-                                            scale: 1.5 - 0.5*(cp-1*index*(1-cp) < 0 ? 0 : cp-1*index*(1-cp)),
-                                            child: FittedBox(fit: BoxFit.scaleDown, child: Icon(correctList[index] ? Icons.check : Icons.clear, color: correctList[index] ? Colors.greenAccent : Colors.redAccent, size: 96))
+                        if(index.isEven) {
+                          index = ((index + 1)/2).toInt();
+                          return RepaintBoundary(
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Transform.translate(
+                                  offset: Offset(-(mediaQuery.size.width * (1-(sp-1*index*(1-sp) < 0 ? 0 : sp-1*index*(1-sp)))), 0),
+                                  child: Container(
+                                    decoration: BoxDecoration(
+                                      borderRadius: StaticsVar.br,
+                                      color: Theme.of(context).colorScheme.surfaceContainerHigh
+                                    ),
+                                    padding: EdgeInsets.all(8.0),
+                                    width: mediaQuery.size.width * 0.4,
+                                    child: Column(
+                                      children: [
+                                        Text("问题: \n${unit.questions[index].riddle}\n你的答案: \n${selection[index] == null ? "未选择" : options[index][selection[index]!]}", style: Theme.of(context).primaryTextTheme.bodyLarge),
+                                        SizedBox(
+                                          width: mediaQuery.size.width * 0.4,
+                                          child: Opacity(
+                                            opacity: (cp-1*index*(1-cp) < 0 ? 0 : cp-1*index*(1-cp)),
+                                            child: Transform.scale(
+                                              scale: 1.5 - 0.5*(cp-1*index*(1-cp) < 0 ? 0 : cp-1*index*(1-cp)),
+                                              child: FittedBox(fit: BoxFit.scaleDown, child: Icon(correctList[index] ? Icons.check : Icons.clear, color: correctList[index] ? Colors.greenAccent : Colors.redAccent, size: 96))
+                                            ),
                                           ),
-                                        ),
-                                      )
-                                    ],
+                                        )
+                                      ],
+                                    ),
                                   ),
                                 ),
-                              ),
-                            ],
-                          ),
-                        );
+                                Transform.translate(
+                                  offset: Offset(mediaQuery.size.width * (1-(sp-1*index*(1-sp) < 0 ? 0 : sp-1*index*(1-sp))), 0),
+                                  child: Container(
+                                    decoration: BoxDecoration(
+                                      color: Theme.of(context).colorScheme.onPrimary,
+                                      borderRadius: StaticsVar.br
+                                    ),
+                                    width: mediaQuery.size.width * 0.5, 
+                                    padding: EdgeInsets.all(8.0),
+                                    margin: EdgeInsets.all(8.0),
+                                    child: Text("正确答案: \n${unit.questions[index].answers[0]}\n解析: \n${unit.questions[index].analysis}", style: Theme.of(context).primaryTextTheme.bodyLarge),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          );
+                        } else {
+                          return RepaintBoundary(
+                            child: Opacity(
+                              opacity: cp,
+                              child: Divider()
+                            )
+                          );
+                        }
                       }
                     ),
                     RepaintBoundary(

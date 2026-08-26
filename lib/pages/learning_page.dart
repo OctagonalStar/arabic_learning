@@ -36,7 +36,7 @@ class LearningPage extends StatelessWidget {
                     shiftToStudy(context);
                   },
                   icon: Padding(
-                    padding: const EdgeInsets.all(16.0),
+                    padding: const EdgeInsets.all(8.0),
                     child: Icon(Icons.task_alt),
                   ),
                   iconDirection: AxisDirection.up,
@@ -73,7 +73,7 @@ class LearningPage extends StatelessWidget {
                 );
               },
               icon: Padding(
-                padding: const EdgeInsets.all(16.0),
+                padding: const EdgeInsets.all(8.0),
                 child: Icon(Icons.history_edu),
               ),
               iconDirection: AxisDirection.up,
