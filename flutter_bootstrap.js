@@ -46,7 +46,7 @@ document.body.appendChild(loading);
 loading.textContent = "正在加载中(Step 1)...\n若长时间无响应请尝试更换网络";
 _flutter.loader.load({
     serviceWorkerSettings: {
-        serviceWorkerVersion: "838816820" /* Flutter's service worker is deprecated and will be removed in a future Flutter release. */,
+        serviceWorkerVersion: "3763698746" /* Flutter's service worker is deprecated and will be removed in a future Flutter release. */,
     },
     onEntrypointLoaded: async function (engineInitializer) {
         loading.textContent = "正在加载中(Step 2)...长时间无响应请尝试删除缓存或更换浏览器";
