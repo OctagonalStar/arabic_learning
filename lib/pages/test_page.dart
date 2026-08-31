@@ -31,7 +31,7 @@ class TestPage extends StatelessWidget {
                   )
                 );
               },
-              child: FittedBox(child: Text('联机', style: TextStyle(fontSize: 34.0))),
+              child: Expanded(child: FittedBox(fit: BoxFit.scaleDown, child: Text('联机', style: TextStyle(fontSize: 34.0)))),
             ),
             Button(
               icon: Icon(Icons.multitrack_audio, size: 36.0),
@@ -45,7 +45,7 @@ class TestPage extends StatelessWidget {
                   )
                 );
               },
-              child: FittedBox(child: Text('阅读理解', style: TextStyle(fontSize: 34.0))),
+              child: Expanded(child: FittedBox(fit: BoxFit.scaleDown, child: Text('阅读理解', style: TextStyle(fontSize: 34.0)))),
             ),
           ],
         ),
