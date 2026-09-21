@@ -5,6 +5,7 @@
 import 'package:arabic_learning/core/statics.dart';
 import 'package:arabic_learning/models/dict.dart' show WordItem;
 import 'package:arabic_learning/services/global_state.dart';
+import 'package:arabic_learning/widgets/feedback.dart' show LoadingIndicator;
 import 'package:arabic_learning/widgets/kit.dart' show Button, WordCard;
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -48,7 +49,7 @@ void alart(BuildContext context, String msg, {Function? onConfirmed, Duration de
                   },
                 );
               } else {
-                return CircularProgressIndicator();
+                return LoadingIndicator();
               }
             }
           )

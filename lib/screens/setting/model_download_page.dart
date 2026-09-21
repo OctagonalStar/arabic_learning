@@ -36,7 +36,7 @@ class _ModelDownload extends State<ModelDownload> {
       body: ListView(
         children: [
           TextContainer(text: "使用基于ViTS的文本转语音模型\n下载后会占用本地约60MB的存储空间"),
-          TextContainer(text: "一旦开始下载，请勿退出此页面; 若在解压时提示软件无响应，属于正常情况，请选择等待", style: TextStyle(color: Theme.of(context).colorScheme.error),),
+          TextContainer(text: "一旦开始下载，请勿退出此页面; 若在解压时提示软件无响应，属于正常情况，请选择等待", style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Theme.of(context).colorScheme.error),),
           Button(
             icon: Icon(progress > 3 ? Icons.download_done : Icons.download),
             size: Size(double.infinity, 100),

@@ -55,7 +55,19 @@ class Global with ChangeNotifier {
     } else {
       scheme = ThemeResolver.seedScheme(regular, brightness);
     }
-    return buildTheme(scheme, fontFamily: zhFont);
+    // 字体回退链随备用字体配置变化：
+    // font==1 → 阿语 Vazirmatn；font==2 → 阿语 Vazirmatn + 中文 NotoSansSC。
+    // `fontFamily` 仍按原逻辑只传 zhFont，不改变其判定与语义。
+    final List<String>? fontFallback = switch (regular.font) {
+      1 => const <String>[StaticsVar.arBackupFont],
+      2 => const <String>[StaticsVar.arBackupFont, StaticsVar.zhBackupFont],
+      _ => null,
+    };
+    return buildTheme(
+      scheme,
+      fontFamily: zhFont,
+      fontFamilyFallback: fontFallback,
+    );
   }
 
   /// 按需解析并缓存动态取色方案；未启用或平台不支持时清空缓存回退种子色。

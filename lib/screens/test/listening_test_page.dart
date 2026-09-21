@@ -7,6 +7,7 @@ import 'package:arabic_learning/core/extensions.dart';
 import 'package:arabic_learning/core/statics.dart';
 import 'package:arabic_learning/services/global_state.dart';
 import 'package:arabic_learning/services/app_data.dart';
+import 'package:arabic_learning/theme/typography.dart';
 import 'package:arabic_learning/widgets/kit.dart' show Button, TextContainer, popSelectClasses;
 import 'package:arabic_learning/widgets/overlays.dart' show alart;
 import 'package:arabic_learning/services/words.dart';
@@ -202,7 +203,7 @@ class _ForeListeningSettingPage extends State<ForeListeningSettingPage> {
                   )
                 );
               },
-              child: Text("听写，启动！", style: TextStyle(fontSize: 24.0),),
+              child: Text("听写，启动！", style: withoutColor(Theme.of(context).textTheme.headlineSmall!),),
             ),
           ],
         )
@@ -346,8 +347,8 @@ class _MainListeningPageState extends State<MainListeningPage> {
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               TextContainer(text: "当前播放数/总数: $index/${(widget.words.length * widget.playTimes)}",textAlign: TextAlign.center,),
-              TextContainer(text: state, style: TextStyle(fontSize: 32.0), size: Size(mediaQuery.size.width * 0.8, mediaQuery.size.height * 0.4),textAlign: TextAlign.center,),
-              TextContainer(text: counter, style: TextStyle(fontSize: 36.0, color: Theme.of(context).colorScheme.error), size: Size(mediaQuery.size.width * 0.6, mediaQuery.size.height * 0.1),textAlign: TextAlign.center,),
+              TextContainer(text: state, style: Theme.of(context).textTheme.headlineLarge, size: Size(mediaQuery.size.width * 0.8, mediaQuery.size.height * 0.4),textAlign: TextAlign.center,),
+              TextContainer(text: counter, style: Theme.of(context).textTheme.displaySmall?.copyWith(color: Theme.of(context).colorScheme.error), size: Size(mediaQuery.size.width * 0.6, mediaQuery.size.height * 0.1),textAlign: TextAlign.center,),
               Button(
                 icon: Icon(stage == 1 ? Icons.flag : Icons.play_arrow, size: 32.0,),
                 padding: EdgeInsets.all(16.0),

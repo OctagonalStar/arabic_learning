@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:math';
 
+import 'package:arabic_learning/widgets/feedback.dart' show LoadingIndicator;
 import 'package:arabic_learning/widgets/kit.dart' show Button, SettingItem, SettingRow, TextContainer;
 import 'package:arabic_learning/widgets/overlays.dart' show alart;
 import 'package:arabic_learning/widgets/shared.dart' show ButtonLabel, appInputDecoration;
@@ -866,7 +867,7 @@ class _QuestionConfigPage extends State<QuestionConfigPage> {
         SizedBox(height: 20),
         Button(
           size: Size.fromHeight(100),
-          icon: adding ? CircularProgressIndicator() : Icon(Icons.check),
+          icon: adding ? LoadingIndicator() : Icon(Icons.check),
           onPressed: () => processSummon(widget.qconfig), 
           child: Text(adding ? "添加中..." : "确认")
         )

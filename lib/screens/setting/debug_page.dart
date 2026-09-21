@@ -58,7 +58,7 @@ class _DebugPage extends State<DebugPage> {
       body: ListView(
         controller: controller,
         children: [
-          TextContainer(text: "该页面为软件调试/测试和bug反馈使用，非必要请勿开启日志捕获，以免性能损耗", style: TextStyle(color: Theme.of(context).colorScheme.error)),
+          TextContainer(text: "该页面为软件调试/测试和bug反馈使用，非必要请勿开启日志捕获，以免性能损耗", style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Theme.of(context).colorScheme.error)),
           SettingCard(
             color: Theme.of(context).colorScheme.surfaceContainerHighest,
             padding: EdgeInsets.only(left: 16.0, right: 16.0),
@@ -130,7 +130,7 @@ class _DebugPage extends State<DebugPage> {
                       ),
                       margin: EdgeInsets.all(2.0),
                       padding: EdgeInsets.all(4.0),
-                      child: SelectableText(logLine, style: TextStyle(color: logLine.contains("[SERVER]") ? context.semanticColors.error : logLine.contains("WARNING") ? context.semanticColors.warning : logLine.contains("FINE") ? Theme.of(context).colorScheme.onSurfaceVariant : null)),
+                      child: SelectableText(logLine, style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: logLine.contains("[SERVER]") ? context.semanticColors.error : logLine.contains("WARNING") ? context.semanticColors.warning : logLine.contains("FINE") ? Theme.of(context).colorScheme.onSurfaceVariant : null)),
                     );
                   }
                 ),
@@ -142,7 +142,7 @@ class _DebugPage extends State<DebugPage> {
             children: [
               Row(
                 children: [
-                  Expanded(child: TextContainer(text: "调试信息中可能包含部分敏感信息，若要发给他人请先自行检查", style: TextStyle(color: Theme.of(context).colorScheme.error))),
+                  Expanded(child: TextContainer(text: "调试信息中可能包含部分敏感信息，若要发给他人请先自行检查", style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Theme.of(context).colorScheme.error))),
                   Button(
                     onPressed: () {
                       Clipboard.setData(ClipboardData(text: debugInfo.join("\n")));

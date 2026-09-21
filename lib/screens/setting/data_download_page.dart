@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:arabic_learning/widgets/feedback.dart' show LoadingIndicator;
 import 'package:arabic_learning/widgets/kit.dart' show Button, SettingItem;
 import 'package:arabic_learning/widgets/overlays.dart' show alart, showSnackBar;
 import 'package:arabic_learning/models/dict.dart';
@@ -39,7 +40,7 @@ class DownloadPage extends StatelessWidget {
         future: downloadList(context),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting || snapshot.data == null) {
-            return Center(child: CircularProgressIndicator());
+            return Center(child: LoadingIndicator());
           }
           return ListView(children: snapshot.data!);
         },
@@ -123,7 +124,7 @@ Widget _buildFileRow(BuildContext context, Dio dio, dynamic f) {
         children: [
           Expanded(child: Text(fileName)),
           inDownloading
-              ? CircularProgressIndicator()
+              ? LoadingIndicator()
               : Button(
                   icon: Icon(downloaded ? Icons.done : Icons.download),
                   onPressed: () async {

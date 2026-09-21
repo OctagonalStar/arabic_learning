@@ -1,8 +1,10 @@
+import 'package:arabic_learning/widgets/feedback.dart' show LoadingIndicator;
 import 'package:arabic_learning/widgets/kit.dart' show Button, TextContainer;
 import 'package:arabic_learning/widgets/overlays.dart' show showSnackBar;
 import 'package:arabic_learning/services/global_state.dart' show Global;
 import 'package:arabic_learning/services/app_data.dart' show AppData;
 import 'package:arabic_learning/core/statics.dart';
+import 'package:arabic_learning/theme/typography.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart' show rootBundle, SystemChannels, SystemNavigator;
 import 'package:flutter_markdown_plus/flutter_markdown_plus.dart' show MarkdownBody;
@@ -56,14 +58,14 @@ class _PolicyPage extends State<PolicyPage> {
                   TextContainer(text: preAnnounce, selectable: true),
                   FutureBuilder(
                     future: tou, 
-                    builder: (context, snapshot) => snapshot.hasData ? MarkdownBody(data: snapshot.data!) : CircularProgressIndicator()
+                    builder: (context, snapshot) => snapshot.hasData ? MarkdownBody(data: snapshot.data!) : LoadingIndicator()
                   ),
                   SizedBox(height: MediaQuery.of(context).size.height * 0.05),
                   Divider(),
                   SizedBox(height: MediaQuery.of(context).size.height * 0.05),
                   FutureBuilder(
                     future: pp, 
-                    builder: (context, snapshot) => snapshot.hasData ? MarkdownBody(data: snapshot.data!) : CircularProgressIndicator()
+                    builder: (context, snapshot) => snapshot.hasData ? MarkdownBody(data: snapshot.data!) : LoadingIndicator()
                   ),
                   SizedBox(height: MediaQuery.of(context).size.height),
                   if(!widget.isUpdate) TextField(
@@ -85,7 +87,7 @@ class _PolicyPage extends State<PolicyPage> {
                   SystemNavigator.pop();
                   return;
                 },
-                child: const Text('不同意', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 24)),
+                child: Text('不同意', style: withoutColor(Theme.of(context).textTheme.headlineSmall!).copyWith(fontWeight: FontWeight.bold)),
               ),
               Button(
                 onPressed: () {
@@ -102,7 +104,7 @@ class _PolicyPage extends State<PolicyPage> {
                   }
                   context.read<Global>().updateSetting(refresh: true);
                 },
-                child: const Text('同意', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 24)),
+                child: Text('同意', style: withoutColor(Theme.of(context).textTheme.headlineSmall!).copyWith(fontWeight: FontWeight.bold)),
               )
             ],
           ),

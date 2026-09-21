@@ -50,7 +50,7 @@ class OpenSourceLicensePage extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(x.name),
-              Text("${x.spdxIdentifiers.length}个许可 ${x.spdxIdentifiers.toString()}", style: TextStyle(fontSize: 12, color: Theme.of(context).colorScheme.onSurfaceVariant),),
+              Text("${x.spdxIdentifiers.length}个许可 ${x.spdxIdentifiers.toString()}", style: Theme.of(context).textTheme.labelMedium?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant),),
             ],
           ),
           children: [
@@ -73,7 +73,7 @@ class OpenSourceLicensePage extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(app.name),
-                Text("${app.spdxIdentifiers.length}个许可 ${app.spdxIdentifiers.toString()}", style: TextStyle(fontSize: 12, color: Theme.of(context).colorScheme.onSurfaceVariant)),
+                Text("${app.spdxIdentifiers.length}个许可 ${app.spdxIdentifiers.toString()}", style: Theme.of(context).textTheme.labelMedium?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant)),
               ],
             ),
             children: [

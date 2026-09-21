@@ -56,18 +56,18 @@ class StatCard extends StatelessWidget {
       child: Column(
         children: [
           if (statusIcon == null)
-            Text(label, style: TextStyle(fontSize: 12.0))
+            Text(label, style: Theme.of(context).textTheme.labelMedium)
           else
             Row(
               crossAxisAlignment: CrossAxisAlignment.center,
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Text(label, style: TextStyle(fontSize: 12.0)),
+                Text(label, style: Theme.of(context).textTheme.labelMedium),
                 statusIcon!,
               ],
             ),
           SizedBox(height: spacing),
-          Text(value, style: TextStyle(fontSize: 24.0, fontWeight: FontWeight.bold)),
+          Text(value, style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold)),
         ],
       ),
     );

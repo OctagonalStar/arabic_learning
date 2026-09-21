@@ -349,7 +349,7 @@ class _SettingPage extends State<SettingPage> {
                           child: Text(
                             "神经网络合成语音",
                             overflow: TextOverflow.ellipsis,
-                            style: TextStyle(
+                            style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                               color: !kIsWeb && AppData().modelTTSDownloaded ? null : context.semanticColors.disabled,
                             ),
                           ),
@@ -437,8 +437,7 @@ class _SettingPage extends State<SettingPage> {
                             Text("项目地址"),
                             Text(
                               "去github上点个star~",
-                              style: TextStyle(
-                                fontSize: 8.0,
+                              style: Theme.of(context).textTheme.labelSmall?.copyWith(
                                 color: Theme.of(context).colorScheme.onSurfaceVariant,
                               ),
                             ),

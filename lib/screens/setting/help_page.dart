@@ -1,3 +1,4 @@
+import 'package:arabic_learning/widgets/feedback.dart' show LoadingIndicator;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart' show rootBundle;
 import 'package:flutter_markdown_plus/flutter_markdown_plus.dart';
@@ -10,7 +11,7 @@ class HelpPage extends StatelessWidget{
     return FutureBuilder(
       future: getHelpMarkDown(),
       builder: (context, helpEssay) {
-        if(!helpEssay.hasData) return CircularProgressIndicator();
+        if(!helpEssay.hasData) return LoadingIndicator();
 
         return Scaffold(
           appBar: AppBar(title: Text("常见问题")),

@@ -5,6 +5,7 @@ import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import 'package:arabic_learning/widgets/feedback.dart' show LoadingIndicator;
 import 'package:arabic_learning/widgets/kit.dart' show Button, SettingItem;
 import 'package:arabic_learning/widgets/overlays.dart' show alart, showSnackBar;
 import 'package:arabic_learning/widgets/shared.dart' show appInputDecoration;
@@ -84,7 +85,7 @@ class _DataSyncPage extends State<DataSyncPage> {
                         );
                       }
                       if(snapshot.connectionState == ConnectionState.waiting) {
-                        return CircularProgressIndicator(constraints: BoxConstraints(minHeight: 18, minWidth: 18), strokeWidth: 2);
+                        return LoadingIndicator(size: 18, strokeWidth: 2);
                       }
                       if(snapshot.hasData) {
                         return Row(
@@ -93,7 +94,7 @@ class _DataSyncPage extends State<DataSyncPage> {
                           ],
                         );
                       }
-                      return CircularProgressIndicator();
+                      return LoadingIndicator();
                     },
                   )
                 ],
@@ -107,12 +108,12 @@ class _DataSyncPage extends State<DataSyncPage> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text("上传数据"),
-                        Text("将本地配置上传到WebDAV服务器", style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 8.0))
+                        Text("将本地配置上传到WebDAV服务器", style: Theme.of(context).textTheme.labelSmall?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant))
                       ],
                     )
                   ),
                   isUploading 
-                  ? CircularProgressIndicator()
+                  ? LoadingIndicator()
                   :Button(
                     onPressed: () async {
                       context.read<Global>().uiLogger.info("用户上传数据");
@@ -145,12 +146,12 @@ class _DataSyncPage extends State<DataSyncPage> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text("恢复数据"),
-                        Text("从WebDAV服务器恢复配置", style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 8.0))
+                        Text("从WebDAV服务器恢复配置", style: Theme.of(context).textTheme.labelSmall?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant))
                       ],
                     )
                   ),
                   isDownloading 
-                  ? CircularProgressIndicator()
+                  ? LoadingIndicator()
                   : Button(
                     onPressed: () async {
                       context.read<Global>().uiLogger.info("用户恢复数据");
@@ -192,7 +193,7 @@ class _DataSyncPage extends State<DataSyncPage> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text("导出数据"),
-                        Text("将当前软件数据作为文件导出", style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 8.0))
+                        Text("将当前软件数据作为文件导出", style: Theme.of(context).textTheme.labelSmall?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant))
                       ],
                     ),
                   ),
@@ -229,7 +230,7 @@ class _DataSyncPage extends State<DataSyncPage> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text("导入数据"),
-                        Text("将文件中的配置覆盖软件配置", style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 8.0))
+                        Text("将文件中的配置覆盖软件配置", style: Theme.of(context).textTheme.labelSmall?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant))
                       ],
                     ),
                   ),

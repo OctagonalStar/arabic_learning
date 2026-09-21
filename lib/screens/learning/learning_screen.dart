@@ -9,6 +9,7 @@ import 'package:provider/provider.dart';
 
 import 'package:arabic_learning/widgets/kit.dart' show Button, popSelectClasses;
 import 'package:arabic_learning/theme/tokens.dart' show AppRadius;
+import 'package:arabic_learning/theme/typography.dart';
 import 'package:arabic_learning/widgets/overlays.dart' show showSnackBar;
 import 'package:arabic_learning/widgets/shared.dart' show ButtonLabel;
 import 'package:arabic_learning/services/words.dart';
@@ -46,7 +47,7 @@ class LearningPage extends StatelessWidget {
                   ),
                   iconDirection: AxisDirection.up,
                   child: ButtonLabel(
-                    child: Text('学习',style: TextStyle(fontSize: 40.0, fontWeight: FontWeight.bold)),
+                    child: Text('学习', style: withoutColor(Theme.of(context).textTheme.displaySmall!).copyWith(fontWeight: FontWeight.bold)),
                   ),
                 ),
                 Button(
@@ -80,7 +81,7 @@ class LearningPage extends StatelessWidget {
               ),
               iconDirection: AxisDirection.up,
               child: ButtonLabel(
-                child: Text("复习",style: TextStyle(fontSize: 40.0, fontWeight: FontWeight.bold))
+                child: Text("复习",style: withoutColor(Theme.of(context).textTheme.displaySmall!).copyWith(fontWeight: FontWeight.bold))
               ),
             ),
           ],
@@ -134,7 +135,7 @@ class LearningPage extends StatelessWidget {
               );
             },
             icon: Icon(Icons.push_pin, size: 24),
-            child: ButtonLabel(fit: BoxFit.contain, child: Text("学习推送单词", style: TextStyle(fontSize: 40.0))),
+            child: ButtonLabel(fit: BoxFit.contain, child: Text("学习推送单词", style: withoutColor(Theme.of(context).textTheme.displaySmall!))),
           ),
         ],
         SizedBox(height: mediaQuery.size.height * 0.05),
@@ -151,7 +152,7 @@ class LearningPage extends StatelessWidget {
             );
           },
           icon: Icon(Icons.abc, size: 24),
-          child: Text("词汇总览", style: TextStyle(fontSize: 40.0)),
+          child: Text("词汇总览", style: withoutColor(Theme.of(context).textTheme.displaySmall!)),
         ),
       ]
     );

@@ -12,6 +12,7 @@ import 'dart:ui' show ImageFilter;
 import 'package:arabic_learning/core/extensions.dart';
 import 'package:arabic_learning/core/statics.dart';
 import 'package:arabic_learning/theme/tokens.dart' show AppRadius, AppSemanticColors;
+import 'package:arabic_learning/theme/typography.dart';
 import 'package:arabic_learning/models/dict.dart' show ClassItem, SourceItem, WordItem;
 import 'package:arabic_learning/models/reading.dart' show ClassSelection;
 import 'package:arabic_learning/services/app_data.dart';
@@ -130,8 +131,7 @@ List<Widget> classesSelectionList(BuildContext context, Function (ClassItem) onC
         ),
         child: Text(
           source.name,
-          style: TextStyle(
-            fontSize: 16.0,
+          style: Theme.of(context).textTheme.bodyLarge?.copyWith(
             fontWeight: FontWeight.bold,
           ),
         ),
@@ -167,7 +167,7 @@ List<Widget> classesSelectionList(BuildContext context, Function (ClassItem) onC
   if(widgetList.isEmpty) {
     context.read<Global>().uiLogger.warning("用户未导入可用词库");
     widgetList.add(
-      Center(child: Text('啥啥词库都没导入，你学个啥呢？\n自己去 设置 -> 数据设置 -> 导入词库', style: TextStyle(fontSize: 24.0, color: context.semanticColors.error),))
+      Center(child: Text('啥啥词库都没导入，你学个啥呢？\n自己去 设置 -> 数据设置 -> 导入词库', style: Theme.of(context).textTheme.headlineSmall?.copyWith(color: context.semanticColors.error),))
     );
   }
   context.read<Global>().uiLogger.info("课程选择列表构建完成");
@@ -206,14 +206,9 @@ class TextContainer extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    late TextStyle actualStyle;
-    if(style == null) {
-      actualStyle = TextStyle(
-        fontSize: 18.0,
-      );
-    } else {
-      actualStyle = style!;
-    }
+    // 默认 18 号正文：由主题 `textTheme.titleMedium`（已按历史尺寸微调）提供。
+    final TextStyle actualStyle =
+        style ?? Theme.of(context).textTheme.titleMedium!;
     return Container(
       width: size?.width,
       height: size?.height,
@@ -291,7 +286,11 @@ class ChooseButtons extends StatelessWidget {
           child: FittedBox(
             child: Text(
               options[i],
-              style: TextStyle(fontSize: 36, fontFamily:options[i].isArabic() ? context.read<Global>().arFont : null),
+              style: arabicTextStyle(
+                context,
+                options[i],
+                base: withoutColor(Theme.of(context).textTheme.displaySmall!),
+              ),
             ),
           ),
         ),
@@ -454,8 +453,10 @@ class CategoryChips extends StatelessWidget {
             category,
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
-            style: TextStyle(
-              fontSize: dense ? 10.0 : 12.0,
+            style: (dense
+                    ? Theme.of(context).textTheme.labelSmall
+                    : Theme.of(context).textTheme.labelMedium)
+                ?.copyWith(
               color: Theme.of(context).colorScheme.onSecondaryContainer,
             ),
           ),
@@ -498,7 +499,7 @@ class CategoryFilter extends StatelessWidget {
             children: [
               Icon(Icons.filter_alt_outlined, size: 18.0),
               SizedBox(width: 4.0),
-              Text("分类筛选", style: TextStyle(fontSize: 14.0, fontWeight: FontWeight.bold)),
+              Text("分类筛选", style: Theme.of(context).textTheme.labelLarge?.copyWith(fontWeight: FontWeight.bold)),
               Spacer(),
               if(selected.isNotEmpty) TextButton(
                 style: TextButton.styleFrom(
@@ -507,7 +508,7 @@ class CategoryFilter extends StatelessWidget {
                   tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                 ),
                 onPressed: () => onChanged(<String>{}),
-                child: Text("清除筛选", style: TextStyle(fontSize: 12.0)),
+                child: Text("清除筛选", style: Theme.of(context).textTheme.labelMedium),
               )
             ],
           ),
@@ -520,9 +521,11 @@ class CategoryFilter extends StatelessWidget {
               return FilterChip(
                 label: Text(
                   category,
-                  style: TextStyle(
-                    fontSize: 12.0,
-                    color: isSelected ? Theme.of(context).colorScheme.onSecondaryContainer : null,
+                  style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                    // 未选中时与 chipTheme.labelStyle 的 onSurfaceVariant 保持一致
+                    color: isSelected
+                      ? Theme.of(context).colorScheme.onSecondaryContainer
+                      : Theme.of(context).colorScheme.onSurfaceVariant,
                   ),
                 ),
                 selected: isSelected,
@@ -592,7 +595,10 @@ class WordCard extends StatelessWidget {
     }
   }
 
-  /// 卡片内的双栏信息行：左侧标签容器 + 右侧内容，样式与原卡片保持一致
+  /// 卡片内的双栏信息行：左侧标签容器 + 右侧内容，样式与原卡片保持一致。
+  ///
+  /// [labelStyle] / [valueStyle] 为语义文本角色；省略时分别回退
+  /// `bodyLarge` / `titleMedium`（对应原 16 / 18 号字）。
   Widget _infoRow(
     BuildContext context, {
     required String label,
@@ -600,12 +606,14 @@ class WordCard extends StatelessWidget {
     required double labelWidth,
     required Color labelColor,
     double? height,
-    double labelFontSize = 16.0,
-    double valueFontSize = 18.0,
+    TextStyle? labelStyle,
+    TextStyle? valueStyle,
     bool isArabicValue = false,
     bool expandValue = false,
     BorderRadius? labelRadius,
   }) {
+    final TextTheme textTheme = Theme.of(context).textTheme;
+    final TextStyle resolvedValueStyle = valueStyle ?? textTheme.titleMedium!;
     return SizedBox(
       height: height,
       child: Row(
@@ -623,7 +631,7 @@ class WordCard extends StatelessWidget {
                 fit: BoxFit.scaleDown,
                 child: Padding(
                   padding: EdgeInsets.symmetric(horizontal: 4.0),
-                  child: Text(label, style: TextStyle(fontSize: labelFontSize)),
+                  child: Text(label, style: labelStyle ?? textTheme.bodyLarge),
                 ),
               ),
             ),
@@ -636,7 +644,9 @@ class WordCard extends StatelessWidget {
                   child: expandValue
                     ? Text(
                         value,
-                        style: TextStyle(fontSize: valueFontSize, fontFamily: isArabicValue ? context.read<Global>().arFont : null),
+                        style: isArabicValue
+                            ? arabicStyle(context, base: resolvedValueStyle)
+                            : resolvedValueStyle,
                         textAlign: TextAlign.center,
                         maxLines: 3,
                         overflow: TextOverflow.ellipsis,
@@ -645,7 +655,9 @@ class WordCard extends StatelessWidget {
                         fit: BoxFit.scaleDown,
                         child: Text(
                           value,
-                          style: TextStyle(fontSize: valueFontSize, fontFamily: isArabicValue ? context.read<Global>().arFont : null),
+                          style: isArabicValue
+                              ? arabicStyle(context, base: resolvedValueStyle)
+                              : resolvedValueStyle,
                           textAlign: TextAlign.center,
                         ),
                       ),
@@ -662,20 +674,21 @@ class WordCard extends StatelessWidget {
   Widget _buildCompactBody(BuildContext context, double useWidth, double useHeight) {
     final Color labelOdd = Theme.of(context).colorScheme.primaryContainer;
     final Color labelEven = Theme.of(context).colorScheme.secondaryContainer;
+    final TextTheme textTheme = Theme.of(context).textTheme;
     return Column(
       children: [
         Expanded(
           flex: 3,
           child: _infoRow(context,
             label: "中文", value: word.chinese, labelWidth: useWidth * 0.2,
-            labelColor: labelOdd, labelFontSize: 16.0, valueFontSize: 24.0),
+            labelColor: labelOdd, labelStyle: textTheme.bodyLarge, valueStyle: textTheme.headlineSmall),
         ),
         const Divider(height: 0),
         Expanded(
           flex: 6,
           child: _infoRow(context,
             label: "解释", value: word.explanation, labelWidth: useWidth * 0.2,
-            labelColor: labelEven, labelFontSize: 18.0, valueFontSize: 16.0, expandValue: true),
+            labelColor: labelEven, labelStyle: textTheme.titleMedium, valueStyle: textTheme.bodyLarge, expandValue: true),
         ),
         const Divider(height: 0),
         if(word.categories.isNotEmpty) ...[
@@ -697,7 +710,7 @@ class WordCard extends StatelessWidget {
           flex: 3,
           child: _infoRow(context,
             label: "归属课程", value: word.className, labelWidth: useWidth * 0.2,
-            labelColor: labelOdd, valueFontSize: 18.0,
+            labelColor: labelOdd, valueStyle: textTheme.titleMedium,
             labelRadius: BorderRadius.only(bottomLeft: Radius.circular(AppRadius.card))),
         ),
       ],
@@ -710,6 +723,7 @@ class WordCard extends StatelessWidget {
     final Color labelEven = Theme.of(context).colorScheme.secondaryContainer;
     final double labelWidth = useWidth * 0.2;
     final double rowHeight = useHeight * 0.12;
+    final TextTheme textTheme = Theme.of(context).textTheme;
     final List<Widget> morphRows = [];
     void addMorphRow(Widget row) {
       if(morphRows.isNotEmpty) morphRows.add(const Divider(height: 0));
@@ -718,32 +732,32 @@ class WordCard extends StatelessWidget {
     if(word.root.isNotEmpty) {
       addMorphRow(_infoRow(context,
         label: "词根", value: word.root, labelWidth: labelWidth, height: rowHeight,
-        labelColor: labelOdd, labelFontSize: 14.0, valueFontSize: 18.0, isArabicValue: true));
+        labelColor: labelOdd, labelStyle: textTheme.bodyMedium, valueStyle: textTheme.titleMedium, isArabicValue: true));
     }
     if(word.pos.isNotEmpty) {
       addMorphRow(_infoRow(context,
         label: "词性", value: _posLabel(word.pos), labelWidth: labelWidth, height: rowHeight,
-        labelColor: labelEven, labelFontSize: 14.0, valueFontSize: 16.0));
+        labelColor: labelEven, labelStyle: textTheme.bodyMedium, valueStyle: textTheme.bodyLarge));
     }
     if(word.plural.isNotEmpty) {
       addMorphRow(_infoRow(context,
         label: "复数", value: word.plural, labelWidth: labelWidth, height: rowHeight,
-        labelColor: labelOdd, labelFontSize: 14.0, valueFontSize: 18.0, isArabicValue: true));
+        labelColor: labelOdd, labelStyle: textTheme.bodyMedium, valueStyle: textTheme.titleMedium, isArabicValue: true));
     }
     if(word.gender != null) {
       addMorphRow(_infoRow(context,
         label: "阴阳性", value: word.gender! ? "阳性" : "阴性", labelWidth: labelWidth, height: rowHeight,
-        labelColor: labelEven, labelFontSize: 14.0, valueFontSize: 16.0));
+        labelColor: labelEven, labelStyle: textTheme.bodyMedium, valueStyle: textTheme.bodyLarge));
     }
     if(word.present.isNotEmpty) {
       addMorphRow(_infoRow(context,
         label: "现在式", value: word.present, labelWidth: labelWidth, height: rowHeight,
-        labelColor: labelOdd, labelFontSize: 14.0, valueFontSize: 18.0, isArabicValue: true));
+        labelColor: labelOdd, labelStyle: textTheme.bodyMedium, valueStyle: textTheme.titleMedium, isArabicValue: true));
     }
     if(word.masdar.isNotEmpty) {
       addMorphRow(_infoRow(context,
         label: "动名词", value: word.masdar, labelWidth: labelWidth, height: rowHeight,
-        labelColor: labelEven, labelFontSize: 14.0, valueFontSize: 18.0, isArabicValue: true));
+        labelColor: labelEven, labelStyle: textTheme.bodyMedium, valueStyle: textTheme.titleMedium, isArabicValue: true));
     }
     if(word.categories.isNotEmpty) {
       addMorphRow(
@@ -756,7 +770,7 @@ class WordCard extends StatelessWidget {
                 padding: EdgeInsets.symmetric(vertical: 4.0),
                 decoration: BoxDecoration(color: labelOdd),
                 alignment: Alignment.center,
-                child: Text("类别", style: TextStyle(fontSize: 14.0)),
+                child: Text("类别", style: textTheme.bodyMedium),
               ),
               Expanded(
                 child: Padding(
@@ -773,7 +787,7 @@ class WordCard extends StatelessWidget {
       children: [
         _infoRow(context,
           label: "中文", value: word.chinese, labelWidth: labelWidth, height: useHeight * 0.14,
-          labelColor: labelOdd, labelFontSize: 16.0, valueFontSize: 24.0),
+          labelColor: labelOdd, labelStyle: textTheme.bodyLarge, valueStyle: textTheme.headlineSmall),
         const Divider(height: 0),
         Expanded(
           child: SingleChildScrollView(
@@ -781,7 +795,7 @@ class WordCard extends StatelessWidget {
               children: [
                 _infoRow(context,
                   label: "解释", value: word.explanation, labelWidth: labelWidth, height: useHeight * 0.24,
-                  labelColor: labelEven, labelFontSize: 18.0, valueFontSize: 16.0, expandValue: true),
+                  labelColor: labelEven, labelStyle: textTheme.titleMedium, valueStyle: textTheme.bodyLarge, expandValue: true),
                 if(morphRows.isNotEmpty) ...[
                   Container(
                     width: double.infinity,
@@ -793,7 +807,7 @@ class WordCard extends StatelessWidget {
                       children: [
                         Icon(Icons.auto_stories_outlined, size: 16.0),
                         SizedBox(width: 4.0),
-                        Text("词形信息", style: TextStyle(fontSize: 14.0, fontWeight: FontWeight.bold)),
+                        Text("词形信息", style: textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.bold)),
                       ],
                     ),
                   ),
@@ -806,7 +820,7 @@ class WordCard extends StatelessWidget {
         const Divider(height: 0),
         _infoRow(context,
           label: "归属课程", value: word.className, labelWidth: labelWidth, height: useHeight * 0.14,
-          labelColor: labelOdd, labelFontSize: 16.0, valueFontSize: 18.0,
+          labelColor: labelOdd, labelStyle: textTheme.bodyLarge, valueStyle: textTheme.titleMedium,
           labelRadius: BorderRadius.only(bottomLeft: Radius.circular(AppRadius.card))),
       ],
     );
@@ -828,7 +842,7 @@ class WordCard extends StatelessWidget {
           onPressed: (){
             playTextToSpeech(word.arabic);
           },
-          child: ButtonLabel(child: Text(word.arabic, style: TextStyle(fontSize: 64.0, fontFamily: context.read<Global>().arFont))),
+          child: ButtonLabel(child: Text(word.arabic, style: arabicStyle(context, base: withoutColor(Theme.of(context).textTheme.displayLarge!)))),
         ),
         Stack(
           children: [
@@ -1131,7 +1145,7 @@ class SettingRow extends StatelessWidget {
               Text(leading),
               if(note != null) Text(
                 note!,
-                style: TextStyle(fontSize: 12.0, color: Theme.of(context).colorScheme.onSurfaceVariant),
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant),
               ),
             ],
           ),

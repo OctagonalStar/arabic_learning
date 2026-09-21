@@ -8,6 +8,7 @@ import 'package:arabic_learning/models/dict.dart' show WordItem;
 import 'package:arabic_learning/services/global_state.dart';
 import 'package:arabic_learning/services/tts.dart';
 import 'package:arabic_learning/services/words.dart' show calculateButtonBoxLayout;
+import 'package:arabic_learning/theme/typography.dart';
 import 'package:arabic_learning/widgets/kit.dart' show Button, ChooseButtons, TextContainer, WordCard;
 import 'package:arabic_learning/widgets/overlays.dart' show alart, showSnackBar;
 import 'package:arabic_learning/widgets/shared.dart' show ButtonLabel, appInputDecoration;
@@ -109,7 +110,7 @@ class _ChoiceQuestions extends State<ChoiceQuestions> {
                         playing = false;
                       });
                     },
-                    child: ButtonLabel(fit: BoxFit.contain, child: Text(widget.mainWord, style: TextStyle(fontSize: 72.0, fontFamily: widget.mainWord.isArabic() ? context.read<Global>().arFont : null))),
+                    child: ButtonLabel(fit: BoxFit.contain, child: Text(widget.mainWord, style: arabicTextStyle(context, widget.mainWord, base: withoutColor(Theme.of(context).textTheme.displayLarge!)))),
                   );
                 }
               ),
@@ -237,7 +238,7 @@ class _SpellQuestion extends State<SpellQuestion> {
                   controller: controller,
                   expands: false,
                   maxLines: 1,
-                  style: TextStyle(fontFamily: context.read<Global>().arFont, fontSize: 28),
+                  style: arabicStyle(context, base: Theme.of(context).textTheme.headlineMedium),
                   keyboardType: TextInputType.name,
                   readOnly: isChecked,
                   decoration: appInputDecoration(

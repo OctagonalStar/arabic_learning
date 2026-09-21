@@ -12,6 +12,7 @@ import 'package:arabic_learning/screens/test/test_screen.dart' show TestPage;
 import 'package:arabic_learning/package_replacement/fake_dart_io.dart' if (dart.library.io) 'dart:io' as io;
 import 'package:arabic_learning/services/app_data.dart' show AppData;
 import 'package:arabic_learning/services/global_state.dart' show Global;
+import 'package:arabic_learning/widgets/feedback.dart' show LoadingIndicator;
 import 'package:arabic_learning/widgets/kit.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -46,7 +47,7 @@ class MyApp extends StatelessWidget {
               width: double.infinity,
               height: double.infinity,
               color: loadingSurface,
-              child: const Center(child: CircularProgressIndicator()),
+              child: const Center(child: LoadingIndicator()),
             );
           }
           return Consumer<Global>(

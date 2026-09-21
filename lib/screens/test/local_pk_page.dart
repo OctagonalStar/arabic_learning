@@ -1,5 +1,6 @@
 import 'dart:math';
 
+import 'package:arabic_learning/widgets/feedback.dart' show LoadingIndicator;
 import 'package:arabic_learning/widgets/kit.dart' show Button, TextContainer, popSelectClasses;
 import 'package:arabic_learning/widgets/overlays.dart' show alart;
 import 'package:arabic_learning/widgets/questions.dart' show ChoiceQuestions;
@@ -11,6 +12,7 @@ import 'package:arabic_learning/services/global_state.dart';
 import 'package:arabic_learning/services/app_data.dart';
 import 'package:arabic_learning/core/extensions.dart';
 import 'package:arabic_learning/core/statics.dart';
+import 'package:arabic_learning/theme/typography.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart' show Clipboard, ClipboardData;
 import 'package:qr_flutter/qr_flutter.dart';
@@ -59,7 +61,7 @@ class _LocalPKSelectPage extends State<LocalPKSelectPage> {
       appBar: AppBar(title: Text("局域网联机")),
       body: Column(
         children: [
-          TextContainer(text: "该功能还处在预览阶段，出现问题请及时提交反馈", style: TextStyle(color: Theme.of(context).colorScheme.error)),
+          TextContainer(text: "该功能还处在预览阶段，出现问题请及时提交反馈", style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Theme.of(context).colorScheme.error)),
           SizedBox(height: mediaQuery.size.height * 0.02),
           Button(
             size: Size(mediaQuery.size.width * 0.8, mediaQuery.size.height * 0.1),
@@ -75,7 +77,7 @@ class _LocalPKSelectPage extends State<LocalPKSelectPage> {
               );
             }, 
             icon: Icon(Icons.manage_accounts, size: 36),
-            child: Text("我做房主", style: TextStyle(fontSize: 24))
+            child: Text("我做房主", style: withoutColor(Theme.of(context).textTheme.headlineSmall!))
           ),
           Divider(height: mediaQuery.size.height * 0.05, thickness: 3),
           Text("我加入联机", style: Theme.of(context).textTheme.headlineMedium),
@@ -307,7 +309,7 @@ class _ServerHostWatingPage extends State<ServerHostWatingPage> {
             isConnecting
             ? Column(
               children: [
-                CircularProgressIndicator(),
+                LoadingIndicator(),
                 Text("正在构建连接"),
               ],
             )
@@ -339,7 +341,7 @@ class _ServerHostWatingPage extends State<ServerHostWatingPage> {
       : Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            CircularProgressIndicator(),
+            LoadingIndicator(),
             Text("服务加载中...\n该过程或将需要一分钟")
           ],
         )
@@ -418,7 +420,7 @@ class ClientWatingPage extends StatelessWidget {
             child: Text("复制口令到剪切板")
           )],
 
-          CircularProgressIndicator(),
+          LoadingIndicator(),
           Text(context.read<PKServer>().inited ? 
                 context.watch<PKServer>().selectableSource.isNotEmpty ? "正在等待房主选择课程" : "请将以上二维码给对方扫描或传递口令"
                 : "正在收集信息生成认证\n此过程或将需要一分钟")

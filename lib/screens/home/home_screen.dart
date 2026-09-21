@@ -6,6 +6,7 @@ import 'package:provider/provider.dart';
 import 'package:arabic_learning/core/date_utils.dart';
 import 'package:arabic_learning/core/extensions.dart';
 import 'package:arabic_learning/theme/tokens.dart' show AppRadius;
+import 'package:arabic_learning/theme/typography.dart';
 import 'package:arabic_learning/widgets/kit.dart' show Button;
 import 'package:arabic_learning/widgets/overlays.dart' show alart;
 import 'package:arabic_learning/widgets/shared.dart' show StatCard;
@@ -131,7 +132,7 @@ class _DailyWord extends State<DailyWord> {
         children: [
           Text(
             '每日一词',
-            style: TextStyle(fontSize: 18.0),
+            style: withoutColor(Theme.of(context).textTheme.titleMedium!),
           ),
           SizedBox(height: mediaQuery.size.height * 0.02),
           FittedBox(
@@ -141,12 +142,12 @@ class _DailyWord extends State<DailyWord> {
                 : [
                 Text(
                   data.arabic,
-                  style: TextStyle(fontSize: 52.0, fontFamily: context.read<Global>().arFont),
+                  style: arabicStyle(context, base: withoutColor(Theme.of(context).textTheme.displayMedium!)),
                 ),
                 SizedBox(height: mediaQuery.size.height * 0.005),
                 Text(
                   data.chinese,
-                  style: TextStyle(fontSize: 18.0),
+                  style: withoutColor(Theme.of(context).textTheme.titleMedium!),
                   textAlign: TextAlign.center,
                 ),
                 SizedBox(height: mediaQuery.size.height * 0.03),

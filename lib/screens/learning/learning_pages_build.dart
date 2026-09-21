@@ -417,8 +417,8 @@ class _ConcludePageState extends State<ConcludePage> {
             contentBuilder: (context, value) => Row(
               children: [
                 Expanded(child: SizedBox()),
-                Text("已完成单词:  ", style: TextStyle(fontSize: 20.0)),
-                Text((widget.data[0] * value).ceil().toString(), style: TextStyle(fontSize: 32.0, fontWeight: FontWeight.bold)),
+                Text("已完成单词:  ", style: Theme.of(context).textTheme.titleLarge),
+                Text((widget.data[0] * value).ceil().toString(), style: Theme.of(context).textTheme.headlineLarge?.copyWith(fontWeight: FontWeight.bold)),
                 SizedBox(width: mediaQuery.size.width * 0.05),
                 CircularProgressIndicator(value: value)
               ],
@@ -433,8 +433,8 @@ class _ConcludePageState extends State<ConcludePage> {
               children: [
                 CircularProgressIndicator(value: value * (widget.data[1]/widget.data[0])),
                 SizedBox(width: mediaQuery.size.width * 0.05),
-                Text("回答正确数:  ", style: TextStyle(fontSize: 20.0)),
-                Text((widget.data[1] * value).ceil().toString(), style: TextStyle(fontSize: 32.0, fontWeight: FontWeight.bold)),
+                Text("回答正确数:  ", style: Theme.of(context).textTheme.titleLarge),
+                Text((widget.data[1] * value).ceil().toString(), style: Theme.of(context).textTheme.headlineLarge?.copyWith(fontWeight: FontWeight.bold)),
                 Expanded(child: SizedBox()),
               ],
             ),
@@ -447,8 +447,8 @@ class _ConcludePageState extends State<ConcludePage> {
             contentBuilder: (context, value) => Row(
               children: [
                 Expanded(child: SizedBox()),
-                Text("总耗时:  ", style: TextStyle(fontSize: 20.0)),
-                Text("${(widget.data[2] * value).ceil().toString()} 秒", style: TextStyle(fontSize: 32.0, fontWeight: FontWeight.bold)),
+                Text("总耗时:  ", style: Theme.of(context).textTheme.titleLarge),
+                Text("${(widget.data[2] * value).ceil().toString()} 秒", style: Theme.of(context).textTheme.headlineLarge?.copyWith(fontWeight: FontWeight.bold)),
                 SizedBox(width: mediaQuery.size.width * 0.05),
                 CircularProgressIndicator(value: value)
               ],
@@ -860,7 +860,7 @@ class _WordLookupLayoutState extends State<WordLookupLayout> {
         ),
         Expanded(
           child: (match.isEmpty && selectedCategories.isNotEmpty)
-            ? Center(child: Text("当前筛选条件下没有匹配的单词", style: TextStyle(fontSize: 16.0)))
+            ? Center(child: Text("当前筛选条件下没有匹配的单词", style: Theme.of(context).textTheme.bodyLarge))
             : GridView.builder(
                 itemCount: match.length,
                 gridDelegate: AppData().config.learning.overviewForceColumn == 0 ? SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: mediaQuery.size.width ~/ 300) : SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: AppData().config.learning.overviewForceColumn), 

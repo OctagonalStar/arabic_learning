@@ -11,21 +11,22 @@ import 'package:arabic_learning/theme/tokens.dart';
 ///
 /// [scheme] 为已解析的颜色方案（种子色或动态取色）；
 /// [fontFamily] / [fontFamilyFallback] 沿用现有字体逻辑（由 `Global` 传入）。
+/// [fontFamilyFallback] 为字体回退链（如 `[Vazirmatn]` 或
+/// `[Vazirmatn, NotoSansSC]`），不会改变 [fontFamily] 的现有语义。
 ThemeData buildTheme(
   ColorScheme scheme, {
   String? fontFamily,
-  String? fontFamilyFallback,
+  List<String>? fontFamilyFallback,
 }) {
   final ThemeData base = ThemeData(
     useMaterial3: true,
     colorScheme: scheme,
     fontFamily: fontFamily,
-    fontFamilyFallback:
-        fontFamilyFallback == null ? null : <String>[fontFamilyFallback],
+    fontFamilyFallback: fontFamilyFallback,
     extensions: <ThemeExtension<dynamic>>[AppSemanticColors.of(scheme)],
   );
 
-  final TextTheme text = base.textTheme;
+  final TextTheme text = _buildTextTheme(base.textTheme);
   final AppSemanticColors semantic = AppSemanticColors.of(scheme);
   final Color disabled = semantic.disabled;
 
@@ -33,6 +34,7 @@ ThemeData buildTheme(
   final BorderRadius cardRadius = AppRadius.cardBorder;
 
   return base.copyWith(
+    textTheme: text,
     scaffoldBackgroundColor: scheme.surface,
     canvasColor: scheme.surface,
     dividerColor: scheme.outlineVariant,
@@ -288,5 +290,17 @@ ThemeData buildTheme(
       contentPadding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm),
       shape: RoundedRectangleBorder(borderRadius: controlRadius),
     ),
+  );
+}
+
+/// 在 M3 默认字阶上做少量微调，使历史内联字号收敛到最接近的文本角色。
+///
+/// - `titleMedium` 16 → 18：对齐历史 `TextContainer` 默认 18 号正文；
+/// - 其余角色沿用 M3 默认（labelSmall 11 / labelMedium 12 / bodyMedium 14 /
+///   bodyLarge 16 / titleLarge 22 / headlineSmall 24 / headlineMedium 28 /
+///   headlineLarge 32 / displaySmall 36 / displayMedium 45 / displayLarge 57）。
+TextTheme _buildTextTheme(TextTheme base) {
+  return base.copyWith(
+    titleMedium: base.titleMedium?.copyWith(fontSize: 18.0),
   );
 }

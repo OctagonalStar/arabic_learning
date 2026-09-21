@@ -279,14 +279,14 @@ class ForeFSRSSettingPage extends StatelessWidget {
                               fsrs.save();
                               Navigator.popUntil(context, (route) => route.isFirst);
                             }, 
-                            child: Text("确认清空", style: TextStyle(color: Theme.of(context).colorScheme.error))
+                            child: Text("确认清空", style: Theme.of(context).textTheme.labelLarge?.copyWith(color: Theme.of(context).colorScheme.error))
                           )
                         ],
                       )
                     );
                   },
                   icon: Icon(Icons.delete_forever, color: Theme.of(context).colorScheme.error),
-                  child: Text("重置并停用", style: TextStyle(color: Theme.of(context).colorScheme.error)),
+                  child: Text("重置并停用", style: Theme.of(context).textTheme.labelLarge?.copyWith(color: Theme.of(context).colorScheme.error)),
                 ),
               )
             ]

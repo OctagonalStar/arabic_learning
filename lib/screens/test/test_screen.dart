@@ -1,3 +1,4 @@
+import 'package:arabic_learning/theme/typography.dart';
 import 'package:arabic_learning/widgets/kit.dart' show Button;
 import 'package:arabic_learning/widgets/shared.dart' show ButtonLabel;
 import 'package:flutter/material.dart';
@@ -32,7 +33,7 @@ class TestPage extends StatelessWidget {
                   )
                 );
               },
-              child: ButtonLabel(child: Text('联机', style: TextStyle(fontSize: 34.0))),
+              child: ButtonLabel(child: Text('联机', style: withoutColor(Theme.of(context).textTheme.headlineLarge!))),
             ),
             Button(
               icon: Icon(Icons.multitrack_audio, size: 36.0),
@@ -46,7 +47,7 @@ class TestPage extends StatelessWidget {
                   )
                 );
               },
-              child: ButtonLabel(child: Text('阅读理解', style: TextStyle(fontSize: 34.0))),
+              child: ButtonLabel(child: Text('阅读理解', style: withoutColor(Theme.of(context).textTheme.headlineLarge!))),
             ),
           ],
         ),
@@ -63,7 +64,7 @@ class TestPage extends StatelessWidget {
               )
             );
           },
-          child: ButtonLabel(child: Text('自主听写', style: TextStyle(fontSize: 34.0))),
+          child: ButtonLabel(child: Text('自主听写', style: withoutColor(Theme.of(context).textTheme.headlineLarge!))),
         ),
       ],
     );
