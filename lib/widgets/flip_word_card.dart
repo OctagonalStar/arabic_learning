@@ -1,11 +1,11 @@
 // 翻卡式单词卡片组件（项目中唯一的单词卡片实现）。
 //
 // 卡片由顶部“阿语 + 发音”按钮与主体组成，主体按使用场景切换布局：
-// - 正面摘要（默认）：中文 / 解释 / 归属课程；
+// - 正面摘要（默认，词汇总览 / 查找网格单元同样复用）：中文 / 解释 /
+//   归属课程三行彩色标签，按 flex 分配高度并由 FittedBox 等比缩小兜底；
 // - 反面详情（翻卡后 / `startOnBack`）：中文与解释组成的释义区、词形信息
 //   芯片网格、类别标签与归属课程页脚；在给定尺寸内一次性展示全部非空
-//   字段，不滚动、按可用空间整体等比缩小兜底；
-// - 紧凑模式（`compact`）：词汇总览 / 查找网格单元里的精简静态展示。
+//   字段，不滚动、按可用空间整体等比缩小兜底。
 //
 // `enableFlip` 为 true 时点击卡片展开：卡片从原位置移动到屏幕中心、放大并
 // 绕 Y 轴翻转到反面，同时全屏遮罩由透明逐渐加深；再次点击卡片、点击遮罩或
@@ -50,9 +50,6 @@ const String _collapseHint = '点击卡片或空白处关闭';
 ///
 /// [enableFlip] :是否允许点击展开翻卡；false 时渲染为静态卡片（无提示行）
 ///
-/// [compact] :紧凑静态展示，用于词汇总览 / 查找网格单元；仅展示阿语 +
-/// 中文 / 解释 / 归属课程的精简版，任意单元尺寸都不溢出，且不参与翻卡
-///
 /// [masked] :遮住释义（FSRS 自评 / 学习卡）；`enableFlip` 为 true 时点击
 /// 卡片翻面即揭示全部详情，为 false 时由调用方切换本参数完成揭示
 ///
@@ -63,7 +60,6 @@ class FlipWordCard extends StatefulWidget {
   final double? width;
   final double? height;
   final bool enableFlip;
-  final bool compact;
   final bool masked;
   final bool startOnBack;
 
@@ -73,7 +69,6 @@ class FlipWordCard extends StatefulWidget {
     this.width,
     this.height,
     this.enableFlip = true,
-    this.compact = false,
     this.masked = false,
     this.startOnBack = false,
   });
@@ -95,9 +90,8 @@ class _FlipWordCardState extends State<FlipWordCard> {
     final double useWidth = widget.width ?? mediaQuery.size.width * 0.9;
     final double useHeight = widget.height ?? mediaQuery.size.height * 0.5;
 
-    // 紧凑模式与 startOnBack 都是静态展示：前者是网格精简版，
-    // 后者已直接呈现全部详情，两者都不参与翻卡交互。
-    if (widget.compact || widget.startOnBack) {
+    // startOnBack 已直接呈现全部详情，属静态展示，不参与翻卡交互。
+    if (widget.startOnBack) {
       return SizedBox(
         key: _cardKey,
         width: useWidth,
@@ -106,9 +100,8 @@ class _FlipWordCardState extends State<FlipWordCard> {
           word: widget.word,
           width: useWidth,
           height: useHeight,
-          showBack: widget.startOnBack,
+          showBack: true,
           masked: widget.masked,
-          compact: widget.compact,
         ),
       );
     }
@@ -191,15 +184,14 @@ class _FlipWordCardState extends State<FlipWordCard> {
 
 /// 卡片本体：顶部阿语发音按钮 + 信息区 + 可选提示行。
 ///
-/// 信息区渲染 [WordCardInfoRow] 组成的正面摘要、[_FlipCardDetailBody] 详情或
-/// [_FlipCardCompactBody] 紧凑体；[masked] 时在信息区叠加毛玻璃遮挡层。
+/// 信息区渲染 [WordCardInfoRow] 组成的正面摘要或 [_FlipCardDetailBody] 详情；
+/// [masked] 时在信息区叠加毛玻璃遮挡层。
 class _FlipCardSurface extends StatelessWidget {
   final WordItem word;
   final double width;
   final double height;
   final bool showBack;
   final bool masked;
-  final bool compact;
   final String? hintText;
 
   const _FlipCardSurface({
@@ -208,7 +200,6 @@ class _FlipCardSurface extends StatelessWidget {
     required this.height,
     required this.showBack,
     this.masked = false,
-    this.compact = false,
     this.hintText,
   });
 
@@ -218,11 +209,9 @@ class _FlipCardSurface extends StatelessWidget {
     final TextTheme textTheme = Theme.of(context).textTheme;
     // 有提示行时信息区占 0.6，静态卡没有提示行则占 0.7，避免底部留白。
     final double bodyShare = hintText == null ? 0.7 : 0.6;
-    final Widget body = compact
-        ? _FlipCardCompactBody(word: word)
-        : showBack
-            ? _FlipCardDetailBody(word: word)
-            : _FlipCardFrontBody(word: word, width: width);
+    final Widget body = showBack
+        ? _FlipCardDetailBody(word: word)
+        : _FlipCardFrontBody(word: word, width: width);
     return ClipRRect(
       borderRadius: AppRadius.cardBorder,
       child: ColoredBox(
@@ -305,78 +294,6 @@ class _FlipCardFrontBody extends StatelessWidget {
             labelRadius: BorderRadius.only(bottomLeft: Radius.circular(AppRadius.card))),
         ),
       ],
-    );
-  }
-}
-
-/// 紧凑体：词汇总览 / 查找网格单元中的静态精简展示。
-///
-/// 仅展示中文 / 解释 / 归属课程（阿语由顶部按钮承担），内容按固有尺寸布局后
-/// 由 [FittedBox] 整体等比缩小，任意小尺寸单元都不溢出。
-class _FlipCardCompactBody extends StatelessWidget {
-  final WordItem word;
-
-  const _FlipCardCompactBody({required this.word});
-
-  @override
-  Widget build(BuildContext context) {
-    final ColorScheme scheme = Theme.of(context).colorScheme;
-    final TextTheme textTheme = Theme.of(context).textTheme;
-    return LayoutBuilder(
-      builder: (BuildContext context, BoxConstraints constraints) {
-        return FittedBox(
-          fit: BoxFit.scaleDown,
-          alignment: Alignment.topCenter,
-          child: SizedBox(
-            width: constraints.maxWidth,
-            child: Padding(
-              padding: const EdgeInsets.all(AppSpacing.xs),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  if (word.chinese.isNotEmpty)
-                    Text(
-                      word.chinese,
-                      style: textTheme.titleMedium?.copyWith(
-                        color: scheme.onSurface,
-                        fontWeight: FontWeight.w700,
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  if (word.explanation.isNotEmpty) ...[
-                    const SizedBox(height: AppSpacing.xxs),
-                    Text(
-                      word.explanation,
-                      style: textTheme.bodySmall?.copyWith(color: scheme.onSurfaceVariant),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ],
-                  if (word.className.isNotEmpty) ...[
-                    const SizedBox(height: AppSpacing.xxs),
-                    Row(
-                      children: [
-                        Icon(Icons.menu_book_outlined, size: 12.0, color: scheme.onSurfaceVariant),
-                        const SizedBox(width: AppSpacing.xxs),
-                        Expanded(
-                          child: Text(
-                            word.className,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: textTheme.labelSmall?.copyWith(color: scheme.onSurfaceVariant),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ],
-              ),
-            ),
-          ),
-        );
-      },
     );
   }
 }
@@ -732,7 +649,7 @@ class WordCardInfoRow extends StatelessWidget {
 
 /// 单词卡片顶部的阿语发音按钮：点击朗读 [word] 的 `arabic`。
 ///
-/// 卡片正面、反面与紧凑体共用，保证阿语展示风格一致。
+/// 卡片正面与反面共用，保证阿语展示风格一致。
 class WordCardArabicButton extends StatelessWidget {
   final WordItem word;
   final double width;

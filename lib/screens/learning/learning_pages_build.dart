@@ -768,8 +768,6 @@ class _WordOverviewGrid extends StatelessWidget {
               child: Center(
                 child: FlipWordCard(
                   word: appData.wordData.words[classItem.wordIndexs[index]],
-                  compact: true,
-                  enableFlip: false,
                   width: cardSide,
                   height: cardSide,
                 ),
@@ -955,8 +953,6 @@ class _WordLookupLayoutState extends State<WordLookupLayout> {
                         child: Center(
                           child: FlipWordCard(
                             word: match[index],
-                            compact: true,
-                            enableFlip: false,
                             width: cardSide,
                             height: cardSide,
                           ),

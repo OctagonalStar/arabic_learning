@@ -345,30 +345,40 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
-  // compact 用于词汇总览 / 查找网格单元：尺寸由网格决定，必须不溢出。
+  // 词汇总览 / 查找网格单元：复用正面卡的彩色标签行，且默认可翻卡。
   for (final double side in <double>[200.0, 120.0]) {
     testWidgets(
-      'compact 单元 ${side.toInt()}x${side.toInt()} 显示精简信息且不可翻卡',
+      '网格单元 ${side.toInt()}x${side.toInt()} 使用正面标签行且可翻卡',
       (WidgetTester tester) async {
         await pumpCard(
           tester,
-          child: FlipWordCard(
-            word: word,
-            compact: true,
-            enableFlip: false,
-            width: side,
-            height: side,
-          ),
+          child: FlipWordCard(word: word, width: side, height: side),
         );
 
+        // 与正面卡一致：中文 / 解释 / 归属课程标签行 + 查看提示。
+        expect(find.text('中文'), findsOneWidget);
         expect(find.text('写'), findsOneWidget);
+        expect(find.text('解释'), findsOneWidget);
         expect(find.text('书写；写作，用笔记录文字'), findsOneWidget);
+        expect(find.text('归属课程'), findsOneWidget);
         expect(find.text('第二课'), findsOneWidget);
-        for (final String label in <String>[...detailLabels, '词形信息', '点击查看更多信息']) {
-          expect(find.text(label), findsNothing, reason: '紧凑体不应出现 $label');
+        expect(find.text('点击查看更多信息'), findsOneWidget);
+        // 翻卡前不展示详情字段。
+        for (final String label in <String>[
+          '词根', '词性', '复数', '阴阳性', '现在式', '动名词', '类别', '词形信息',
+        ]) {
+          expect(find.text(label), findsNothing, reason: '正面网格卡不应出现 $label');
         }
+        expect(tester.takeException(), isNull);
 
-        await tester.tap(find.byType(FlipWordCard));
+        // 网格卡默认允许翻卡：点击后居中放大并翻到详情面。
+        await tester.tap(find.text('点击查看更多信息'));
+        await tester.pumpAndSettle();
+        expect(find.text('词根'), findsOneWidget);
+        expect(find.text('点击卡片或空白处关闭'), findsOneWidget);
+        expect(tester.takeException(), isNull);
+
+        await tester.tapAt(const Offset(4, 4));
         await tester.pumpAndSettle();
         expect(find.text('词根'), findsNothing);
         expect(tester.takeException(), isNull);
