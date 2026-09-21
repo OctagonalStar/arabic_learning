@@ -178,7 +178,6 @@ class _InLearningPageState extends State<InLearningPage> {
           child: PageView.builder(
             scrollDirection: AppData().isWideScreen ? Axis.vertical : Axis.horizontal,
             physics: NeverScrollableScrollPhysics(),
-            // itemCount: testList.length,
             controller: controller,
             itemBuilder: (context, index) {
               if(index == testList.length) {

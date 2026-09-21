@@ -115,19 +115,6 @@ class FSRS {
     return dueCards;
   }
 
-  int getLeastDueCard() {
-    Card? leastDueCard;
-    for(Card card in config.cards) {
-      if(willDueIn(card) < 1) {
-        if(leastDueCard == null || card.due.toLocal().isBefore(leastDueCard.due.toLocal())) {
-          leastDueCard = card;
-        }
-      }
-    }
-    if (leastDueCard == null) return -1;
-    return leastDueCard.cardId;
-  }
-
   bool isContained(int wordId) {
     return config.cards.any((Card card) => card.cardId == wordId);
   }

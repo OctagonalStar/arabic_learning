@@ -69,8 +69,6 @@ void main() async {
     });
     logger.info("窗口配置加载完成");
   }
-  // final global = Global();
-  // await global.init();
   runApp(
     ChangeNotifierProvider(
       create: (context) => Global(),
@@ -168,7 +166,6 @@ class _MyHomePageState extends State<MyHomePage> {
             onPageChanged: (index) {
               setState(() {});
             },
-            // physics: const NeverScrollableScrollPhysics(), // 禁用滑动
             children: [
               HomePage(),
               LearningPage(),

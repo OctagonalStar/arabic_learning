@@ -91,7 +91,6 @@ Future<void> playTextToSpeech(String text, {double? speed}) async {
       final Duration duration = Duration(milliseconds: (audio.samples.length / audio.sampleRate * 1000).round());
       if(ok) {
         await StaticsVar.player.setAudioSource(AudioSource.uri(Uri.file(cacheFile.path)));
-        // await StaticsVar.player.setSpeed(playRate);
         StaticsVar.player.play();
         await Future.delayed(duration);
         if(cacheFile.existsSync()) cacheFile.deleteSync();
@@ -205,19 +204,6 @@ extension StringExtensions on String {
     
     double similarity = intersection / minLength;
     return similarity >= 0.4;
-  }
-}
-
-extension ListExtensions on List {
-  bool hasDuplicate() {
-    final seen = <dynamic>{};
-    for (var element in this) {
-      if (seen.contains(element)) {
-        return true;
-      }
-      seen.add(element);
-    }
-    return false;
   }
 }
 
@@ -618,17 +604,6 @@ int _calculateTier(AnalysisResult target, AnalysisResult candidate) {
   }
 
   return 0; // 不相关
-}
-
-/// 计算两个阿拉伯语单词的相似度（编辑距离）。
-/// [wordA] - 第一个单词。
-/// [wordB] - 第二个单词。
-/// 返回两个单词词根之间的 Levenshtein 编辑距离。距离越小，单词越相似。
-int getArabicWordsSimilarity(String wordA, String wordB) {
-  final rootA = _arabicStemmer.extractRoot(wordA);
-  final rootB = _arabicStemmer.extractRoot(wordB);
-  
-  return getLevenshtein(rootA, rootB);
 }
 
 //基于BK-tree实现快速相似词搜索

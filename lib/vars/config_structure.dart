@@ -62,12 +62,6 @@ class Config {
     };
   }
 
-  @override
-  String toString() {
-    final Map<String, dynamic> configMap = toMap();
-    return jsonEncode(configMap);
-  }
-
   static Config buildFromMap(Map<String, dynamic>? setting) {
     if(setting == null) return Config();
     return Config(
@@ -737,12 +731,6 @@ class ReadingData {
     }
     return ReadingData(units: units);
   }
-
-  ReadingData copyWith({
-    List<ReadingUnit>? units
-  }){
-    return ReadingData(units: units ?? this.units);
-  }
 }
 
 class ClassSelection {
@@ -821,28 +809,6 @@ class ReadingUnit {
     );
   }
 
-  ReadingUnit copyWith({
-    int? type,
-    String? title,
-    String? passage,
-    int? difficulty,
-    bool? tashkeel,
-    List<ReadingQuestion>? questions,
-    List<int>? corrects ,
-    List<String>? tags
-  }){
-    return ReadingUnit(
-      type: type ?? this.type, 
-      title: title ?? this.title, 
-      passage: passage ?? this.passage, 
-      difficulty: difficulty ?? this.difficulty, 
-      tashkeel: tashkeel ?? this.tashkeel, 
-      questions: questions ?? this.questions, 
-      corrects: corrects ?? this.corrects,
-      tags: tags ?? this.tags
-    );
-  }
-
   List<int> getHash() {
     String test = "$type$title;$passage;$difficulty;$tashkeel";
     for(ReadingQuestion x in questions){
@@ -884,20 +850,6 @@ class ReadingQuestion {
       answers: List<String>.from(question["answers"]), 
       type: question["type"], 
       analysis: question["analysis"]
-    );
-  }
-
-  ReadingQuestion copyWith({
-    String? riddle,
-    List<String>? answers,
-    String? type,
-    String? analysis
-  }){
-    return ReadingQuestion(
-      riddle: riddle ?? this.riddle, 
-      answers: answers ?? this.answers, 
-      type: type ?? this.type, 
-      analysis: analysis ?? this.analysis
     );
   }
 }

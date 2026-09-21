@@ -389,7 +389,6 @@ class ChooseButtons extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: buttonWidgets.sublist(0, 2),
             ),
-            // SizedBox(height: mediaQuery.size.height * 0.01),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: buttonWidgets.sublist(2),
@@ -1133,48 +1132,6 @@ class ClassSelectPage extends StatelessWidget {
             },
           ),
         ],
-      ),
-    );
-  }
-}
-
-/// 开发中页面
-/// 
-/// 用于代替还没完成的功能的组件
-class InDevelopingPage extends StatelessWidget {
-  const InDevelopingPage({super.key});
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text("开发中"),
-      ),
-      body: Center(
-        child: FittedBox(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(
-                Icons.build,
-                size: 100.0,
-              ),
-              Text(
-                "该页面还在开发中...",
-                style: TextStyle(
-                  fontSize: 40.0,
-                ),
-              ),
-              Text(
-                "日子要一天一天过，单词要一个一个背...\n高数要一课一课学，阿语要一句一句记...\n牙膏要一点一点挤，代码要一行一行敲...",
-                style: TextStyle(
-                  fontSize: 18.0,
-                  fontStyle: FontStyle.italic,
-                  color: Colors.grey,
-                ),
-              ),
-            ],
-          ),
-        ),
       ),
     );
   }

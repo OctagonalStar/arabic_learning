@@ -27,7 +27,6 @@ class _ModelDownload extends State<ModelDownload> {
 
   @override
   Widget build(BuildContext context) {
-    // context.read<Global>().uiLogger.info("构建 ModelDownload");
     return Scaffold(
       appBar: AppBar(
         title: const Text('模型下载'),

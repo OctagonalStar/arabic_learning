@@ -218,7 +218,6 @@ class AppData {
 
   late final SharedPreferences storage;
   late final io.Directory basePath;
-  late FSRS fsrs;
   late DictData wordData;
   late ReadingData readingData;
   sherpa_onnx.OfflineTts? vitsTTS;

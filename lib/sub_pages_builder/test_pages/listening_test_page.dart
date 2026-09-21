@@ -374,7 +374,6 @@ class _MainListeningPageState extends State<MainListeningPage> {
       setState(() {
         counter = (i/10).toString();
       });
-      // if(i == 100 && context.mounted) playTextToSpeech("سيبدأ الإملاء خلال 10 ثوانٍ. يرجى الاستعداد.", context);
       await Future.delayed(Duration(milliseconds: 100));
     }
     for (WordItem x in widget.words) {
@@ -386,7 +385,6 @@ class _MainListeningPageState extends State<MainListeningPage> {
         });
         if(!context.mounted) return;
         await playTextToSpeech(x.arabic, speed: widget.playRate);
-        // await Future.delayed(Duration(seconds: 1));
         setState((){
           state = "播放间隔中...";
         });
