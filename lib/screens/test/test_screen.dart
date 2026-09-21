@@ -4,9 +4,9 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import 'package:arabic_learning/services/global_state.dart';
-import 'package:arabic_learning/sub_pages_builder/test_pages/listening_test_page.dart' show ForeListeningSettingPage;
-import 'package:arabic_learning/sub_pages_builder/test_pages/local_pk_page.dart' show LocalPKSelectPage;
-import 'package:arabic_learning/sub_pages_builder/test_pages/reading_test_page.dart' show ReadingTestPage;
+import 'package:arabic_learning/screens/test/listening_test_page.dart' show ForeListeningSettingPage;
+import 'package:arabic_learning/screens/test/local_pk_page.dart' show LocalPKSelectPage;
+import 'package:arabic_learning/screens/test/reading_test_page.dart' show ReadingTestPage;
 class TestPage extends StatelessWidget {
   const TestPage({super.key});
   @override

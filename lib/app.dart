@@ -4,11 +4,11 @@
 
 import 'package:arabic_learning/core/extensions.dart';
 import 'package:arabic_learning/core/statics.dart' show StaticsVar;
-import 'package:arabic_learning/pages/home_page.dart';
-import 'package:arabic_learning/pages/leading_page.dart' show PolicyPage;
-import 'package:arabic_learning/pages/learning_page.dart' show LearningPage;
-import 'package:arabic_learning/pages/setting_page.dart' show SettingPage;
-import 'package:arabic_learning/pages/test_page.dart' show TestPage;
+import 'package:arabic_learning/screens/home/home_screen.dart';
+import 'package:arabic_learning/screens/policy/leading_screen.dart' show PolicyPage;
+import 'package:arabic_learning/screens/learning/learning_screen.dart' show LearningPage;
+import 'package:arabic_learning/screens/setting/setting_screen.dart' show SettingPage;
+import 'package:arabic_learning/screens/test/test_screen.dart' show TestPage;
 import 'package:arabic_learning/package_replacement/fake_dart_io.dart' if (dart.library.io) 'dart:io' as io;
 import 'package:arabic_learning/services/app_data.dart' show AppData;
 import 'package:arabic_learning/services/global_state.dart' show Global;

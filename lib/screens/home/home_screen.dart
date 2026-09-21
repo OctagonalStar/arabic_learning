@@ -9,7 +9,7 @@ import 'package:arabic_learning/widgets/overlays.dart' show alart;
 import 'package:arabic_learning/widgets/shared.dart' show StatCard;
 import 'package:arabic_learning/services/words.dart';
 import 'package:arabic_learning/services/tts.dart';
-import 'package:arabic_learning/pages/setting_page.dart';
+import 'package:arabic_learning/screens/setting/setting_screen.dart';
 import 'package:arabic_learning/models/dict.dart';
 import 'package:arabic_learning/services/global_state.dart';
 import 'package:arabic_learning/services/app_data.dart';

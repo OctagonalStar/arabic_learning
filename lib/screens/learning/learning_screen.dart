@@ -1,7 +1,7 @@
 import 'dart:math';
 
 import 'package:arabic_learning/services/fsrs.dart';
-import 'package:arabic_learning/sub_pages_builder/setting_pages/questions_setting_page.dart' show QuestionsSettingPage;
+import 'package:arabic_learning/screens/setting/questions_setting_page.dart' show QuestionsSettingPage;
 import 'package:arabic_learning/models/dict.dart';
 import 'package:arabic_learning/models/reading.dart';
 import 'package:flutter/material.dart';
@@ -13,8 +13,8 @@ import 'package:arabic_learning/widgets/shared.dart' show ButtonLabel;
 import 'package:arabic_learning/services/words.dart';
 import 'package:arabic_learning/services/global_state.dart';
 import 'package:arabic_learning/services/app_data.dart';
-import 'package:arabic_learning/sub_pages_builder/learning_pages/fsrs_pages.dart' show FSRSLearningPage, ForeFSRSSettingPage;
-import 'package:arabic_learning/sub_pages_builder/learning_pages/learning_pages_build.dart';
+import 'package:arabic_learning/screens/learning/fsrs_screens.dart' show FSRSLearningPage, ForeFSRSSettingPage;
+import 'package:arabic_learning/screens/learning/learning_pages_build.dart';
 
 class LearningPage extends StatelessWidget {
   const LearningPage({super.key});

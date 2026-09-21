@@ -8,21 +8,21 @@ import 'package:arabic_learning/widgets/kit.dart' show Button, SettingItem, Sett
 import 'package:arabic_learning/widgets/overlays.dart' show alart, showSnackBar;
 import 'package:arabic_learning/services/global_state.dart';
 import 'package:arabic_learning/services/app_data.dart';
-import 'package:arabic_learning/sub_pages_builder/setting_pages/help_page.dart'
+import 'package:arabic_learning/screens/setting/help_page.dart'
     show HelpPage;
-import 'package:arabic_learning/sub_pages_builder/setting_pages/debug_page.dart'
+import 'package:arabic_learning/screens/setting/debug_page.dart'
     show DebugPage;
-import 'package:arabic_learning/sub_pages_builder/setting_pages/about_page.dart'
+import 'package:arabic_learning/screens/setting/about_page.dart'
     show AboutPage;
-import 'package:arabic_learning/sub_pages_builder/setting_pages/data_download_page.dart'
+import 'package:arabic_learning/screens/setting/data_download_page.dart'
     show DownloadPage;
-import 'package:arabic_learning/sub_pages_builder/setting_pages/model_download_page.dart'
+import 'package:arabic_learning/screens/setting/model_download_page.dart'
     show ModelDownload;
-import 'package:arabic_learning/sub_pages_builder/setting_pages/questions_setting_page.dart'
+import 'package:arabic_learning/screens/setting/questions_setting_page.dart'
     show QuestionsSettingPage;
-import 'package:arabic_learning/sub_pages_builder/setting_pages/sync_page.dart'
+import 'package:arabic_learning/screens/setting/sync_page.dart'
     show DataSyncPage;
-import 'package:arabic_learning/sub_pages_builder/learning_pages/fsrs_pages.dart'
+import 'package:arabic_learning/screens/learning/fsrs_screens.dart'
     show ForeFSRSSettingPage;
 import 'package:arabic_learning/package_replacement/fake_dart_io.dart'
     if (dart.library.io) 'dart:io'
