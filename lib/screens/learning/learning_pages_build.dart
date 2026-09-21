@@ -18,7 +18,8 @@ import 'package:arabic_learning/core/statics.dart';
 import 'package:arabic_learning/theme/tokens.dart' show AppMotion;
 import 'package:arabic_learning/services/global_state.dart';
 import 'package:arabic_learning/services/app_data.dart';
-import 'package:arabic_learning/widgets/kit.dart' show Button, CategoryFilter, TextContainer, WordCard;
+import 'package:arabic_learning/widgets/flip_word_card.dart' show FlipWordCard;
+import 'package:arabic_learning/widgets/kit.dart' show Button, CategoryFilter, TextContainer;
 import 'package:arabic_learning/widgets/motion.dart' show StaggeredEntrance;
 import 'package:arabic_learning/widgets/overlays.dart' show showSnackBar, viewAnswer;
 import 'package:arabic_learning/widgets/questions.dart' show ChoiceQuestions, ListeningQuestion, SpellQuestion, WordCardQuestion;
@@ -765,10 +766,10 @@ class _WordOverviewGrid extends StatelessWidget {
             return StaggeredEntrance(
               index: index,
               child: Center(
-                child: WordCard(
+                child: FlipWordCard(
                   word: appData.wordData.words[classItem.wordIndexs[index]],
-                  useMask: false,
                   compact: true,
+                  enableFlip: false,
                   width: cardSide,
                   height: cardSide,
                 ),
@@ -952,10 +953,10 @@ class _WordLookupLayoutState extends State<WordLookupLayout> {
                       return StaggeredEntrance(
                         index: index,
                         child: Center(
-                          child: WordCard(
+                          child: FlipWordCard(
                             word: match[index],
-                            useMask: false,
                             compact: true,
+                            enableFlip: false,
                             width: cardSide,
                             height: cardSide,
                           ),

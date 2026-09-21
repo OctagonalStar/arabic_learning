@@ -7,7 +7,8 @@ import 'package:arabic_learning/models/dict.dart' show WordItem;
 import 'package:arabic_learning/services/global_state.dart';
 import 'package:arabic_learning/theme/tokens.dart' show AppMotion;
 import 'package:arabic_learning/widgets/feedback.dart' show LoadingIndicator;
-import 'package:arabic_learning/widgets/kit.dart' show Button, WordCard;
+import 'package:arabic_learning/widgets/flip_word_card.dart' show FlipWordCard;
+import 'package:arabic_learning/widgets/kit.dart' show Button;
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -91,7 +92,7 @@ void viewAnswer(BuildContext context, WordItem wordData) async {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            WordCard(word: wordData, useMask: false),
+            FlipWordCard(word: wordData, enableFlip: false, startOnBack: true),
             Button(
               onPressed: () => Navigator.pop(context), 
               size:  Size(mediaQuery.size.width * 0.8, mediaQuery.size.height * 0.1),

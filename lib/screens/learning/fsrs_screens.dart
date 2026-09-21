@@ -6,7 +6,8 @@ import 'package:flutter/material.dart';
 import 'package:fsrs/fsrs.dart' show Rating;
 import 'package:provider/provider.dart';
 
-import 'package:arabic_learning/widgets/kit.dart' show Button, CategoryFilter, TextContainer, WordCard;
+import 'package:arabic_learning/widgets/flip_word_card.dart' show FlipWordCard;
+import 'package:arabic_learning/widgets/kit.dart' show Button, CategoryFilter, TextContainer;
 import 'package:arabic_learning/widgets/overlays.dart' show alart, viewAnswer;
 import 'package:arabic_learning/widgets/questions.dart' show ChoiceQuestions;
 import 'package:arabic_learning/widgets/shared.dart' show RevealableActionBar, SettingCard;
@@ -520,7 +521,7 @@ class _FSRSReviewCardPage extends State<FSRSReviewCardPage> {
     return Material(
       child: ChoiceQuestions(
         mainWord: widget.fsrs.config.selfEvaluate ? "[selfEvaluate]" : wordData[widget.wordID].arabic, 
-        midWidget: widget.fsrs.config.selfEvaluate ? WordCard(word: wordData[widget.wordID], width: mediaQuery.size.width * 0.8, height: clampDouble(mediaQuery.size.height * 0.4, 150.0, 340.0), useMask: !choosed) : null,
+        midWidget: widget.fsrs.config.selfEvaluate ? FlipWordCard(word: wordData[widget.wordID], width: mediaQuery.size.width * 0.8, height: clampDouble(mediaQuery.size.height * 0.4, 150.0, 340.0), enableFlip: false, masked: !choosed) : null,
         choices: options!, 
         allowAudio: true, 
         allowAnitmation: !widget.fsrs.config.selfEvaluate,
@@ -631,7 +632,7 @@ class _FSRSLearningPageState extends State<FSRSLearningPage> {
             itemBuilder: (context, index) {
               return Column(
                 children: [
-                  WordCard(word: widget.words[index]),
+                  FlipWordCard(word: widget.words[index], masked: true),
                   Expanded(child: SizedBox()),
                   Button(
                     size: Size(mediaQuery.size.width * 0.8, clampDouble(mediaQuery.size.height * 0.15, 64.0, 170.0)),
