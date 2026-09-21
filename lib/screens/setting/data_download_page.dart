@@ -36,7 +36,7 @@ class DownloadPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: Text("下载在线词库")),
-      body: FutureBuilder(
+      body: SafeArea(top: false, child: FutureBuilder(
         future: downloadList(context),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting || snapshot.data == null) {
@@ -44,7 +44,7 @@ class DownloadPage extends StatelessWidget {
           }
           return ListView(children: snapshot.data!);
         },
-      ),
+      )),
     );
   }
 }

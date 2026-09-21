@@ -1,8 +1,8 @@
+import 'package:arabic_learning/core/adaptive.dart' show AdaptiveData;
 import 'package:arabic_learning/services/words.dart';
 import 'package:arabic_learning/services/search.dart';
 import 'package:arabic_learning/models/config.dart';
 import 'package:arabic_learning/models/dict.dart';
-import 'package:arabic_learning/services/app_data.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
@@ -42,6 +42,7 @@ void main() {
 
   group('calculateButtonBoxLayout 分支', () {
     // possible[1..3] 的长度决定是否换行；元素 0 不参与判断。
+    // 宽屏阈值 = width * 0.21，窄屏阈值 = width * 0.8。
     List<String> possible(int length) => <String>[
           'x',
           'a' * length,
@@ -50,23 +51,43 @@ void main() {
         ];
 
     test('宽屏 + 全部短文本 -> 0', () {
-      AppData().isWideScreen = true;
-      expect(calculateButtonBoxLayout(possible(2), 400), 0);
+      expect(
+        calculateButtonBoxLayout(
+          possible(2),
+          const AdaptiveData(width: 700, height: 500),
+        ),
+        0,
+      );
     });
 
     test('宽屏 + 存在长文本 -> 1', () {
-      AppData().isWideScreen = true;
-      expect(calculateButtonBoxLayout(possible(10), 400), 1);
+      expect(
+        calculateButtonBoxLayout(
+          possible(10),
+          const AdaptiveData(width: 700, height: 500),
+        ),
+        1,
+      );
     });
 
     test('窄屏 + 全部短文本 -> 1', () {
-      AppData().isWideScreen = false;
-      expect(calculateButtonBoxLayout(possible(2), 400), 1);
+      expect(
+        calculateButtonBoxLayout(
+          possible(2),
+          const AdaptiveData(width: 400, height: 800),
+        ),
+        1,
+      );
     });
 
     test('窄屏 + 存在长文本 -> 2', () {
-      AppData().isWideScreen = false;
-      expect(calculateButtonBoxLayout(possible(30), 400), 2);
+      expect(
+        calculateButtonBoxLayout(
+          possible(30),
+          const AdaptiveData(width: 400, height: 800),
+        ),
+        2,
+      );
     });
   });
 

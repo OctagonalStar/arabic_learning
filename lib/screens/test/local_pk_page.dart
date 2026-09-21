@@ -59,7 +59,7 @@ class _LocalPKSelectPage extends State<LocalPKSelectPage> {
 
     return Scaffold(
       appBar: AppBar(title: Text("局域网联机")),
-      body: Column(
+      body: SafeArea(top: false, child: Column(
         children: [
           TextContainer(text: "该功能还处在预览阶段，出现问题请及时提交反馈", style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Theme.of(context).colorScheme.error)),
           SizedBox(height: mediaQuery.size.height * 0.02),
@@ -141,7 +141,7 @@ class _LocalPKSelectPage extends State<LocalPKSelectPage> {
             ),
           )
         ],
-      ),
+      )),
     );
   }
 }
@@ -238,7 +238,7 @@ class _ServerHostWatingPage extends State<ServerHostWatingPage> {
 
     return Scaffold(
       appBar: AppBar(title: Text(context.watch<PKServer>().inited ? "准备连接" : "正在启动服务")),
-      body: Center(
+      body: SafeArea(top: false, child: Center(
         child: context.watch<PKServer>().inited
           ? Column(
             children: [
@@ -345,7 +345,7 @@ class _ServerHostWatingPage extends State<ServerHostWatingPage> {
             Text("服务加载中...\n该过程或将需要一分钟")
           ],
         )
-      ),
+      )),
     );
   }
 }
@@ -359,7 +359,7 @@ class PKClassSelectionPage extends StatelessWidget {
 
     return Scaffold(
       appBar: AppBar(title: Text("连接成功")),
-      body: Center(
+      body: SafeArea(top: false, child: Center(
         child: Column(
           children: [
             SizedBox(height: mediaQuery.size.height * 0.1),
@@ -378,7 +378,7 @@ class PKClassSelectionPage extends StatelessWidget {
             )
           ],
         ),
-      ),
+      )),
     );
   }
 }
@@ -393,7 +393,7 @@ class ClientWatingPage extends StatelessWidget {
 
     return Scaffold(
       appBar: AppBar(title: Text(context.watch<PKServer>().inited ? "收集信息中" : context.watch<PKServer>().connected ? "已连接" : "等待连接")),
-      body: Center(child: Column(
+      body: SafeArea(top: false, child: Center(child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
           if(context.watch<PKServer>().inited && !context.watch<PKServer>().connected) 
@@ -425,7 +425,7 @@ class ClientWatingPage extends StatelessWidget {
                 context.watch<PKServer>().selectableSource.isNotEmpty ? "正在等待房主选择课程" : "请将以上二维码给对方扫描或传递口令"
                 : "正在收集信息生成认证\n此过程或将需要一分钟")
         ]
-      ))
+      )))
     );
   }
 }
@@ -441,7 +441,7 @@ class PKPreparePage extends StatelessWidget {
 
     return Scaffold(
       appBar: AppBar(title: Text("请准备")),
-      body: Center(
+      body: SafeArea(top: false, child: Center(
         child: Column(
           children: [
             SizedBox(height: mediaQuery.size.height * 0.05),
@@ -514,7 +514,7 @@ class PKPreparePage extends StatelessWidget {
             )
           ],
         ),
-      ),
+      )),
     );
   }
 }
@@ -556,7 +556,7 @@ class _PKOngoingPage extends State<PKOngoingPage> {
       canPop: false,
       child: Scaffold(
         appBar: AppBar(title: Text("局域网联机"), automaticallyImplyLeading: false),
-        body: Column(
+        body: SafeArea(top: false, child: Column(
           children: [
             TopScoreBar(state: context.watch<PKServer>().pkState),
             Expanded(
@@ -615,7 +615,7 @@ class _PKOngoingPage extends State<PKOngoingPage> {
               ),
             )
           ],
-        )
+        ))
       ),
     );
   }

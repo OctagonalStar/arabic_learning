@@ -227,7 +227,7 @@ class _ReadingTestPage extends State<ReadingTestPage> {
           icon: Icon(Icons.add)
         )
       ]),
-      body: ListView.builder(
+      body: SafeArea(top: false, child: ListView.builder(
         itemCount: appData.readingData.units.length + 1,
         itemBuilder: (context, index) {
           if(index == appData.readingData.units.length) {
@@ -235,7 +235,7 @@ class _ReadingTestPage extends State<ReadingTestPage> {
           }
           return ReadingUnitButton(unit: appData.readingData.units[index]);
         }
-      ),
+      )),
     );
   }
 }
@@ -286,7 +286,7 @@ class _ReadingTestAddLeading extends State<ReadingTestAddLeading> {
 
     return Scaffold(
       appBar: AppBar(title: Text(scaffoldTitle())),
-      body: PageView(
+      body: SafeArea(top: false, child: PageView(
         controller: _pageController,
         physics: NeverScrollableScrollPhysics(),
         children: [
@@ -348,7 +348,7 @@ class _ReadingTestAddLeading extends State<ReadingTestAddLeading> {
           ),
           QuestionConfigPage(qconfig: qconfig),
         ],
-      ),
+      )),
     );
   }
 }
@@ -397,7 +397,7 @@ class _ReadingQuestionPage extends State<ReadingQuestionPage> {
 
     return Scaffold(
       appBar: AppBar(title: Text(widget.unit.title)),
-      body: Row(
+      body: SafeArea(top: false, child: Row(
         children: [
           SizedBox(
             width: mediaQuery.size.width * 0.65,
@@ -516,7 +516,7 @@ class _ReadingQuestionPage extends State<ReadingQuestionPage> {
             ),
           )
         ],
-      ),
+      )),
     );
   }
 }
@@ -923,7 +923,7 @@ class ReadingResultPage extends StatelessWidget {
 
     return Scaffold(
       appBar: AppBar(title: Text("测试结果-${unit.title}")),
-      body: TweenAnimationBuilder<double>(
+      body: SafeArea(top: false, child: TweenAnimationBuilder<double>(
         tween: Tween(
           begin: 0.0,
           end: 1.0
@@ -1035,7 +1035,7 @@ class ReadingResultPage extends StatelessWidget {
             ],
           );
         }
-      ),
+      )),
     );
   }
 }

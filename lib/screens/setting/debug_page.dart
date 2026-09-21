@@ -6,6 +6,7 @@ import 'package:provider/provider.dart';
 
 import 'package:arabic_learning/widgets/kit.dart' show Button, TextContainer;
 import 'package:arabic_learning/widgets/shared.dart' show SettingCard;
+import 'package:arabic_learning/core/adaptive.dart' show AdaptiveScope;
 import 'package:arabic_learning/core/extensions.dart';
 import 'package:arabic_learning/core/statics.dart';
 import 'package:arabic_learning/services/global_state.dart';
@@ -40,7 +41,7 @@ class _DebugPage extends State<DebugPage> {
     debugInfo.add("Device System: ${io.Platform.operatingSystem}");
     debugInfo.add("Device System Version: ${io.Platform.operatingSystemVersion}");
     debugInfo.add("Environment: ${io.Platform.environment}");
-    debugInfo.add("WideScreen: ${AppData().isWideScreen}");
+    debugInfo.add("WideScreen: ${AdaptiveScope.of(context).isWide}");
 
     // 存储类型
     debugInfo.add("Storage Type: ${AppData().storage.type ? "SharedPreferences" : "IndexDB"}");
@@ -55,7 +56,7 @@ class _DebugPage extends State<DebugPage> {
           controller.animateTo(0, duration: Durations.medium2, curve: StaticsVar.curve);
         }
       ),
-      body: ListView(
+      body: SafeArea(top: false, child: ListView(
         controller: controller,
         children: [
           TextContainer(text: "该页面为软件调试/测试和bug反馈使用，非必要请勿开启日志捕获，以免性能损耗", style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Theme.of(context).colorScheme.error)),
@@ -155,7 +156,7 @@ class _DebugPage extends State<DebugPage> {
             ],
           )
         ],
-      ),
+      )),
     );
   }
 }

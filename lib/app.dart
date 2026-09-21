@@ -2,6 +2,7 @@
 // MyHomePage / _MyHomePageState（桌面侧边导航与移动底部导航的自适应外壳）。
 // 引导逻辑（日志/窗口/后台任务/runApp）位于 lib/main.dart。
 
+import 'package:arabic_learning/core/adaptive.dart' show AdaptiveData, AdaptiveScope;
 import 'package:arabic_learning/core/extensions.dart';
 import 'package:arabic_learning/core/statics.dart' show StaticsVar;
 import 'package:arabic_learning/screens/home/home_screen.dart';
@@ -12,6 +13,7 @@ import 'package:arabic_learning/screens/test/test_screen.dart' show TestPage;
 import 'package:arabic_learning/package_replacement/fake_dart_io.dart' if (dart.library.io) 'dart:io' as io;
 import 'package:arabic_learning/services/app_data.dart' show AppData;
 import 'package:arabic_learning/services/global_state.dart' show Global;
+import 'package:arabic_learning/theme/tokens.dart' show AppBreakpoints;
 import 'package:arabic_learning/widgets/feedback.dart' show LoadingIndicator;
 import 'package:arabic_learning/widgets/kit.dart';
 import 'package:flutter/foundation.dart';
@@ -56,6 +58,13 @@ class MyApp extends StatelessWidget {
               theme: global.lightThemeData,
               darkTheme: global.darkThemeData,
               themeMode: global.themeMode,
+              // 在 MaterialApp 之下、Navigator 之上下发响应式数据：
+              // home 与所有 push 出的路由共享同一份 AdaptiveData，
+              // 取代原先在 build 期写 AppData().isWideScreen 的副作用。
+              builder: (context, child) => AdaptiveScope(
+                data: AdaptiveData.fromMediaQuery(context),
+                child: child ?? const SizedBox.shrink(),
+              ),
               home: const MyHomePage()
             )
           );
@@ -91,9 +100,6 @@ const List<_NavItem> _navItems = [
 
 class _MyHomePageState extends State<MyHomePage> {
   final PageController _pageController = PageController(initialPage: 0);
-
-  // 判断是否为桌面端的阈值（可根据需要调整）
-  static const double _desktopBreakpoint = 600;
 
 
   // 构建桌面端布局（侧边导航）
@@ -265,18 +271,16 @@ class _MyHomePageState extends State<MyHomePage> {
           ),
         ],
       ),
-      body: LayoutBuilder(
+      body: SafeArea(top: false, child: LayoutBuilder(
         builder: (context, constraints) {
-          // 根据屏幕宽度决定使用哪种布局
-          if (constraints.maxWidth > _desktopBreakpoint) {
-            AppData().isWideScreen = true;
+          // 根据屏幕宽度决定使用哪种布局（断点与 AdaptiveScope.isWide 一致）
+          if (constraints.maxWidth > AppBreakpoints.mobile) {
             return _buildDesktopLayout(context);
           } else {
-            AppData().isWideScreen = false;
             return _buildMobileLayout(context);
           }
         },
-      ),
+      )),
     );
   }
 }

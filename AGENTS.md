@@ -20,7 +20,7 @@ flutter analyze          # analysis_options excludes build/ and all platform dir
 - **Only one app-wide provider exists: `Global`** (`lib/vars/global.dart`). Everything else is a hand-rolled singleton (`AppData()`, `FSRS()` in `funcs/fsrs_func.dart`, static `BKSearch` in `funcs/utili.dart`) or a locally-scoped `ChangeNotifier` created inside a `MaterialPageRoute` (e.g. `PKServer`, `SingleSelectionNotifier`). `context.read<Global>()` is often used just to log.
 - **Navigation is not route-based.** Root is `MaterialApp.home` + a responsive `PageView` of 4 tabs (`Home/Learning/Test/Setting`), switched by `PageController`. No named routes, no router package. Detail screens live in `lib/sub_pages_builder/{setting,learning,test}_pages/` and are opened with `Navigator.push(MaterialPageRoute(...))`.
 - `lib/funcs/ui.dart` is the shared **widget kit** (custom `Button`, `TextContainer`, question widgets, `ClassSelectPage`) plus dialog/selection helpers — reuse it instead of raw Material widgets. `lib/vars/` holds immutable models/constants only; `lib/funcs/` holds logic.
-- `lib/main.dart` writes `AppData().isWideScreen` as a **build side effect**; layouts elsewhere depend on this global flag.
+- `lib/core/adaptive.dart` provides `AdaptiveScope` / `AdaptiveData` (mounted under `MaterialApp` via its `builder`), read with `AdaptiveScope.of(context)` (falls back to `MediaQuery` when no scope). Orientation policy in `lib/main.dart`: phones (shortest side < 600) lock portrait, tablets/desktop/Web allow all orientations via `shouldLockPortrait`.
 
 ## Storage & data
 

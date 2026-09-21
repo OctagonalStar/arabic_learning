@@ -15,7 +15,7 @@ class HelpPage extends StatelessWidget{
 
         return Scaffold(
           appBar: AppBar(title: Text("常见问题")),
-          body: ListView(
+          body: SafeArea(top: false, child: ListView(
             children: [
               ExpansionTile(
                 title: Text("点击发音按钮后没有声音"),
@@ -24,7 +24,7 @@ class HelpPage extends StatelessWidget{
                 ],
               )
             ],
-          ),
+          )),
         );
       }
     );

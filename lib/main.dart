@@ -3,6 +3,7 @@
 // 应用外壳 MyApp / MyHomePage 位于 lib/app.dart。
 
 import 'package:arabic_learning/app.dart' show MyApp;
+import 'package:arabic_learning/core/adaptive.dart' show shouldLockPortrait;
 import 'package:arabic_learning/core/statics.dart' show StaticsVar;
 import 'package:arabic_learning/package_replacement/fake_dart_io.dart' if (dart.library.io) 'dart:io' as io;
 import 'package:arabic_learning/services/global_state.dart' show Global;
@@ -29,10 +30,21 @@ void main() async {
   logger.info("日志加载成功");
   WidgetsFlutterBinding.ensureInitialized();
 
-  SystemChrome.setPreferredOrientations([
-    DeviceOrientation.portraitUp,
-    DeviceOrientation.portraitDown
-  ]);
+  // 定向策略：仅手机（非桌面 / 非 Web 且最短边 < 600）锁竖屏；
+  // 平板允许全部方向。桌面 / Web 上 SystemChrome 无副作用，直接跳过。
+  if (!kIsWeb && !StaticsVar.isDesktop) {
+    final view = WidgetsBinding.instance.platformDispatcher.views.first;
+    final double shortestSide =
+        view.physicalSize.shortestSide / view.devicePixelRatio;
+    if (shouldLockPortrait(shortestSide)) {
+      SystemChrome.setPreferredOrientations([
+        DeviceOrientation.portraitUp,
+        DeviceOrientation.portraitDown,
+      ]);
+    } else {
+      SystemChrome.setPreferredOrientations(DeviceOrientation.values);
+    }
+  }
 
   if(io.Platform.isAndroid) {
     Workmanager().initialize(callbackDispatcher);
@@ -55,7 +67,8 @@ void main() async {
       skipTaskbar: false,
       titleBarStyle: TitleBarStyle.normal,
       title: StaticsVar.appName,
-      minimumSize: Size(400, 700),
+      // 允许矮横屏窗口（如 480x420），不再强制较高的最小高度。
+      minimumSize: Size(480, 420),
     );
     windowManager.waitUntilReadyToShow(windowOptions, () async {
       await windowManager.show();

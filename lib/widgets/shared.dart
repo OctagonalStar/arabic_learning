@@ -67,7 +67,14 @@ class StatCard extends StatelessWidget {
               ],
             ),
           SizedBox(height: spacing),
-          Text(value, style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold)),
+          // 矮横屏等极端高度下卡片内部空间不足时按比例缩放数值，
+          // 正常尺寸下 FittedBox 尺寸等于文本固有尺寸，显示效果不变。
+          Flexible(
+            child: FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Text(value, style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold)),
+            ),
+          ),
         ],
       ),
     );

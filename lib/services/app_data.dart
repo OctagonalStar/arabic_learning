@@ -57,7 +57,6 @@ class AppData {
   Logger logger = Logger("AppData");
 
   List<String> internalLogCapture = [];
-  bool isWideScreen = false;
   Config config = Config();
 
   late final SharedPreferences storage;

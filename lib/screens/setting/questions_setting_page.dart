@@ -4,6 +4,7 @@ import 'package:arabic_learning/widgets/shared.dart' show ButtonLabel;
 import 'package:arabic_learning/models/config.dart';
 import 'package:arabic_learning/services/global_state.dart';
 import 'package:arabic_learning/services/app_data.dart';
+import 'package:arabic_learning/core/adaptive.dart' show AdaptiveScope;
 import 'package:arabic_learning/core/statics.dart';
 import 'package:arabic_learning/theme/tokens.dart' show AppRadius;
 import 'package:flutter/material.dart';
@@ -82,9 +83,9 @@ class _QuestionsSettingPage extends State<QuestionsSettingPage> {
       },
       child: Scaffold(
         appBar: AppBar(title: Text("题型配置")),
-        body: Column(
+        body: SafeArea(top: false, child: Column(
           children: [
-            if(!AppData().isWideScreen) TextContainer(text: "长按可拖动排序", style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant), animated: true),
+            if(!AdaptiveScope.of(context).isWide) TextContainer(text: "长按可拖动排序", style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant), animated: true),
             Expanded(
               child: ReorderableListView(
                 onReorderItem: (oldIndex, newIndex) {
@@ -172,7 +173,7 @@ class _QuestionsSettingPage extends State<QuestionsSettingPage> {
               ],
             )
           ],
-        ),
+        )),
         floatingActionButton: TweenAnimationBuilder<double>(
           tween: Tween(
             begin: 0.0,

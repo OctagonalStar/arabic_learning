@@ -2,6 +2,7 @@
 // 承载选择题 ChoiceQuestions、单词卡片题 WordCardQuestion、
 // 拼写题 SpellQuestion 与听力题 ListeningQuestion。
 
+import 'package:arabic_learning/core/adaptive.dart' show AdaptiveScope;
 import 'package:arabic_learning/core/extensions.dart';
 import 'package:arabic_learning/core/statics.dart';
 import 'package:arabic_learning/models/dict.dart' show WordItem;
@@ -78,7 +79,7 @@ class _ChoiceQuestions extends State<ChoiceQuestions> {
     // showingMode 0: 1 Row, 1: 2 Rows, 2: 4 Rows
     if(showingMode == -1){
       context.read<Global>().uiLogger.fine("未指定布局，开始计算");
-      showingMode = calculateButtonBoxLayout(widget.choices, mediaQuery.size.width);
+      showingMode = calculateButtonBoxLayout(widget.choices, AdaptiveScope.of(context));
       context.read<Global>().uiLogger.info("最终采用布局方案: $showingMode");
     }
     return Material(
@@ -309,7 +310,7 @@ class _ListeningQuestion extends State<ListeningQuestion> {
     int showingMode = widget.bottonLayout;
     if(showingMode == -1){
       context.read<Global>().uiLogger.fine("未指定布局，开始计算");
-      showingMode = calculateButtonBoxLayout(widget.choices, mediaQuery.size.width);
+      showingMode = calculateButtonBoxLayout(widget.choices, AdaptiveScope.of(context));
       context.read<Global>().uiLogger.info("最终采用布局方案: $showingMode");
     }
     return Material(

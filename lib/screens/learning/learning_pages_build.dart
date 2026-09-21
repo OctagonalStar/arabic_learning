@@ -12,6 +12,7 @@ import 'package:flutter/material.dart';
 import 'package:fsrs/fsrs.dart' show Rating;
 import 'package:provider/provider.dart';
 
+import 'package:arabic_learning/core/adaptive.dart' show AdaptiveScope;
 import 'package:arabic_learning/core/statics.dart';
 import 'package:arabic_learning/services/global_state.dart';
 import 'package:arabic_learning/services/app_data.dart';
@@ -182,9 +183,9 @@ class _InLearningPageState extends State<InLearningPage> {
             ],
           ),
         ),
-        body: Center(
+        body: SafeArea(top: false, child: Center(
           child: PageView.builder(
-            scrollDirection: AppData().isWideScreen ? Axis.vertical : Axis.horizontal,
+            scrollDirection: AdaptiveScope.of(context).isWide ? Axis.vertical : Axis.horizontal,
             physics: NeverScrollableScrollPhysics(),
             controller: controller,
             itemBuilder: (context, index) {
@@ -331,7 +332,7 @@ class _InLearningPageState extends State<InLearningPage> {
               );
             },
           )
-        )
+        ))
       ),
     );
   }
@@ -687,7 +688,10 @@ class _WordCardOverViewPage extends State<WordCardOverViewPage> {
         child: inSearch ? Icon(Icons.search_off) : Icon(Icons.search)
       ),
 
-      body: inSearch ? WordLookupLayout(lookfor: _query) : WordCardOverViewLayout()
+      body: SafeArea(
+        top: false,
+        child: inSearch ? WordLookupLayout(lookfor: _query) : WordCardOverViewLayout(),
+      )
     );
   }
 }

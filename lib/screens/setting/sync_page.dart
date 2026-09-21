@@ -44,7 +44,7 @@ class _DataSyncPage extends State<DataSyncPage> {
       appBar: AppBar(
         title: Text("同步设置"),
       ),
-      body: ListView(
+      body: SafeArea(top: false, child: ListView(
         children: [
           SettingItem(
             title: "远程",
@@ -276,7 +276,7 @@ class _DataSyncPage extends State<DataSyncPage> {
             ]
           )
         ],
-      ),
+      )),
     );
   }
 }

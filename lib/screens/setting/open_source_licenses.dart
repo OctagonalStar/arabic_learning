@@ -64,7 +64,7 @@ class OpenSourceLicensePage extends StatelessWidget {
       appBar: AppBar(
         title: Text("开放源代码许可"),
       ),
-      body: ListView(
+      body: SafeArea(top: false, child: ListView(
         children: [
           TextContainer(text: "本软件的许可证"),
           ExpansionTile(
@@ -83,7 +83,7 @@ class OpenSourceLicensePage extends StatelessWidget {
           TextContainer(text: "以下是该项目中使用的一些其他开源项目的库及其开源许可证，感谢这些项目及其贡献者的付出。"),
           ...widgets,
         ]
-      ),
+      )),
     );
   }
 }

@@ -9,6 +9,7 @@
 import 'dart:convert';
 import 'dart:ui' show ImageFilter;
 
+import 'package:arabic_learning/core/adaptive.dart' show AdaptiveScope;
 import 'package:arabic_learning/core/extensions.dart';
 import 'package:arabic_learning/core/statics.dart';
 import 'package:arabic_learning/theme/tokens.dart' show AppRadius, AppSemanticColors;
@@ -81,7 +82,7 @@ Future<ClassSelection> popSelectClasses(BuildContext context, {bool withCache = 
     context: context,
     shape: RoundedRectangleBorder(side: BorderSide(width: 1.0, color: Theme.of(context).colorScheme.outlineVariant), borderRadius: StaticsVar.br),
     isDismissible: false,
-    isScrollControlled: appData.isWideScreen,
+    isScrollControlled: AdaptiveScope.of(context).isWide,
     enableDrag: true,
     builder: (BuildContext context) {
       return ClassSelectPage(beforeSelectedClasses: beforeSelectedClasses, withReviewChoose: withReviewChoose);
@@ -1030,7 +1031,7 @@ class ClassSelectPage extends StatelessWidget {
       appBar: AppBar(
         title: Text('选择特定课程单词'),
       ),
-      body: Column(
+      body: SafeArea(top: false, child: Column(
         children: [
           Expanded(
             child: ListView(
@@ -1066,7 +1067,7 @@ class ClassSelectPage extends StatelessWidget {
             },
           ),
         ],
-      ),
+      )),
     );
   }
 }

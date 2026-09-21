@@ -30,7 +30,7 @@ class ForeFSRSSettingPage extends StatelessWidget {
       appBar: AppBar(
         title: const Text("单词规律复习设置"),
       ),
-      body: StatefulBuilder(
+      body: SafeArea(top: false, child: StatefulBuilder(
         builder: (context, setState) {
           final List<String> availableCategories = collectAllCategories();
           return ListView(
@@ -292,7 +292,7 @@ class ForeFSRSSettingPage extends StatelessWidget {
             ]
           );
         }
-      ),
+      )),
     );
   }
 }
@@ -402,7 +402,7 @@ class _MainFSRSPageState extends State<MainFSRSPage> {
           ),
         ],
       ),
-      body: PageView.builder(
+      body: SafeArea(top: false, child: PageView.builder(
         scrollDirection: Axis.vertical,
         controller: controller,
         physics: const PageScrollPhysics(),
@@ -472,7 +472,7 @@ class _MainFSRSPageState extends State<MainFSRSPage> {
             controller: controller,
           );
         }
-      )
+      ))
     );
   }
 }
@@ -608,14 +608,14 @@ class _FSRSLearningPageState extends State<FSRSLearningPage> {
     if(widget.words.isEmpty) {
       return Scaffold(
         appBar: AppBar(),
-        body: Center(child: TextContainer(text: "你选择的所有的单词都已经学习过了\n等复习吧")),
+        body: SafeArea(top: false, child: Center(child: TextContainer(text: "你选择的所有的单词都已经学习过了\n等复习吧"))),
       );
     }
     return Scaffold(
       appBar: AppBar(
         title: const Text("规律学习"),
       ),
-      body: PageView(
+      body: SafeArea(top: false, child: PageView(
         scrollDirection: Axis.horizontal,
         physics: NeverScrollableScrollPhysics(),
         controller: controllerHor,
@@ -716,7 +716,7 @@ class _FSRSLearningPageState extends State<FSRSLearningPage> {
             )
           )
         ],
-      )
+      ))
     );
   }
 }

@@ -50,7 +50,7 @@ class _PolicyPage extends State<PolicyPage> {
     context.read<Global>().uiLogger.info("构建PP&TOU签署页面");
 
     return Scaffold(
-      body: Column(
+      body: SafeArea(child: Column(
         children: [
           Expanded(
             child: ListView(
@@ -109,7 +109,7 @@ class _PolicyPage extends State<PolicyPage> {
             ],
           ),
         ],
-      ),
+      )),
     );
   }
 }

@@ -38,7 +38,7 @@ class _ForeListeningSettingPage extends State<ForeListeningSettingPage> {
       appBar: AppBar(
         title: Text('自主听写预设置'),
       ),
-      body: Center(
+      body: SafeArea(top: false, child: Center(
         child: ListView(
           children: [
             TextContainer(text: "请先完成以下选项以开始听写:"),
@@ -207,7 +207,7 @@ class _ForeListeningSettingPage extends State<ForeListeningSettingPage> {
             ),
           ],
         )
-      ),
+      )),
     );
   }
 }
@@ -301,7 +301,7 @@ class _MainListeningPageState extends State<MainListeningPage> {
           automaticallyImplyLeading: false,
           title: Text("听写完成"),
         ),
-        body: Column(
+        body: SafeArea(top: false, child: Column(
           children: [
             Expanded(
               child: ListView(
@@ -317,7 +317,7 @@ class _MainListeningPageState extends State<MainListeningPage> {
               child: Text("返回主页"),
             )
           ],
-        )
+        ))
       );
     }
     return PopScope(
@@ -341,7 +341,7 @@ class _MainListeningPageState extends State<MainListeningPage> {
             },
           ),
         ),
-        body: Center(
+        body: SafeArea(top: false, child: Center(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             crossAxisAlignment: CrossAxisAlignment.center,
@@ -371,7 +371,7 @@ class _MainListeningPageState extends State<MainListeningPage> {
               )
             ],
           ),
-        )
+        ))
       ),
     );
   }

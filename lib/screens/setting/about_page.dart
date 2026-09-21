@@ -19,7 +19,7 @@ class AboutPage extends StatelessWidget {
       appBar: AppBar(
         title: Center(child: Text("关于")),
       ),
-      body: ListView(
+      body: SafeArea(top: false, child: ListView(
         children: [
           TextContainer(text: "该软件仅供学习使用，请勿用于商业用途。\n该软件基于GNU AFFERO GENERAL PUBLIC LICENSE (Version 3)协议开源，协议原文详见页面底部。", style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Theme.of(context).colorScheme.error, fontWeight: FontWeight.bold)),
           TextContainer(text: "Copyright (C) <2025>  <OctagonalStar>\n该软件通过GNU GENERAL PUBLIC LICENSE (Version 3)协议授权给 \"${AppData().config.user}\"，协议内容详见开放源代码许可页面"),
@@ -63,7 +63,7 @@ class AboutPage extends StatelessWidget {
             )
           ),
         ],
-      ),
+      )),
     );
   }
 }

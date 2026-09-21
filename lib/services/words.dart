@@ -4,6 +4,7 @@
 
 import 'dart:math';
 
+import 'package:arabic_learning/core/adaptive.dart' show AdaptiveData;
 import 'package:arabic_learning/core/date_utils.dart';
 import 'package:arabic_learning/core/extensions.dart' show RemoveDuplicatesExtension;
 import 'package:arabic_learning/models/config.dart' show LearningConfig;
@@ -23,9 +24,14 @@ List<WordItem> getSelectedWords(DictData wordData , List<ClassItem> selectedClas
   return ans;
 }
 
-int calculateButtonBoxLayout(List<String> possible, double width){
+/// 计算选项按钮的排布模式（0: 1 行, 1: 2 行, 2: 4 行）。
+///
+/// 布局数据由调用方通过 [layout] 显式传入（原先读取全局
+/// `AppData().isWideScreen`，现由 `AdaptiveScope` 提供）。
+int calculateButtonBoxLayout(List<String> possible, AdaptiveData layout) {
   // showingMode 0: 1 Row, 1: 2 Rows, 2: 4 Rows
-  bool isWideScreen = AppData().isWideScreen;
+  final bool isWideScreen = layout.isWide;
+  final double width = layout.width;
   for(int i = 1; i < 4; i++) {
     if(possible[i].length * 16 > width * (isWideScreen ? 0.21 : 0.8)){
       if (isWideScreen) {

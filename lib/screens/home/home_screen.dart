@@ -120,7 +120,7 @@ class _DailyWord extends State<DailyWord> {
           });
         } else {
           context.read<Global>().uiLogger.info("跳转: DailyWord => SettingPage");
-          Navigator.of(context).push(MaterialPageRoute(builder: (context) => Scaffold(appBar: AppBar(title: Text("设置")) , body: SettingPage())));
+          Navigator.of(context).push(MaterialPageRoute(builder: (context) => Scaffold(appBar: AppBar(title: Text("设置")) , body: SafeArea(top: false, child: SettingPage()))));
         }
       },
       backgroundColor: Theme.of(context).colorScheme.primaryContainer,
