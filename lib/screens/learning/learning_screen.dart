@@ -149,7 +149,9 @@ class LearningPage extends StatelessWidget {
                   );
                 },
                 icon: Icon(Icons.push_pin, size: 24),
-                child: ButtonLabel(fit: BoxFit.contain, child: Text("学习推送单词", style: withoutColor(Theme.of(context).textTheme.displaySmall!))),
+                // 次级全宽按钮统一 titleLarge(22)：与主 CTA（学习/复习，displaySmall 36）
+                // 拉开层级；ButtonLabel 默认 scaleDown 只缩不放，短文本不会被放大填满按钮。
+                child: ButtonLabel(child: Text("学习推送单词", style: withoutColor(Theme.of(context).textTheme.titleLarge!))),
               ),
             ],
             SizedBox(height: gap),
@@ -166,7 +168,8 @@ class LearningPage extends StatelessWidget {
                 );
               },
               icon: Icon(Icons.abc, size: 24),
-              child: Text("词汇总览", style: withoutColor(Theme.of(context).textTheme.displaySmall!)),
+              // 与「学习推送单词」同为次级全宽按钮，统一 titleLarge(22)。
+              child: Text("词汇总览", style: withoutColor(Theme.of(context).textTheme.titleLarge!)),
             ),
           ]
         );

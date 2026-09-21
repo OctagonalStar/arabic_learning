@@ -201,7 +201,9 @@ class _QuestionsSettingPage extends State<QuestionsSettingPage> {
                         });
                       }, 
                       icon: Icon(Icons.add),
-                      child: ButtonLabel(fit: BoxFit.contain, child: Text("添加 ${castMap[i]}")),
+                      // 依主题 labelLarge(14)；ButtonLabel 默认 scaleDown 只缩不放，
+                      // 各展开项字号不随文案长度变化。
+                      child: ButtonLabel(child: Text("添加 ${castMap[i]}")),
                     );
                   }),
                   Button(
@@ -215,7 +217,7 @@ class _QuestionsSettingPage extends State<QuestionsSettingPage> {
                       });
                     }, 
                     icon: Icon(value > 0.5 ?  Icons.deselect : Icons.add),
-                    child: value > 0.5 ? ButtonLabel(fit: BoxFit.contain, child: Text("收起")) : null,
+                    child: value > 0.5 ? ButtonLabel(child: Text("收起")) : null,
                   )
                 ],
               ),

@@ -285,6 +285,9 @@ class ChooseButtons extends StatelessWidget {
           height: settingShowingMode == 0 ? mediaQuery.size.height * 0.15 : settingShowingMode == 1 ? mediaQuery.size.height * 0.12 : mediaQuery.size.height * 0.09,
           isAnimated: isShowAnimation,
           child: FittedBox(
+            // 选项文字显式只缩不放（FittedBox 默认 contain）：按钮当前以松约束
+            // 布局文字，二者观感一致；显式 scaleDown 防止后续布局变化引入放大。
+            fit: BoxFit.scaleDown,
             child: Text(
               options[i],
               style: arabicTextStyle(

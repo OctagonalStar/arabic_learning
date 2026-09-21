@@ -258,7 +258,7 @@ class PKScoreRow extends StatelessWidget {
 /// [tipWidth] / [nextWidth] 按动画进度计算按钮宽度，[gapWidth] 计算间距宽度，
 /// [gapHeight] 为间距高度（可为 null）；[nextThreshold] 控制右侧按钮出现的
 /// 进度阈值；[tipLabel] 按进度生成左侧文案；[nextLabel] 为右侧文案并自动包
-/// 裹为 Expanded + FittedBox([nextFit])；[tipLabelExpanded] 控制左侧文案是否
+/// 裹为 Expanded + FittedBox([nextFit])（默认 scaleDown 只缩不放，禁止 contain）；[tipLabelExpanded] 控制左侧文案是否
 /// 同样包裹；[tipIcon] / [nextIcon] / [nextIconDirection] 与
 /// [tipBackgroundColor] / [nextBackgroundColor] 原样传递给 [Button]。
 /// 动画时长固定为 AppMotion.medium，曲线为 AppMotion.standardCurve。
@@ -346,12 +346,21 @@ class RevealableActionBar extends StatelessWidget {
 /// 按钮标签（Expanded + FittedBox 惯用法）
 ///
 /// 与直接书写 `Expanded(child: FittedBox(fit: ..., child: child))` 完全等价，
-/// [fit] 默认 [BoxFit.scaleDown]，需要默认的 [BoxFit.contain] 时显式传入。
+/// [fit] 默认且推荐 [BoxFit.scaleDown]（只在放不下时缩小）。
+///
+/// 按钮文本**禁止**传入 [BoxFit.contain]：`Expanded` 会给 FittedBox 一个紧
+/// 宽度约束，`contain` 会把短文本放大到填满按钮，导致「文字特大」以及同组
+/// 按钮因文案长度不同而字号不一。开发期由构造函数断言拦截。
 class ButtonLabel extends StatelessWidget {
   final Widget child;
   final BoxFit fit;
 
-  const ButtonLabel({super.key, required this.child, this.fit = BoxFit.scaleDown});
+  const ButtonLabel({super.key, required this.child, this.fit = BoxFit.scaleDown})
+      : assert(
+          fit != BoxFit.contain,
+          '按钮标签禁止使用 BoxFit.contain：FittedBox 会把文本放大填满按钮，'
+          '请使用默认的 BoxFit.scaleDown（只缩不放）。',
+        );
 
   @override
   Widget build(BuildContext context) {

@@ -142,6 +142,8 @@ class ReadingUnitButton extends StatelessWidget {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     SizedBox(width: mediaQuery.size.width * 0.02),
+                    // 装饰性难度数字：固定 64 号；FittedBox 宽度约束不紧（Row
+                    // 内自然宽度），contain 只会缩小不会放大，故保留。
                     FittedBox(
                       fit: BoxFit.contain,
                       child: Text(

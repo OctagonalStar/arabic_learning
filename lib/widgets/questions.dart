@@ -111,7 +111,9 @@ class _ChoiceQuestions extends State<ChoiceQuestions> {
                         playing = false;
                       });
                     },
-                    child: ButtonLabel(fit: BoxFit.contain, child: Text(widget.mainWord, style: arabicTextStyle(context, widget.mainWord, base: withoutColor(Theme.of(context).textTheme.displayLarge!)))),
+                    // displayLarge(57) 为封顶字号：长词由 scaleDown 缩小，
+                    // 短词保持封顶而不会被 contain 放大填满按钮。
+                    child: ButtonLabel(child: Text(widget.mainWord, style: arabicTextStyle(context, widget.mainWord, base: withoutColor(Theme.of(context).textTheme.displayLarge!)))),
                   );
                 }
               ),

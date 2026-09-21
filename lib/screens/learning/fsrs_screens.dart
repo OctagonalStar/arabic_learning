@@ -693,7 +693,6 @@ class _FSRSLearningPageState extends State<FSRSLearningPage> {
                   nextWidth: (value) => mediaQuery.size.width * 0.5 * value,
                   nextIcon: Icon(index == widget.words.length-1 ? Icons.done_all : Icons.arrow_downward),
                   nextLabel: index == widget.words.length-1 ? "完成学习" : "下一题",
-                  nextFit: BoxFit.contain,
                   onNextClicked: () {
                     if(index == widget.words.length-1) {
                       controllerHor.nextPage(duration: AppMotion.medium, curve: AppMotion.standardCurve);
