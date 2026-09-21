@@ -130,7 +130,7 @@ class ReadingUnitButton extends StatelessWidget {
                       child: Text(
                         unit.title,
                         maxLines: 1,
-                        textDirection: unit.title.isArabic() ? TextDirection.rtl : TextDirection.ltr,
+                        textDirection: unit.title.textDirection,
                         style: Theme.of(context).primaryTextTheme.headlineLarge,
                       ),
                     ),
@@ -791,7 +791,7 @@ class _QuestionConfigPage extends State<QuestionConfigPage> {
               end: Expanded(
                 child: TextField(
                   controller: themeEditController,
-                  textDirection: themeEditController.text.isArabic() ? TextDirection.rtl : TextDirection.ltr,
+                  textDirection: themeEditController.text.textDirection,
                   maxLines: 1,
                   decoration: appInputDecoration(
                     context,

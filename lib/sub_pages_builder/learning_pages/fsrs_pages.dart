@@ -505,8 +505,7 @@ class _FSRSReviewCardPage extends State<FSRSReviewCardPage> {
         options = const ["记得很清楚", "还记得", "回忆困难", "忘了"];
         correct = -1;
       } else {
-        List<WordItem> optionWords = getRandomWords(4, appData.wordData, include: wordData[widget.wordID], preferClass: !widget.fsrs.config.preferSimilar, rnd: widget.rnd);
-        options = List.generate(4, (int index) => optionWords[index].chinese, growable: false);
+        options = buildChineseChoiceOptions(wordData[widget.wordID], appData.wordData, preferSimilar: widget.fsrs.config.preferSimilar, rnd: widget.rnd);
         correct  = options!.indexOf(appData.wordData.words[widget.wordID].chinese);
       }
     }
@@ -586,9 +585,7 @@ class _FSRSLearningPageState extends State<FSRSLearningPage> {
   void initState() {
     final Random rnd = Random();
     for(WordItem word in widget.words) {
-      List<WordItem> optionWords = getRandomWords(4, AppData().wordData, include: word, preferClass: !widget.fsrs.config.preferSimilar, rnd: rnd);
-      List<String> option = List.generate(4, (int index) => optionWords[index].chinese, growable: false);
-      options.add(option);
+      options.add(buildChineseChoiceOptions(word, AppData().wordData, preferSimilar: widget.fsrs.config.preferSimilar, rnd: rnd));
     }
     super.initState();
   }

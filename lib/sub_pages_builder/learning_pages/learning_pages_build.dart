@@ -563,7 +563,7 @@ class _WordCardOverViewPage extends State<WordCardOverViewPage> {
                 child: SizedBox(
                   width: mediaQuery.size.width * value,
                   child: TextField(
-                    textDirection: searchController.text.isArabic() ? TextDirection.rtl : TextDirection.ltr,
+                    textDirection: searchController.text.textDirection,
                     controller: searchController,
                     autofocus: true,
                     expands: false,

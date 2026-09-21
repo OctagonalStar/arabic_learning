@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:math';
 
+import 'package:arabic_learning/funcs/date_utils.dart';
 import 'package:arabic_learning/vars/config_structure.dart';
 import 'package:arabic_learning/vars/statics_var.dart';
 import 'package:workmanager/workmanager.dart';
@@ -51,7 +52,7 @@ Future<bool> sendNotification() async {
   final Config config = Config.buildFromMap(jsonDecode(configText));
   
   // 如果当天连胜续了就不通知
-  if(config.learning.lastDate == DateTime.now().difference(DateTime(2025, 11, 1)).inDays) return Future.value(true);
+  if(config.learning.lastDate == daysSinceEpoch()) return Future.value(true);
   // 起床前不通知
   if(DateTime.now().hour < 7) return Future.value(true);
   

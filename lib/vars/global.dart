@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:arabic_learning/funcs/date_utils.dart';
 import 'package:arabic_learning/funcs/fsrs_func.dart';
 import 'package:arabic_learning/funcs/utili.dart';
 import 'package:logging/logging.dart';
@@ -161,7 +162,7 @@ class Global with ChangeNotifier {
   }
   
   void updateLearningStreak(){
-    final int nowDate = DateTime.now().difference(DateTime(2025, 11, 1)).inDays;
+    final int nowDate = daysSinceEpoch();
     if (nowDate == AppData().config.learning.lastDate) return;
     logger.info("保存学习进度中");
     // 以 2025/11/1 为基准计算天数（因为这个bug是这天修的:} ）

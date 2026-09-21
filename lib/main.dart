@@ -111,6 +111,22 @@ class MyHomePage extends StatefulWidget {
   State<MyHomePage> createState() => _MyHomePageState();
 }
 
+/// 导航目的地定义：桌面端 NavigationRail 与移动端 NavigationBar 共用
+class _NavItem {
+  final IconData icon;
+  final IconData selectedIcon;
+  final String label;
+
+  const _NavItem({required this.icon, required this.selectedIcon, required this.label});
+}
+
+const List<_NavItem> _navItems = [
+  _NavItem(icon: Icons.home_outlined, selectedIcon: Icons.home, label: '主页'),
+  _NavItem(icon: Icons.book_outlined, selectedIcon: Icons.book, label: '学习'),
+  _NavItem(icon: Icons.edit_outlined, selectedIcon: Icons.edit, label: '测试'),
+  _NavItem(icon: Icons.settings_applications_outlined, selectedIcon: Icons.settings_applications, label: '设置'),
+];
+
 
 class _MyHomePageState extends State<MyHomePage> {
   final PageController _pageController = PageController(initialPage: 0);
@@ -133,27 +149,13 @@ class _MyHomePageState extends State<MyHomePage> {
           },
           labelType: NavigationRailLabelType.selected,
           backgroundColor: Theme.of(context).colorScheme.onPrimary.withAlpha(150),
-          destinations: const [
-            NavigationRailDestination(
-              icon: Icon(Icons.home_outlined),
-              selectedIcon: Icon(Icons.home),
-              label: Text('主页'),
-            ),
-            NavigationRailDestination(
-              icon: Icon(Icons.book_outlined),
-              selectedIcon: Icon(Icons.book),
-              label: Text('学习'),
-            ),
-            NavigationRailDestination(
-              icon: Icon(Icons.edit_outlined),
-              selectedIcon: Icon(Icons.edit),
-              label: Text('测试'),
-            ),
-            NavigationRailDestination(
-              icon: Icon(Icons.settings_applications_outlined),
-              selectedIcon: Icon(Icons.settings_applications),
-              label: Text('设置'),
-            ),
+          destinations: [
+            for (final _NavItem item in _navItems)
+              NavigationRailDestination(
+                icon: Icon(item.icon),
+                selectedIcon: Icon(item.selectedIcon),
+                label: Text(item.label),
+              ),
           ],
         ),
         // 垂直分隔线
@@ -209,27 +211,13 @@ class _MyHomePageState extends State<MyHomePage> {
           animationDuration: Durations.medium2,
           labelBehavior: NavigationDestinationLabelBehavior.onlyShowSelected,
           backgroundColor: Theme.of(context).colorScheme.onPrimary.withAlpha(150),
-          destinations: const [
-            NavigationDestination(
-              icon: Icon(Icons.home_outlined),
-              selectedIcon: Icon(Icons.home),
-              label: '主页',
-            ),
-            NavigationDestination(
-              icon: Icon(Icons.book_outlined),
-              selectedIcon: Icon(Icons.book),
-              label: '学习',
-            ),
-            NavigationDestination(
-              icon: Icon(Icons.edit_outlined),
-              selectedIcon: Icon(Icons.edit),
-              label: '测试',
-            ),
-            NavigationDestination(
-              icon: Icon(Icons.settings_applications_outlined),
-              selectedIcon: Icon(Icons.settings_applications),
-              label: '设置',
-            ),
+          destinations: [
+            for (final _NavItem item in _navItems)
+              NavigationDestination(
+                icon: Icon(item.icon),
+                selectedIcon: Icon(item.selectedIcon),
+                label: item.label,
+              ),
           ]
         )
       ],

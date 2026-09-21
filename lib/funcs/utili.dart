@@ -8,6 +8,7 @@ import 'package:path_provider/path_provider.dart' as path_provider;
 import 'package:dio/dio.dart';
 import 'package:just_audio/just_audio.dart';
 
+import 'package:arabic_learning/funcs/date_utils.dart';
 import 'package:arabic_learning/vars/statics_var.dart';
 import 'package:arabic_learning/vars/config_structure.dart';
 import 'package:arabic_learning/vars/global.dart';
@@ -164,6 +165,9 @@ extension StringExtensions on String {
     final arabicRegExp = RegExp(r'[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\uFB50-\uFDFF\uFE70-\uFEFF]');
     return arabicRegExp.hasMatch(this);
   }
+
+  /// 文本方向：包含阿拉伯语字符时为 RTL，否则为 LTR
+  TextDirection get textDirection => isArabic() ? TextDirection.rtl : TextDirection.ltr;
   String removeAracicExtensionPart(){
     String res = this;
     res = res.replaceAll(RegExp(r'[\u064B-\u065F\u0640\u0670\u06D6-\u06ED]'), ""); 
@@ -208,7 +212,7 @@ extension StringExtensions on String {
 }
 
 int getStrokeDays(LearningConfig config) {
-  return (DateTime.now().difference(DateTime(2025, 11, 1)).inDays - config.lastDate > 1) ? 0 : (config.lastDate - config.startDate + 1);
+  return (daysSinceEpoch() - config.lastDate > 1) ? 0 : (config.lastDate - config.startDate + 1);
 }
 
 extension ZFillExtension on num {
@@ -298,6 +302,24 @@ List<WordItem> getRandomWords(int count, DictData dict, {WordItem? include, bool
   if(shuffle) wordList.shuffle();
 
   return wordList;
+}
+
+/// 生成选择题的 4 个中文选项（包含 [word] 自身）
+///
+/// [preferSimilar] 为真时优先选择与 [word] 相似的单词（内部取反后传给
+/// [getRandomWords] 的 `preferClass`）。参数求值顺序、随机数消耗次数与顺序
+/// 均与原先在 fsrs_pages 中直接书写的
+/// `getRandomWords(4, dict, include: word, preferClass: !preferSimilar, rnd: rnd)`
+/// + `List.generate(4, (index) => optionWords[index].chinese, growable: false)`
+/// 完全一致。
+List<String> buildChineseChoiceOptions(
+  WordItem word,
+  DictData dict, {
+  required bool preferSimilar,
+  required Random rnd,
+}) {
+  final List<WordItem> optionWords = getRandomWords(4, dict, include: word, preferClass: !preferSimilar, rnd: rnd);
+  return List.generate(4, (int index) => optionWords[index].chinese, growable: false);
 }
 
 /// 内部极简 BK-Tree 节点。

@@ -3,6 +3,7 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import 'package:arabic_learning/funcs/date_utils.dart';
 import 'package:arabic_learning/funcs/shared_widgets.dart';
 import 'package:arabic_learning/funcs/ui.dart';
 import 'package:arabic_learning/funcs/utili.dart';
@@ -33,7 +34,7 @@ class HomePage extends StatelessWidget {
               spacing: mediaQuery.size.height * 0.03,
               label: '连胜天数',
               value: getStrokeDays(AppData().config.learning).toString(),
-              statusIcon: AppData().config.learning.lastDate == DateTime.now().difference(DateTime(2025, 11, 1)).inDays
+              statusIcon: AppData().config.learning.lastDate == daysSinceEpoch()
                 ? Icon(Icons.done, size: 15.0, color: Colors.tealAccent)
                 : Icon(Icons.error_outline, size: 15.0, color: Colors.amber),
             ),
