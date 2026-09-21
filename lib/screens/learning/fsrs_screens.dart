@@ -1,6 +1,7 @@
 import 'dart:math';
 
 import 'package:arabic_learning/models/dict.dart';
+import 'package:flutter/foundation.dart' show clampDouble;
 import 'package:flutter/material.dart';
 import 'package:fsrs/fsrs.dart' show Rating;
 import 'package:provider/provider.dart';
@@ -423,7 +424,7 @@ class _MainFSRSPageState extends State<MainFSRSPage> {
                 children: [
                   TextContainer(
                     text: "已载入待复习队列\n上滑页面开始复习",
-                    size: Size(mediaQuery.size.width * 0.8, mediaQuery.size.height * 0.4),
+                    size: Size(mediaQuery.size.width * 0.8, clampDouble(mediaQuery.size.height * 0.4, 140.0, 340.0)),
                     textAlign: TextAlign.center,
                   ),
                   Icon(Icons.arrow_upward, size: 48.0, color: Theme.of(context).colorScheme.onSurfaceVariant)
@@ -448,7 +449,7 @@ class _MainFSRSPageState extends State<MainFSRSPage> {
                   children: [
                     TextContainer(
                       text: "太棒了！当前没有任何卡片需要复习！\n若刚复习完请等待下一个间隔",
-                      size: Size(mediaQuery.size.width * 0.8, mediaQuery.size.height * 0.4),
+                      size: Size(mediaQuery.size.width * 0.8, clampDouble(mediaQuery.size.height * 0.4, 140.0, 340.0)),
                       textAlign: TextAlign.center,
                     ),
                     Button(
@@ -517,7 +518,7 @@ class _FSRSReviewCardPage extends State<FSRSReviewCardPage> {
     return Material(
       child: ChoiceQuestions(
         mainWord: widget.fsrs.config.selfEvaluate ? "[selfEvaluate]" : wordData[widget.wordID].arabic, 
-        midWidget: widget.fsrs.config.selfEvaluate ? WordCard(word: wordData[widget.wordID], width: mediaQuery.size.width * 0.8, height: mediaQuery.size.height * 0.4, useMask: !choosed) : null,
+        midWidget: widget.fsrs.config.selfEvaluate ? WordCard(word: wordData[widget.wordID], width: mediaQuery.size.width * 0.8, height: clampDouble(mediaQuery.size.height * 0.4, 150.0, 340.0), useMask: !choosed) : null,
         choices: options!, 
         allowAudio: true, 
         allowAnitmation: !widget.fsrs.config.selfEvaluate,
@@ -555,7 +556,7 @@ class _FSRSReviewCardPage extends State<FSRSReviewCardPage> {
             });
           },
           gapWidth: (value) => mediaQuery.size.width*0.02*value,
-          gapHeight: mediaQuery.size.height * 0.1,
+          gapHeight: clampDouble(mediaQuery.size.height * 0.1, 16.0, 72.0),
           nextThreshold: 0.3,
           nextWidth: (value) => mediaQuery.size.width * (widget.fsrs.config.selfEvaluate ? 0.8 : 0.5) * value,
           nextIcon: Icon(Icons.arrow_downward),
@@ -631,7 +632,7 @@ class _FSRSLearningPageState extends State<FSRSLearningPage> {
                   WordCard(word: widget.words[index]),
                   Expanded(child: SizedBox()),
                   Button(
-                    size: Size(mediaQuery.size.width * 0.8, mediaQuery.size.height * 0.15),
+                    size: Size(mediaQuery.size.width * 0.8, clampDouble(mediaQuery.size.height * 0.15, 64.0, 170.0)),
                     icon: Icon(index == widget.words.length-1 ? Icons.arrow_forward : Icons.arrow_downward),
                     onPressed: (){
                       if(index == widget.words.length-1) {

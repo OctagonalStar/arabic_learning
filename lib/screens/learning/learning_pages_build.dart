@@ -8,6 +8,7 @@ import 'package:arabic_learning/services/words.dart' show collectAllCategories, 
 import 'package:arabic_learning/services/tts.dart' show playTextToSpeech;
 import 'package:arabic_learning/models/config.dart';
 import 'package:arabic_learning/models/dict.dart';
+import 'package:flutter/foundation.dart' show clampDouble;
 import 'package:flutter/material.dart';
 import 'package:fsrs/fsrs.dart' show Rating;
 import 'package:provider/provider.dart';
@@ -167,7 +168,7 @@ class _InLearningPageState extends State<InLearningPage> {
                       value: 0.05 + value * 0.95,
                       backgroundColor: Theme.of(context).colorScheme.secondaryContainer,
                       color: Theme.of(context).colorScheme.secondary,
-                      minHeight: mediaQuery.size.height * 0.04,
+                      minHeight: clampDouble(mediaQuery.size.height * 0.04, 8.0, 24.0),
                       borderRadius: StaticsVar.br,
                     );
                   },
@@ -206,7 +207,7 @@ class _InLearningPageState extends State<InLearningPage> {
                   word: testItem.testWord,
                   hint: "尝试自行回忆以下单词",
                   bottomWidget: Button(
-                    size: Size(mediaQuery.size.width * 0.8, mediaQuery.size.height * 0.1),
+                    size: Size(mediaQuery.size.width * 0.8, clampDouble(mediaQuery.size.height * 0.1, 48.0, 96.0)),
                     onPressed: (){
                       controller.nextPage(duration: Durations.medium2, curve: StaticsVar.curve);
                       correctCount++;
@@ -406,65 +407,86 @@ class _ConcludePageState extends State<ConcludePage> {
   @override
   Widget build(BuildContext context) {
     context.read<Global>().uiLogger.info("构建 ConcludePage");
-    MediaQueryData mediaQuery = MediaQuery.of(context);
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          ConclusionCard(
-            visible: visible1,
-            slideFromLeft: true,
-            color: Theme.of(context).colorScheme.primaryContainer,
-            contentBuilder: (context, value) => Row(
-              children: [
-                Expanded(child: SizedBox()),
-                Text("已完成单词:  ", style: Theme.of(context).textTheme.titleLarge),
-                Text((widget.data[0] * value).ceil().toString(), style: Theme.of(context).textTheme.headlineLarge?.copyWith(fontWeight: FontWeight.bold)),
-                SizedBox(width: mediaQuery.size.width * 0.05),
-                CircularProgressIndicator(value: value)
-              ],
+    // 结果卡尺寸按页面实际可用约束推导并夹在合理区间；高度不足时整页可滚动，
+    // 避免矮横屏下三张卡片 + 间距 + 按钮超出视口。
+    return LayoutBuilder(
+      builder: (BuildContext context, BoxConstraints constraints) {
+        final double width = constraints.maxWidth;
+        final double height = constraints.maxHeight;
+        final double cardHeight = clampDouble(height * 0.2, 88.0, 170.0);
+        final double gap = clampDouble(height * 0.05, 12.0, 36.0);
+        final double buttonHeight = clampDouble(height * 0.1, 48.0, 96.0);
+        return SingleChildScrollView(
+          child: ConstrainedBox(
+            constraints: BoxConstraints(minHeight: constraints.maxHeight),
+            child: IntrinsicHeight(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  ConclusionCard(
+                    visible: visible1,
+                    slideFromLeft: true,
+                    color: Theme.of(context).colorScheme.primaryContainer,
+                    width: width * 0.8,
+                    height: cardHeight,
+                    contentBuilder: (context, value) => Row(
+                      children: [
+                        Expanded(child: SizedBox()),
+                        Text("已完成单词:  ", style: Theme.of(context).textTheme.titleLarge),
+                        Text((widget.data[0] * value).ceil().toString(), style: Theme.of(context).textTheme.headlineLarge?.copyWith(fontWeight: FontWeight.bold)),
+                        SizedBox(width: width * 0.05),
+                        CircularProgressIndicator(value: value)
+                      ],
+                    ),
+                  ),
+                  SizedBox(height: gap),
+                  ConclusionCard(
+                    visible: visible2,
+                    slideFromLeft: false,
+                    color: Theme.of(context).colorScheme.secondaryContainer,
+                    width: width * 0.8,
+                    height: cardHeight,
+                    contentBuilder: (context, value) => Row(
+                      children: [
+                        CircularProgressIndicator(value: value * (widget.data[1]/widget.data[0])),
+                        SizedBox(width: width * 0.05),
+                        Text("回答正确数:  ", style: Theme.of(context).textTheme.titleLarge),
+                        Text((widget.data[1] * value).ceil().toString(), style: Theme.of(context).textTheme.headlineLarge?.copyWith(fontWeight: FontWeight.bold)),
+                        Expanded(child: SizedBox()),
+                      ],
+                    ),
+                  ),
+                  SizedBox(height: gap),
+                  ConclusionCard(
+                    visible: visible3,
+                    slideFromLeft: true,
+                    color: Theme.of(context).colorScheme.primaryContainer,
+                    width: width * 0.8,
+                    height: cardHeight,
+                    contentBuilder: (context, value) => Row(
+                      children: [
+                        Expanded(child: SizedBox()),
+                        Text("总耗时:  ", style: Theme.of(context).textTheme.titleLarge),
+                        Text("${(widget.data[2] * value).ceil().toString()} 秒", style: Theme.of(context).textTheme.headlineLarge?.copyWith(fontWeight: FontWeight.bold)),
+                        SizedBox(width: width * 0.05),
+                        CircularProgressIndicator(value: value)
+                      ],
+                    ),
+                  ),
+                  Expanded(child: SizedBox()),
+                  Button(
+                    size: Size(width, buttonHeight),
+                    onPressed: (){
+                      Navigator.pop(context, true);
+                    },
+                    child: Text("返回主页")
+                  ),
+                ],
+              ),
             ),
           ),
-          SizedBox(height: mediaQuery.size.height * 0.05),
-          ConclusionCard(
-            visible: visible2,
-            slideFromLeft: false,
-            color: Theme.of(context).colorScheme.secondaryContainer,
-            contentBuilder: (context, value) => Row(
-              children: [
-                CircularProgressIndicator(value: value * (widget.data[1]/widget.data[0])),
-                SizedBox(width: mediaQuery.size.width * 0.05),
-                Text("回答正确数:  ", style: Theme.of(context).textTheme.titleLarge),
-                Text((widget.data[1] * value).ceil().toString(), style: Theme.of(context).textTheme.headlineLarge?.copyWith(fontWeight: FontWeight.bold)),
-                Expanded(child: SizedBox()),
-              ],
-            ),
-          ),
-          SizedBox(height: mediaQuery.size.height * 0.05),
-          ConclusionCard(
-            visible: visible3,
-            slideFromLeft: true,
-            color: Theme.of(context).colorScheme.primaryContainer,
-            contentBuilder: (context, value) => Row(
-              children: [
-                Expanded(child: SizedBox()),
-                Text("总耗时:  ", style: Theme.of(context).textTheme.titleLarge),
-                Text("${(widget.data[2] * value).ceil().toString()} 秒", style: Theme.of(context).textTheme.headlineLarge?.copyWith(fontWeight: FontWeight.bold)),
-                SizedBox(width: mediaQuery.size.width * 0.05),
-                CircularProgressIndicator(value: value)
-              ],
-            ),
-          ),
-          Expanded(child: SizedBox()),
-          Button(
-            size: Size(mediaQuery.size.width, mediaQuery.size.height * 0.1),
-            onPressed: (){
-              Navigator.pop(context, true);
-            },
-            child: Text("返回主页")
-          ),
-        ],
-      ),
+        );
+      },
     );
   }
 }
@@ -703,6 +725,56 @@ class WordCardOverViewLayout extends StatefulWidget {
   State<StatefulWidget> createState() => _WordCardOverViewLayout();
 }
 
+/// 词汇总览 / 查找网格列数：用户固定列数（>0）优先，否则按可用宽度约每
+/// 300 逻辑像素一列，至少一列。
+int _overviewGridColumns(double availableWidth) {
+  final int forced = AppData().config.learning.overviewForceColumn;
+  if(forced > 0) return forced;
+  return max(1, availableWidth ~/ 300);
+}
+
+/// 词汇总览中单个班级的网格：列数与 cell 尺寸由网格区域的可用宽高共同决定。
+///
+/// cell 边长取 `min(可用宽度/列数, 可用高度)`：保证 cell 为方形且不会高于
+/// 容器可视高度，矮屏下自动缩小；间隙由 margin 等效的内边距提供。
+class _WordOverviewGrid extends StatelessWidget {
+  const _WordOverviewGrid({required this.classItem});
+
+  final ClassItem classItem;
+
+  @override
+  Widget build(BuildContext context) {
+    final AppData appData = AppData();
+    return LayoutBuilder(
+      builder: (BuildContext context, BoxConstraints constraints) {
+        final int columns = _overviewGridColumns(constraints.maxWidth);
+        final double cellWidth = constraints.maxWidth / columns;
+        final double side = max(min(cellWidth, constraints.maxHeight), 1.0);
+        final double cardSide = max(side - 16.0, 0.0);
+        return GridView.builder(
+          itemCount: classItem.wordIndexs.length,
+          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: columns,
+            // 高度 = side，宽度 = cellWidth；两者相等时为正方形。
+            childAspectRatio: cellWidth / side,
+          ),
+          itemBuilder: (context, index) {
+            return Center(
+              child: WordCard(
+                word: appData.wordData.words[classItem.wordIndexs[index]],
+                useMask: false,
+                compact: true,
+                width: cardSide,
+                height: cardSide,
+              ),
+            );
+          }
+        );
+      },
+    );
+  }
+}
+
 class _WordCardOverViewLayout extends State<WordCardOverViewLayout> {
   final ScrollController jsonController = ScrollController();
   final ScrollController classController = ScrollController();
@@ -718,99 +790,90 @@ class _WordCardOverViewLayout extends State<WordCardOverViewLayout> {
 
   @override
   Widget build(BuildContext context) {
-    MediaQueryData mediaQuery = MediaQuery.of(context);
-    AppData appData = AppData();
+    final AppData appData = AppData();
 
-    return ListView.builder(
-      physics: allowJsonScorll ? null : NeverScrollableScrollPhysics(),
-      controller: jsonController,
-      itemCount: appData.wordData.classes.length + 1,
-      itemBuilder: (context, jsonIndex) {
-        if(jsonIndex == appData.wordData.classes.length) {
-          return SizedBox(height: mediaQuery.size.height);
-        }
-        final SourceItem jsonSource = appData.wordData.classes[jsonIndex];
-        return ExpansionTile(
-          title: Text(jsonSource.name.trim()),
-          minTileHeight: 64,
-          onExpansionChanged: (value) {
-            setState(() {
-              allowClassScorll = value;
-              allowJsonScorll = !value; // 展开json后锁定首个ListView，禁止滑动
-            });
-            jsonController.animateTo(
-              (66 * jsonIndex).toDouble(), 
-              duration: Durations.medium1, 
-              curve: StaticsVar.curve
-            );
-          },
-          children: [
-            SizedBox(
-              height: mediaQuery.size.height * 0.9,
-              child: ListView.builder(
-                physics: allowClassScorll ? null : NeverScrollableScrollPhysics(),
-                controller: classController,
-                itemCount: jsonSource.subClasses.length + 1,
-                itemBuilder: (context, classIndex) {
-                  if(classIndex == jsonSource.subClasses.length) {
-                    return SizedBox(height: mediaQuery.size.height); // 避免0.9空间估计不足
-                  }
-                  final ClassItem classItem = jsonSource.subClasses[classIndex];
-                  return ExpansionTile(
-                    title: Text(classItem.className.trim()),
-                    minTileHeight: 62,
-                    onExpansionChanged: (value) {
-                      setState(() {
-                        allowClassScorll = !value;
-                      });
-                      if(value) {
-                        classController.animateTo(
-                          (64 * classIndex).toDouble(), 
-                          duration: Durations.medium1, 
-                          curve: StaticsVar.curve
-                        );
-                        jsonController.animateTo(
-                          (66 * (jsonIndex + 1)).toDouble(), 
-                          duration: Durations.medium1, 
-                          curve: StaticsVar.curve
-                        );
-                      } else {
-                        jsonController.animateTo(
-                          (66 * jsonIndex).toDouble(), 
-                          duration: Durations.medium1, 
-                          curve: StaticsVar.curve
-                        );
+    // 外层用 LayoutBuilder 取页面实际可视高度：内部所有“预留滚动空间”的
+    // 高度都基于可视高度而非整屏高度，矮横屏下不会因该值超过可视区域而溢出。
+    return LayoutBuilder(
+      builder: (BuildContext context, BoxConstraints constraints) {
+        final double viewportHeight = constraints.maxHeight;
+        return ListView.builder(
+          physics: allowJsonScorll ? null : NeverScrollableScrollPhysics(),
+          controller: jsonController,
+          itemCount: appData.wordData.classes.length + 1,
+          itemBuilder: (context, jsonIndex) {
+            if(jsonIndex == appData.wordData.classes.length) {
+              return SizedBox(height: viewportHeight);
+            }
+            final SourceItem jsonSource = appData.wordData.classes[jsonIndex];
+            return ExpansionTile(
+              title: Text(jsonSource.name.trim()),
+              minTileHeight: 64,
+              onExpansionChanged: (value) {
+                setState(() {
+                  allowClassScorll = value;
+                  allowJsonScorll = !value; // 展开json后锁定首个ListView，禁止滑动
+                });
+                jsonController.animateTo(
+                  (66 * jsonIndex).toDouble(), 
+                  duration: Durations.medium1, 
+                  curve: StaticsVar.curve
+                );
+              },
+              children: [
+                SizedBox(
+                  height: viewportHeight * 0.9,
+                  child: ListView.builder(
+                    physics: allowClassScorll ? null : NeverScrollableScrollPhysics(),
+                    controller: classController,
+                    itemCount: jsonSource.subClasses.length + 1,
+                    itemBuilder: (context, classIndex) {
+                      if(classIndex == jsonSource.subClasses.length) {
+                        return SizedBox(height: viewportHeight); // 避免0.9空间估计不足
                       }
-                    },
-                    children: [
-                      SizedBox(
-                        height: mediaQuery.size.height * 0.8,
-                        child: GridView.builder(
-                          itemCount: classItem.wordIndexs.length,
-                          gridDelegate: AppData().config.learning.overviewForceColumn == 0 ? SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: mediaQuery.size.width ~/ 300) : SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: AppData().config.learning.overviewForceColumn), 
-                          itemBuilder: (context, index) {
-                            return Container(
-                              margin: EdgeInsets.all(8.0),
-                              child: WordCard(
-                                word: appData.wordData.words[classItem.wordIndexs[index]],
-                                useMask: false,
-                                compact: true,
-                                width: mediaQuery.size.width / (AppData().config.learning.overviewForceColumn == 0 ? (mediaQuery.size.width ~/ 300) : AppData().config.learning.overviewForceColumn),
-                                height: mediaQuery.size.width / (AppData().config.learning.overviewForceColumn == 0 ? (mediaQuery.size.width ~/ 300) : AppData().config.learning.overviewForceColumn),
-                              ),
+                      final ClassItem classItem = jsonSource.subClasses[classIndex];
+                      return ExpansionTile(
+                        title: Text(classItem.className.trim()),
+                        minTileHeight: 62,
+                        onExpansionChanged: (value) {
+                          setState(() {
+                            allowClassScorll = !value;
+                          });
+                          if(value) {
+                            classController.animateTo(
+                              (64 * classIndex).toDouble(), 
+                              duration: Durations.medium1, 
+                              curve: StaticsVar.curve
+                            );
+                            jsonController.animateTo(
+                              (66 * (jsonIndex + 1)).toDouble(), 
+                              duration: Durations.medium1, 
+                              curve: StaticsVar.curve
+                            );
+                          } else {
+                            jsonController.animateTo(
+                              (66 * jsonIndex).toDouble(), 
+                              duration: Durations.medium1, 
+                              curve: StaticsVar.curve
                             );
                           }
-                        ),
-                      ),
-                      SizedBox(height: mediaQuery.size.height * 0.5)
-                    ],
-                  );
-                }
-              ),
-            ),
-          ],
+                        },
+                        children: [
+                          SizedBox(
+                            height: viewportHeight * 0.8,
+                            child: _WordOverviewGrid(classItem: classItem),
+                          ),
+                          SizedBox(height: viewportHeight * 0.5)
+                        ],
+                      );
+                    }
+                  ),
+                ),
+              ],
+            );
+          }
         );
-      }
+      },
     );
   }
 }
@@ -832,7 +895,6 @@ class _WordLookupLayoutState extends State<WordLookupLayout> {
     // 使用索引化检索（归一化预计算 + 字符倒排 + 整词 BK-Tree），替代原全表扫描
     final String lookfor = widget.lookfor.trim();
     if(lookfor.isEmpty) return SizedBox();
-    final MediaQueryData mediaQuery = MediaQuery.of(context);
     List<WordItem> match = BKSearch.lookup(lookfor);
 
     // 分类筛选（AND）：所有检索途径的结果统一过滤
@@ -850,7 +912,6 @@ class _WordLookupLayoutState extends State<WordLookupLayout> {
     }
 
     final List<String> availableCategories = collectAllCategories();
-    final double cellSize = mediaQuery.size.width / (AppData().config.learning.overviewForceColumn == 0 ? (mediaQuery.size.width ~/ 300) : AppData().config.learning.overviewForceColumn);
     return Column(
       children: [
         if(availableCategories.isNotEmpty) CategoryFilter(
@@ -865,21 +926,33 @@ class _WordLookupLayoutState extends State<WordLookupLayout> {
         Expanded(
           child: (match.isEmpty && selectedCategories.isNotEmpty)
             ? Center(child: Text("当前筛选条件下没有匹配的单词", style: Theme.of(context).textTheme.bodyLarge))
-            : GridView.builder(
-                itemCount: match.length,
-                gridDelegate: AppData().config.learning.overviewForceColumn == 0 ? SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: mediaQuery.size.width ~/ 300) : SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: AppData().config.learning.overviewForceColumn), 
-                itemBuilder: (context, index) {
-                  return Container(
-                    margin: EdgeInsets.all(8.0),
-                    child: WordCard(
-                      word: match[index],
-                      useMask: false,
-                      compact: true,
-                      width: cellSize,
-                      height: cellSize,
+            : LayoutBuilder(
+                builder: (BuildContext context, BoxConstraints constraints) {
+                  // 列数与 cell 尺寸由网格区域可用宽高共同决定：
+                  // cell 边长 = min(宽/列数, 高)，保证方形卡片不高于可视区域。
+                  final int columns = _overviewGridColumns(constraints.maxWidth);
+                  final double cellWidth = constraints.maxWidth / columns;
+                  final double side = max(min(cellWidth, constraints.maxHeight), 1.0);
+                  final double cardSide = max(side - 16.0, 0.0);
+                  return GridView.builder(
+                    itemCount: match.length,
+                    gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                      crossAxisCount: columns,
+                      childAspectRatio: cellWidth / side,
                     ),
+                    itemBuilder: (context, index) {
+                      return Center(
+                        child: WordCard(
+                          word: match[index],
+                          useMask: false,
+                          compact: true,
+                          width: cardSide,
+                          height: cardSide,
+                        ),
+                      );
+                    }
                   );
-                }
+                },
               ),
         ),
       ],

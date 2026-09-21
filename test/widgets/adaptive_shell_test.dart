@@ -45,6 +45,27 @@ void main() {
     await tester.pumpAndSettle();
   }
 
+  // 未选中状态下导航项的图标（NavigationBar 与 NavigationRail 共用）
+  const List<IconData> unselectedNavIcons = <IconData>[
+    Icons.home_outlined,
+    Icons.book_outlined,
+    Icons.edit_outlined,
+    Icons.settings_applications_outlined,
+  ];
+
+  /// 依次切换到 4 个顶层 Tab，并在每次切换后断言无布局异常。
+  Future<void> switchThroughTabs(WidgetTester tester, Size size) async {
+    for (int tab = 0; tab < unselectedNavIcons.length; tab++) {
+      if (tab != 0) {
+        final Finder destination = find.byIcon(unselectedNavIcons[tab]);
+        expect(destination, findsWidgets, reason: '$size 下找不到第 $tab 个导航目标');
+        await tester.tap(destination.first);
+        await tester.pumpAndSettle();
+      }
+      expect(tester.takeException(), isNull, reason: '$size 下第 $tab 个 Tab 溢出');
+    }
+  }
+
   testWidgets('手机 360x640：移动布局且无 overflow', (WidgetTester tester) async {
     await pumpShell(tester, const Size(360, 640));
 
@@ -76,5 +97,32 @@ void main() {
     expect(tester.takeException(), isNull);
     expect(find.byType(NavigationBar), findsOneWidget);
     expect(find.byType(NavigationRail), findsNothing);
+  });
+
+  group('四个顶层 Tab 在多尺寸下切换无 overflow', () {
+    testWidgets('360x640 手机竖屏', (WidgetTester tester) async {
+      await pumpShell(tester, const Size(360, 640));
+      await switchThroughTabs(tester, const Size(360, 640));
+    });
+
+    testWidgets('480x420 矮横屏', (WidgetTester tester) async {
+      await pumpShell(tester, const Size(480, 420));
+      await switchThroughTabs(tester, const Size(480, 420));
+    });
+
+    testWidgets('1280x800 桌面横屏', (WidgetTester tester) async {
+      await pumpShell(tester, const Size(1280, 800));
+      await switchThroughTabs(tester, const Size(1280, 800));
+    });
+
+    testWidgets('1280x600 矮桌面横屏', (WidgetTester tester) async {
+      await pumpShell(tester, const Size(1280, 600));
+      await switchThroughTabs(tester, const Size(1280, 600));
+    });
+
+    testWidgets('800x1280 平板竖屏', (WidgetTester tester) async {
+      await pumpShell(tester, const Size(800, 1280));
+      await switchThroughTabs(tester, const Size(800, 1280));
+    });
   });
 }

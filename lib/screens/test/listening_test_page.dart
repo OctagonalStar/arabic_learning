@@ -1,5 +1,6 @@
 import 'package:arabic_learning/models/dict.dart';
 import 'package:arabic_learning/models/reading.dart';
+import 'package:flutter/foundation.dart' show clampDouble;
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -66,7 +67,7 @@ class _ForeListeningSettingPage extends State<ForeListeningSettingPage> {
             ),
             Button(
               padding: EdgeInsets.all(16.0),
-              size: Size.fromHeight(mediaQuery.size.height * 0.1),
+              size: Size.fromHeight(clampDouble(mediaQuery.size.height * 0.1, 56.0, 96.0)),
               onPressed: () async {
                 selectedClasses = await popSelectClasses(context, withCache: false, withReviewChoose: false);
                 setState(() {});
@@ -310,7 +311,7 @@ class _MainListeningPageState extends State<MainListeningPage> {
             ),
             Button(
               icon: Icon(Icons.arrow_back, size: 32.0,),
-              size: Size(mediaQuery.size.width * 0.9, mediaQuery.size.height * 0.1),
+              size: Size(mediaQuery.size.width * 0.9, clampDouble(mediaQuery.size.height * 0.1, 48.0, 96.0)),
               onPressed: () {
                 Navigator.popUntil(context, (Route route) {return route.isFirst;});
               },
@@ -341,36 +342,47 @@ class _MainListeningPageState extends State<MainListeningPage> {
             },
           ),
         ),
-        body: SafeArea(top: false, child: Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              TextContainer(text: "当前播放数/总数: $index/${(widget.words.length * widget.playTimes)}",textAlign: TextAlign.center,),
-              TextContainer(text: state, style: Theme.of(context).textTheme.headlineLarge, size: Size(mediaQuery.size.width * 0.8, mediaQuery.size.height * 0.4),textAlign: TextAlign.center,),
-              TextContainer(text: counter, style: Theme.of(context).textTheme.displaySmall?.copyWith(color: Theme.of(context).colorScheme.error), size: Size(mediaQuery.size.width * 0.6, mediaQuery.size.height * 0.1),textAlign: TextAlign.center,),
-              Button(
-                icon: Icon(stage == 1 ? Icons.flag : Icons.play_arrow, size: 32.0,),
-                padding: EdgeInsets.all(16.0),
-                size: Size.fromHeight(mediaQuery.size.height * 0.15),
-                onPressed: (){
-                  if(stage == 1) {
-                    marks.add((index / widget.playTimes).floor());
-                  } else if(stage == 2) {
-                    setState(() {
-                      stage = 3;
-                    });
-                  } else {
-                    setState(() {
-                      stage++;
-                    });
-                    circlePlay(context);
-                  }
-                },
-                child: Text(stage == 1 ? "标记当前单词" : (stage == 2 ? "查看答案" : "开始听写(20秒倒计时)")),
-              )
-            ],
-          ),
+        body: SafeArea(top: false, child: LayoutBuilder(
+          builder: (BuildContext context, BoxConstraints constraints) {
+            final double height = constraints.maxHeight;
+            // 固定高度文本区按可用高度夹取；高度不足时整页可滚动兜底。
+            return SingleChildScrollView(
+              child: ConstrainedBox(
+                constraints: BoxConstraints(minHeight: constraints.maxHeight),
+                child: Center(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      TextContainer(text: "当前播放数/总数: $index/${(widget.words.length * widget.playTimes)}",textAlign: TextAlign.center,),
+                      TextContainer(text: state, style: Theme.of(context).textTheme.headlineLarge, size: Size(constraints.maxWidth * 0.8, clampDouble(height * 0.4, 140.0, 340.0)),textAlign: TextAlign.center,),
+                      TextContainer(text: counter, style: Theme.of(context).textTheme.displaySmall?.copyWith(color: Theme.of(context).colorScheme.error), size: Size(constraints.maxWidth * 0.6, clampDouble(height * 0.1, 48.0, 96.0)),textAlign: TextAlign.center,),
+                      Button(
+                        icon: Icon(stage == 1 ? Icons.flag : Icons.play_arrow, size: 32.0,),
+                        padding: EdgeInsets.all(16.0),
+                        size: Size.fromHeight(clampDouble(height * 0.15, 64.0, 150.0)),
+                        onPressed: (){
+                          if(stage == 1) {
+                            marks.add((index / widget.playTimes).floor());
+                          } else if(stage == 2) {
+                            setState(() {
+                              stage = 3;
+                            });
+                          } else {
+                            setState(() {
+                              stage++;
+                            });
+                            circlePlay(context);
+                          }
+                        },
+                        child: Text(stage == 1 ? "标记当前单词" : (stage == 2 ? "查看答案" : "开始听写(20秒倒计时)")),
+                      )
+                    ],
+                  ),
+                ),
+              ),
+            );
+          },
         ))
       ),
     );

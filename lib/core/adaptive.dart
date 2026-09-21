@@ -69,3 +69,38 @@ class AdaptiveScope extends InheritedWidget {
 /// 平板 / 桌面 / Web 传 false，允许全部方向。
 bool shouldLockPortrait(double shortestSide) =>
     shortestSide < AppBreakpoints.mobile;
+
+/// 顶层 Tab 页的自适应容器：按可用约束计算内容尺寸，并在高度不足时提供滚动兜底。
+///
+/// [builder] 会收到父级实际约束（`constraints.maxHeight` 为 Tab 可视高度，
+/// 已扣除 AppBar / 导航栏），应优先据此推导卡片与间距尺寸；返回的 [Column]
+/// 需使用 [MainAxisSize.min] 以便在滚动容器中测量。
+///
+/// 手势策略：
+/// - 手机布局（宽度 <= 600，顶层 `PageView` 横向翻页）允许纵向滚动，矮屏内容
+///   超出时可滚动查看；
+/// - 平板 / 桌面布局（顶层 `PageView` 纵向翻页）禁用内层滚动，避免抢占翻页
+///   手势；尺寸由调用方按约束推导保证不溢出，[ConstrainedBox] 同时兜底。
+class AdaptiveTabBody extends StatelessWidget {
+  const AdaptiveTabBody({super.key, required this.builder});
+
+  /// 依据实际约束构建页面内容。
+  final Widget Function(BuildContext context, BoxConstraints constraints) builder;
+
+  @override
+  Widget build(BuildContext context) {
+    return LayoutBuilder(
+      builder: (BuildContext context, BoxConstraints constraints) {
+        return SingleChildScrollView(
+          physics: AdaptiveScope.of(context).isWide
+              ? const NeverScrollableScrollPhysics()
+              : const ClampingScrollPhysics(),
+          child: ConstrainedBox(
+            constraints: BoxConstraints(minHeight: constraints.maxHeight),
+            child: builder(context, constraints),
+          ),
+        );
+      },
+    );
+  }
+}

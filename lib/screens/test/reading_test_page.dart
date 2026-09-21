@@ -11,12 +11,24 @@ import 'package:arabic_learning/models/reading.dart';
 import 'package:arabic_learning/services/app_data.dart';
 import 'package:arabic_learning/core/statics.dart';
 import 'package:arabic_learning/core/ai_prompt.dart';
-import 'package:arabic_learning/theme/tokens.dart' show AppSemanticColors;
+import 'package:arabic_learning/theme/tokens.dart' show AppBreakpoints, AppSemanticColors;
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart' show clampDouble;
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart' show Clipboard, ClipboardData, DeviceOrientation, SystemChrome;
+import 'package:flutter/services.dart' show Clipboard, ClipboardData;
 import 'package:flutter_markdown_plus/flutter_markdown_plus.dart';
 import 'package:provider/provider.dart';
+
+
+/// 阅读文本缩放倍率：按可用宽度分档。
+///
+/// 原先固定 3 倍在窄竖屏（分栏后文章栏更窄）会显著偏大，这里改为：
+/// 手机宽度用较小倍率，平板 / 桌面适当放大，兼顾可读性与不溢出。
+TextScaler readingTextScaler(double width) {
+  if (width < AppBreakpoints.mobile) return TextScaler.linear(1.8);
+  if (width < AppBreakpoints.tablet) return TextScaler.linear(2.2);
+  return TextScaler.linear(2.6);
+}
 
 
 class QuestionConfig {
@@ -282,7 +294,29 @@ class _ReadingTestAddLeading extends State<ReadingTestAddLeading> {
 
   @override
   Widget build(BuildContext context) {
-    MediaQueryData mediaQuery = MediaQuery.of(context);
+    // 卡片高度按页面可用高度推导并限制在 [140, 220]：
+    // 矮屏下缩短并可整页滚动，避免 0.2 倍屏高在小高度下撑破 Column。
+    Widget buildTypePage({
+      required List<Widget> Function(double cardHeight, double cardWidth) cards,
+      required MainAxisAlignment alignment,
+    }) {
+      return LayoutBuilder(
+        builder: (BuildContext context, BoxConstraints constraints) {
+          final double cardHeight = clampDouble(constraints.maxHeight * 0.2, 140.0, 220.0);
+          final double cardWidth = constraints.maxWidth * 0.8;
+          return SingleChildScrollView(
+            child: ConstrainedBox(
+              constraints: BoxConstraints(minHeight: constraints.maxHeight),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                mainAxisAlignment: alignment,
+                children: cards(cardHeight, cardWidth),
+              ),
+            ),
+          );
+        },
+      );
+    }
 
     return Scaffold(
       appBar: AppBar(title: Text(scaffoldTitle())),
@@ -290,61 +324,57 @@ class _ReadingTestAddLeading extends State<ReadingTestAddLeading> {
         controller: _pageController,
         physics: NeverScrollableScrollPhysics(),
         children: [
-          Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-              children: [
-                TypeChoose(
-                  mainTitle: Text("阅读理解", style: Theme.of(context).textTheme.headlineMedium), 
-                  rt: defType(1, 1),
-                  subTitle: Text("根据给出的文章，选择最合适的答案", style: Theme.of(context).textTheme.bodyMedium),
-                  widget: mediaQuery.size.width * 0.8,
-                  height: mediaQuery.size.height * 0.2,
-                ),
-                TypeChoose(
-                  mainTitle: Text("完形填空", style: Theme.of(context).textTheme.headlineMedium), 
-                  rt: defType(2, 1),
-                  subTitle: Text("使用恰当的词语，填补文中的空白", style: Theme.of(context).textTheme.bodyMedium),
-                  widget: mediaQuery.size.width * 0.8,
-                  height: mediaQuery.size.height * 0.2,
-                ),
-              ]
-            )
+          buildTypePage(
+            alignment: MainAxisAlignment.spaceEvenly,
+            cards: (double cardHeight, double cardWidth) => <Widget>[
+              TypeChoose(
+                mainTitle: Text("阅读理解", style: Theme.of(context).textTheme.headlineMedium), 
+                rt: defType(1, 1),
+                subTitle: Text("根据给出的文章，选择最合适的答案", style: Theme.of(context).textTheme.bodyMedium),
+                widget: cardWidth,
+                height: cardHeight,
+              ),
+              TypeChoose(
+                mainTitle: Text("完形填空", style: Theme.of(context).textTheme.headlineMedium), 
+                rt: defType(2, 1),
+                subTitle: Text("使用恰当的词语，填补文中的空白", style: Theme.of(context).textTheme.bodyMedium),
+                widget: cardWidth,
+                height: cardHeight,
+              ),
+            ],
           ),
-          Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                TypeChoose(
-                  mainTitle: Text("使用AI API生成", style: Theme.of(context).textTheme.headlineMedium), 
-                  rt: defType(1, 2), 
-                  subTitle: Text("调用兼容OpenAI标准的接口，直接请求题目生成\n快，题目质量高，错误率低\n可能要向提供商缴费\n如果你不知道\"API\"是什么，那么你不会用这个", style: Theme.of(context).textTheme.bodyMedium), 
-                  widget: mediaQuery.size.width * 0.8, 
-                  height: mediaQuery.size.height * 0.2
-                ),
-                TypeChoose(
-                  mainTitle: Text("使用AI Prompt生成", style: Theme.of(context).textTheme.headlineMedium), 
-                  rt: defType(2, 2), 
-                  subTitle: Text("配置题目相关难度后会生成一段AI提示词，由你复制到其他AI软件中，再将结果复制回程序使用\n方便，免费\n质量由你的提供商决定\n警告：不要使用某包，测试中其生成质量远低于其他模型，特别是高难度下", style: Theme.of(context).textTheme.bodyMedium), 
-                  widget: mediaQuery.size.width * 0.8, 
-                  height: mediaQuery.size.height * 0.2
-                ),
-                TypeChoose(
-                  mainTitle: Text("使用现有JSON导入", style: Theme.of(context).textTheme.headlineMedium), 
-                  rt: defType(3, 2), 
-                  subTitle: Text("在使用AI Prompt方式获取到结果后选择此项粘贴", style: Theme.of(context).textTheme.bodyMedium), 
-                  widget: mediaQuery.size.width * 0.8, 
-                  height: mediaQuery.size.height * 0.2
-                ),
-                TypeChoose(
-                  mainTitle: Text("从在线仓库中获取", style: Theme.of(context).textTheme.headlineMedium), 
-                  rt: (){alart(context, "都说了在施工了...");}, 
-                  subTitle: Text("施工中，暂时无法使用", style: Theme.of(context).textTheme.bodyMedium), 
-                  widget: mediaQuery.size.width * 0.8, 
-                  height: mediaQuery.size.height * 0.2
-                ),
-              ],
-            ),
+          buildTypePage(
+            alignment: MainAxisAlignment.spaceBetween,
+            cards: (double cardHeight, double cardWidth) => <Widget>[
+              TypeChoose(
+                mainTitle: Text("使用AI API生成", style: Theme.of(context).textTheme.headlineMedium), 
+                rt: defType(1, 2), 
+                subTitle: Text("调用兼容OpenAI标准的接口，直接请求题目生成\n快，题目质量高，错误率低\n可能要向提供商缴费\n如果你不知道\"API\"是什么，那么你不会用这个", style: Theme.of(context).textTheme.bodyMedium), 
+                widget: cardWidth, 
+                height: cardHeight
+              ),
+              TypeChoose(
+                mainTitle: Text("使用AI Prompt生成", style: Theme.of(context).textTheme.headlineMedium), 
+                rt: defType(2, 2), 
+                subTitle: Text("配置题目相关难度后会生成一段AI提示词，由你复制到其他AI软件中，再将结果复制回程序使用\n方便，免费\n质量由你的提供商决定\n警告：不要使用某包，测试中其生成质量远低于其他模型，特别是高难度下", style: Theme.of(context).textTheme.bodyMedium), 
+                widget: cardWidth, 
+                height: cardHeight
+              ),
+              TypeChoose(
+                mainTitle: Text("使用现有JSON导入", style: Theme.of(context).textTheme.headlineMedium), 
+                rt: defType(3, 2), 
+                subTitle: Text("在使用AI Prompt方式获取到结果后选择此项粘贴", style: Theme.of(context).textTheme.bodyMedium), 
+                widget: cardWidth, 
+                height: cardHeight
+              ),
+              TypeChoose(
+                mainTitle: Text("从在线仓库中获取", style: Theme.of(context).textTheme.headlineMedium), 
+                rt: (){alart(context, "都说了在施工了...");}, 
+                subTitle: Text("施工中，暂时无法使用", style: Theme.of(context).textTheme.bodyMedium), 
+                widget: cardWidth, 
+                height: cardHeight
+              ),
+            ],
           ),
           QuestionConfigPage(qconfig: qconfig),
         ],
@@ -374,42 +404,34 @@ class _ReadingQuestionPage extends State<ReadingQuestionPage> {
     for(ReadingQuestion x in widget.unit.questions){
       options.add(List<String>.from(x.answers)..shuffle());
     }
-    
-    SystemChrome.setPreferredOrientations([
-      DeviceOrientation.landscapeLeft,
-      DeviceOrientation.landscapeRight
-    ]);
+
+    // 不再强制横屏：定向策略由 lib/main.dart 的全局规则决定
+    // （手机竖屏、平板/桌面自由），窄竖屏下走上下分栏降级布局。
     super.initState();
   }
 
   @override
   void dispose() {
-    SystemChrome.setPreferredOrientations([
-      DeviceOrientation.portraitUp,
-      DeviceOrientation.portraitDown
-    ]);
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    MediaQueryData mediaQuery = MediaQuery.of(context);
-
     return Scaffold(
       appBar: AppBar(title: Text(widget.unit.title)),
-      body: SafeArea(top: false, child: Row(
-        children: [
-          SizedBox(
-            width: mediaQuery.size.width * 0.65,
-            height: mediaQuery.size.height,
-            child: Markdown(
+      body: SafeArea(
+        top: false,
+        child: LayoutBuilder(
+          builder: (BuildContext context, BoxConstraints constraints) {
+            final bool sideBySide = constraints.maxWidth >= AppBreakpoints.mobile;
+            // 左右分栏时题目栏仅占 35% 宽，选项按钮沿用原 0.2 倍屏宽；
+            // 上下降级布局中题目栏占满整宽，按钮放大到 0.4 倍便于点选。
+            final double optionButtonWidth = constraints.maxWidth * (sideBySide ? 0.2 : 0.4);
+            final Markdown passage = Markdown(
               data: widget.unit.passage,
-              styleSheet: MarkdownStyleSheet(textScaler: TextScaler.linear(3))
-            )
-          ),
-          Divider(),
-          Expanded(
-            child: PageView.builder(
+              styleSheet: MarkdownStyleSheet(textScaler: readingTextScaler(constraints.maxWidth)),
+            );
+            final Widget questions = PageView.builder(
               controller: pageController,
               itemCount: widget.unit.questions.length+1,
               itemBuilder: (context, int index) {
@@ -443,7 +465,7 @@ class _ReadingQuestionPage extends State<ReadingQuestionPage> {
                                         context.read<SingleSelectionNotifier>().changeTo(i);
                                       }
                                     },
-                                    size: Size.fromWidth(mediaQuery.size.width * 0.2),
+                                    size: Size.fromWidth(optionButtonWidth),
                                     child: Text(options[index][i], style: Theme.of(context).textTheme.headlineMedium),
                                   ),
                                 )
@@ -493,14 +515,14 @@ class _ReadingQuestionPage extends State<ReadingQuestionPage> {
                           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                           children: [
                             if(index != 0 && i > 0.3) Button(
-                              size: Size.fromWidth(mediaQuery.size.width * 0.3 * i),
+                              size: Size.fromWidth(constraints.maxWidth * 0.3 * i),
                               icon: Icon(Icons.arrow_back_ios),
                               iconDirection: AxisDirection.left,
                               onPressed: () => pageController.previousPage(duration: Durations.medium4, curve: StaticsVar.curve),
                               child: ButtonLabel(child: Text("上一题")),
                             ),
                             if(index != widget.unit.questions.length) Button(
-                              size: Size.fromWidth(mediaQuery.size.width * 0.3 * (1 - i)),
+                              size: Size.fromWidth(constraints.maxWidth * 0.3 * (1 - i)),
                               icon: Icon(Icons.arrow_forward_ios),
                               iconDirection: AxisDirection.right,
                               onPressed: () => pageController.nextPage(duration: Durations.medium4, curve: StaticsVar.curve),
@@ -513,10 +535,36 @@ class _ReadingQuestionPage extends State<ReadingQuestionPage> {
                   ],
                 );
               }
-            ),
-          )
-        ],
-      )),
+            );
+            // 宽度不足（窄竖屏 / 矮横屏）时 65% + Expanded 的左右分栏会过于拥挤，
+            // 降级为上下布局：文章占上半屏（可滚动），题目占剩余空间。
+            if(sideBySide) {
+              return Row(
+                children: [
+                  SizedBox(
+                    width: constraints.maxWidth * 0.65,
+                    height: constraints.maxHeight,
+                    child: passage,
+                  ),
+                  Divider(),
+                  Expanded(child: questions),
+                ],
+              );
+            }
+            return Column(
+              children: [
+                SizedBox(
+                  width: constraints.maxWidth,
+                  height: constraints.maxHeight * 0.5,
+                  child: passage,
+                ),
+                Divider(),
+                Expanded(child: questions),
+              ],
+            );
+          },
+        ),
+      ),
     );
   }
 }
@@ -544,7 +592,18 @@ class TypeChoose extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         children: [
           mainTitle,
-          ?subTitle,
+          // 卡片高度受限时让副标题等比缩小而不是撑破按钮：宽度先按按钮内宽
+          // （固定宽 - 左右 24 的内边距）锁定，保留原有换行行为；空间充足时
+          // FittedBox 不缩放，显示与原来一致。
+          if(subTitle != null) Flexible(
+            child: FittedBox(
+              fit: BoxFit.scaleDown,
+              child: SizedBox(
+                width: widget != null ? clampDouble(widget! - 48.0, 120.0, double.infinity) : null,
+                child: subTitle!,
+              ),
+            ),
+          ),
           Row(
             children: [
               Expanded(child: SizedBox()),
@@ -923,7 +982,8 @@ class ReadingResultPage extends StatelessWidget {
 
     return Scaffold(
       appBar: AppBar(title: Text("测试结果-${unit.title}")),
-      body: SafeArea(top: false, child: TweenAnimationBuilder<double>(
+      body: SafeArea(top: false, child: LayoutBuilder(
+        builder: (BuildContext context, BoxConstraints constraints) => TweenAnimationBuilder<double>(
         tween: Tween(
           begin: 0.0,
           end: 1.0
@@ -945,8 +1005,8 @@ class ReadingResultPage extends StatelessWidget {
                     opacity: dp,
                     child: SizedBox(
                       width: mediaQuery.size.width,
-                      height: mediaQuery.size.height * 0.3,
-                      child: Markdown(data: unit.passage, styleSheet: MarkdownStyleSheet(textScaler: TextScaler.linear(2)))
+                      height: clampDouble(constraints.maxHeight * 0.3, 100.0, 260.0),
+                      child: Markdown(data: unit.passage, styleSheet: MarkdownStyleSheet(textScaler: readingTextScaler(constraints.maxWidth)))
                     ),
                   ),
                 ),
@@ -1021,7 +1081,7 @@ class ReadingResultPage extends StatelessWidget {
                       child: Opacity(
                         opacity: dp,
                         child: Button(
-                          size: Size.fromHeight(mediaQuery.size.height * 0.1),
+                          size: Size.fromHeight(clampDouble(constraints.maxHeight * 0.1, 48.0, 96.0)),
                           onPressed: () {
                             Navigator.pop(context);
                           },
@@ -1035,7 +1095,7 @@ class ReadingResultPage extends StatelessWidget {
             ],
           );
         }
-      )),
+      ))),
     );
   }
 }

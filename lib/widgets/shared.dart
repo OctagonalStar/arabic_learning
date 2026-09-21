@@ -121,10 +121,14 @@ class SettingCard extends StatelessWidget {
 /// （左滑：-0.2 / -1.5，右滑：0.2 / 1.5）；[color] 为卡片背景色；
 /// [contentBuilder] 接收动画进度 value 构建卡片内容行，内部动画时长
 /// （AnimatedSlide 1 秒、数值 4 秒）与曲线均保持原样。
+/// [width] / [height] 可选：调用方按可用约束推导尺寸时传入；省略时沿用
+/// 屏幕宽 0.8 / 高 0.2 的旧行为，保持既有调用点语义不变。
 class ConclusionCard extends StatelessWidget {
   final bool visible;
   final bool slideFromLeft;
   final Color color;
+  final double? width;
+  final double? height;
   final Widget Function(BuildContext context, double value) contentBuilder;
 
   const ConclusionCard({
@@ -132,6 +136,8 @@ class ConclusionCard extends StatelessWidget {
     required this.visible,
     required this.slideFromLeft,
     required this.color,
+    this.width,
+    this.height,
     required this.contentBuilder,
   });
 
@@ -145,8 +151,8 @@ class ConclusionCard extends StatelessWidget {
       duration: Duration(seconds: 1),
       curve: StaticsVar.curve,
       child: Container(
-        width: mediaQuery.size.width * 0.8,
-        height: mediaQuery.size.height * 0.2,
+        width: width ?? mediaQuery.size.width * 0.8,
+        height: height ?? mediaQuery.size.height * 0.2,
         padding: EdgeInsets.all(16.0),
         margin: EdgeInsets.all(8.0),
         decoration: BoxDecoration(
@@ -198,6 +204,9 @@ class PKScoreRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     MediaQueryData mediaQuery = MediaQuery.of(context);
+    // 差值因子夹在 [-2, 2]：保证 0.5 ± 0.25*bias 始终落在 [0, 1]，
+    // 避免极端时间差 / 得分差在窄屏算出负宽度或两栏总和超过屏宽。
+    final double bias = scoreBias.clamp(-2.0, 2.0);
     return TweenAnimationBuilder<double>(
       tween: Tween(
         begin: 0,
@@ -212,20 +221,28 @@ class PKScoreRow extends StatelessWidget {
             Container(
               padding: EdgeInsets.all(16.0),
               height: mediaQuery.size.height * 0.1,
-              width: math.min(value*2, 1) * mediaQuery.size.width * (0.5 + 0.25*scoreBias),
+              width: math.min(value*2, 1) * mediaQuery.size.width * (0.5 + 0.25*bias),
               decoration: BoxDecoration(
                 color: Theme.of(context).colorScheme.primaryContainer,
               ),
-              child: Text(leftText(value), style: Theme.of(context).textTheme.headlineMedium?.copyWith(color: Theme.of(context).colorScheme.onPrimaryContainer), textAlign: TextAlign.end),
+              child: FittedBox(
+                fit: BoxFit.scaleDown,
+                alignment: Alignment.centerRight,
+                child: Text(leftText(value), style: Theme.of(context).textTheme.headlineMedium?.copyWith(color: Theme.of(context).colorScheme.onPrimaryContainer), textAlign: TextAlign.end),
+              ),
             ),
             Container(
               padding: EdgeInsets.all(16.0),
               height: mediaQuery.size.height * 0.1,
-              width: math.min(value*2, 1) * mediaQuery.size.width * (0.5 - 0.25*scoreBias),
+              width: math.min(value*2, 1) * mediaQuery.size.width * (0.5 - 0.25*bias),
               decoration: BoxDecoration(
                 color: Theme.of(context).colorScheme.secondaryContainer,
               ),
-              child: Text(rightText(value), style: Theme.of(context).textTheme.headlineMedium?.copyWith(color: Theme.of(context).colorScheme.onSecondaryContainer), textAlign: TextAlign.start),
+              child: FittedBox(
+                fit: BoxFit.scaleDown,
+                alignment: Alignment.centerLeft,
+                child: Text(rightText(value), style: Theme.of(context).textTheme.headlineMedium?.copyWith(color: Theme.of(context).colorScheme.onSecondaryContainer), textAlign: TextAlign.start),
+              ),
             ),
           ],
         );

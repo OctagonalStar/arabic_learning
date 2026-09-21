@@ -13,6 +13,7 @@ import 'package:arabic_learning/services/app_data.dart';
 import 'package:arabic_learning/core/extensions.dart';
 import 'package:arabic_learning/core/statics.dart';
 import 'package:arabic_learning/theme/typography.dart';
+import 'package:flutter/foundation.dart' show clampDouble;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart' show Clipboard, ClipboardData;
 import 'package:qr_flutter/qr_flutter.dart';
@@ -59,7 +60,7 @@ class _LocalPKSelectPage extends State<LocalPKSelectPage> {
 
     return Scaffold(
       appBar: AppBar(title: Text("局域网联机")),
-      body: SafeArea(top: false, child: Column(
+      body: SafeArea(top: false, child: ListView(
         children: [
           TextContainer(text: "该功能还处在预览阶段，出现问题请及时提交反馈", style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Theme.of(context).colorScheme.error)),
           SizedBox(height: mediaQuery.size.height * 0.02),
@@ -126,7 +127,7 @@ class _LocalPKSelectPage extends State<LocalPKSelectPage> {
           ),
           if(isScaning) SizedBox(
             width: mediaQuery.size.width * 0.8,
-            height: mediaQuery.size.height * 0.4,
+            height: clampDouble(mediaQuery.size.height * 0.4, 160.0, 340.0),
             child: MobileScanner(
               controller: scannerController,
               fit: BoxFit.scaleDown,
