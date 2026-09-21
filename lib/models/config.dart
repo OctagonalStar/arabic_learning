@@ -178,16 +178,46 @@ class RegularConfig {
   /// ```
   final int font;
 
-  /// 是否启用深色模式
+  /// 是否启用深色模式。
+  ///
+  /// **已由 [themeMode] 取代**，仅为兼容旧版本降级读取而保留并继续写出
+  /// （存储 key 仍为 `"darkMode"`）。新代码请使用 [themeMode]。
   final bool darkMode;
+
+  /// 深色模式三态。
+  /// ```
+  /// 0: 跟随系统
+  /// 1: 强制浅色
+  /// 2: 强制深色
+  /// ```
+  ///
+  /// 旧数据无此字段时由 [darkMode] 推导（`true→2`、`false→1`）以保持既有观感；
+  /// 新安装默认 `0`（跟随系统）。
+  final int themeMode;
+
+  /// 是否启用动态取色（Material You）。
+  ///
+  /// 平台不支持或 Web 端时自动回退到 [theme] 指定的种子色。
+  final bool dynamicColor;
 
   /// 是否隐藏Web端`下载App`按钮
   final bool hideAppDownloadButton;
+
+  /// [themeMode] 取值：跟随系统。
+  static const int themeModeSystem = 0;
+
+  /// [themeMode] 取值：强制浅色。
+  static const int themeModeLight = 1;
+
+  /// [themeMode] 取值：强制深色。
+  static const int themeModeDark = 2;
 
   const RegularConfig({
     this.theme = 9,
     this.font = 0,
     this.darkMode = false,
+    this.themeMode = themeModeSystem,
+    this.dynamicColor = false,
     this.hideAppDownloadButton = false
   });
 
@@ -196,17 +226,33 @@ class RegularConfig {
       "theme": theme,
       "font": font,
       "darkMode": darkMode,
+      "themeMode": themeMode,
+      "dynamicColor": dynamicColor,
       "hideAppDownloadButton": hideAppDownloadButton,
     };
   }
 
   static RegularConfig buildFromMap(Map<String, dynamic>? setting) {
     if(setting == null) return RegularConfig();
+
+    // 旧数据兼容：无 themeMode 时由 darkMode 推导；两者都无则为新装默认 0。
+    final int themeMode;
+    if(setting.containsKey("themeMode")) {
+      final dynamic rawThemeMode = setting["themeMode"];
+      themeMode = rawThemeMode is num ? rawThemeMode.toInt() : themeModeSystem;
+    } else if(setting.containsKey("darkMode")) {
+      themeMode = setting["darkMode"] == true ? themeModeDark : themeModeLight;
+    } else {
+      themeMode = themeModeSystem;
+    }
+
     return RegularConfig(
-      theme: setting["theme"],
-      font: setting["font"],
-      darkMode: setting["darkMode"],
-      hideAppDownloadButton: setting["hideAppDownloadButton"]
+      theme: setting["theme"] ?? 9,
+      font: setting["font"] ?? 0,
+      darkMode: setting["darkMode"] ?? false,
+      themeMode: themeMode,
+      dynamicColor: setting["dynamicColor"] ?? false,
+      hideAppDownloadButton: setting["hideAppDownloadButton"] ?? false
     );
   }
 
@@ -214,12 +260,27 @@ class RegularConfig {
     int? theme,
     int? font,
     bool? darkMode,
+    int? themeMode,
+    bool? dynamicColor,
     bool? hideAppDownloadButton,
   }) {
+    final int nextThemeMode = themeMode ?? this.themeMode;
+    // 显式传入 themeMode 时同步旧 darkMode 字段，保证降级兼容；
+    // 跟随系统（0）无法确定亮暗，沿用原有 darkMode。
+    final bool nextDarkMode = darkMode ??
+        (themeMode == null
+            ? this.darkMode
+            : nextThemeMode == themeModeDark
+                ? true
+                : nextThemeMode == themeModeLight
+                    ? false
+                    : this.darkMode);
     return RegularConfig(
       theme: theme ?? this.theme,
       font: font ?? this.font,
-      darkMode: darkMode ?? this.darkMode,
+      darkMode: nextDarkMode,
+      themeMode: nextThemeMode,
+      dynamicColor: dynamicColor ?? this.dynamicColor,
       hideAppDownloadButton: hideAppDownloadButton ?? this.hideAppDownloadButton,
     );
   }

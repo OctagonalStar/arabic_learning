@@ -31,14 +31,30 @@ class MyApp extends StatelessWidget {
         future: context.read<Global>().init(),
         initialData: false,
         builder: (context, asyncSnapshot) {
+          final Global global = context.read<Global>();
           if(!(asyncSnapshot.data??false)) {
-            return Material(child: Container(width: double.infinity, height: double.infinity, color: Colors.black ,child: Center(child: CircularProgressIndicator())));    
+            // 加载页：使用主题 surface 语义色，不再硬编码纯黑。
+            final bool platformDark = WidgetsBinding
+                    .instance.platformDispatcher.platformBrightness ==
+                Brightness.dark;
+            final Color loadingSurface = (platformDark
+                    ? global.darkThemeData
+                    : global.lightThemeData)
+                .colorScheme
+                .surface;
+            return Container(
+              width: double.infinity,
+              height: double.infinity,
+              color: loadingSurface,
+              child: const Center(child: CircularProgressIndicator()),
+            );
           }
           return Consumer<Global>(
             builder: (context, global, child) => MaterialApp(
               title: StaticsVar.appName,
-              themeMode: ThemeMode.system,
-              theme: global.themeData,
+              theme: global.lightThemeData,
+              darkTheme: global.darkThemeData,
+              themeMode: global.themeMode,
               home: const MyHomePage()
             )
           );
@@ -92,7 +108,6 @@ class _MyHomePageState extends State<MyHomePage> {
             _onNavigationTapped(index);
           },
           labelType: NavigationRailLabelType.selected,
-          backgroundColor: Theme.of(context).colorScheme.onPrimary.withAlpha(150),
           destinations: [
             for (final _NavItem item in _navItems)
               NavigationRailDestination(
@@ -154,7 +169,6 @@ class _MyHomePageState extends State<MyHomePage> {
           height: MediaQuery.of(context).size.height * 0.1,
           animationDuration: Durations.medium2,
           labelBehavior: NavigationDestinationLabelBehavior.onlyShowSelected,
-          backgroundColor: Theme.of(context).colorScheme.onPrimary.withAlpha(150),
           destinations: [
             for (final _NavItem item in _navItems)
               NavigationDestination(
@@ -239,7 +253,6 @@ class _MyHomePageState extends State<MyHomePage> {
     return Scaffold(
       appBar: AppBar(
         centerTitle: true,
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary.withAlpha(150),
         title: Text(StaticsVar.appName),
         actions: [
           if(kIsWeb && !AppData().config.regular.hideAppDownloadButton) Button(

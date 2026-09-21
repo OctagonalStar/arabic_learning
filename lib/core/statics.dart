@@ -7,6 +7,8 @@ import 'package:arabic_learning/package_replacement/fake_dart_io.dart' if (dart.
 import 'package:flutter/material.dart';
 import 'package:just_audio/just_audio.dart';
 
+import 'package:arabic_learning/theme/tokens.dart' show AppMotion, AppRadius;
+
 @immutable
 class StaticsVar {
   static const String appName = 'Ar 学';
@@ -14,7 +16,7 @@ class StaticsVar {
   static const int termVersion = 2;
   static const String modelPath = 'arabicLearning/tts/model/vits-piper-ar_JO-kareem-medium';
   static const Map<String, dynamic> tempConfig = {"SelectedClasses": []};
-  static const Curve curve = Curves.fastEaseInToSlowEaseOut;
+  static const Curve curve = AppMotion.standardCurve;
   static const String onlineDictOwner = 'JYinherit';
   static const String arBackupFont = "Vazirmatn";
   static const String zhBackupFont = "NotoSansSC";
@@ -54,5 +56,5 @@ class StaticsVar {
   ];
   static final isDesktop = kIsWeb ? false : (Platform.isWindows || Platform.isLinux || Platform.isMacOS);
   static final player = AudioPlayer(); // load Player when app start
-  static final BorderRadius br = BorderRadius.circular(25.0);
+  static final BorderRadius br = AppRadius.cardBorder;
 }

@@ -6,6 +6,7 @@ import 'package:url_launcher/url_launcher.dart';
 
 import 'package:arabic_learning/widgets/kit.dart' show Button, SettingItem, SettingRedirctButton, SettingRow;
 import 'package:arabic_learning/widgets/overlays.dart' show alart, showSnackBar;
+import 'package:arabic_learning/models/config.dart' show RegularConfig;
 import 'package:arabic_learning/services/global_state.dart';
 import 'package:arabic_learning/services/app_data.dart';
 import 'package:arabic_learning/screens/setting/help_page.dart'
@@ -58,6 +59,9 @@ class _SettingPage extends State<SettingPage> {
                 SettingRow(
                   leading: "主题颜色",
                   icon: Icons.color_lens,
+                  note: appData.config.regular.dynamicColor
+                      ? "动态取色开启时作为回退色"
+                      : null,
                   end: DropdownButton<int>(
                     value: appData.config.regular.theme,
                     items: const [
@@ -87,19 +91,56 @@ class _SettingPage extends State<SettingPage> {
                 SettingRow(
                   leading: "深色模式",
                   icon: Icons.brightness_4,
-                  end: Switch(
-                    value: appData.config.regular.darkMode,
+                  note: "跟随系统 / 强制浅色 / 强制深色",
+                  end: DropdownButton<int>(
+                    value: appData.config.regular.themeMode,
+                    items: const [
+                      DropdownMenuItem(
+                        value: RegularConfig.themeModeSystem,
+                        child: Text('跟随系统'),
+                      ),
+                      DropdownMenuItem(
+                        value: RegularConfig.themeModeLight,
+                        child: Text('浅色'),
+                      ),
+                      DropdownMenuItem(
+                        value: RegularConfig.themeModeDark,
+                        child: Text('深色'),
+                      ),
+                    ],
                     onChanged: (value) {
-                      context.read<Global>().uiLogger.info(
-                        "更新深色模式设置: $value",
-                      );
+                      if (value == null) return;
+                      context.read<Global>().uiLogger.info("更新深色模式: $value");
                       AppData().config = AppData().config.copyWith(
                         regular: AppData().config.regular.copyWith(
-                          darkMode: value,
+                          themeMode: value,
                         ),
                       );
                       context.read<Global>().updateSetting();
                     },
+                  ),
+                ),
+                SettingRow(
+                  leading: "动态取色",
+                  icon: Icons.palette,
+                  note: kIsWeb
+                      ? "网页版不支持动态取色，将使用上方主题颜色"
+                      : "使用系统壁纸/主题配色（Material You），不支持时回退到主题颜色",
+                  end: Switch(
+                    value: appData.config.regular.dynamicColor,
+                    onChanged: kIsWeb
+                        ? null
+                        : (value) {
+                            context.read<Global>().uiLogger.info(
+                              "更新动态取色设置: $value",
+                            );
+                            AppData().config = AppData().config.copyWith(
+                              regular: AppData().config.regular.copyWith(
+                                dynamicColor: value,
+                              ),
+                            );
+                            context.read<Global>().updateSetting();
+                          },
                   ),
                 ),
                 SettingRow(

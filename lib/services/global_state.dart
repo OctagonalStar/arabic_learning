@@ -5,12 +5,15 @@ import 'dart:convert';
 
 import 'package:arabic_learning/core/date_utils.dart';
 import 'package:arabic_learning/core/statics.dart';
-import 'package:arabic_learning/models/config.dart' show Config;
+import 'package:arabic_learning/models/config.dart' show Config, RegularConfig;
 import 'package:arabic_learning/models/dict.dart' show DictData;
 import 'package:arabic_learning/models/reading.dart' show ReadingData;
 import 'package:arabic_learning/services/app_data.dart' show AppData;
 import 'package:arabic_learning/services/fsrs.dart' show FSRS;
 import 'package:arabic_learning/services/search.dart' show BKSearch;
+import 'package:arabic_learning/theme/app_theme.dart' show buildTheme;
+import 'package:arabic_learning/theme/theme_resolver.dart'
+    show ResolvedSchemes, ThemeResolver;
 import 'package:logging/logging.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
@@ -25,14 +28,56 @@ class Global with ChangeNotifier {
   String? zhFont;
   bool updateLogRequire = false; //是否需要显示更新日志
 
-  ThemeData get themeData => ThemeData(
-    useMaterial3: true,
-    colorScheme: ColorScheme.fromSeed(
-      seedColor: StaticsVar.themeList[AppData().config.regular.theme],
-      brightness: AppData().config.regular.darkMode ? Brightness.dark : Brightness.light,
-    ),
-    fontFamily: zhFont,
-  );
+  // 动态取色解析缓存：避免每次 build 重新请求原生插件。
+  ColorScheme? _dynamicLightScheme;
+  ColorScheme? _dynamicDarkScheme;
+  String? _dynamicSchemeKey;
+
+  /// 亮色主题。
+  ThemeData get lightThemeData => _buildTheme(Brightness.light);
+
+  /// 暗色主题。
+  ThemeData get darkThemeData => _buildTheme(Brightness.dark);
+
+  /// 由配置解析出的主题模式（跟随系统 / 浅色 / 深色）。
+  ThemeMode get themeMode =>
+      ThemeResolver.themeModeFromConfig(AppData().config.regular);
+
+  ThemeData _buildTheme(Brightness brightness) {
+    final RegularConfig regular = AppData().config.regular;
+    final ColorScheme scheme;
+    if (regular.dynamicColor &&
+        !kIsWeb &&
+        _dynamicLightScheme != null &&
+        _dynamicDarkScheme != null) {
+      scheme =
+          brightness == Brightness.dark ? _dynamicDarkScheme! : _dynamicLightScheme!;
+    } else {
+      scheme = ThemeResolver.seedScheme(regular, brightness);
+    }
+    return buildTheme(scheme, fontFamily: zhFont);
+  }
+
+  /// 按需解析并缓存动态取色方案；未启用或平台不支持时清空缓存回退种子色。
+  Future<void> _refreshDynamicScheme() async {
+    final RegularConfig regular = AppData().config.regular;
+    if (!regular.dynamicColor || kIsWeb) {
+      _dynamicLightScheme = null;
+      _dynamicDarkScheme = null;
+      _dynamicSchemeKey = null;
+      return;
+    }
+    final String key = regular.theme.toString();
+    if (_dynamicSchemeKey == key &&
+        _dynamicLightScheme != null &&
+        _dynamicDarkScheme != null) {
+      return;
+    }
+    final ResolvedSchemes schemes = await ThemeResolver.resolveSchemes(regular);
+    _dynamicLightScheme = schemes.light;
+    _dynamicDarkScheme = schemes.dark;
+    _dynamicSchemeKey = key;
+  }
 
 
   Future<bool> init() async {
@@ -143,6 +188,7 @@ class Global with ChangeNotifier {
     if(appData.config.audio.audioSource == 2) await appData.loadTTS(appData.config.audio.playRate);
     changeLoggerBehavior();
     updateTheme();
+    await _refreshDynamicScheme();
     notifyListeners();
     logger.info("应用设置完成");
   }

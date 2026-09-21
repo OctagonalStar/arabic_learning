@@ -15,6 +15,8 @@ void main() {
         theme: 1,
         font: 2,
         darkMode: true,
+        themeMode: RegularConfig.themeModeDark,
+        dynamicColor: true,
         hideAppDownloadButton: true,
       ),
       audio: AudioConfig(audioSource: 2, playRate: 1.5, autoPlay: true),
@@ -91,6 +93,84 @@ void main() {
 
     test('QuizConfig buildFromMap(null) 抛异常（设计如此）', () {
       expect(() => QuizConfig.buildFromMap(null), throwsA(isA<Exception>()));
+    });
+  });
+
+  group('RegularConfig 主题字段兼容与迁移', () {
+    test('旧数据无 themeMode 时由 darkMode 推导（true→深色）', () {
+      final RegularConfig rebuilt = RegularConfig.buildFromMap(<String, dynamic>{
+        "theme": 3,
+        "font": 1,
+        "darkMode": true,
+        "hideAppDownloadButton": false,
+      });
+      expect(rebuilt.themeMode, RegularConfig.themeModeDark);
+      expect(rebuilt.dynamicColor, isFalse);
+      expect(rebuilt.theme, 3);
+      expect(rebuilt.font, 1);
+    });
+
+    test('旧数据无 themeMode 时由 darkMode 推导（false→浅色）', () {
+      final RegularConfig rebuilt = RegularConfig.buildFromMap(<String, dynamic>{
+        "theme": 9,
+        "font": 0,
+        "darkMode": false,
+      });
+      expect(rebuilt.themeMode, RegularConfig.themeModeLight);
+      expect(rebuilt.dynamicColor, isFalse);
+    });
+
+    test('新安装 buildFromMap(null) 默认跟随系统且不启用动态取色', () {
+      final RegularConfig rebuilt = RegularConfig.buildFromMap(null);
+      expect(rebuilt.themeMode, RegularConfig.themeModeSystem);
+      expect(rebuilt.dynamicColor, isFalse);
+    });
+
+    test('新字段显式存在时优先于 darkMode', () {
+      final RegularConfig rebuilt = RegularConfig.buildFromMap(<String, dynamic>{
+        "darkMode": true,
+        "themeMode": RegularConfig.themeModeLight,
+        "dynamicColor": true,
+      });
+      expect(rebuilt.themeMode, RegularConfig.themeModeLight);
+      expect(rebuilt.dynamicColor, isTrue);
+    });
+
+    test('新字段往返一致', () {
+      const RegularConfig regular = RegularConfig(
+        theme: 5,
+        themeMode: RegularConfig.themeModeLight,
+        dynamicColor: true,
+      );
+      final RegularConfig rebuilt = RegularConfig.buildFromMap(regular.toMap());
+      expect(rebuilt.toMap(), regular.toMap());
+      expect(rebuilt.themeMode, RegularConfig.themeModeLight);
+      expect(rebuilt.dynamicColor, isTrue);
+    });
+
+    test('copyWith(themeMode) 同步旧 darkMode 字段', () {
+      const RegularConfig base = RegularConfig();
+      expect(
+        base.copyWith(themeMode: RegularConfig.themeModeDark).darkMode,
+        isTrue,
+      );
+      expect(
+        base.copyWith(themeMode: RegularConfig.themeModeLight).darkMode,
+        isFalse,
+      );
+      // 跟随系统无法确定亮暗，沿用原 darkMode
+      const RegularConfig darkBase = RegularConfig(darkMode: true);
+      expect(
+        darkBase.copyWith(themeMode: RegularConfig.themeModeSystem).darkMode,
+        isTrue,
+      );
+    });
+
+    test('toMap 始终写出旧 darkMode key 与新旧字段', () {
+      final Map<String, dynamic> map = const RegularConfig().toMap();
+      expect(map.containsKey("darkMode"), isTrue);
+      expect(map.containsKey("themeMode"), isTrue);
+      expect(map.containsKey("dynamicColor"), isTrue);
     });
   });
 
