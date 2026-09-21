@@ -9,6 +9,7 @@ import 'dart:math' as math;
 
 import 'package:arabic_learning/widgets/kit.dart' show Button;
 import 'package:arabic_learning/core/statics.dart';
+import 'package:arabic_learning/theme/tokens.dart' show AppMotion;
 import 'package:flutter/material.dart';
 
 /// 首页统计卡片
@@ -148,8 +149,8 @@ class ConclusionCard extends StatelessWidget {
       offset: visible
         ? (slideFromLeft ? Offset(-0.2, 0) : Offset(0.2, 0))
         : (slideFromLeft ? Offset(-1.5, 0.2) : Offset(1.5, 0.2)),
-      duration: Duration(seconds: 1),
-      curve: StaticsVar.curve,
+      duration: AppMotion.slow,
+      curve: AppMotion.standardCurve,
       child: Container(
         width: width ?? mediaQuery.size.width * 0.8,
         height: height ?? mediaQuery.size.height * 0.2,
@@ -169,8 +170,8 @@ class ConclusionCard extends StatelessWidget {
         ),
         child: TweenAnimationBuilder<double>(
           tween: Tween<double>(begin: 0.0, end: visible ? 1.0 : 0.0),
-          duration: Duration(seconds: 4),
-          curve: StaticsVar.curve,
+          duration: AppMotion.ultraSlow,
+          curve: AppMotion.standardCurve,
           builder: (context, value, child) => contentBuilder(context, value),
         ),
       ),
@@ -212,7 +213,7 @@ class PKScoreRow extends StatelessWidget {
         begin: 0,
         end: 1
       ),
-      curve: StaticsVar.curve,
+      curve: AppMotion.standardCurve,
       duration: duration,
       builder: (context, value, child) {
         return Row(
@@ -260,7 +261,7 @@ class PKScoreRow extends StatelessWidget {
 /// 裹为 Expanded + FittedBox([nextFit])；[tipLabelExpanded] 控制左侧文案是否
 /// 同样包裹；[tipIcon] / [nextIcon] / [nextIconDirection] 与
 /// [tipBackgroundColor] / [nextBackgroundColor] 原样传递给 [Button]。
-/// 动画时长固定为 Durations.medium2，曲线为 StaticsVar.curve。
+/// 动画时长固定为 AppMotion.medium，曲线为 AppMotion.standardCurve。
 class RevealableActionBar extends StatelessWidget {
   final bool revealed;
   final bool showTipButton;
@@ -311,8 +312,8 @@ class RevealableActionBar extends StatelessWidget {
         begin: 0.0,
         end: revealed ? 1.0 : 0.0
       ),
-      duration: Durations.medium2,
-      curve: StaticsVar.curve,
+      duration: AppMotion.medium,
+      curve: AppMotion.standardCurve,
       builder: (context, value, child) {
         return Row(
           mainAxisAlignment: MainAxisAlignment.center,

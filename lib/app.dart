@@ -13,7 +13,7 @@ import 'package:arabic_learning/screens/test/test_screen.dart' show TestPage;
 import 'package:arabic_learning/package_replacement/fake_dart_io.dart' if (dart.library.io) 'dart:io' as io;
 import 'package:arabic_learning/services/app_data.dart' show AppData;
 import 'package:arabic_learning/services/global_state.dart' show Global;
-import 'package:arabic_learning/theme/tokens.dart' show AppBreakpoints;
+import 'package:arabic_learning/theme/tokens.dart' show AppBreakpoints, AppMotion;
 import 'package:arabic_learning/widgets/feedback.dart' show LoadingIndicator;
 import 'package:arabic_learning/widgets/kit.dart';
 import 'package:flutter/foundation.dart';
@@ -58,6 +58,9 @@ class MyApp extends StatelessWidget {
               theme: global.lightThemeData,
               darkTheme: global.darkThemeData,
               themeMode: global.themeMode,
+              // 主题色 / 深浅色切换走统一动效 token，切换过程平滑过渡。
+              themeAnimationDuration: AppMotion.medium,
+              themeAnimationCurve: AppMotion.emphasizedCurve,
               // 在 MaterialApp 之下、Navigator 之上下发响应式数据：
               // home 与所有 push 出的路由共享同一份 AdaptiveData，
               // 取代原先在 build 期写 AppData().isWideScreen 的副作用。
@@ -174,7 +177,7 @@ class _MyHomePageState extends State<MyHomePage> {
             _onNavigationTapped(index);
           },
           height: MediaQuery.of(context).size.height * 0.1,
-          animationDuration: Durations.medium2,
+          animationDuration: AppMotion.medium,
           labelBehavior: NavigationDestinationLabelBehavior.onlyShowSelected,
           destinations: [
             for (final _NavItem item in _navItems)
@@ -193,8 +196,8 @@ class _MyHomePageState extends State<MyHomePage> {
   void _onNavigationTapped(int index) {
     _pageController.animateToPage(
       index,
-      duration: Durations.medium2,
-      curve: StaticsVar.curve,
+      duration: AppMotion.medium,
+      curve: AppMotion.standardCurve,
     );
   }
 

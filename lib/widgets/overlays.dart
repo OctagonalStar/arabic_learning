@@ -5,6 +5,7 @@
 import 'package:arabic_learning/core/statics.dart';
 import 'package:arabic_learning/models/dict.dart' show WordItem;
 import 'package:arabic_learning/services/global_state.dart';
+import 'package:arabic_learning/theme/tokens.dart' show AppMotion;
 import 'package:arabic_learning/widgets/feedback.dart' show LoadingIndicator;
 import 'package:arabic_learning/widgets/kit.dart' show Button, WordCard;
 import 'package:flutter/material.dart';
@@ -67,8 +68,8 @@ void showSnackBar(BuildContext context, String msg, {Duration duration = const D
       duration: duration,
     ),
     snackBarAnimationStyle: AnimationStyle(
-      curve: StaticsVar.curve,
-      reverseCurve: StaticsVar.curve
+      curve: AppMotion.standardCurve,
+      reverseCurve: AppMotion.standardCurve
     )
   );
 }

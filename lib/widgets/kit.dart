@@ -12,7 +12,7 @@ import 'dart:ui' show ImageFilter;
 import 'package:arabic_learning/core/adaptive.dart' show AdaptiveScope;
 import 'package:arabic_learning/core/extensions.dart';
 import 'package:arabic_learning/core/statics.dart';
-import 'package:arabic_learning/theme/tokens.dart' show AppRadius, AppSemanticColors;
+import 'package:arabic_learning/theme/tokens.dart' show AppMotion, AppRadius, AppSemanticColors;
 import 'package:arabic_learning/theme/typography.dart';
 import 'package:arabic_learning/models/dict.dart' show ClassItem, SourceItem, WordItem;
 import 'package:arabic_learning/models/reading.dart' show ClassSelection;
@@ -222,8 +222,8 @@ class TextContainer extends StatelessWidget {
       child: (animated)
         ? TweenAnimationBuilder<double>(
           tween: Tween(begin: 0.0, end: text.length.toDouble()), 
-          duration: Durations.long4,
-          curve: StaticsVar.curve,
+          duration: AppMotion.long2,
+          curve: AppMotion.standardCurve,
           builder: (context, value, child) {
             if(value == text.length.toDouble()) return child!;
             return Row(
@@ -362,6 +362,32 @@ class _ChooseButtonBoxState extends State<ChooseButtonBox> {
   Color? onColor;
   bool isChoosed = false;
 
+  /// 警示色动画结束后待落定的作答结果；`null` 表示没有待处理结果。
+  /// 由 [AnimatedContainer.onEnd] 消费且只消费一次，取代原先与动画时长
+  /// 并行赛跑的 `Future.delayed`，保证正误色严格在颜色动画完成后切换。
+  bool? _pendingResult;
+
+  /// 依据 [ans] 落定按钮的正误颜色（调用方负责包在 `setState` 内）。
+  void _applyResult(bool ans, ColorScheme scheme, AppSemanticColors semantic) {
+    if(ans) {
+      color = semantic.success;
+      onColor = semantic.onSuccess;
+    } else {
+      color = scheme.error;
+      onColor = scheme.onError;
+    }
+  }
+
+  /// 颜色动画结束：落定第一阶段暂存的作答结果，只处理一次。
+  void _onColorAnimationEnd() {
+    final bool? ans = _pendingResult;
+    if(ans == null) return;
+    _pendingResult = null;
+    setState(() {
+      _applyResult(ans, Theme.of(context).colorScheme, context.semanticColors);
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     final ColorScheme scheme = Theme.of(context).colorScheme;
@@ -370,47 +396,34 @@ class _ChooseButtonBoxState extends State<ChooseButtonBox> {
     onColor ??= widget.cl == null ? scheme.onPrimaryContainer : scheme.onSurface;
     return AnimatedContainer(
       margin: EdgeInsets.all(8.0),
-      duration: widget.isAnimated ? Durations.medium4 : Duration(),
-      curve: StaticsVar.curve,
+      duration: widget.isAnimated ? AppMotion.mediumLong : Duration(),
+      curve: AppMotion.standardCurve,
+      // 关闭动画时不会产生待处理结果，回调内部直接空转。
+      onEnd: _onColorAnimationEnd,
       decoration: BoxDecoration(
         color: color,
         borderRadius: StaticsVar.br,
       ),
       child: Button(
         onPressed: () {
+          if(isChoosed) return;
           setState(() {
-            if(isChoosed) return;
             isChoosed = true;
             bool? ans = widget.chose(widget.index);
             if(ans != null) {
               if(widget.isAnimated) {
+                // 先闪警示色，动画结束后由 onEnd 落定正误色。
                 color = semantic.warning;
                 onColor = semantic.onWarning;
-                Future.delayed(Durations.medium4, (){
-                  setState(() {
-                    if(ans) {
-                      color = semantic.success;
-                      onColor = semantic.onSuccess;
-                    } else {
-                      color = scheme.error;
-                      onColor = scheme.onError;
-                    }
-                  });
-                });
+                _pendingResult = ans;
               } else {
-                if(ans) {
-                  color = semantic.success;
-                  onColor = semantic.onSuccess;
-                } else {
-                  color = scheme.error;
-                  onColor = scheme.onError;
-                }
+                // 关闭动画时保持原语义：立即落定正误色。
+                _applyResult(ans, scheme, semantic);
               }
             } else {
-              setState(() {
-                color = scheme.primaryContainer;
-                onColor = scheme.onPrimaryContainer;
-              });
+              // 未产生正误判定：恢复初始色。
+              color = scheme.primaryContainer;
+              onColor = scheme.onPrimaryContainer;
             }
           });
         },
@@ -865,8 +878,8 @@ class WordCard extends StatelessWidget {
                     begin: 1.0,
                     end: hide ? 1.0 : 0.0
                   ),
-                  duration: Durations.extralong2,
-                  curve: StaticsVar.curve,
+                  duration: AppMotion.extraLong1,
+                  curve: AppMotion.standardCurve,
                   builder: (context, value, child) {
                     return ClipRRect(
                       borderRadius: BorderRadiusGeometry.vertical(bottom: Radius.circular(AppRadius.card)),

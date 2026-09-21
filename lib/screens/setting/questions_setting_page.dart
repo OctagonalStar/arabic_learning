@@ -5,8 +5,7 @@ import 'package:arabic_learning/models/config.dart';
 import 'package:arabic_learning/services/global_state.dart';
 import 'package:arabic_learning/services/app_data.dart';
 import 'package:arabic_learning/core/adaptive.dart' show AdaptiveScope;
-import 'package:arabic_learning/core/statics.dart';
-import 'package:arabic_learning/theme/tokens.dart' show AppRadius;
+import 'package:arabic_learning/theme/tokens.dart' show AppMotion, AppRadius;
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -179,8 +178,8 @@ class _QuestionsSettingPage extends State<QuestionsSettingPage> {
             begin: 0.0,
             end: floatButtonFlod ? 0.0 : 1.0
           ), 
-          duration: Durations.long2,
-          curve: StaticsVar.curve, 
+          duration: AppMotion.long1,
+          curve: AppMotion.standardCurve, 
           builder: (context, value, child) {
             return Container(
               decoration: BoxDecoration(

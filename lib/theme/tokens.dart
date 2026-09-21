@@ -55,7 +55,8 @@ class AppRadius {
 
 /// 动效 token：常用 `Duration` 与 `Curve`。
 ///
-/// 数值沿用 Material 的 `Durations`，为 Phase 5 动效系统提供统一入口。
+/// 毫秒级数值沿用 Material 的 `Durations`，秒级长动画单独命名；
+/// 所有动画调用点统一引用此处 token，避免散落的字面量。
 @immutable
 class AppMotion {
   const AppMotion._();
@@ -72,8 +73,15 @@ class AppMotion {
   /// 加速曲线（退场）。
   static const Curve accelerateCurve = Curves.easeInCubic;
 
+  /// 线性曲线：仅用于按时间 / 进度做线性映射的场景
+  /// （如 PK 开场倒计时、阅读结果页的 Interval 时间轴）。
+  static const Curve linearCurve = Curves.linear;
+
   /// 快速（约 200ms）。
   static const Duration quick = Durations.short4;
+
+  /// 中短（约 250ms，沿用 `Durations.medium1`）。
+  static const Duration mediumShort = Durations.medium1;
 
   /// 常规（约 300ms，沿用 `Durations.medium2`）。
   static const Duration medium = Durations.medium2;
@@ -92,6 +100,18 @@ class AppMotion {
 
   /// 超长（约 800ms，沿用 `Durations.extralong4`）。
   static const Duration extraLong2 = Durations.extralong4;
+
+  /// 秒级（1s）—— 联机结算行、听写进度等慢速动画。
+  static const Duration slow = Duration(seconds: 1);
+
+  /// 秒级（2s）—— 联机结算得分条。
+  static const Duration slower = Duration(seconds: 2);
+
+  /// 秒级（3s）—— 阅读结果页入场。
+  static const Duration slowest = Duration(seconds: 3);
+
+  /// 秒级（4s）—— 结论卡内容揭示。
+  static const Duration ultraSlow = Duration(seconds: 4);
 }
 
 /// 响应式断点 token（逻辑像素宽度）。

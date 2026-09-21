@@ -6,6 +6,7 @@ import 'package:provider/provider.dart';
 
 import 'package:arabic_learning/core/extensions.dart';
 import 'package:arabic_learning/core/statics.dart';
+import 'package:arabic_learning/theme/tokens.dart' show AppMotion;
 import 'package:arabic_learning/services/global_state.dart';
 import 'package:arabic_learning/services/app_data.dart';
 import 'package:arabic_learning/theme/typography.dart';
@@ -332,7 +333,8 @@ class _MainListeningPageState extends State<MainListeningPage> {
               begin: 0.0,
               end: index/(widget.words.length * widget.playTimes),
             ),
-            duration: Duration(seconds: 1), 
+            duration: AppMotion.slow,
+            curve: AppMotion.standardCurve,
             builder: (context, value, child) {
               return LinearProgressIndicator(
                 borderRadius: StaticsVar.br,

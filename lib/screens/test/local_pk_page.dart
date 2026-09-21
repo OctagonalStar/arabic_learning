@@ -12,6 +12,7 @@ import 'package:arabic_learning/services/global_state.dart';
 import 'package:arabic_learning/services/app_data.dart';
 import 'package:arabic_learning/core/extensions.dart';
 import 'package:arabic_learning/core/statics.dart';
+import 'package:arabic_learning/theme/tokens.dart' show AppMotion;
 import 'package:arabic_learning/theme/typography.dart';
 import 'package:flutter/foundation.dart' show clampDouble;
 import 'package:flutter/material.dart';
@@ -373,7 +374,7 @@ class PKClassSelectionPage extends StatelessWidget {
                 ClassSelection selection = await popSelectClasses(context, forceSelectRange: context.read<PKServer>().selectableSource, withCache: false, withReviewChoose: false);
                 if(!context.mounted || selection.selectedClass.isEmpty) return;
                 context.read<PKServer>().setSelectedClass(selection);
-                context.read<PKServer>().pageController!.nextPage(duration: Durations.medium2, curve: StaticsVar.curve);
+                context.read<PKServer>().pageController!.nextPage(duration: AppMotion.medium, curve: AppMotion.standardCurve);
               }, 
               child: Text("开始选课")
             )
@@ -504,7 +505,9 @@ class PKPreparePage extends StatelessWidget {
                 begin: 1,
                 end: 0
               ), 
+              // 倒计时进度严格按剩余时间线性推进，时长由业务时刻决定，不参与动效 token 化。
               duration: context.read<PKServer>().startTime!.difference(DateTime.now()), 
+              curve: AppMotion.linearCurve,
               builder: (context, value, child) => Column(
                 children: [
                   CircularProgressIndicator(value: value),
@@ -600,7 +603,7 @@ class _PKOngoingPage extends State<PKOngoingPage> {
                       allowAudio: true, 
                       allowAnitmation: false,
                       onSelected: (int choosed) {
-                        pageController.nextPage(duration: Durations.medium2, curve: StaticsVar.curve);
+                        pageController.nextPage(duration: AppMotion.medium, curve: AppMotion.standardCurve);
                         if(choiceOptions[index][choosed] == context.read<PKServer>().pkState.testWords[index].chinese) {
                           context.read<PKServer>().updateState(true);
                           return true;
@@ -645,7 +648,7 @@ class PKConclue extends StatelessWidget {
       children: [
         Text("回答正确数", style:Theme.of(context).textTheme.titleLarge),
         PKScoreRow(
-          duration: Duration(seconds: 1),
+          duration: AppMotion.slow,
           scoreBias: (selfCorrect - sideCorrect)/context.read<PKServer>().pkState.testWords.length,
           leftText: (value) => "你  ${(value*selfCorrect).floor()}",
           rightText: (value) => "${(value*sideCorrect).floor()}  对方",
@@ -653,7 +656,7 @@ class PKConclue extends StatelessWidget {
         SizedBox(height: mediaQuery.size.height * 0.05),
         Text("回答用时", style:Theme.of(context).textTheme.titleLarge),
         PKScoreRow(
-          duration: Durations.medium2,
+          duration: AppMotion.medium,
           scoreBias: (context.read<PKServer>().pkState.sideTookenTime! - context.read<PKServer>().pkState.selfTookenTime!)/300,
           leftText: (value) => "你  ${(value*context.read<PKServer>().pkState.selfTookenTime!).floor()}秒",
           rightText: (value) => "${(value*context.read<PKServer>().pkState.sideTookenTime!).floor()}秒  对方",
@@ -661,7 +664,7 @@ class PKConclue extends StatelessWidget {
         SizedBox(height: mediaQuery.size.height * 0.05),
         Text("计算得分", style:Theme.of(context).textTheme.titleLarge),
         PKScoreRow(
-          duration: Duration(seconds: 2),
+          duration: AppMotion.slower,
           scoreBias: (selfPt - sidePt)/300,
           leftText: (value) => "你  ${(value*selfPt).round()}Pt",
           rightText: (value) => "${(value*sidePt).round()}Pt  对方",
@@ -701,7 +704,8 @@ class TopScoreBar extends StatelessWidget {
                   begin: 0.0,
                   end: context.watch<PKServer>().pkState.selfProgress.length/context.watch<PKServer>().pkState.testWords.length
                 ),
-                duration: Durations.medium2,
+                duration: AppMotion.medium,
+                curve: AppMotion.standardCurve,
                 builder: (context, value, child) {
                   return LinearProgressIndicator(
                     value: value,
@@ -724,7 +728,8 @@ class TopScoreBar extends StatelessWidget {
                   begin: 0.0,
                   end: context.watch<PKServer>().pkState.sideProgress.length/context.watch<PKServer>().pkState.testWords.length
                 ),
-                duration: Durations.medium2,
+                duration: AppMotion.medium,
+                curve: AppMotion.standardCurve,
                 builder: (context, value, child) {
                   return LinearProgressIndicator(
                     value: value,

@@ -15,6 +15,7 @@ import 'package:provider/provider.dart';
 
 import 'package:arabic_learning/core/adaptive.dart' show AdaptiveScope;
 import 'package:arabic_learning/core/statics.dart';
+import 'package:arabic_learning/theme/tokens.dart' show AppMotion;
 import 'package:arabic_learning/services/global_state.dart';
 import 'package:arabic_learning/services/app_data.dart';
 import 'package:arabic_learning/widgets/kit.dart' show Button, CategoryFilter, TextContainer, WordCard;
@@ -161,8 +162,8 @@ class _InLearningPageState extends State<InLearningPage> {
                     begin: 0.00,
                     end: ((controller.hasClients ? controller.page?.ceil() : 0) ?? 0) / (testList.length - 1),
                   ),
-                  duration: Durations.extralong4,
-                  curve: StaticsVar.curve,
+                  duration: AppMotion.extraLong2,
+                  curve: AppMotion.standardCurve,
                   builder: (context, value, child) {
                     return LinearProgressIndicator(
                       value: 0.05 + value * 0.95,
@@ -209,7 +210,7 @@ class _InLearningPageState extends State<InLearningPage> {
                   bottomWidget: Button(
                     size: Size(mediaQuery.size.width * 0.8, clampDouble(mediaQuery.size.height * 0.1, 48.0, 96.0)),
                     onPressed: (){
-                      controller.nextPage(duration: Durations.medium2, curve: StaticsVar.curve);
+                      controller.nextPage(duration: AppMotion.medium, curve: AppMotion.standardCurve);
                       correctCount++;
                       setState(() {});
                     },
@@ -246,7 +247,7 @@ class _InLearningPageState extends State<InLearningPage> {
                     isShowNext: clicked, 
                     isLast: controller.page?.ceil() == testList.length - 1, 
                     onNextClicked: (){
-                      controller.nextPage(duration: Durations.medium2, curve: StaticsVar.curve);
+                      controller.nextPage(duration: AppMotion.medium, curve: AppMotion.standardCurve);
                       setState(() {
                         clicked = false;
                       });
@@ -278,7 +279,7 @@ class _InLearningPageState extends State<InLearningPage> {
                     isShowNext: clicked, 
                     isLast: controller.page?.ceil() == testList.length - 1, 
                     onNextClicked: (){
-                      controller.nextPage(duration: Durations.medium2, curve: StaticsVar.curve);
+                      controller.nextPage(duration: AppMotion.medium, curve: AppMotion.standardCurve);
                       setState(() {
                         clicked = false;
                       });
@@ -317,7 +318,7 @@ class _InLearningPageState extends State<InLearningPage> {
                     isShowNext: clicked, 
                     isLast: controller.page?.ceil() == testList.length - 1, 
                     onNextClicked: (){
-                      controller.nextPage(duration: Durations.medium2, curve: StaticsVar.curve);
+                      controller.nextPage(duration: AppMotion.medium, curve: AppMotion.standardCurve);
                       setState(() {
                         clicked = false;
                       });
@@ -586,8 +587,8 @@ class _WordCardOverViewPage extends State<WordCardOverViewPage> {
           preferredSize: Size(mediaQuery.size.width, 75), 
           child: TweenAnimationBuilder<double>(
             tween: Tween(begin: 0.0, end: inSearch ? 1.0 : 0.0), 
-            duration: Durations.short4, 
-            curve: StaticsVar.curve,
+            duration: AppMotion.quick, 
+            curve: AppMotion.standardCurve,
             builder: (context, value, child){
               return Center(
                 child: SizedBox(
@@ -816,8 +817,8 @@ class _WordCardOverViewLayout extends State<WordCardOverViewLayout> {
                 });
                 jsonController.animateTo(
                   (66 * jsonIndex).toDouble(), 
-                  duration: Durations.medium1, 
-                  curve: StaticsVar.curve
+                  duration: AppMotion.mediumShort, 
+                  curve: AppMotion.standardCurve
                 );
               },
               children: [
@@ -842,19 +843,19 @@ class _WordCardOverViewLayout extends State<WordCardOverViewLayout> {
                           if(value) {
                             classController.animateTo(
                               (64 * classIndex).toDouble(), 
-                              duration: Durations.medium1, 
-                              curve: StaticsVar.curve
+                              duration: AppMotion.mediumShort, 
+                              curve: AppMotion.standardCurve
                             );
                             jsonController.animateTo(
                               (66 * (jsonIndex + 1)).toDouble(), 
-                              duration: Durations.medium1, 
-                              curve: StaticsVar.curve
+                              duration: AppMotion.mediumShort, 
+                              curve: AppMotion.standardCurve
                             );
                           } else {
                             jsonController.animateTo(
                               (66 * jsonIndex).toDouble(), 
-                              duration: Durations.medium1, 
-                              curve: StaticsVar.curve
+                              duration: AppMotion.mediumShort, 
+                              curve: AppMotion.standardCurve
                             );
                           }
                         },
@@ -904,6 +905,7 @@ class _WordLookupLayoutState extends State<WordLookupLayout> {
 
     context.read<Global>().uiLogger.finer("单词检索结果: $match");
     if(!AppData().config.learning.wordLookupRealtime){
+      // 固定展示延迟属业务时序（等待列表渲染完成），不参与动效 token 化。
       Future.delayed(Durations.medium1, () {
         if(context.mounted) {
           showSnackBar(context, "检索到${match.length}个结果");

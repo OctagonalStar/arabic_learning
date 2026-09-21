@@ -11,6 +11,7 @@ import 'package:arabic_learning/core/extensions.dart';
 import 'package:arabic_learning/core/statics.dart';
 import 'package:arabic_learning/services/global_state.dart';
 import 'package:arabic_learning/services/app_data.dart';
+import 'package:arabic_learning/theme/tokens.dart' show AppMotion;
 
 class DebugPage extends StatefulWidget {
   const DebugPage({super.key});
@@ -53,7 +54,7 @@ class _DebugPage extends State<DebugPage> {
       floatingActionButton: FloatingActionButton(
         child: Icon(Icons.arrow_upward),
         onPressed: (){
-          controller.animateTo(0, duration: Durations.medium2, curve: StaticsVar.curve);
+          controller.animateTo(0, duration: AppMotion.medium, curve: AppMotion.standardCurve);
         }
       ),
       body: SafeArea(top: false, child: ListView(

@@ -4,11 +4,11 @@
 
 import 'package:arabic_learning/core/adaptive.dart' show AdaptiveScope;
 import 'package:arabic_learning/core/extensions.dart';
-import 'package:arabic_learning/core/statics.dart';
 import 'package:arabic_learning/models/dict.dart' show WordItem;
 import 'package:arabic_learning/services/global_state.dart';
 import 'package:arabic_learning/services/tts.dart';
 import 'package:arabic_learning/services/words.dart' show calculateButtonBoxLayout;
+import 'package:arabic_learning/theme/tokens.dart' show AppMotion;
 import 'package:arabic_learning/theme/typography.dart';
 import 'package:arabic_learning/widgets/kit.dart' show Button, ChooseButtons, TextContainer, WordCard;
 import 'package:arabic_learning/widgets/overlays.dart' show alart, showSnackBar;
@@ -230,8 +230,8 @@ class _SpellQuestion extends State<SpellQuestion> {
                       : context.semanticColors.error).withAlpha(64)
                   : Theme.of(context).colorScheme.surfaceContainerHighest
               ),
-              duration: Durations.medium2,
-              curve: StaticsVar.curve,
+              duration: AppMotion.medium,
+              curve: AppMotion.standardCurve,
               builder: (context, value, child) {
                 return TextField(
                   textDirection: TextDirection.rtl,

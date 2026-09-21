@@ -11,6 +11,7 @@ import 'package:arabic_learning/widgets/overlays.dart' show alart, viewAnswer;
 import 'package:arabic_learning/widgets/questions.dart' show ChoiceQuestions;
 import 'package:arabic_learning/widgets/shared.dart' show RevealableActionBar, SettingCard;
 import 'package:arabic_learning/core/statics.dart';
+import 'package:arabic_learning/theme/tokens.dart' show AppMotion;
 import 'package:arabic_learning/services/global_state.dart';
 import 'package:arabic_learning/services/app_data.dart';
 import 'package:arabic_learning/services/words.dart';
@@ -371,7 +372,8 @@ class _MainFSRSPageState extends State<MainFSRSPage> {
                     begin: 0,
                     end: (initalReviewNum-widget.fsrs.getWillDueCount())/initalReviewNum
                   ), 
-                  duration: Durations.medium2, 
+                  duration: AppMotion.medium,
+                  curve: AppMotion.standardCurve,
                   builder: (context, value, child) {
                     return LinearProgressIndicator(
                     value: value,
@@ -562,7 +564,7 @@ class _FSRSReviewCardPage extends State<FSRSReviewCardPage> {
           nextIcon: Icon(Icons.arrow_downward),
           nextLabel: "下一题",
           onNextClicked: () {
-            widget.controller.nextPage(duration: Durations.medium2, curve: StaticsVar.curve);
+            widget.controller.nextPage(duration: AppMotion.medium, curve: AppMotion.standardCurve);
           },
         )
       )
@@ -636,9 +638,9 @@ class _FSRSLearningPageState extends State<FSRSLearningPage> {
                     icon: Icon(index == widget.words.length-1 ? Icons.arrow_forward : Icons.arrow_downward),
                     onPressed: (){
                       if(index == widget.words.length-1) {
-                        controllerHor.nextPage(duration: Durations.medium2, curve: StaticsVar.curve);
+                        controllerHor.nextPage(duration: AppMotion.medium, curve: AppMotion.standardCurve);
                       } else {
-                      controllerLearning.nextPage(duration: Durations.medium2, curve: StaticsVar.curve);
+                      controllerLearning.nextPage(duration: AppMotion.medium, curve: AppMotion.standardCurve);
                       }
                     }, 
                     child: Text(index == widget.words.length-1 ? "开始答题" : "下一个"),
@@ -694,9 +696,9 @@ class _FSRSLearningPageState extends State<FSRSLearningPage> {
                   nextFit: BoxFit.contain,
                   onNextClicked: () {
                     if(index == widget.words.length-1) {
-                      controllerHor.nextPage(duration: Durations.medium2, curve: StaticsVar.curve);
+                      controllerHor.nextPage(duration: AppMotion.medium, curve: AppMotion.standardCurve);
                     }
-                    controllerQuestions.nextPage(duration: Durations.medium2, curve: StaticsVar.curve);
+                    controllerQuestions.nextPage(duration: AppMotion.medium, curve: AppMotion.standardCurve);
                   },
                 )
               );

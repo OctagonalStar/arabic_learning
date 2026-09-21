@@ -11,7 +11,7 @@ import 'package:arabic_learning/models/reading.dart';
 import 'package:arabic_learning/services/app_data.dart';
 import 'package:arabic_learning/core/statics.dart';
 import 'package:arabic_learning/core/ai_prompt.dart';
-import 'package:arabic_learning/theme/tokens.dart' show AppBreakpoints, AppSemanticColors;
+import 'package:arabic_learning/theme/tokens.dart' show AppBreakpoints, AppMotion, AppSemanticColors;
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart' show clampDouble;
 import 'package:flutter/material.dart';
@@ -273,7 +273,7 @@ class _ReadingTestAddLeading extends State<ReadingTestAddLeading> {
         case 2: qconfig.sourceType = type;
       }
       
-      _pageController.animateToPage(toPage, duration: Durations.medium2, curve: StaticsVar.curve);
+      _pageController.animateToPage(toPage, duration: AppMotion.medium, curve: AppMotion.standardCurve);
     };
   }
 
@@ -508,8 +508,8 @@ class _ReadingQuestionPage extends State<ReadingQuestionPage> {
                         begin: 0,
                         end: index == 0 ? 0 : 0.5
                       ),
-                      duration: Durations.medium4,
-                      curve: StaticsVar.curve,
+                      duration: AppMotion.mediumLong,
+                      curve: AppMotion.standardCurve,
                       builder: (context, double i, child) {
                         return  Row(
                           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
@@ -518,14 +518,14 @@ class _ReadingQuestionPage extends State<ReadingQuestionPage> {
                               size: Size.fromWidth(constraints.maxWidth * 0.3 * i),
                               icon: Icon(Icons.arrow_back_ios),
                               iconDirection: AxisDirection.left,
-                              onPressed: () => pageController.previousPage(duration: Durations.medium4, curve: StaticsVar.curve),
+                              onPressed: () => pageController.previousPage(duration: AppMotion.mediumLong, curve: AppMotion.standardCurve),
                               child: ButtonLabel(child: Text("上一题")),
                             ),
                             if(index != widget.unit.questions.length) Button(
                               size: Size.fromWidth(constraints.maxWidth * 0.3 * (1 - i)),
                               icon: Icon(Icons.arrow_forward_ios),
                               iconDirection: AxisDirection.right,
-                              onPressed: () => pageController.nextPage(duration: Durations.medium4, curve: StaticsVar.curve),
+                              onPressed: () => pageController.nextPage(duration: AppMotion.mediumLong, curve: AppMotion.standardCurve),
                               child: ButtonLabel(child: Text(index == widget.unit.questions.length-1 ? "检查答案" : "下一题")),
                             ),
                           ],
@@ -960,9 +960,9 @@ class ReadingResultPage extends StatelessWidget {
   final List<int?> selection;
   final List<List<String>> options;
   
-  static const Interval downProgress = Interval(0.066, 0.233, curve: StaticsVar.curve);
-  static const Interval slideProgress = Interval(0.233, 0.666, curve: StaticsVar.curve);
-  static const Interval correctProgress = Interval(0.666, 1, curve: StaticsVar.curve);
+  static const Interval downProgress = Interval(0.066, 0.233, curve: AppMotion.standardCurve);
+  static const Interval slideProgress = Interval(0.233, 0.666, curve: AppMotion.standardCurve);
+  static const Interval correctProgress = Interval(0.666, 1, curve: AppMotion.standardCurve);
 
 
   const ReadingResultPage({super.key, required this.unit, required this.selection, required this.options});
@@ -988,8 +988,10 @@ class ReadingResultPage extends StatelessWidget {
           begin: 0.0,
           end: 1.0
         ), 
-        curve: Curves.linear,
-        duration: Duration(seconds: 3), 
+        // 单一时间轴驱动 dp/sp/cp 三段 Interval，必须线性推进，
+        // 保证三段动画的起止时刻严格按设计比例对齐。
+        curve: AppMotion.linearCurve,
+        duration: AppMotion.slowest, 
         builder: (context, t, child){
           sp = slideProgress.transform(t);
           cp = correctProgress.transform(t);
