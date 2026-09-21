@@ -46,3 +46,7 @@ app.*.map.json
 
 # Gemini
 .gemini/
+
+# opencode
+.omo/
+temp/
