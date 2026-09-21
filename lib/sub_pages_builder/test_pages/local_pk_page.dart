@@ -2,16 +2,18 @@ import 'dart:math';
 
 import 'package:arabic_learning/funcs/shared_widgets.dart';
 import 'package:arabic_learning/funcs/ui.dart';
-import 'package:arabic_learning/funcs/utili.dart';
-import 'package:arabic_learning/vars/config_structure.dart';
-import 'package:arabic_learning/vars/global.dart';
-import 'package:arabic_learning/vars/statics_var.dart';
+import 'package:arabic_learning/services/words.dart';
+import 'package:arabic_learning/models/dict.dart';
+import 'package:arabic_learning/models/reading.dart';
+import 'package:arabic_learning/services/global_state.dart';
+import 'package:arabic_learning/services/app_data.dart';
+import 'package:arabic_learning/core/statics.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart' show Clipboard, ClipboardData;
 import 'package:qr_flutter/qr_flutter.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:provider/provider.dart';
-import 'package:arabic_learning/funcs/local_pk_server.dart';
+import 'package:arabic_learning/services/pk_server.dart';
 
 
 class LocalPKSelectPage extends StatefulWidget {

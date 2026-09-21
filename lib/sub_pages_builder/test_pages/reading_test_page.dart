@@ -3,10 +3,12 @@ import 'dart:math';
 
 import 'package:arabic_learning/funcs/shared_widgets.dart';
 import 'package:arabic_learning/funcs/ui.dart';
-import 'package:arabic_learning/funcs/utili.dart';
-import 'package:arabic_learning/vars/config_structure.dart';
-import 'package:arabic_learning/vars/global.dart';
-import 'package:arabic_learning/vars/statics_var.dart';
+import 'package:arabic_learning/core/extensions.dart';
+import 'package:arabic_learning/core/selection.dart';
+import 'package:arabic_learning/models/reading.dart';
+import 'package:arabic_learning/services/app_data.dart';
+import 'package:arabic_learning/core/statics.dart';
+import 'package:arabic_learning/core/ai_prompt.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart' show Clipboard, ClipboardData, DeviceOrientation, SystemChrome;

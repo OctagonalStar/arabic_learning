@@ -1,9 +1,9 @@
 import 'dart:convert';
 import 'dart:math';
 
-import 'package:arabic_learning/funcs/date_utils.dart';
-import 'package:arabic_learning/vars/config_structure.dart';
-import 'package:arabic_learning/vars/statics_var.dart';
+import 'package:arabic_learning/core/date_utils.dart';
+import 'package:arabic_learning/models/config.dart';
+import 'package:arabic_learning/core/statics.dart';
 import 'package:workmanager/workmanager.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:arabic_learning/package_replacement/storage.dart';

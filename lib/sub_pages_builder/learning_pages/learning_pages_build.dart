@@ -1,15 +1,20 @@
 import 'dart:async';
 import 'dart:math';
 
-import 'package:arabic_learning/funcs/fsrs_func.dart' show FSRS;
-import 'package:arabic_learning/funcs/utili.dart' show BKSearch, StringExtensions, getRandomWords, playTextToSpeech;
-import 'package:arabic_learning/vars/config_structure.dart';
+import 'package:arabic_learning/services/fsrs.dart' show FSRS;
+import 'package:arabic_learning/services/search.dart' show BKSearch;
+import 'package:arabic_learning/core/extensions.dart' show StringExtensions;
+import 'package:arabic_learning/services/words.dart' show getRandomWords;
+import 'package:arabic_learning/services/tts.dart' show playTextToSpeech;
+import 'package:arabic_learning/models/config.dart';
+import 'package:arabic_learning/models/dict.dart';
 import 'package:flutter/material.dart';
 import 'package:fsrs/fsrs.dart' show Rating;
 import 'package:provider/provider.dart';
 
-import 'package:arabic_learning/vars/statics_var.dart';
-import 'package:arabic_learning/vars/global.dart';
+import 'package:arabic_learning/core/statics.dart';
+import 'package:arabic_learning/services/global_state.dart';
+import 'package:arabic_learning/services/app_data.dart';
 import 'package:arabic_learning/funcs/shared_widgets.dart';
 import 'package:arabic_learning/funcs/ui.dart';
 

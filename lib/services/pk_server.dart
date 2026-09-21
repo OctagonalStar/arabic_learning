@@ -3,12 +3,13 @@ import 'dart:convert';
 import 'dart:math';
 import 'package:arabic_learning/funcs/ui.dart';
 import 'package:archive/archive.dart';
-import 'package:arabic_learning/funcs/utili.dart';
-import 'package:arabic_learning/vars/config_structure.dart';
-import 'package:arabic_learning/vars/global.dart';
+import 'package:arabic_learning/services/words.dart';
+import 'package:arabic_learning/models/dict.dart';
+import 'package:arabic_learning/models/reading.dart';
+import 'package:arabic_learning/services/app_data.dart';
 import 'package:flutter/material.dart' show BuildContext, PageController, Durations;
 import 'package:logging/logging.dart';
-import 'package:arabic_learning/vars/statics_var.dart';
+import 'package:arabic_learning/core/statics.dart';
 import 'package:flutter/foundation.dart' show ChangeNotifier;
 import 'package:flutter_webrtc/flutter_webrtc.dart';
 

@@ -1,15 +1,17 @@
 import 'dart:math';
 
-import 'package:arabic_learning/funcs/fsrs_func.dart';
+import 'package:arabic_learning/services/fsrs.dart';
 import 'package:arabic_learning/sub_pages_builder/setting_pages/questions_setting_page.dart' show QuestionsSettingPage;
-import 'package:arabic_learning/vars/config_structure.dart';
+import 'package:arabic_learning/models/dict.dart';
+import 'package:arabic_learning/models/reading.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import 'package:arabic_learning/funcs/shared_widgets.dart';
 import 'package:arabic_learning/funcs/ui.dart';
-import 'package:arabic_learning/funcs/utili.dart';
-import 'package:arabic_learning/vars/global.dart';
+import 'package:arabic_learning/services/words.dart';
+import 'package:arabic_learning/services/global_state.dart';
+import 'package:arabic_learning/services/app_data.dart';
 import 'package:arabic_learning/sub_pages_builder/learning_pages/fsrs_pages.dart' show FSRSLearningPage, ForeFSRSSettingPage;
 import 'package:arabic_learning/sub_pages_builder/learning_pages/learning_pages_build.dart';
 

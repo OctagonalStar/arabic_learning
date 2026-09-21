@@ -1,8 +1,9 @@
 import 'package:arabic_learning/funcs/ui.dart';
-import 'package:arabic_learning/funcs/utili.dart';
-import 'package:arabic_learning/vars/global.dart';
-import 'package:arabic_learning/vars/license_storage.dart';
-import 'package:arabic_learning/vars/statics_var.dart';
+import 'package:arabic_learning/services/download.dart';
+import 'package:arabic_learning/services/global_state.dart';
+import 'package:arabic_learning/services/app_data.dart';
+import 'package:arabic_learning/core/license_storage.dart';
+import 'package:arabic_learning/core/statics.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:path_provider/path_provider.dart';

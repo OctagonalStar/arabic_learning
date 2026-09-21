@@ -1,5 +1,5 @@
-import 'package:arabic_learning/vars/global.dart';
-import 'package:arabic_learning/vars/config_structure.dart';
+import 'package:arabic_learning/services/app_data.dart';
+import 'package:arabic_learning/models/dict.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import '../helpers/test_env.dart';

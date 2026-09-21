@@ -1,6 +1,8 @@
-import 'package:arabic_learning/funcs/utili.dart';
-import 'package:arabic_learning/vars/config_structure.dart';
-import 'package:arabic_learning/vars/global.dart';
+import 'package:arabic_learning/services/words.dart';
+import 'package:arabic_learning/services/search.dart';
+import 'package:arabic_learning/models/config.dart';
+import 'package:arabic_learning/models/dict.dart';
+import 'package:arabic_learning/services/app_data.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {

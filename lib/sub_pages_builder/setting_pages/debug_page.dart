@@ -6,8 +6,9 @@ import 'package:provider/provider.dart';
 
 import 'package:arabic_learning/funcs/shared_widgets.dart';
 import 'package:arabic_learning/funcs/ui.dart';
-import 'package:arabic_learning/vars/statics_var.dart';
-import 'package:arabic_learning/vars/global.dart';
+import 'package:arabic_learning/core/statics.dart';
+import 'package:arabic_learning/services/global_state.dart';
+import 'package:arabic_learning/services/app_data.dart';
 
 class DebugPage extends StatefulWidget {
   const DebugPage({super.key});

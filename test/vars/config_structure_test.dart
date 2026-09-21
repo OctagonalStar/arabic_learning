@@ -1,5 +1,7 @@
-import 'package:arabic_learning/vars/config_structure.dart';
-import 'package:arabic_learning/vars/statics_var.dart';
+import 'package:arabic_learning/models/config.dart';
+import 'package:arabic_learning/models/dict.dart';
+import 'package:arabic_learning/models/reading.dart';
+import 'package:arabic_learning/core/statics.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {

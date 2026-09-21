@@ -1,6 +1,7 @@
 import 'package:arabic_learning/funcs/ui.dart';
-import 'package:arabic_learning/vars/global.dart' show Global, AppData;
-import 'package:arabic_learning/vars/statics_var.dart';
+import 'package:arabic_learning/services/global_state.dart' show Global;
+import 'package:arabic_learning/services/app_data.dart' show AppData;
+import 'package:arabic_learning/core/statics.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart' show rootBundle, SystemChannels, SystemNavigator;
 import 'package:flutter_markdown_plus/flutter_markdown_plus.dart' show MarkdownBody;

@@ -1,12 +1,13 @@
 import 'dart:convert';
 
 import 'package:arabic_learning/funcs/ui.dart' show Button, alart, showSnackBar, SettingItem;
-import 'package:arabic_learning/vars/config_structure.dart';
+import 'package:arabic_learning/models/dict.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:dio/dio.dart';
 
-import 'package:arabic_learning/vars/global.dart';
+import 'package:arabic_learning/services/global_state.dart';
+import 'package:arabic_learning/services/app_data.dart';
 
 /// 线上词库来源：区块标题 + GitHub contents API 地址
 class _DictRepo {

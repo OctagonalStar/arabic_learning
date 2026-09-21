@@ -1,15 +1,19 @@
 import 'dart:convert';
 import 'dart:ui' show ImageFilter;
 
-import 'package:arabic_learning/funcs/fsrs_func.dart';
-import 'package:arabic_learning/vars/config_structure.dart' show ClassItem, SourceItem, WordItem, ClassSelection;
+import 'package:arabic_learning/services/fsrs.dart';
+import 'package:arabic_learning/models/dict.dart' show ClassItem, SourceItem, WordItem;
+import 'package:arabic_learning/models/reading.dart' show ClassSelection;
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import 'package:arabic_learning/vars/global.dart';
-import 'package:arabic_learning/vars/statics_var.dart';
+import 'package:arabic_learning/services/global_state.dart';
+import 'package:arabic_learning/services/app_data.dart';
+import 'package:arabic_learning/core/statics.dart';
 import 'package:arabic_learning/funcs/shared_widgets.dart';
-import 'package:arabic_learning/funcs/utili.dart';
+import 'package:arabic_learning/services/words.dart';
+import 'package:arabic_learning/services/tts.dart';
+import 'package:arabic_learning/core/extensions.dart';
 
 // 该文件主要包含了对于UI有关的函数及多次在不同地方使用的Widget类或者函数
 

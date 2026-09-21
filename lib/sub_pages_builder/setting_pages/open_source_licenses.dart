@@ -1,8 +1,8 @@
 import 'package:arabic_learning/funcs/ui.dart';
 import 'package:flutter/material.dart';
-import 'package:arabic_learning/vars/global.dart';
+import 'package:arabic_learning/services/global_state.dart';
 import 'package:arabic_learning/oss_licenses.dart' as oss;
-import 'package:arabic_learning/vars/license_storage.dart';
+import 'package:arabic_learning/core/license_storage.dart';
 import 'package:provider/provider.dart';
 
 class OpenSourceLicensePage extends StatelessWidget {

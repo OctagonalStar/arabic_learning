@@ -1,4 +1,4 @@
-import 'package:arabic_learning/funcs/noification.dart';
+import 'package:arabic_learning/services/notifications.dart';
 import 'package:arabic_learning/package_replacement/fake_dart_io.dart' if (dart.library.io) 'dart:io' as io;
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -11,9 +11,10 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:logging/logging.dart';
 
 import 'package:arabic_learning/funcs/ui.dart';
-import 'package:arabic_learning/funcs/utili.dart';
-import 'package:arabic_learning/vars/global.dart' show AppData, Global;
-import 'package:arabic_learning/vars/statics_var.dart' show StaticsVar;
+import 'package:arabic_learning/core/extensions.dart';
+import 'package:arabic_learning/services/global_state.dart' show Global;
+import 'package:arabic_learning/services/app_data.dart' show AppData;
+import 'package:arabic_learning/core/statics.dart' show StaticsVar;
 import 'package:arabic_learning/pages/home_page.dart';
 import 'package:arabic_learning/pages/learning_page.dart'show LearningPage;
 import 'package:arabic_learning/pages/setting_page.dart'show SettingPage;

@@ -1,6 +1,6 @@
 import 'dart:convert';
 
-import 'package:arabic_learning/vars/global.dart';
+import 'package:arabic_learning/services/app_data.dart';
 import 'package:flutter/foundation.dart';
 import 'package:fsrs/fsrs.dart';
 import 'package:logging/logging.dart';

@@ -7,9 +7,10 @@ import 'package:provider/provider.dart';
 
 import 'package:arabic_learning/funcs/shared_widgets.dart';
 import 'package:arabic_learning/funcs/ui.dart';
-import 'package:arabic_learning/funcs/sync.dart';
-import 'package:arabic_learning/vars/config_structure.dart';
-import 'package:arabic_learning/vars/global.dart';
+import 'package:arabic_learning/services/sync.dart';
+import 'package:arabic_learning/models/config.dart';
+import 'package:arabic_learning/services/global_state.dart';
+import 'package:arabic_learning/services/app_data.dart';
 import 'package:arabic_learning/package_replacement/fake_dart_io.dart' if (dart.library.io) 'dart:io' as io;
 
 class DataSyncPage extends StatefulWidget {

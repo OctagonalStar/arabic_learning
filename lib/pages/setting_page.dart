@@ -5,7 +5,8 @@ import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import 'package:arabic_learning/funcs/ui.dart';
-import 'package:arabic_learning/vars/global.dart';
+import 'package:arabic_learning/services/global_state.dart';
+import 'package:arabic_learning/services/app_data.dart';
 import 'package:arabic_learning/sub_pages_builder/setting_pages/help_page.dart'
     show HelpPage;
 import 'package:arabic_learning/sub_pages_builder/setting_pages/debug_page.dart'
