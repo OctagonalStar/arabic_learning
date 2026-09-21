@@ -39,7 +39,8 @@ import 'package:provider/provider.dart';
 /// [bottonLayout] :控制选项按钮的排布
 /// 允许值：-1：自动；0：1行；1：2行；2：4行，默认自动
 /// 
-/// [allowAnitmation] :是否显示动画，即按钮变黄后变红
+/// [allowAnitmation] :是否显示动画，即预判微光 -> 徽章 -> 正误差异化
+/// 关闭时立即落色
 class ChoiceQuestions extends StatefulWidget {
   final String mainWord;
   final List<String> choices;
@@ -134,7 +135,9 @@ class _ChoiceQuestions extends State<ChoiceQuestions> {
                   return widget.onSelected(value);
                 }
               }, 
-              isShowAnimation: widget.allowAnitmation
+              isShowAnimation: widget.allowAnitmation,
+              // 单选时判定后聚焦选中项并淡化其余选项；多选保持原样。
+              isSingleSelect: !widget.allowMutipleSelect
             ),
             SizedBox(height: mediaQuery.size.height *0.01),
             if(widget.bottomWidget != null) widget.bottomWidget!,
@@ -364,7 +367,9 @@ class _ListeningQuestion extends State<ListeningQuestion> {
                   return widget.onSelected(value);
                 }
               }, 
-              isShowAnimation: widget.allowAnitmation
+              isShowAnimation: widget.allowAnitmation,
+              // 单选时判定后聚焦选中项并淡化其余选项；多选保持原样。
+              isSingleSelect: !widget.allowMutipleSelect
             ),
             TextButton(
               onPressed: (){

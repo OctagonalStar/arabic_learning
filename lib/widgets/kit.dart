@@ -7,6 +7,7 @@
 // 说明：与 widgets/shared.dart、widgets/overlays.dart 之间存在循环 import，
 // 在 Dart 中合法。
 
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:arabic_learning/core/adaptive.dart' show AdaptiveScope;
@@ -20,7 +21,9 @@ import 'package:arabic_learning/services/app_data.dart';
 import 'package:arabic_learning/services/fsrs.dart';
 import 'package:arabic_learning/services/global_state.dart';
 import 'package:arabic_learning/widgets/overlays.dart' show showSnackBar;
+import 'package:flutter/foundation.dart' show listEquals;
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart' show HapticFeedback;
 import 'package:provider/provider.dart';
 
 // 该文件主要包含了对于UI有关的函数及多次在不同地方使用的Widget类或者函数
@@ -250,47 +253,85 @@ class TextContainer extends StatelessWidget {
 /// 
 /// [onSelected] :某个选项被选中时的回调，会传入一个int类型数据指示被选择的按钮的索引号[0~3]
 /// 
-/// [isShowAnimation] :是否显示动画，即变黄后变红/绿的动画
-/// 若为false则会立即变红/绿
+/// [isShowAnimation] :是否显示判定动画（预判微光 -> 低饱和落色 -> 徽章 -> 正误差异化）
+/// 若为false则会立即变红/绿，且不出现徽章、抖动与淡化
 /// 默认为true
 /// 
 /// [settingShowingMode] :显示选项的模式
 /// 为适应不同屏幕选项可以多行显示，
 /// 允许值：0：1行；1：2行；2：4行
 /// 
+/// [isSingleSelect] :是否单选模式。为 true 且 [isShowAnimation] 为 true 时，
+/// 某选项产生判定结果后其余选项会淡化并轻微缩小（选中聚焦）。
+/// 多选（`ChoiceQuestions.allowMutipleSelect`）应保持 false，以免干扰继续选择。
+/// 默认为false
+///
 /// 该组件在 [ChoiceQuestions] 被调用，若非必要，你不应使用此组件
-class ChooseButtons extends StatelessWidget {
+class ChooseButtons extends StatefulWidget {
   final List<String> options;
   final bool? Function(int) onSelected;
   final bool isShowAnimation;
   final int settingShowingMode; // 0: 1 Row, 1: 2 Rows, 2: 4 Rows
+  final bool isSingleSelect;
 
   const ChooseButtons({super.key, 
                       required this.options, 
                       required this.onSelected, 
                       this.isShowAnimation = false, 
-                      this.settingShowingMode = -1});
+                      this.settingShowingMode = -1,
+                      this.isSingleSelect = false});
+  @override
+  State<ChooseButtons> createState() => _ChooseButtonsState();
+}
+
+class _ChooseButtonsState extends State<ChooseButtons> {
+  /// 已有判定结果的选项索引（单选聚焦的锚点）；`null` 表示尚无判定。
+  int? _judgedIndex;
+
+  /// 子按钮产生判定结果（`chose` 返回非 null）时记录，用于选中聚焦。
+  void _onJudged(int index) {
+    if(_judgedIndex == index) return;
+    setState(() {
+      _judgedIndex = index;
+    });
+  }
+
+  @override
+  void didUpdateWidget(ChooseButtons oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // 选项 / 模式变化（PageView 可能复用 element）时重置聚焦，避免残留旧状态。
+    if(oldWidget.isShowAnimation != widget.isShowAnimation ||
+        oldWidget.isSingleSelect != widget.isSingleSelect ||
+        !listEquals(oldWidget.options, widget.options)) {
+      _judgedIndex = null;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     MediaQueryData mediaQuery = MediaQuery.of(context);
+    // 选中聚焦（E）：仅单选 + 开启动画 + 已产生判定结果时淡化其余选项。
+    final bool focusJudged = widget.isShowAnimation && widget.isSingleSelect && _judgedIndex != null;
     List<Widget> buttonWidgets = [];
-    for(int i = 0; i < options.length; i++) {
+    for(int i = 0; i < widget.options.length; i++) {
       buttonWidgets.add(
         ChooseButtonBox(
           index: i,
-          chose: onSelected,
-          width: settingShowingMode == 0 ? mediaQuery.size.width * 0.2 : settingShowingMode == 1 ? mediaQuery.size.width * 0.45 : mediaQuery.size.width * 0.85,
-          height: settingShowingMode == 0 ? mediaQuery.size.height * 0.15 : settingShowingMode == 1 ? mediaQuery.size.height * 0.12 : mediaQuery.size.height * 0.09,
-          isAnimated: isShowAnimation,
+          chose: widget.onSelected,
+          width: widget.settingShowingMode == 0 ? mediaQuery.size.width * 0.2 : widget.settingShowingMode == 1 ? mediaQuery.size.width * 0.45 : mediaQuery.size.width * 0.85,
+          height: widget.settingShowingMode == 0 ? mediaQuery.size.height * 0.15 : widget.settingShowingMode == 1 ? mediaQuery.size.height * 0.12 : mediaQuery.size.height * 0.09,
+          isAnimated: widget.isShowAnimation,
+          isDimmed: focusJudged && i != _judgedIndex,
+          onJudged: _onJudged,
           child: FittedBox(
             // 选项文字显式只缩不放（FittedBox 默认 contain）：按钮当前以松约束
             // 布局文字，二者观感一致；显式 scaleDown 防止后续布局变化引入放大。
             fit: BoxFit.scaleDown,
             child: Text(
-              options[i],
+              widget.options[i],
               style: arabicTextStyle(
                 context,
-                options[i],
+                widget.options[i],
                 base: withoutColor(Theme.of(context).textTheme.displaySmall!),
               ),
             ),
@@ -300,11 +341,11 @@ class ChooseButtons extends StatelessWidget {
     }
     return Column(
       children: [
-        if(settingShowingMode == 0) Row(
+        if(widget.settingShowingMode == 0) Row(
           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
           children: buttonWidgets,
         ),
-        if(settingShowingMode == 1) Column(
+        if(widget.settingShowingMode == 1) Column(
           children: [
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
@@ -316,7 +357,7 @@ class ChooseButtons extends StatelessWidget {
             ),
           ],
         ),
-        if(settingShowingMode == 2) ...buttonWidgets,
+        if(widget.settingShowingMode == 2) ...buttonWidgets,
       ],
     );
   }
@@ -324,6 +365,16 @@ class ChooseButtons extends StatelessWidget {
 
 /// 选择题按钮（单个）
 /// 
+/// 判定反馈由单个 [AnimationController] 驱动，分阶段且有限（总时长
+/// [AppMotion.extraLong1]，可 `pumpAndSettle`）：
+/// 1. 预判（~176ms）：琥珀描边 + 微光脉冲，不整块高饱和变色；
+/// 2. 揭示：底色过渡为低饱和语义容器色，文字保持可读；
+/// 3. 徽章：✓ / ✗ 圆形徽章以 `easeOutBack` 弹性缩放入场（~272ms）并淡入；
+/// 4. 差异化：正确轻微脉冲（1→1.045→1），错误水平抖动（0→+6→-6→+4→0），
+///    均伴随柔和外发光；位移 / 缩放均不参与布局。
+/// 同时触发触觉反馈（正确 [HapticFeedback.lightImpact]、错误
+/// [HapticFeedback.mediumImpact]），平台失败时静默容错。
+///
 /// [index] :这个按钮的索引号
 /// 
 /// [chose] :回调参数，被选择时触发，会传入该按钮索引号
@@ -336,7 +387,12 @@ class ChooseButtons extends StatelessWidget {
 /// 
 /// [height] :高
 /// 
-/// [isAnimated] :是否显示动画，即变黄后变红
+/// [isAnimated] :是否显示判定动画；false 时保持旧语义立即落定正误色，
+/// 无徽章 / 抖动 / 淡化
+///
+/// [isDimmed] :是否淡化（单选聚焦时由父组件传入）；true 时降低不透明度并轻微缩小
+///
+/// [onJudged] :产生判定结果（[chose] 返回非 null）时通知父组件，用于选中聚焦协调
 class ChooseButtonBox extends StatefulWidget {
   final int index;
   final bool? Function(int) chose;
@@ -345,6 +401,8 @@ class ChooseButtonBox extends StatefulWidget {
   final double? width;
   final double? height;
   final bool isAnimated;
+  final bool isDimmed;
+  final ValueChanged<int>? onJudged;
   const ChooseButtonBox({super.key,
                     required this.index, 
                     required this.chose, 
@@ -352,87 +410,268 @@ class ChooseButtonBox extends StatefulWidget {
                     this.cl, 
                     this.width, 
                     this.height,
-                    this.isAnimated = true
+                    this.isAnimated = true,
+                    this.isDimmed = false,
+                    this.onJudged,
                   });
   
   @override
   State<ChooseButtonBox> createState() => _ChooseButtonBoxState();
 }
-class _ChooseButtonBoxState extends State<ChooseButtonBox> {
-  Color? color;
-  Color? onColor;
+
+class _ChooseButtonBoxState extends State<ChooseButtonBox> with SingleTickerProviderStateMixin {
+  /// 判定动画总时长（800ms），各阶段以 [Interval] 划分，见类文档。
+  static const Duration _judgeDuration = AppMotion.extraLong1;
+
+  /// 徽章直径与错误抖动幅度（像素级位移，不影响布局）。
+  static const double _badgeSize = 26.0;
+  static const double _shakeAmplitude = 6.0;
+
+  /// 唯一的判定动画控制器：预判 / 揭示 / 徽章 / 脉冲 / 抖动 / 发光均由它驱动。
+  late final AnimationController _controller;
+
+  /// 预判微光：0 → 1 → 0（琥珀描边 / 微光脉冲）。
+  late final Animation<double> _warning;
+
+  /// 揭示进度：初始色 → 低饱和语义容器色。
+  late final Animation<double> _reveal;
+
+  /// 柔和外发光：随差异化阶段渐显并静态保持。
+  late final Animation<double> _glow;
+
+  /// 徽章弹性缩放（`easeOutBack`）与淡入。
+  late final Animation<double> _badgeScale;
+  late final Animation<double> _badgeOpacity;
+
+  /// 正确脉冲（1 → 1.045 → 1）与错误水平抖动（0 → +6 → -6 → +4 → 0）。
+  late final Animation<double> _pulse;
+  late final Animation<double> _shake;
+
   bool isChoosed = false;
 
-  /// 警示色动画结束后待落定的作答结果；`null` 表示没有待处理结果。
-  /// 由 [AnimatedContainer.onEnd] 消费且只消费一次，取代原先与动画时长
-  /// 并行赛跑的 `Future.delayed`，保证正误色严格在颜色动画完成后切换。
-  bool? _pendingResult;
+  /// 作答判定结果；`null` 表示尚未判定或未产生判定（多选 / 不判定）。
+  bool? _result;
 
-  /// 依据 [ans] 落定按钮的正误颜色（调用方负责包在 `setState` 内）。
-  void _applyResult(bool ans, ColorScheme scheme, AppSemanticColors semantic) {
-    if(ans) {
-      color = semantic.success;
-      onColor = semantic.onSuccess;
-    } else {
-      color = scheme.error;
-      onColor = scheme.onError;
-    }
+  /// 是否执行了完整判定动画（开启动画且未要求减弱动态效果）。
+  bool _animated = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(vsync: this, duration: _judgeDuration);
+    _warning = TweenSequence<double>(<TweenSequenceItem<double>>[
+      TweenSequenceItem<double>(tween: Tween<double>(begin: 0.0, end: 1.0), weight: 1.0),
+      TweenSequenceItem<double>(tween: Tween<double>(begin: 1.0, end: 0.0), weight: 1.0),
+    ]).animate(CurvedAnimation(parent: _controller, curve: const Interval(0.0, 0.22, curve: Curves.easeInOut)));
+    _reveal = CurvedAnimation(parent: _controller, curve: const Interval(0.14, 0.46, curve: AppMotion.standardCurve));
+    _glow = CurvedAnimation(parent: _controller, curve: const Interval(0.46, 0.86, curve: Curves.easeOutCubic));
+    _badgeScale = CurvedAnimation(parent: _controller, curve: const Interval(0.40, 0.74, curve: Curves.easeOutBack));
+    _badgeOpacity = CurvedAnimation(parent: _controller, curve: const Interval(0.40, 0.58, curve: Curves.easeOut));
+    _pulse = TweenSequence<double>(<TweenSequenceItem<double>>[
+      TweenSequenceItem<double>(tween: Tween<double>(begin: 1.0, end: 1.045), weight: 1.0),
+      TweenSequenceItem<double>(tween: Tween<double>(begin: 1.045, end: 1.0), weight: 1.0),
+    ]).animate(CurvedAnimation(parent: _controller, curve: const Interval(0.52, 1.0, curve: Curves.easeInOut)));
+    _shake = TweenSequence<double>(<TweenSequenceItem<double>>[
+      TweenSequenceItem<double>(tween: Tween<double>(begin: 0.0, end: _shakeAmplitude), weight: 1.0),
+      TweenSequenceItem<double>(tween: Tween<double>(begin: _shakeAmplitude, end: -_shakeAmplitude), weight: 2.0),
+      TweenSequenceItem<double>(tween: Tween<double>(begin: -_shakeAmplitude, end: _shakeAmplitude * 2 / 3), weight: 1.0),
+      TweenSequenceItem<double>(tween: Tween<double>(begin: _shakeAmplitude * 2 / 3, end: 0.0), weight: 1.0),
+    ]).animate(CurvedAnimation(parent: _controller, curve: const Interval(0.52, 1.0, curve: Curves.easeInOut)));
   }
 
-  /// 颜色动画结束：落定第一阶段暂存的作答结果，只处理一次。
-  void _onColorAnimationEnd() {
-    final bool? ans = _pendingResult;
-    if(ans == null) return;
-    _pendingResult = null;
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  /// 触觉反馈：Web / 测试 / 平台不支持时静默失败，不中断判定流程。
+  void _fireHaptic(bool correct) {
+    final Future<void> feedback =
+        correct ? HapticFeedback.lightImpact() : HapticFeedback.mediumImpact();
+    unawaited(feedback.catchError((Object _) {}));
+  }
+
+  /// 点击选项：同步调用 [ChooseButtonBox.chose] 获取判定结果并驱动动画。
+  /// `chose()` 的调用时机与次数保持不变（点击时同步调用一次，仍在 `setState` 内）。
+  void _handleTap() {
+    if(isChoosed) return;
+    final bool reduceMotion = MediaQuery.maybeDisableAnimationsOf(context) ?? false;
     setState(() {
-      _applyResult(ans, Theme.of(context).colorScheme, context.semanticColors);
+      isChoosed = true;
+      final bool? ans = widget.chose(widget.index);
+      _result = ans;
+      _animated = ans != null && widget.isAnimated && !reduceMotion;
+      if(_animated) {
+        _controller.forward(from: 0.0);
+      } else {
+        // 立即落色（未开动画 / 减弱动态效果）或恢复初始色（未判定）：不启动动画。
+        _controller.value = 0.0;
+      }
     });
+    final bool? ans = _result;
+    if(ans != null) {
+      widget.onJudged?.call(widget.index);
+      // 触觉反馈属于判定语义，PK 等关闭判定的场景不引入。
+      if(widget.isAnimated) _fireHaptic(ans);
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     final ColorScheme scheme = Theme.of(context).colorScheme;
     final AppSemanticColors semantic = context.semanticColors;
-    color ??= widget.cl ?? scheme.primaryContainer;
-    onColor ??= widget.cl == null ? scheme.onPrimaryContainer : scheme.onSurface;
-    return AnimatedContainer(
-      margin: EdgeInsets.all(8.0),
-      duration: widget.isAnimated ? AppMotion.mediumLong : Duration(),
+    final bool reduceMotion = MediaQuery.maybeDisableAnimationsOf(context) ?? false;
+
+    final bool judged = _result != null;
+    final bool correct = _result == true;
+    // 旧语义：isAnimated=false（如 PK）保持立即落定高饱和正误色。
+    final bool legacyInstant = judged && !widget.isAnimated;
+    // 新语义动画路径；减弱动态效果时只落定静态结果色（staticReveal）。
+    final bool animated = judged && _animated;
+    final bool staticReveal = judged && !legacyInstant && !animated;
+
+    final Color accent = correct ? semantic.success : semantic.error;
+    // 落定色：低饱和语义容器色（语义色低透明度叠 surface 容器），文字保持可读。
+    final Color judgedColor = legacyInstant
+        ? accent
+        : Color.alphaBlend(accent.withValues(alpha: 0.20), scheme.surfaceContainerHighest);
+    final Color judgedOnColor = legacyInstant
+        ? (correct ? semantic.onSuccess : scheme.onError)
+        : scheme.onSurface;
+
+    // 未判定时恢复初始色（自定义 cl 时按其明暗语义取前景）。
+    final Color idleColor = widget.cl ?? scheme.primaryContainer;
+    final Color idleOnColor = widget.cl == null ? scheme.onPrimaryContainer : scheme.onSurface;
+
+    // 逐帧动画（颜色揭示 / 预判描边 / 发光 / 脉冲 / 抖动）统一由控制器驱动：
+    // build 本身不会逐帧执行，必须经 AnimatedBuilder 监听控制器。
+    // 选中聚焦（E）：仅由父组件在单选判定后置位；减弱动态效果时不做过渡。
+    return AnimatedOpacity(
+      duration: reduceMotion ? Duration.zero : AppMotion.medium,
       curve: AppMotion.standardCurve,
-      // 关闭动画时不会产生待处理结果，回调内部直接空转。
-      onEnd: _onColorAnimationEnd,
-      decoration: BoxDecoration(
-        color: color,
-        borderRadius: StaticsVar.br,
-      ),
-      child: Button(
-        onPressed: () {
-          if(isChoosed) return;
-          setState(() {
-            isChoosed = true;
-            bool? ans = widget.chose(widget.index);
-            if(ans != null) {
-              if(widget.isAnimated) {
-                // 先闪警示色，动画结束后由 onEnd 落定正误色。
-                color = semantic.warning;
-                onColor = semantic.onWarning;
-                _pendingResult = ans;
-              } else {
-                // 关闭动画时保持原语义：立即落定正误色。
-                _applyResult(ans, scheme, semantic);
-              }
+      opacity: widget.isDimmed ? 0.4 : 1.0,
+      child: AnimatedScale(
+        duration: reduceMotion ? Duration.zero : AppMotion.medium,
+        curve: AppMotion.standardCurve,
+        scale: widget.isDimmed ? 0.975 : 1.0,
+        child: AnimatedBuilder(
+          animation: _controller,
+          builder: (BuildContext context, Widget? _) {
+            // 揭示进度：非动画路径直接 1.0（立即落色）。
+            final double reveal = animated ? _reveal.value : (judged ? 1.0 : 0.0);
+            final Color background = judged ? Color.lerp(idleColor, judgedColor, reveal)! : idleColor;
+            final Color foreground = judged ? Color.lerp(idleOnColor, judgedOnColor, reveal)! : idleOnColor;
+
+            // 预判描边 / 微光与判定外发光（结束后发光静态保持；旧语义不引入）。
+            final double warning = animated ? _warning.value : 0.0;
+            final double glow = animated ? _glow.value : 0.0;
+            final Border? border;
+            if(legacyInstant) {
+              border = null;
+            } else if(animated) {
+              // 预判琥珀描边 -> 揭示正误强调描边，随 reveal 交叉过渡。
+              border = Border.all(
+                color: Color.lerp(
+                  semantic.warning.withValues(alpha: 0.34 + 0.51 * warning),
+                  accent.withValues(alpha: 0.45),
+                  reveal,
+                )!,
+                width: 1.5,
+              );
+            } else if(staticReveal) {
+              border = Border.all(color: accent.withValues(alpha: 0.45), width: 1.5);
             } else {
-              // 未产生正误判定：恢复初始色。
-              color = scheme.primaryContainer;
-              onColor = scheme.onPrimaryContainer;
+              border = null;
             }
-          });
-        },
-        size: Size(widget.width ?? 200, widget.height ?? 50),
-        backgroundColor: Colors.transparent,
-        foregroundColor: onColor,
-        shadowColor: Colors.transparent,
-        child: widget.child,
+            final List<BoxShadow>? shadows;
+            if(legacyInstant || staticReveal) {
+              shadows = null;
+            } else if(judged) {
+              shadows = glow > 0.0
+                  ? <BoxShadow>[BoxShadow(color: accent.withValues(alpha: 0.30 * glow), blurRadius: 16.0, spreadRadius: 1.0)]
+                  : null;
+            } else if(warning > 0.0) {
+              shadows = <BoxShadow>[BoxShadow(color: semantic.warning.withValues(alpha: 0.20 * warning), blurRadius: 14.0)];
+            } else {
+              shadows = null;
+            }
+
+            // 差异化（D）：正确脉冲 / 错误抖动，均不参与布局。
+            final double pulseScale = (animated && correct) ? _pulse.value : 1.0;
+            final double shakeDx = (animated && !correct) ? _shake.value : 0.0;
+
+            return Transform.translate(
+              offset: Offset(shakeDx, 0.0),
+              child: Transform.scale(
+                scale: pulseScale,
+                child: Container(
+                  // 供测试定位容器装饰；index 在单个按钮组内唯一。
+                  key: ValueKey<String>('chooseButtonBoxSurface-${widget.index}'),
+                  margin: const EdgeInsets.all(8.0),
+                  decoration: BoxDecoration(
+                    color: background,
+                    borderRadius: StaticsVar.br,
+                    boxShadow: shadows,
+                  ),
+                  // 描边以前景装饰绘制，避免 Container 依据 border 追加内边距导致布局跳动。
+                  foregroundDecoration: border == null
+                      ? null
+                      : BoxDecoration(border: border, borderRadius: StaticsVar.br),
+                  child: Stack(
+                    clipBehavior: Clip.none,
+                    children: [
+                      Button(
+                        onPressed: _handleTap,
+                        size: Size(widget.width ?? 200, widget.height ?? 50),
+                        backgroundColor: Colors.transparent,
+                        foregroundColor: foreground,
+                        shadowColor: Colors.transparent,
+                        child: widget.child,
+                      ),
+                      if(animated) Positioned(
+                        top: 4.0,
+                        right: 4.0,
+                        // 徽章仅作视觉评章，不拦截点击。
+                        child: IgnorePointer(
+                          child: FadeTransition(
+                            opacity: _badgeOpacity,
+                            child: ScaleTransition(
+                              scale: _badgeScale,
+                              child: _buildBadge(scheme, semantic),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            );
+          },
+        ),
+      ),
+    );
+  }
+
+  /// 判定徽章：✓（成功）/ ✗（错误）圆形评章，置于按钮内容层。
+  Widget _buildBadge(ColorScheme scheme, AppSemanticColors semantic) {
+    final bool correct = _result == true;
+    final Color accent = correct ? semantic.success : semantic.error;
+    return Container(
+      width: _badgeSize,
+      height: _badgeSize,
+      decoration: BoxDecoration(
+        color: accent,
+        shape: BoxShape.circle,
+        border: Border.all(color: scheme.surface.withValues(alpha: 0.9), width: 1.5),
+        boxShadow: <BoxShadow>[BoxShadow(color: accent.withValues(alpha: 0.35), blurRadius: 8.0)],
+      ),
+      alignment: Alignment.center,
+      child: Icon(
+        correct ? Icons.check_rounded : Icons.close_rounded,
+        size: 15.0,
+        color: correct ? semantic.onSuccess : scheme.onError,
       ),
     );
   }
