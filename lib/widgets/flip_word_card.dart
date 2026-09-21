@@ -5,7 +5,8 @@
 //   归属课程三行彩色标签，按 flex 分配高度并由 FittedBox 等比缩小兜底；
 // - 反面详情（翻卡后 / `startOnBack`）：中文与解释组成的释义区、词形信息
 //   芯片网格、类别标签与归属课程页脚；在给定尺寸内一次性展示全部非空
-//   字段，不滚动、按可用空间整体等比缩小兜底。
+//   字段，不滚动；字号等按可用宽高响应式放大，超大内容由等比缩小兜底
+//   （详见 `_FlipCardDetailBody` 与 `_detailScale`）。
 //
 // `enableFlip` 为 true 时点击卡片展开：卡片从原位置移动到屏幕中心、放大并
 // 绕 Y 轴翻转到反面，同时全屏遮罩由透明逐渐加深；再次点击卡片、点击遮罩或
@@ -306,8 +307,13 @@ class _FlipCardFrontBody extends StatelessWidget {
 ///   阴阳性、现在式、动名词，逐项判空）；
 /// - 类别：标签 chips；页脚：归属课程。
 ///
-/// 内容先按固有尺寸布局（宽度锁定为可用宽度，保证文本正常换行），再由
+/// 所有元素的字号 / 图标 / 内边距 / 间距先按下述缩放因子 [scale] 显式放大，
+/// 再按固有尺寸布局（宽度锁定为可用宽度，保证文本正常换行），最后由
 /// [FittedBox] 整体等比缩小以适配可用高度：宁可缩小也不滚动 / 溢出。
+///
+/// [scale] 由信息区可用宽高推导（见 [_detailScale]），小尺寸下为 1.0 保持
+/// 现状，大屏 / 展开后的大卡片上明显放大；系统 `textScaler` 会在放大后的
+/// 字号上继续叠加，不覆盖用户的无障碍文字缩放。
 class _FlipCardDetailBody extends StatelessWidget {
   final WordItem word;
 
@@ -317,35 +323,44 @@ class _FlipCardDetailBody extends StatelessWidget {
   Widget build(BuildContext context) {
     final ColorScheme scheme = Theme.of(context).colorScheme;
     final TextTheme textTheme = Theme.of(context).textTheme;
-    final List<Widget> morphChips = <Widget>[];
-    if (word.root.isNotEmpty) {
-      morphChips.add(_FlipCardMorphChip(label: "词根", value: word.root, isArabic: true));
-    }
-    if (word.pos.isNotEmpty) {
-      morphChips.add(_FlipCardMorphChip(label: "词性", value: _wordPosLabel(word.pos)));
-    }
-    if (word.plural.isNotEmpty) {
-      morphChips.add(_FlipCardMorphChip(label: "复数", value: word.plural, isArabic: true));
-    }
-    if (word.gender != null) {
-      morphChips.add(_FlipCardMorphChip(label: "阴阳性", value: word.gender! ? "阳性" : "阴性"));
-    }
-    if (word.present.isNotEmpty) {
-      morphChips.add(_FlipCardMorphChip(label: "现在式", value: word.present, isArabic: true));
-    }
-    if (word.masdar.isNotEmpty) {
-      morphChips.add(_FlipCardMorphChip(label: "动名词", value: word.masdar, isArabic: true));
-    }
 
     return LayoutBuilder(
       builder: (BuildContext context, BoxConstraints constraints) {
+        final double scale = _detailScale(constraints);
+        final double gapXs = AppSpacing.xs * scale;
+        final double gapXxs = AppSpacing.xxs * scale;
+        final List<Widget> morphChips = <Widget>[];
+        if (word.root.isNotEmpty) {
+          morphChips.add(_FlipCardMorphChip(label: "词根", value: word.root, isArabic: true, scale: scale));
+        }
+        if (word.pos.isNotEmpty) {
+          morphChips.add(_FlipCardMorphChip(label: "词性", value: _wordPosLabel(word.pos), scale: scale));
+        }
+        if (word.plural.isNotEmpty) {
+          morphChips.add(_FlipCardMorphChip(label: "复数", value: word.plural, isArabic: true, scale: scale));
+        }
+        if (word.gender != null) {
+          morphChips.add(_FlipCardMorphChip(label: "阴阳性", value: word.gender! ? "阳性" : "阴性", scale: scale));
+        }
+        if (word.present.isNotEmpty) {
+          morphChips.add(_FlipCardMorphChip(label: "现在式", value: word.present, isArabic: true, scale: scale));
+        }
+        if (word.masdar.isNotEmpty) {
+          morphChips.add(_FlipCardMorphChip(label: "动名词", value: word.masdar, isArabic: true, scale: scale));
+        }
+
         return FittedBox(
           fit: BoxFit.scaleDown,
           alignment: Alignment.topCenter,
           child: SizedBox(
             width: constraints.maxWidth,
             child: Padding(
-              padding: const EdgeInsets.fromLTRB(AppSpacing.sm, AppSpacing.xs, AppSpacing.sm, AppSpacing.sm),
+              padding: EdgeInsets.fromLTRB(
+                AppSpacing.sm * scale,
+                gapXs,
+                AppSpacing.sm * scale,
+                AppSpacing.sm * scale,
+              ),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -354,7 +369,9 @@ class _FlipCardDetailBody extends StatelessWidget {
                   if (word.chinese.isNotEmpty)
                     Text(
                       word.chinese,
-                      style: textTheme.headlineSmall?.copyWith(
+                      style: _scaledTextStyle(
+                        textTheme.headlineSmall,
+                        scale,
                         color: scheme.onSurface,
                         fontWeight: FontWeight.w700,
                       ),
@@ -362,61 +379,68 @@ class _FlipCardDetailBody extends StatelessWidget {
                       overflow: TextOverflow.ellipsis,
                     ),
                   if (word.explanation.isNotEmpty) ...[
-                    if (word.chinese.isNotEmpty) const SizedBox(height: AppSpacing.xxs),
+                    if (word.chinese.isNotEmpty) SizedBox(height: gapXxs),
                     Text(
                       word.explanation,
-                      style: textTheme.bodyMedium?.copyWith(color: scheme.onSurfaceVariant),
+                      style: _scaledTextStyle(textTheme.bodyMedium, scale, color: scheme.onSurfaceVariant),
                       maxLines: 3,
                       overflow: TextOverflow.ellipsis,
                     ),
                   ],
                   // ── 词形信息区：自适应换行的芯片网格 ──
                   if (morphChips.isNotEmpty) ...[
-                    const SizedBox(height: AppSpacing.xs),
-                    const _FlipCardSectionLabel(icon: Icons.spellcheck, label: "词形信息"),
-                    const SizedBox(height: AppSpacing.xs),
+                    SizedBox(height: gapXs),
+                    _FlipCardSectionLabel(icon: Icons.spellcheck, label: "词形信息", scale: scale),
+                    SizedBox(height: gapXs),
                     Wrap(
-                      spacing: AppSpacing.xs,
-                      runSpacing: AppSpacing.xs,
+                      spacing: gapXs,
+                      runSpacing: gapXs,
                       children: morphChips,
                     ),
                   ],
                   // ── 类别标签 ──
                   if (word.categories.isNotEmpty) ...[
-                    const SizedBox(height: AppSpacing.xs),
-                    const _FlipCardSectionLabel(icon: Icons.sell_outlined, label: "类别"),
-                    const SizedBox(height: AppSpacing.xs),
-                    CategoryChips(categories: word.categories, dense: true),
+                    SizedBox(height: gapXs),
+                    _FlipCardSectionLabel(icon: Icons.sell_outlined, label: "类别", scale: scale),
+                    SizedBox(height: gapXs),
+                    CategoryChips(categories: word.categories, dense: true, scale: scale),
                   ],
                   // ── 页脚：归属课程 ──
                   if (word.className.isNotEmpty) ...[
-                    const SizedBox(height: AppSpacing.sm),
+                    SizedBox(height: AppSpacing.sm * scale),
                     Container(
                       width: double.infinity,
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: AppSpacing.xs,
-                        vertical: AppSpacing.xxs,
+                      padding: EdgeInsets.symmetric(
+                        horizontal: gapXs,
+                        vertical: gapXxs,
                       ),
                       decoration: BoxDecoration(
                         color: scheme.primaryContainer,
-                        borderRadius: BorderRadius.circular(AppRadius.control),
+                        borderRadius: BorderRadius.circular(AppRadius.control * scale),
                       ),
                       child: Row(
                         children: [
-                          Icon(Icons.menu_book_outlined, size: 14.0, color: scheme.onPrimaryContainer),
-                          const SizedBox(width: AppSpacing.xxs),
-                          Text(
-                            "归属课程",
-                            style: textTheme.labelSmall?.copyWith(color: scheme.onPrimaryContainer),
+                          Icon(Icons.menu_book_outlined, size: 14.0 * scale, color: scheme.onPrimaryContainer),
+                          SizedBox(width: gapXxs),
+                          // 标签在极窄卡片上可收缩（省略号兜底），避免固定宽度
+                          // 与右侧课程名抢占空间造成 Row 溢出。
+                          Flexible(
+                            child: Text(
+                              "归属课程",
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: _scaledTextStyle(textTheme.labelSmall, scale, color: scheme.onPrimaryContainer),
+                            ),
                           ),
-                          const SizedBox(width: AppSpacing.xs),
+                          SizedBox(width: gapXs),
                           Expanded(
+                            flex: 2,
                             child: Text(
                               word.className,
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                               textAlign: TextAlign.end,
-                              style: textTheme.labelMedium?.copyWith(color: scheme.onPrimaryContainer),
+                              style: _scaledTextStyle(textTheme.labelMedium, scale, color: scheme.onPrimaryContainer),
                             ),
                           ),
                         ],
@@ -433,12 +457,61 @@ class _FlipCardDetailBody extends StatelessWidget {
   }
 }
 
-/// 详情分组标题：主题色小图标 + 小标签。
+/// 反面详情缩放的参考宽度：内容正常换行的基准卡片宽度。
+const double _detailScaleBaseWidth = 360.0;
+
+/// 反面详情缩放的参考高度：满字段内容在 `scale = 1` 时的典型固有高度。
+///
+/// 仅当信息区高度超过该值时才会真正放大，避免在高度受限的小卡上放大后被
+/// [FittedBox] 原样缩回（无收益）。
+const double _detailScaleBaseHeight = 260.0;
+
+/// 反面详情缩放因子的下限 / 上限。
+const double _detailScaleMin = 1.0;
+const double _detailScaleMax = 2.0;
+
+/// 由反面信息区的可用宽高推导内容缩放因子。
+///
+/// `s = clamp(min(maxWidth / 360, maxHeight / 260), 1.0, 2.0)`：
+/// 宽高任一方向不足都会限制放大，小尺寸保持 1.0；仅在宽高都有界时生效，
+/// 无界约束回退 1.0。放大后的内容由外层 [FittedBox]（scaleDown）兜底，
+/// 保证不溢出、不滚动。
+double _detailScale(BoxConstraints constraints) {
+  if (!constraints.hasBoundedWidth || !constraints.hasBoundedHeight) {
+    return _detailScaleMin;
+  }
+  final double raw = math.min(
+    constraints.maxWidth / _detailScaleBaseWidth,
+    constraints.maxHeight / _detailScaleBaseHeight,
+  );
+  return raw.clamp(_detailScaleMin, _detailScaleMax).toDouble();
+}
+
+/// 显式按 [scale] 放大 [base] 语义角色的字号，并可覆盖颜色 / 字重。
+///
+/// 不替换 `MediaQuery.textScaler`：系统无障碍文字缩放会在放大后的字号上
+/// 继续叠加生效；[base] 未声明字号时回退 14.0。
+TextStyle _scaledTextStyle(
+  TextStyle? base,
+  double scale, {
+  Color? color,
+  FontWeight? fontWeight,
+}) {
+  final TextStyle style = base ?? const TextStyle();
+  return style.copyWith(
+    fontSize: (style.fontSize ?? 14.0) * scale,
+    color: color ?? style.color,
+    fontWeight: fontWeight ?? style.fontWeight,
+  );
+}
+
+/// 详情分组标题：主题色小图标 + 小标签，随 [scale] 放大。
 class _FlipCardSectionLabel extends StatelessWidget {
   final IconData icon;
   final String label;
+  final double scale;
 
-  const _FlipCardSectionLabel({required this.icon, required this.label});
+  const _FlipCardSectionLabel({required this.icon, required this.label, this.scale = 1.0});
 
   @override
   Widget build(BuildContext context) {
@@ -447,11 +520,13 @@ class _FlipCardSectionLabel extends StatelessWidget {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Icon(icon, size: 14.0, color: scheme.primary),
-        const SizedBox(width: AppSpacing.xxs),
+        Icon(icon, size: 14.0 * scale, color: scheme.primary),
+        SizedBox(width: AppSpacing.xxs * scale),
         Text(
           label,
-          style: textTheme.labelSmall?.copyWith(
+          style: _scaledTextStyle(
+            textTheme.labelSmall,
+            scale,
             color: scheme.primary,
             fontWeight: FontWeight.bold,
           ),
@@ -462,31 +537,41 @@ class _FlipCardSectionLabel extends StatelessWidget {
 }
 
 /// 词形信息芯片：上标签 / 下值的小型信息块；值过长时以省略号兜底。
+///
+/// 字号 / 内边距 / 圆角 / 边框随 [scale] 放大，系统 `textScaler` 仍会叠加。
 class _FlipCardMorphChip extends StatelessWidget {
   final String label;
   final String value;
   final bool isArabic;
+  final double scale;
 
-  const _FlipCardMorphChip({required this.label, required this.value, this.isArabic = false});
+  const _FlipCardMorphChip({
+    required this.label,
+    required this.value,
+    this.isArabic = false,
+    this.scale = 1.0,
+  });
 
   @override
   Widget build(BuildContext context) {
     final ColorScheme scheme = Theme.of(context).colorScheme;
     final TextTheme textTheme = Theme.of(context).textTheme;
-    final TextStyle valueStyle =
-        textTheme.labelLarge?.copyWith(color: scheme.onSurface) ?? const TextStyle();
+    final TextStyle valueStyle = _scaledTextStyle(textTheme.labelLarge, scale, color: scheme.onSurface);
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xs, vertical: AppSpacing.xxs),
+      padding: EdgeInsets.symmetric(horizontal: AppSpacing.xs * scale, vertical: AppSpacing.xxs * scale),
       decoration: BoxDecoration(
         color: scheme.surfaceContainerLow,
-        borderRadius: BorderRadius.circular(AppRadius.control),
-        border: Border.all(color: scheme.outlineVariant),
+        borderRadius: BorderRadius.circular(AppRadius.control * scale),
+        border: Border.all(color: scheme.outlineVariant, width: scale),
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(label, style: textTheme.labelSmall?.copyWith(color: scheme.onSurfaceVariant)),
+          Text(
+            label,
+            style: _scaledTextStyle(textTheme.labelSmall, scale, color: scheme.onSurfaceVariant),
+          ),
           Text(
             value,
             maxLines: 1,

@@ -684,35 +684,47 @@ class _ChooseButtonBoxState extends State<ChooseButtonBox> with SingleTickerProv
 /// [categories] :分类字符串列表，为空时不渲染任何内容
 /// 
 /// [dense] :紧凑模式，使用更小的字号与内边距，适用于空间受限的卡片
+/// 
+/// [scale] :在 [dense] 基准尺寸上的额外缩放（默认 1.0 保持既有外观），
+/// 供大卡片等空间充裕的场景放大字号 / 内边距 / 圆角与间距；不覆盖
+/// `MediaQuery.textScaler`，系统无障碍文字缩放仍会叠加生效
 class CategoryChips extends StatelessWidget {
   final List<String> categories;
   final bool dense;
-  const CategoryChips({super.key, required this.categories, this.dense = false});
+  final double scale;
+  const CategoryChips({super.key, required this.categories, this.dense = false, this.scale = 1.0});
 
   @override
   Widget build(BuildContext context) {
     if(categories.isEmpty) return const SizedBox.shrink();
+    final ColorScheme scheme = Theme.of(context).colorScheme;
+    final TextStyle baseStyle =
+        (dense ? Theme.of(context).textTheme.labelSmall : Theme.of(context).textTheme.labelMedium) ??
+            const TextStyle();
+    // 显式放大的字号让系统 textScaler 在其之上继续叠加（不替换系统值）。
+    final TextStyle labelStyle = baseStyle.copyWith(
+      color: scheme.onSecondaryContainer,
+      fontSize: (baseStyle.fontSize ?? 12.0) * scale,
+    );
     return Wrap(
-      spacing: dense ? 4.0 : 6.0,
-      runSpacing: dense ? 4.0 : 6.0,
+      spacing: (dense ? 4.0 : 6.0) * scale,
+      runSpacing: (dense ? 4.0 : 6.0) * scale,
       children: List<Widget>.generate(categories.length, (int index) {
         final String category = categories[index];
         return Container(
-          padding: EdgeInsets.symmetric(horizontal: dense ? 6.0 : 10.0, vertical: dense ? 1.0 : 4.0),
+          padding: EdgeInsets.symmetric(
+            horizontal: (dense ? 6.0 : 10.0) * scale,
+            vertical: (dense ? 1.0 : 4.0) * scale,
+          ),
           decoration: BoxDecoration(
-            color: Theme.of(context).colorScheme.secondaryContainer,
-            borderRadius: StaticsVar.br,
+            color: scheme.secondaryContainer,
+            borderRadius: BorderRadius.circular(AppRadius.card * scale),
           ),
           child: Text(
             category,
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
-            style: (dense
-                    ? Theme.of(context).textTheme.labelSmall
-                    : Theme.of(context).textTheme.labelMedium)
-                ?.copyWith(
-              color: Theme.of(context).colorScheme.onSecondaryContainer,
-            ),
+            style: labelStyle,
           ),
         );
       }),

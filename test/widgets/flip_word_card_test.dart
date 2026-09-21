@@ -28,12 +28,14 @@ void main() {
     masdar: 'كِتَابَةٌ',
   );
 
-  /// 泵起卡片；[disableAnimations] 模拟系统“减弱动态效果”。
+  /// 泵起卡片；[disableAnimations] 模拟系统“减弱动态效果”，
+  /// [textScaler] 模拟系统无障碍文字缩放。
   Future<void> pumpCard(
     WidgetTester tester, {
     required Widget child,
     Size size = const Size(400, 800),
     bool disableAnimations = false,
+    TextScaler? textScaler,
   }) async {
     tester.view.physicalSize = size;
     tester.view.devicePixelRatio = 1.0;
@@ -46,10 +48,13 @@ void main() {
         child: MaterialApp(
           home: Builder(
             builder: (BuildContext context) {
-              // 保留视图尺寸等既有数据，仅覆盖“减弱动态效果”开关。
+              // 保留视图尺寸等既有数据，仅覆盖“减弱动态效果”开关与文字缩放。
               final MediaQueryData base = MediaQuery.of(context);
               return MediaQuery(
-                data: base.copyWith(disableAnimations: disableAnimations),
+                data: base.copyWith(
+                  disableAnimations: disableAnimations,
+                  textScaler: textScaler,
+                ),
                 child: Scaffold(body: Center(child: child)),
               );
             },
@@ -264,6 +269,7 @@ void main() {
     const Size(1280, 800),
     const Size(800, 1280),
     const Size(200, 200),
+    const Size(120, 120),
   ]) {
     testWidgets(
       '反面详情在 ${size.width.toInt()}x${size.height.toInt()} 下渲染无溢出且字段齐全',
@@ -278,10 +284,85 @@ void main() {
           expect(find.text(label), findsOneWidget, reason: '反面应显示 $label');
         }
         expect(find.text('写'), findsOneWidget);
+        expect(find.byType(SingleChildScrollView), findsNothing, reason: '反面详情不得使用滚动容器');
         expect(tester.takeException(), isNull);
       },
     );
   }
+
+  /// 读取 [text] 对应 [Text] 的显式字号（用于比较响应式缩放）。
+  double detailFontSize(WidgetTester tester, String text) {
+    return tester.widget<Text>(find.text(text)).style?.fontSize ?? 0.0;
+  }
+
+  testWidgets('反面详情在大卡片上按可用尺寸放大字号', (WidgetTester tester) async {
+    const Widget card = FlipWordCard(word: word, enableFlip: false, startOnBack: true);
+
+    // 200x200 屏幕：信息区 180x70，低于参考尺寸，缩放因子保持 1.0。
+    await pumpCard(tester, child: card, size: const Size(200, 200));
+    final double smallSection = detailFontSize(tester, '词形信息');
+    final double smallMorph = detailFontSize(tester, '词根');
+    final double smallCategory = detailFontSize(tester, '基础');
+    final double smallFooter = detailFontSize(tester, '归属课程');
+    final double smallChinese = detailFontSize(tester, '写');
+
+    // 800x1280 屏幕：信息区 720x448，min(720/360, 448/260) ≈ 1.72。
+    await pumpCard(tester, child: card, size: const Size(800, 1280));
+    final double largeSection = detailFontSize(tester, '词形信息');
+    final double largeMorph = detailFontSize(tester, '词根');
+    final double largeCategory = detailFontSize(tester, '基础');
+    final double largeFooter = detailFontSize(tester, '归属课程');
+    final double largeChinese = detailFontSize(tester, '写');
+
+    void expectLarger(double small, double large, String name) {
+      expect(large, greaterThan(small), reason: '$name 在大卡片上应放大');
+    }
+
+    expectLarger(smallSection, largeSection, '分组标题');
+    expectLarger(smallMorph, largeMorph, '词形芯片');
+    expectLarger(smallCategory, largeCategory, '类别标签');
+    expectLarger(smallFooter, largeFooter, '归属页脚');
+    expectLarger(smallChinese, largeChinese, '释义文字');
+
+    final double ratio = largeSection / smallSection;
+    expect(ratio, greaterThan(1.4), reason: '大卡片上应明显放大');
+    expect(ratio, lessThanOrEqualTo(2.0 + 1e-6), reason: '放大倍数不得超过上限');
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('反面详情缩放有上限：超大可放尺寸不超过 2 倍', (WidgetTester tester) async {
+    const Widget card = FlipWordCard(word: word, enableFlip: false, startOnBack: true);
+
+    await pumpCard(tester, child: card, size: const Size(200, 200));
+    final double small = detailFontSize(tester, '词形信息');
+
+    await pumpCard(tester, child: card, size: const Size(2000, 2000));
+    final double huge = detailFontSize(tester, '词形信息');
+
+    expect(huge, closeTo(small * 2.0, 0.001), reason: '放大倍数应被钳制在 2 倍');
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('反面详情不覆盖系统文字缩放（textScaler 叠加生效）', (WidgetTester tester) async {
+    const Widget card = FlipWordCard(word: word, enableFlip: false, startOnBack: true);
+
+    await pumpCard(tester, child: card, size: const Size(320, 480));
+    final double plainStyleSize = detailFontSize(tester, '词形信息');
+    final double plainHeight = tester.getSize(find.text('词形信息')).height;
+
+    await pumpCard(
+      tester,
+      child: card,
+      size: const Size(320, 480),
+      textScaler: const TextScaler.linear(2.0),
+    );
+    final double scaledStyleSize = detailFontSize(tester, '词形信息');
+    final double scaledHeight = tester.getSize(find.text('词形信息')).height;
+
+    expect(scaledStyleSize, plainStyleSize, reason: '系统缩放不得写入组件显式字号');
+    expect(scaledHeight, greaterThan(plainHeight * 1.5), reason: '文字缩放应叠加在组件字号上');
+    expect(tester.takeException(), isNull);
+  });
 
   testWidgets('反面详情不渲染空字段', (WidgetTester tester) async {
     await pumpCard(
