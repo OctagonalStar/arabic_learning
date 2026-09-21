@@ -1,3 +1,4 @@
+import 'package:arabic_learning/funcs/shared_widgets.dart';
 import 'package:arabic_learning/funcs/ui.dart';
 import 'package:arabic_learning/vars/config_structure.dart';
 import 'package:arabic_learning/vars/global.dart';
@@ -197,7 +198,7 @@ class _QuestionsSettingPage extends State<QuestionsSettingPage> {
                         });
                       }, 
                       icon: Icon(Icons.add),
-                      child: Expanded(child: FittedBox(child: Text("添加 ${castMap[i]}"))),
+                      child: ButtonLabel(fit: BoxFit.contain, child: Text("添加 ${castMap[i]}")),
                     );
                   }),
                   Button(
@@ -211,7 +212,7 @@ class _QuestionsSettingPage extends State<QuestionsSettingPage> {
                       });
                     }, 
                     icon: Icon(value > 0.5 ?  Icons.deselect : Icons.add),
-                    child: value > 0.5 ? Expanded(child: FittedBox(child: Text("收起"))) : null,
+                    child: value > 0.5 ? ButtonLabel(fit: BoxFit.contain, child: Text("收起")) : null,
                   )
                 ],
               ),

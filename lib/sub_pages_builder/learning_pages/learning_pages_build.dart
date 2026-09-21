@@ -10,6 +10,7 @@ import 'package:provider/provider.dart';
 
 import 'package:arabic_learning/vars/statics_var.dart';
 import 'package:arabic_learning/vars/global.dart';
+import 'package:arabic_learning/funcs/shared_widgets.dart';
 import 'package:arabic_learning/funcs/ui.dart';
 
 
@@ -339,46 +340,22 @@ class BottomTip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     MediaQueryData mediaQuery = MediaQuery.of(context);
-    return TweenAnimationBuilder<double>(
-      tween: Tween<double>(
-        begin: 0.0,
-        end: isShowNext ? 1.0 : 0.0,
-      ),
-      duration: Durations.medium2,
-      curve: StaticsVar.curve,
-      builder: (context, value, child) {
-        return Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Button(
-              size: Size(mediaQuery.size.width * (0.8 - (0.45 * value)), mediaQuery.size.height * 0.1),
-              backgroundColor: Theme.of(context).colorScheme.secondaryContainer,
-              onPressed: onTipClicked, 
-              icon: Icon(Icons.view_list),
-              child: Expanded(
-                child: FittedBox(
-                  fit: BoxFit.scaleDown,
-                  child: Text("查看详解"),
-                ),
-              )
-            ),
-            SizedBox(width: mediaQuery.size.width * 0.05 * value),
-            if(value != 0.0) Button(
-              size: Size(mediaQuery.size.width * (0.45 * value), mediaQuery.size.height * 0.1),
-              backgroundColor: Theme.of(context).colorScheme.primaryContainer,
-              onPressed: onNextClicked,
-              icon: Icon(isLast ? Icons.done : Icons.navigate_next),
-              iconDirection: AxisDirection.right,
-              child: Expanded(
-                child: FittedBox(
-                  fit: BoxFit.scaleDown,
-                  child: Text(isLast ? "完成" : "下一个"),
-                ),
-              ),
-            )
-          ],
-        );
-      }
+    return RevealableActionBar(
+      revealed: isShowNext,
+      tipWidth: (value) => mediaQuery.size.width * (0.8 - (0.45 * value)),
+      tipLabel: (_) => "查看详解",
+      tipLabelExpanded: true,
+      tipBackgroundColor: Theme.of(context).colorScheme.secondaryContainer,
+      tipIcon: Icon(Icons.view_list),
+      onTipClicked: onTipClicked,
+      gapWidth: (value) => mediaQuery.size.width * 0.05 * value,
+      nextThreshold: 0.0,
+      nextWidth: (value) => mediaQuery.size.width * (0.45 * value),
+      nextIcon: Icon(isLast ? Icons.done : Icons.navigate_next),
+      nextIconDirection: AxisDirection.right,
+      nextLabel: isLast ? "完成" : "下一个",
+      nextBackgroundColor: Theme.of(context).colorScheme.primaryContainer,
+      onNextClicked: onNextClicked,
     );
   }
 }
@@ -426,123 +403,48 @@ class _ConcludePageState extends State<ConcludePage> {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          AnimatedSlide(
-            offset: visible1 ? Offset(-0.2, 0) : const Offset(-1.5, 0.2),
-            duration: Duration(seconds: 1),
-            curve: StaticsVar.curve,
-            child: Container(
-              width: mediaQuery.size.width * 0.8,
-              height: mediaQuery.size.height * 0.2,
-              padding: EdgeInsets.all(16.0),
-              margin: EdgeInsets.all(8.0),
-              decoration: BoxDecoration(
-                color: Theme.of(context).colorScheme.onPrimary,
-                borderRadius: StaticsVar.br,
-                boxShadow: [
-                  BoxShadow(
-                    color: Theme.of(context).colorScheme.surfaceBright,
-                    spreadRadius: 5,
-                    blurRadius: 7,
-                    offset: Offset(0, 3),
-                  )
-                ]
-              ),
-              child: TweenAnimationBuilder(
-                tween: Tween<double>(begin: 0.0, end: visible1 ? 1.0 : 0.0),
-                duration: Duration(seconds: 4),
-                curve: StaticsVar.curve,
-                builder: (context, value, child) {
-                  return Row(
-                      children: [
-                        Expanded(child: SizedBox()),
-                        Text("已完成单词:  ", style: TextStyle(fontSize: 20.0)),
-                        Text((widget.data[0] * value).ceil().toString(), style: TextStyle(fontSize: 32.0, fontWeight: FontWeight.bold)),
-                        SizedBox(width: mediaQuery.size.width * 0.05),
-                        CircularProgressIndicator(value: value)
-                      ],
-                    );
-                }
-              ),
+          ConclusionCard(
+            visible: visible1,
+            slideFromLeft: true,
+            color: Theme.of(context).colorScheme.onPrimary,
+            contentBuilder: (context, value) => Row(
+              children: [
+                Expanded(child: SizedBox()),
+                Text("已完成单词:  ", style: TextStyle(fontSize: 20.0)),
+                Text((widget.data[0] * value).ceil().toString(), style: TextStyle(fontSize: 32.0, fontWeight: FontWeight.bold)),
+                SizedBox(width: mediaQuery.size.width * 0.05),
+                CircularProgressIndicator(value: value)
+              ],
             ),
           ),
           SizedBox(height: mediaQuery.size.height * 0.05),
-          AnimatedSlide(
-            offset: visible2 ? Offset(0.2, 0) : const Offset(1.5, 0.2),
-            duration: Duration(seconds: 1),
-            curve: StaticsVar.curve,
-            child: Container(
-              width: mediaQuery.size.width * 0.8,
-              height: mediaQuery.size.height * 0.2,
-              padding: EdgeInsets.all(16.0),
-              margin: EdgeInsets.all(8.0),
-              decoration: BoxDecoration(
-                color: Theme.of(context).colorScheme.onSecondary,
-                borderRadius: StaticsVar.br,
-                boxShadow: [
-                  BoxShadow(
-                    color: Theme.of(context).colorScheme.surfaceBright,
-                    spreadRadius: 5,
-                    blurRadius: 7,
-                    offset: Offset(0, 3),
-                  )
-                ]
-              ),
-              child: TweenAnimationBuilder(
-                tween: Tween<double>(begin: 0.0, end: visible2 ? 1.0 : 0.0),
-                duration: Duration(seconds: 4),
-                curve: StaticsVar.curve,
-                builder: (context, value, child) {
-                  return Row(
-                      children: [
-                        CircularProgressIndicator(value: value * (widget.data[1]/widget.data[0])),
-                        SizedBox(width: mediaQuery.size.width * 0.05),
-                        Text("回答正确数:  ", style: TextStyle(fontSize: 20.0)),
-                        Text((widget.data[1] * value).ceil().toString(), style: TextStyle(fontSize: 32.0, fontWeight: FontWeight.bold)),
-                        Expanded(child: SizedBox()),
-                      ],
-                    );
-                }
-              ),
+          ConclusionCard(
+            visible: visible2,
+            slideFromLeft: false,
+            color: Theme.of(context).colorScheme.onSecondary,
+            contentBuilder: (context, value) => Row(
+              children: [
+                CircularProgressIndicator(value: value * (widget.data[1]/widget.data[0])),
+                SizedBox(width: mediaQuery.size.width * 0.05),
+                Text("回答正确数:  ", style: TextStyle(fontSize: 20.0)),
+                Text((widget.data[1] * value).ceil().toString(), style: TextStyle(fontSize: 32.0, fontWeight: FontWeight.bold)),
+                Expanded(child: SizedBox()),
+              ],
             ),
           ),
           SizedBox(height: mediaQuery.size.height * 0.05),
-          AnimatedSlide(
-            offset: visible3 ? Offset(-0.2, 0) : const Offset(-1.5, 0.2),
-            duration: Duration(seconds: 1),
-            curve: StaticsVar.curve,
-            child: Container(
-              width: mediaQuery.size.width * 0.8,
-              height: mediaQuery.size.height * 0.2,
-              padding: EdgeInsets.all(16.0),
-              margin: EdgeInsets.all(8.0),
-              decoration: BoxDecoration(
-                color: Theme.of(context).colorScheme.onPrimary,
-                borderRadius: StaticsVar.br,
-                boxShadow: [
-                  BoxShadow(
-                    color: Theme.of(context).colorScheme.surfaceBright,
-                    spreadRadius: 5,
-                    blurRadius: 7,
-                    offset: Offset(0, 3),
-                  )
-                ]
-              ),
-              child: TweenAnimationBuilder(
-                tween: Tween<double>(begin: 0.0, end: visible3 ? 1.0 : 0.0),
-                duration: Duration(seconds: 4),
-                curve: StaticsVar.curve,
-                builder: (context, value, child) {
-                  return Row(
-                      children: [
-                        Expanded(child: SizedBox()),
-                        Text("总耗时:  ", style: TextStyle(fontSize: 20.0)),
-                        Text("${(widget.data[2] * value).ceil().toString()} 秒", style: TextStyle(fontSize: 32.0, fontWeight: FontWeight.bold)),
-                        SizedBox(width: mediaQuery.size.width * 0.05),
-                        CircularProgressIndicator(value: value)
-                      ],
-                    );
-                }
-              ),
+          ConclusionCard(
+            visible: visible3,
+            slideFromLeft: true,
+            color: Theme.of(context).colorScheme.onPrimary,
+            contentBuilder: (context, value) => Row(
+              children: [
+                Expanded(child: SizedBox()),
+                Text("总耗时:  ", style: TextStyle(fontSize: 20.0)),
+                Text("${(widget.data[2] * value).ceil().toString()} 秒", style: TextStyle(fontSize: 32.0, fontWeight: FontWeight.bold)),
+                SizedBox(width: mediaQuery.size.width * 0.05),
+                CircularProgressIndicator(value: value)
+              ],
             ),
           ),
           Expanded(child: SizedBox()),
@@ -666,13 +568,10 @@ class _WordCardOverViewPage extends State<WordCardOverViewPage> {
                     autofocus: true,
                     expands: false,
                     maxLines: 1,
-                    decoration: InputDecoration(
+                    decoration: appInputDecoration(
+                      context,
                       labelText: "词汇检索",
                       hintText: "阿语单词或中文释义",
-                      border: OutlineInputBorder(
-                        borderRadius: StaticsVar.br,
-                        borderSide: BorderSide(color: Theme.of(context).colorScheme.outline),
-                      ),
                       suffix: Button(
                         onPressed: () => _searchNow(searchController.text), 
                         child: Text("查找")

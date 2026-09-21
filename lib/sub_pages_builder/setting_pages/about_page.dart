@@ -3,8 +3,8 @@ import 'package:flutter/services.dart' show rootBundle;
 import 'package:flutter_markdown_plus/flutter_markdown_plus.dart';
 import 'package:provider/provider.dart';
 
-import 'package:arabic_learning/vars/statics_var.dart';
 import 'package:arabic_learning/vars/global.dart';
+import 'package:arabic_learning/funcs/shared_widgets.dart';
 import 'package:arabic_learning/funcs/ui.dart';
 import 'package:arabic_learning/sub_pages_builder/setting_pages/open_source_licenses.dart';
 
@@ -38,13 +38,9 @@ class AboutPage extends StatelessWidget {
             child: Text("开放源代码许可"),
           ),
           TextContainer(text: "用户协议"),
-          Container(
+          SettingCard(
+            color: Theme.of(context).colorScheme.onSecondary,
             margin: EdgeInsets.all(8.0),
-            padding: EdgeInsets.all(8.0),
-            decoration: BoxDecoration(
-              color: Theme.of(context).colorScheme.onSecondary,
-              borderRadius: StaticsVar.br,
-            ),
             child: FutureBuilder(
               future: rootBundle.loadString('assets/help/TermsOfUse.md'),
               initialData: "加载中...",
@@ -54,13 +50,9 @@ class AboutPage extends StatelessWidget {
             )
           ),
           TextContainer(text: "隐私政策"),
-          Container(
+          SettingCard(
+            color: Theme.of(context).colorScheme.onSecondary,
             margin: EdgeInsets.all(8.0),
-            padding: EdgeInsets.all(8.0),
-            decoration: BoxDecoration(
-              color: Theme.of(context).colorScheme.onSecondary,
-              borderRadius: StaticsVar.br,
-            ),
             child: FutureBuilder(
               future: rootBundle.loadString('assets/help/PrivacyPolicy.md'),
               initialData: "加载中...",

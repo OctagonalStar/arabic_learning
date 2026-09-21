@@ -8,6 +8,7 @@ import 'package:provider/provider.dart';
 
 import 'package:arabic_learning/vars/global.dart';
 import 'package:arabic_learning/vars/statics_var.dart';
+import 'package:arabic_learning/funcs/shared_widgets.dart';
 import 'package:arabic_learning/funcs/utili.dart';
 
 // 该文件主要包含了对于UI有关的函数及多次在不同地方使用的Widget类或者函数
@@ -924,7 +925,7 @@ class WordCard extends StatelessWidget {
           onPressed: (){
             playTextToSpeech(word.arabic);
           },
-          child: Expanded(child: FittedBox(fit: BoxFit.scaleDown ,child: Text(word.arabic, style: TextStyle(fontSize: 64.0, fontFamily: context.read<Global>().arFont)))),
+          child: ButtonLabel(child: Text(word.arabic, style: TextStyle(fontSize: 64.0, fontFamily: context.read<Global>().arFont))),
         ),
         Stack(
           children: [
@@ -1232,7 +1233,7 @@ class _ChoiceQuestions extends State<ChoiceQuestions> {
                         playing = false;
                       });
                     },
-                    child: Expanded(child: FittedBox(fit: BoxFit.contain ,child: Text(widget.mainWord, style: TextStyle(fontSize: 72.0, fontFamily: widget.mainWord.isArabic() ? context.read<Global>().arFont : null)))),
+                    child: ButtonLabel(fit: BoxFit.contain, child: Text(widget.mainWord, style: TextStyle(fontSize: 72.0, fontFamily: widget.mainWord.isArabic() ? context.read<Global>().arFont : null))),
                   );
                 }
               ),
@@ -1361,12 +1362,9 @@ class _SpellQuestion extends State<SpellQuestion> {
                   style: TextStyle(fontFamily: context.read<Global>().arFont, fontSize: 28),
                   keyboardType: TextInputType.name,
                   readOnly: isChecked,
-                  decoration: InputDecoration(
+                  decoration: appInputDecoration(
+                    context,
                     labelText: "阿拉伯语单词",
-                    border: OutlineInputBorder(
-                      borderRadius: StaticsVar.br,
-                      borderSide: BorderSide(color: Theme.of(context).colorScheme.outline),
-                    ),
                     filled: true,
                     fillColor: value
                   ),

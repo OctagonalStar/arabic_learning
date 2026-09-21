@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 
+import 'package:arabic_learning/funcs/shared_widgets.dart';
 import 'package:arabic_learning/funcs/ui.dart';
 import 'package:arabic_learning/vars/statics_var.dart';
 import 'package:arabic_learning/vars/global.dart';
@@ -56,11 +57,8 @@ class _DebugPage extends State<DebugPage> {
         controller: controller,
         children: [
           TextContainer(text: "该页面为软件调试/测试和bug反馈使用，非必要请勿开启日志捕获，以免性能损耗", style: TextStyle(color: Colors.redAccent)),
-          Container(
-            decoration: BoxDecoration(
-              borderRadius: StaticsVar.br,
-              color: Theme.of(context).colorScheme.onPrimary
-            ),
+          SettingCard(
+            color: Theme.of(context).colorScheme.onPrimary,
             padding: EdgeInsets.only(left: 16.0, right: 16.0),
             child: Row(
               children: [
@@ -80,11 +78,8 @@ class _DebugPage extends State<DebugPage> {
               ],
             ),
           ),
-          Container(
-            decoration: BoxDecoration(
-              borderRadius: StaticsVar.br,
-              color: Theme.of(context).colorScheme.onSecondary
-            ),
+          SettingCard(
+            color: Theme.of(context).colorScheme.onSecondary,
             padding: EdgeInsets.only(left: 16.0, right: 16.0),
             child: Row(
               children: [

@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:fsrs/fsrs.dart' show Rating;
 import 'package:provider/provider.dart';
 
+import 'package:arabic_learning/funcs/shared_widgets.dart';
 import 'package:arabic_learning/vars/statics_var.dart';
 import 'package:arabic_learning/vars/global.dart';
 import 'package:arabic_learning/funcs/ui.dart';
@@ -32,13 +33,9 @@ class ForeFSRSSettingPage extends StatelessWidget {
           return ListView(
             children: [
               TextContainer(text: "参数配置", textAlign: TextAlign.center),
-              Container(
-                decoration: BoxDecoration(
-                  borderRadius: StaticsVar.br,
-                  color: Theme.of(context).colorScheme.onPrimary
-                ),
+              SettingCard(
+                color: Theme.of(context).colorScheme.onPrimary,
                 margin: EdgeInsets.all(8.0),
-                padding: EdgeInsets.all(8.0),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -66,13 +63,9 @@ class ForeFSRSSettingPage extends StatelessWidget {
                   ],
                 ),
               ),
-              Container(
-                decoration: BoxDecoration(
-                  borderRadius: StaticsVar.br,
-                  color: Theme.of(context).colorScheme.onSecondary
-                ),
+              SettingCard(
+                color: Theme.of(context).colorScheme.onSecondary,
                 margin: EdgeInsets.all(8.0),
-                padding: EdgeInsets.all(8.0),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -100,13 +93,9 @@ class ForeFSRSSettingPage extends StatelessWidget {
                   ],
                 ),
               ),
-              Container(
-                decoration: BoxDecoration(
-                  borderRadius: StaticsVar.br,
-                  color: Theme.of(context).colorScheme.onPrimary
-                ),
+              SettingCard(
+                color: Theme.of(context).colorScheme.onPrimary,
                 margin: EdgeInsets.all(8.0),
-                padding: EdgeInsets.all(8.0),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -135,13 +124,9 @@ class ForeFSRSSettingPage extends StatelessWidget {
                   ],
                 ),
               ),
-              Container(
-                decoration: BoxDecoration(
-                  borderRadius: StaticsVar.br,
-                  color: Theme.of(context).colorScheme.onSecondary
-                ),
+              SettingCard(
+                color: Theme.of(context).colorScheme.onSecondary,
                 margin: EdgeInsets.all(8.0),
-                padding: EdgeInsets.all(8.0),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -166,13 +151,9 @@ class ForeFSRSSettingPage extends StatelessWidget {
                   ],
                 ),
               ),
-              Container(
-                decoration: BoxDecoration(
-                  borderRadius: StaticsVar.br,
-                  color: Theme.of(context).colorScheme.onSecondary
-                ),
+              SettingCard(
+                color: Theme.of(context).colorScheme.onSecondary,
                 margin: EdgeInsets.all(8.0),
-                padding: EdgeInsets.all(8.0),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -212,13 +193,9 @@ class ForeFSRSSettingPage extends StatelessWidget {
                   ],
                 ),
               ),
-              if(!fsrs.config.selfEvaluate) Container(
-                decoration: BoxDecoration(
-                  borderRadius: StaticsVar.br,
-                  color: Theme.of(context).colorScheme.onPrimary
-                ),
+              if(!fsrs.config.selfEvaluate) SettingCard(
+                color: Theme.of(context).colorScheme.onPrimary,
                 margin: EdgeInsets.all(8.0),
-                padding: EdgeInsets.all(8.0),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -243,13 +220,9 @@ class ForeFSRSSettingPage extends StatelessWidget {
                   ],
                 ),
               ),
-              Container(
-                decoration: BoxDecoration(
-                  borderRadius: StaticsVar.br,
-                  color: Theme.of(context).colorScheme.onPrimary
-                ),
+              SettingCard(
+                color: Theme.of(context).colorScheme.onPrimary,
                 margin: EdgeInsets.all(8.0),
-                padding: EdgeInsets.all(8.0),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -566,42 +539,27 @@ class _FSRSReviewCardPage extends State<FSRSReviewCardPage> {
             }
           }
         },
-        bottomWidget: TweenAnimationBuilder<double>(
-          tween: Tween(
-            begin: 0.0,
-            end: choosed ? 1.0 : 0.0
-          ),
-          duration: Durations.medium2,
-          curve: StaticsVar.curve,
-          builder: (context, value, child) {
-            return Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                if(!widget.fsrs.config.selfEvaluate) Button(
-                  size: Size(mediaQuery.size.width * 0.9 - mediaQuery.size.width * 0.5 * value, mediaQuery.size.height * 0.1),
-                  shape: RoundedRectangleBorder(borderRadius: StaticsVar.br),
-                  onPressed: (){
-                    viewAnswer(context, wordData[widget.wordID]);
-                    setState(() {
-                      choosed = true;
-                      end = DateTime.now();
-                    });
-                  }, 
-                  icon: Icon(Icons.tips_and_updates),
-                  child: Text(value == 0.0 ? "忘了？" : "详解"),
-                ),
-                SizedBox(width: mediaQuery.size.width*0.02*value, height: mediaQuery.size.height * 0.1),
-                if(value > 0.3) Button(
-                  size: Size(mediaQuery.size.width * (widget.fsrs.config.selfEvaluate ? 0.8 : 0.5) * value, mediaQuery.size.height * 0.1),
-                  onPressed: () {
-                    widget.controller.nextPage(duration: Durations.medium2, curve: StaticsVar.curve);
-                  },
-                  icon: Icon(Icons.arrow_downward),
-                  child: Expanded(child: FittedBox(fit: BoxFit.scaleDown, child: Text("下一题"))),
-                )
-              ],
-            );
-          }
+        bottomWidget: RevealableActionBar(
+          revealed: choosed,
+          showTipButton: !widget.fsrs.config.selfEvaluate,
+          tipWidth: (value) => mediaQuery.size.width * 0.9 - mediaQuery.size.width * 0.5 * value,
+          tipLabel: (value) => value == 0.0 ? "忘了？" : "详解",
+          onTipClicked: (){
+            viewAnswer(context, wordData[widget.wordID]);
+            setState(() {
+              choosed = true;
+              end = DateTime.now();
+            });
+          },
+          gapWidth: (value) => mediaQuery.size.width*0.02*value,
+          gapHeight: mediaQuery.size.height * 0.1,
+          nextThreshold: 0.3,
+          nextWidth: (value) => mediaQuery.size.width * (widget.fsrs.config.selfEvaluate ? 0.8 : 0.5) * value,
+          nextIcon: Icon(Icons.arrow_downward),
+          nextLabel: "下一题",
+          onNextClicked: () {
+            widget.controller.nextPage(duration: Durations.medium2, curve: StaticsVar.curve);
+          },
         )
       )
     );
@@ -719,39 +677,24 @@ class _FSRSLearningPageState extends State<FSRSLearningPage> {
                     return false;
                   }
                 },
-                bottomWidget: TweenAnimationBuilder<double>(
-                  tween: Tween(
-                    begin: 0.0,
-                    end: corrected ? 1.0 : 0.0
-                  ),
-                  duration: Durations.medium2,
-                  curve: StaticsVar.curve,
-                  builder: (context, value, child) {
-                    return Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Button(
-                          size: Size(mediaQuery.size.width * 0.9 - mediaQuery.size.width * 0.5 * value, mediaQuery.size.height * 0.1),
-                          onPressed: (){
-                            viewAnswer(context, widget.words[index]);
-                          }, 
-                          icon: Icon(Icons.tips_and_updates),
-                          child: Text(value == 0.0 ? "提示" : "查看详解"),
-                        ),
-                        SizedBox(width: mediaQuery.size.width * 0.02 * value),
-                        if(value > 0.2) Button(
-                          size: Size(mediaQuery.size.width * 0.5 * value, mediaQuery.size.height * 0.1),
-                          onPressed: () {
-                            if(index == widget.words.length-1) {
-                              controllerHor.nextPage(duration: Durations.medium2, curve: StaticsVar.curve);
-                            }
-                            controllerQuestions.nextPage(duration: Durations.medium2, curve: StaticsVar.curve);
-                          },
-                          icon: Icon(index == widget.words.length-1 ? Icons.done_all : Icons.arrow_downward),
-                          child: Expanded(child: FittedBox(child: Text(index == widget.words.length-1 ? "完成学习" : "下一题"))),
-                        )
-                      ],
-                    );
+                bottomWidget: RevealableActionBar(
+                  revealed: corrected,
+                  tipWidth: (value) => mediaQuery.size.width * 0.9 - mediaQuery.size.width * 0.5 * value,
+                  tipLabel: (value) => value == 0.0 ? "提示" : "查看详解",
+                  onTipClicked: (){
+                    viewAnswer(context, widget.words[index]);
+                  },
+                  gapWidth: (value) => mediaQuery.size.width * 0.02 * value,
+                  nextThreshold: 0.2,
+                  nextWidth: (value) => mediaQuery.size.width * 0.5 * value,
+                  nextIcon: Icon(index == widget.words.length-1 ? Icons.done_all : Icons.arrow_downward),
+                  nextLabel: index == widget.words.length-1 ? "完成学习" : "下一题",
+                  nextFit: BoxFit.contain,
+                  onNextClicked: () {
+                    if(index == widget.words.length-1) {
+                      controllerHor.nextPage(duration: Durations.medium2, curve: StaticsVar.curve);
+                    }
+                    controllerQuestions.nextPage(duration: Durations.medium2, curve: StaticsVar.curve);
                   },
                 )
               );

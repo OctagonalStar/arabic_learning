@@ -3,12 +3,12 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import 'package:arabic_learning/funcs/shared_widgets.dart';
 import 'package:arabic_learning/funcs/ui.dart';
 import 'package:arabic_learning/funcs/utili.dart';
 import 'package:arabic_learning/pages/setting_page.dart';
 import 'package:arabic_learning/vars/config_structure.dart';
 import 'package:arabic_learning/vars/global.dart';
-import 'package:arabic_learning/vars/statics_var.dart';
 import 'package:arabic_learning/funcs/fsrs_func.dart';
 
 class HomePage extends StatelessWidget {
@@ -27,115 +27,41 @@ class HomePage extends StatelessWidget {
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
           children: [
-            Container(
+            StatCard(
               width: mediaQuery.size.width * 0.30,
               height: mediaQuery.size.height * 0.18,
-              margin: EdgeInsets.all(4.0),
-              padding: EdgeInsets.all(16.0),
-              decoration: BoxDecoration(
-                color: Theme.of(context).colorScheme.secondaryContainer.withAlpha(150),
-                boxShadow: [
-                  BoxShadow(
-                    color: Theme.of(context).colorScheme.surfaceBright.withAlpha(150),
-                    offset: Offset(2, 4),
-                    blurRadius: 8.0,
-                  ),
-                ],
-                borderRadius: StaticsVar.br,
-              ),
-              child: Column(
-                children: [
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Text('连胜天数', style: TextStyle(fontSize: 12.0)),
-                      AppData().config.learning.lastDate == DateTime.now().difference(DateTime(2025, 11, 1)).inDays
-                        ? Icon(Icons.done, size: 15.0, color: Colors.tealAccent)
-                        : Icon(Icons.error_outline, size: 15.0, color: Colors.amber),
-                    ],
-                  ),
-                  SizedBox(height: mediaQuery.size.height * 0.03),
-                  Text(getStrokeDays(AppData().config.learning).toString(), style: TextStyle(fontSize: 24.0, fontWeight: FontWeight.bold)),
-                ],
-              ),
+              spacing: mediaQuery.size.height * 0.03,
+              label: '连胜天数',
+              value: getStrokeDays(AppData().config.learning).toString(),
+              statusIcon: AppData().config.learning.lastDate == DateTime.now().difference(DateTime(2025, 11, 1)).inDays
+                ? Icon(Icons.done, size: 15.0, color: Colors.tealAccent)
+                : Icon(Icons.error_outline, size: 15.0, color: Colors.amber),
             ),
-            Container(
+            StatCard(
               width: mediaQuery.size.width * 0.50,
               height: mediaQuery.size.height * 0.18,
-              margin: EdgeInsets.all(4.0),
-              padding: EdgeInsets.all(16.0),
-              decoration: BoxDecoration(
-                color: Theme.of(context).colorScheme.secondaryContainer.withAlpha(150),
-                boxShadow: [
-                  BoxShadow(
-                    color: Theme.of(context).colorScheme.surfaceBright.withAlpha(150),
-                    offset: Offset(2, 4),
-                    blurRadius: 8.0,
-                  ),
-                ],
-                borderRadius: BorderRadius.circular(25.0),
-              ),
-              child: Column(
-                children: [
-                  Text('已学词汇', style: TextStyle(fontSize: 12.0)),
-                  SizedBox(height: mediaQuery.size.height * 0.03),
-                  Text(fsrs.config.enabled ? fsrs.config.cards.length.toString() : "未启用" , style: TextStyle(fontSize: 24.0, fontWeight: FontWeight.bold)),
-                ],
-              ),
+              spacing: mediaQuery.size.height * 0.03,
+              label: '已学词汇',
+              value: fsrs.config.enabled ? fsrs.config.cards.length.toString() : "未启用",
             ),
           ],
         ),
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
           children: [
-            Container(
+            StatCard(
               width: mediaQuery.size.width * 0.50,
               height: mediaQuery.size.height * 0.18,
-              margin: EdgeInsets.all(4.0),
-              padding: EdgeInsets.all(16.0),
-              decoration: BoxDecoration(
-                color: Theme.of(context).colorScheme.secondaryContainer.withAlpha(150),
-                boxShadow: [
-                  BoxShadow(
-                    color: Theme.of(context).colorScheme.surfaceBright.withAlpha(150),
-                    offset: Offset(2, 4),
-                    blurRadius: 8.0,
-                  ),
-                ],
-                borderRadius: BorderRadius.circular(25.0),
-              ),
-              child: Column(
-                children: [
-                  Text('规律性学习', style: TextStyle(fontSize: 12.0)),
-                  SizedBox(height: mediaQuery.size.height * 0.03),
-                  Text(fsrs.config.enabled ? "${fsrs.getWillDueCount().toString()}个待复习" : "未启用", style: TextStyle(fontSize: 24.0, fontWeight: FontWeight.bold)),
-                ],
-              ),
+              spacing: mediaQuery.size.height * 0.03,
+              label: '规律性学习',
+              value: fsrs.config.enabled ? "${fsrs.getWillDueCount().toString()}个待复习" : "未启用",
             ),
-            Container(
+            StatCard(
               width: mediaQuery.size.width * 0.30,
               height: mediaQuery.size.height * 0.18,
-              margin: EdgeInsets.all(4.0),
-              padding: EdgeInsets.all(16.0),
-              decoration: BoxDecoration(
-                color: Theme.of(context).colorScheme.secondaryContainer.withAlpha(150),
-                boxShadow: [
-                  BoxShadow(
-                    color: Theme.of(context).colorScheme.surfaceBright.withAlpha(150),
-                    offset: Offset(2, 4),
-                    blurRadius: 8.0,
-                  ),
-                ],
-                borderRadius: StaticsVar.br,
-              ),
-              child: Column(
-                children: [
-                  Text('单词总数', style: TextStyle(fontSize: 12.0)),
-                  SizedBox(height: mediaQuery.size.height * 0.03),
-                  Text(AppData().wordCount.toString(), style: TextStyle(fontSize: 24.0, fontWeight: FontWeight.bold))
-                ],
-              ),
+              spacing: mediaQuery.size.height * 0.03,
+              label: '单词总数',
+              value: AppData().wordCount.toString(),
             ),
           ]
         )

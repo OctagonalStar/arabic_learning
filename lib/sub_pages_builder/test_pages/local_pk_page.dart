@@ -1,5 +1,6 @@
 import 'dart:math';
 
+import 'package:arabic_learning/funcs/shared_widgets.dart';
 import 'package:arabic_learning/funcs/ui.dart';
 import 'package:arabic_learning/funcs/utili.dart';
 import 'package:arabic_learning/vars/config_structure.dart';
@@ -79,12 +80,9 @@ class _LocalPKSelectPage extends State<LocalPKSelectPage> {
             expands: false,
             maxLines: 1,
             keyboardType: TextInputType.visiblePassword,
-            decoration: InputDecoration(
+            decoration: appInputDecoration(
+              context,
               labelText: "联机口令",
-              border: OutlineInputBorder(
-                borderRadius: StaticsVar.br,
-                borderSide: BorderSide(color: Theme.of(context).colorScheme.outline),
-              ),
               suffix: Button(
                 onPressed: () async {
                   connecting();
@@ -243,12 +241,9 @@ class _ServerHostWatingPage extends State<ServerHostWatingPage> {
                 expands: false,
                 maxLines: 1,
                 keyboardType: TextInputType.visiblePassword,
-                decoration: InputDecoration(
+                decoration: appInputDecoration(
+                  context,
                   labelText: "联机口令",
-                  border: OutlineInputBorder(
-                    borderRadius: StaticsVar.br,
-                    borderSide: BorderSide(color: Theme.of(context).colorScheme.outline),
-                  ),
                   suffix: Button(
                     onPressed: () async {
                       if(isConnecting) return;
@@ -634,108 +629,27 @@ class PKConclue extends StatelessWidget {
     return Column(
       children: [
         Text("回答正确数", style:Theme.of(context).textTheme.titleLarge),
-        TweenAnimationBuilder<double>(
-          tween: Tween(
-            begin: 0,
-            end: 1
-          ), 
-          curve: StaticsVar.curve,
-          duration: Duration(seconds: 1), 
-          builder: (context, value, child) {
-            return Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Container(
-                  padding: EdgeInsets.all(16.0),
-                  height: mediaQuery.size.height * 0.1,
-                  width: min(value*2, 1) * mediaQuery.size.width * (0.5 + 0.25*((selfCorrect - sideCorrect)/context.read<PKServer>().pkState.testWords.length)),
-                  decoration: BoxDecoration(
-                    color: Theme.of(context).colorScheme.onPrimary,
-                  ),
-                  child: Text("你  ${(value*selfCorrect).floor()}", style: Theme.of(context).textTheme.headlineMedium, textAlign: TextAlign.end),
-                ),
-                Container(
-                  padding: EdgeInsets.all(16.0),
-                  height: mediaQuery.size.height * 0.1,
-                  width: min(value*2, 1) * mediaQuery.size.width * (0.5 - 0.25*((selfCorrect - sideCorrect)/context.read<PKServer>().pkState.testWords.length)),
-                  decoration: BoxDecoration(
-                    color: Theme.of(context).colorScheme.onSecondary,
-                  ),
-                  child: Text("${(value*sideCorrect).floor()}  对方", style: Theme.of(context).textTheme.headlineMedium, textAlign: TextAlign.start),
-                ),
-              ],
-            );
-          }
+        PKScoreRow(
+          duration: Duration(seconds: 1),
+          scoreBias: (selfCorrect - sideCorrect)/context.read<PKServer>().pkState.testWords.length,
+          leftText: (value) => "你  ${(value*selfCorrect).floor()}",
+          rightText: (value) => "${(value*sideCorrect).floor()}  对方",
         ),
         SizedBox(height: mediaQuery.size.height * 0.05),
         Text("回答用时", style:Theme.of(context).textTheme.titleLarge),
-        TweenAnimationBuilder<double>(
-          tween: Tween(
-            begin: 0,
-            end: 1
-          ), 
-          curve: StaticsVar.curve,
-          duration: Durations.medium2, 
-          builder: (context, value, child) {
-            return Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Container(
-                  padding: EdgeInsets.all(16.0),
-                  height: mediaQuery.size.height * 0.1,
-                  width: min(value*2, 1) * mediaQuery.size.width * (0.5 - 0.25*(context.read<PKServer>().pkState.selfTookenTime! - context.read<PKServer>().pkState.sideTookenTime!)/300),
-                  decoration: BoxDecoration(
-                    color: Theme.of(context).colorScheme.onPrimary,
-                  ),
-                  child: Text("你  ${(value*context.read<PKServer>().pkState.selfTookenTime!).floor()}秒", style: Theme.of(context).textTheme.headlineMedium, textAlign: TextAlign.end),
-                ),
-                Container(
-                  padding: EdgeInsets.all(16.0),
-                  height: mediaQuery.size.height * 0.1,
-                  width: min(value*2, 1) * mediaQuery.size.width * (0.5 + 0.25*(context.read<PKServer>().pkState.selfTookenTime! - context.read<PKServer>().pkState.sideTookenTime!)/300),
-                  decoration: BoxDecoration(
-                    color: Theme.of(context).colorScheme.onSecondary,
-                  ),
-                  child: Text("${(value*context.read<PKServer>().pkState.sideTookenTime!).floor()}秒  对方", style: Theme.of(context).textTheme.headlineMedium, textAlign: TextAlign.start),
-                ),
-              ],
-            );
-          }
+        PKScoreRow(
+          duration: Durations.medium2,
+          scoreBias: (context.read<PKServer>().pkState.sideTookenTime! - context.read<PKServer>().pkState.selfTookenTime!)/300,
+          leftText: (value) => "你  ${(value*context.read<PKServer>().pkState.selfTookenTime!).floor()}秒",
+          rightText: (value) => "${(value*context.read<PKServer>().pkState.sideTookenTime!).floor()}秒  对方",
         ),
         SizedBox(height: mediaQuery.size.height * 0.05),
         Text("计算得分", style:Theme.of(context).textTheme.titleLarge),
-        TweenAnimationBuilder<double>(
-          tween: Tween(
-            begin: 0,
-            end: 1
-          ), 
-          curve: StaticsVar.curve,
-          duration: Duration(seconds: 2), 
-          builder: (context, value, child) {
-            return Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Container(
-                  padding: EdgeInsets.all(16.0),
-                  height: mediaQuery.size.height * 0.1,
-                  width: min(value*2, 1) * mediaQuery.size.width * (0.5 + 0.25*(selfPt - sidePt)/300),
-                  decoration: BoxDecoration(
-                    color: Theme.of(context).colorScheme.onPrimary,
-                  ),
-                  child: Text("你  ${(value*selfPt).round()}Pt", style: Theme.of(context).textTheme.headlineMedium, textAlign: TextAlign.end),
-                ),
-                Container(
-                  padding: EdgeInsets.all(16.0),
-                  height: mediaQuery.size.height * 0.1,
-                  width: min(value*2, 1) * mediaQuery.size.width * (0.5 - 0.25*(selfPt - sidePt)/300),
-                  decoration: BoxDecoration(
-                    color: Theme.of(context).colorScheme.onSecondary,
-                  ),
-                  child: Text("${(value*sidePt).round()}Pt  对方", style: Theme.of(context).textTheme.headlineMedium, textAlign: TextAlign.start),
-                ),
-              ],
-            );
-          }
+        PKScoreRow(
+          duration: Duration(seconds: 2),
+          scoreBias: (selfPt - sidePt)/300,
+          leftText: (value) => "你  ${(value*selfPt).round()}Pt",
+          rightText: (value) => "${(value*sidePt).round()}Pt  对方",
         ),
         Expanded(child: SizedBox()),
         Button(

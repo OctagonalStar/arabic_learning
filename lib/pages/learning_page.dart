@@ -6,6 +6,7 @@ import 'package:arabic_learning/vars/config_structure.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import 'package:arabic_learning/funcs/shared_widgets.dart';
 import 'package:arabic_learning/funcs/ui.dart';
 import 'package:arabic_learning/funcs/utili.dart';
 import 'package:arabic_learning/vars/global.dart';
@@ -40,11 +41,8 @@ class LearningPage extends StatelessWidget {
                     child: Icon(Icons.task_alt),
                   ),
                   iconDirection: AxisDirection.up,
-                  child: Expanded(
-                    child: FittedBox(
-                      fit: BoxFit.scaleDown,
-                      child: Text('学习',style: TextStyle(fontSize: 40.0, fontWeight: FontWeight.bold)),
-                    ),
+                  child: ButtonLabel(
+                    child: Text('学习',style: TextStyle(fontSize: 40.0, fontWeight: FontWeight.bold)),
                   ),
                 ),
                 Button(
@@ -77,11 +75,8 @@ class LearningPage extends StatelessWidget {
                 child: Icon(Icons.history_edu),
               ),
               iconDirection: AxisDirection.up,
-              child: Expanded(
-                child: FittedBox(
-                  fit: BoxFit.scaleDown,
-                  child: Text("复习",style: TextStyle(fontSize: 40.0, fontWeight: FontWeight.bold))
-                ),
+              child: ButtonLabel(
+                child: Text("复习",style: TextStyle(fontSize: 40.0, fontWeight: FontWeight.bold))
               ),
             ),
           ],
@@ -135,7 +130,7 @@ class LearningPage extends StatelessWidget {
               );
             },
             icon: Icon(Icons.push_pin, size: 24),
-            child: Expanded(child: FittedBox(child: Text("学习推送单词", style: TextStyle(fontSize: 40.0)))),
+            child: ButtonLabel(fit: BoxFit.contain, child: Text("学习推送单词", style: TextStyle(fontSize: 40.0))),
           ),
         ],
         SizedBox(height: mediaQuery.size.height * 0.05),

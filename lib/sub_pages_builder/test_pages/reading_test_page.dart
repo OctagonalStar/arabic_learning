@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:math';
 
+import 'package:arabic_learning/funcs/shared_widgets.dart';
 import 'package:arabic_learning/funcs/ui.dart';
 import 'package:arabic_learning/funcs/utili.dart';
 import 'package:arabic_learning/vars/config_structure.dart';
@@ -480,14 +481,14 @@ class _ReadingQuestionPage extends State<ReadingQuestionPage> {
                               icon: Icon(Icons.arrow_back_ios),
                               iconDirection: AxisDirection.left,
                               onPressed: () => pageController.previousPage(duration: Durations.medium4, curve: StaticsVar.curve),
-                              child: Expanded(child: FittedBox(fit: BoxFit.scaleDown, child: Text("上一题"))),
+                              child: ButtonLabel(child: Text("上一题")),
                             ),
                             if(index != widget.unit.questions.length) Button(
                               size: Size.fromWidth(mediaQuery.size.width * 0.3 * (1 - i)),
                               icon: Icon(Icons.arrow_forward_ios),
                               iconDirection: AxisDirection.right,
                               onPressed: () => pageController.nextPage(duration: Durations.medium4, curve: StaticsVar.curve),
-                              child: Expanded(child: FittedBox(fit: BoxFit.scaleDown, child: Text(index == widget.unit.questions.length-1 ? "检查答案" : "下一题"))),
+                              child: ButtonLabel(child: Text(index == widget.unit.questions.length-1 ? "检查答案" : "下一题")),
                             ),
                           ],
                         );
@@ -630,12 +631,9 @@ class _QuestionConfigPage extends State<QuestionConfigPage> {
                           controller: promptEditController,
                           textDirection: TextDirection.ltr,
                           maxLines: 10,
-                          decoration: InputDecoration(
+                          decoration: appInputDecoration(
+                            context,
                             labelText: "Prompt",
-                            border: OutlineInputBorder(
-                              borderRadius: StaticsVar.br,
-                              borderSide: BorderSide(color: Theme.of(context).colorScheme.outline),
-                            ),
                           )
                         )
                       ],
@@ -736,12 +734,7 @@ class _QuestionConfigPage extends State<QuestionConfigPage> {
                 child: TextField(
                   controller: apiAddressEditController,
                   maxLines: 1,
-                  decoration: InputDecoration(
-                    border: OutlineInputBorder(
-                      borderRadius: StaticsVar.br,
-                      borderSide: BorderSide(color: Theme.of(context).colorScheme.outline),
-                    ),
-                  )
+                  decoration: appInputDecoration(context)
                 ),
               ),
               note: "从你的AI提供商获取，要求兼容OpenAI标准，例如DeepSeek的API地址为 https://api.deepseek.com \n如果出错，可以在地址末尾加入 /v1 尝试\n注意：末尾不要有 / "
@@ -753,12 +746,7 @@ class _QuestionConfigPage extends State<QuestionConfigPage> {
                 child: TextField(
                   controller: apiKeyEditController,
                   maxLines: 1,
-                  decoration: InputDecoration(
-                    border: OutlineInputBorder(
-                      borderRadius: StaticsVar.br,
-                      borderSide: BorderSide(color: Theme.of(context).colorScheme.outline),
-                    ),
-                  )
+                  decoration: appInputDecoration(context)
                 ),
               ),
               note: "你的API Key，注意，本软件不保存你的API Key，请自行妥善保管"
@@ -770,12 +758,7 @@ class _QuestionConfigPage extends State<QuestionConfigPage> {
                 child: TextField(
                   controller: apiModelEditController,
                   maxLines: 1,
-                  decoration: InputDecoration(
-                    border: OutlineInputBorder(
-                      borderRadius: StaticsVar.br,
-                      borderSide: BorderSide(color: Theme.of(context).colorScheme.outline),
-                    ),
-                  )
+                  decoration: appInputDecoration(context)
                 ),
               ),
               note: "你要使用的AI模型名称，通常你的提供商会提供给你，例如: deepseek-v4-flash"
@@ -810,12 +793,9 @@ class _QuestionConfigPage extends State<QuestionConfigPage> {
                   controller: themeEditController,
                   textDirection: themeEditController.text.isArabic() ? TextDirection.rtl : TextDirection.ltr,
                   maxLines: 1,
-                  decoration: InputDecoration(
+                  decoration: appInputDecoration(
+                    context,
                     hintText: "留空自动随机",
-                    border: OutlineInputBorder(
-                      borderRadius: StaticsVar.br,
-                      borderSide: BorderSide(color: Theme.of(context).colorScheme.outline),
-                    ),
                     suffix: IconButton(
                       onPressed: (){
                         setState(() {
@@ -862,13 +842,10 @@ class _QuestionConfigPage extends State<QuestionConfigPage> {
           controller: themeEditController,
           textDirection: TextDirection.ltr,
           maxLines: 20,
-          decoration: InputDecoration(
+          decoration: appInputDecoration(
+            context,
             hintText: "粘贴从AI工具中生成的文本",
-            border: OutlineInputBorder(
-              borderRadius: StaticsVar.br,
-              borderSide: BorderSide(color: Theme.of(context).colorScheme.outline),
-            ),
-          )
+          ),
         ),
         SizedBox(height: 20),
         Button(

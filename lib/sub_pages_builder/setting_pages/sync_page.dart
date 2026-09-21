@@ -5,11 +5,11 @@ import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import 'package:arabic_learning/funcs/shared_widgets.dart';
 import 'package:arabic_learning/funcs/ui.dart';
 import 'package:arabic_learning/funcs/sync.dart';
 import 'package:arabic_learning/vars/config_structure.dart';
 import 'package:arabic_learning/vars/global.dart';
-import 'package:arabic_learning/vars/statics_var.dart';
 import 'package:arabic_learning/package_replacement/fake_dart_io.dart' if (dart.library.io) 'dart:io' as io;
 
 class DataSyncPage extends StatefulWidget {
@@ -297,13 +297,10 @@ Future<void> popAccountSetting(BuildContext context) async {
               autocorrect: false,
               controller: uriController,
               maxLines: 1,
-              decoration: InputDecoration(
+              decoration: appInputDecoration(
+                context,
                 labelText: "WebDAV地址",
                 icon: Icon(Icons.webhook),
-                border: OutlineInputBorder(
-                  borderRadius: StaticsVar.br,
-                  borderSide: BorderSide(color: Theme.of(context).colorScheme.outline),
-                ),
               ),
             ),
             SizedBox(height: 20),
@@ -311,13 +308,10 @@ Future<void> popAccountSetting(BuildContext context) async {
               autocorrect: false,
               controller: accountController,
               maxLines: 1,
-              decoration: InputDecoration(
+              decoration: appInputDecoration(
+                context,
                 labelText: "用户名",
                 icon: Icon(Icons.account_box_outlined),
-                border: OutlineInputBorder(
-                  borderRadius: StaticsVar.br,
-                  borderSide: BorderSide(color: Theme.of(context).colorScheme.outline),
-                ),
               ),
             ),
             SizedBox(height: 20),
@@ -326,13 +320,10 @@ Future<void> popAccountSetting(BuildContext context) async {
               controller: passwdController,
               maxLines: 1,
               keyboardType: TextInputType.visiblePassword,
-              decoration: InputDecoration(
+              decoration: appInputDecoration(
+                context,
                 labelText: "密码",
                 icon: Icon(Icons.password),
-                border: OutlineInputBorder(
-                  borderRadius: StaticsVar.br,
-                  borderSide: BorderSide(color: Theme.of(context).colorScheme.outline),
-                ),
               ),
             ),
           ],
