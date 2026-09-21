@@ -10,7 +10,8 @@ import 'package:arabic_learning/services/tts.dart';
 import 'package:arabic_learning/services/words.dart' show calculateButtonBoxLayout;
 import 'package:arabic_learning/theme/tokens.dart' show AppMotion;
 import 'package:arabic_learning/theme/typography.dart';
-import 'package:arabic_learning/widgets/kit.dart' show Button, ChooseButtons, TextContainer, WordCard;
+import 'package:arabic_learning/widgets/flip_word_card.dart' show FlipWordCard;
+import 'package:arabic_learning/widgets/kit.dart' show Button, ChooseButtons, TextContainer;
 import 'package:arabic_learning/widgets/overlays.dart' show alart, showSnackBar;
 import 'package:arabic_learning/widgets/shared.dart' show ButtonLabel, appInputDecoration;
 import 'package:flutter/material.dart';
@@ -165,7 +166,7 @@ class WordCardQuestion extends StatelessWidget {
         children: [
           if(hint != null) TextContainer(text: hint!, animated: true),
           SizedBox(height: mediaQuery.size.height * 0.01),
-          WordCard(word: word),
+          FlipWordCard(word: word),
           Expanded(child: SizedBox()),
           ?bottomWidget,
           SizedBox(height: mediaQuery.size.height * 0.05),

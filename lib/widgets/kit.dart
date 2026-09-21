@@ -577,58 +577,53 @@ class CategoryFilter extends StatelessWidget {
   }
 }
 
-/// 单词卡片组件
-/// 
-/// 显示一个阿语单词在上，下有中文解释的卡片
-/// 
-/// [word] :单词数据 参考Global.wordData中单个单词储存的数据结构
-/// 
-/// [width] :限定宽度，默认全屏
-/// 
-/// [height] :限定高度，默认自动
-/// 
-/// [useMask] :是否显示高斯遮罩
-/// 
-/// [compact] :紧凑模式，用于词汇总览网格与查找结果等固定尺寸单元。
-/// 保持紧凑布局，仅在分类非空时追加一行小标签，绝不溢出；
-/// 为false（默认）时展示可滚动的“词形信息”区域，适合详解弹窗与学习页面
-class WordCard extends StatelessWidget {
-  final WordItem word;
-  final double? width;
-  final double? height;
-  final bool useMask;
-  final bool compact;
-  const WordCard({super.key, required this.word, this.width, this.height, this.useMask = true, this.compact = false});
-
-  /// 词性的中文展示（未知值原样显示）
-  String _posLabel(String pos) {
-    switch(pos) {
-      case "Nominals": return "名词";
-      case "Verbs": return "动词";
-      case "Phrases and Clauses": return "短语与从句";
-      case "Particles": return "虚词";
-      case "Adverbial Expressions": return "状语表达";
-      default: return pos;
-    }
+/// 词性的中文展示（未知值原样显示）
+String _wordPosLabel(String pos) {
+  switch(pos) {
+    case "Nominals": return "名词";
+    case "Verbs": return "动词";
+    case "Phrases and Clauses": return "短语与从句";
+    case "Particles": return "虚词";
+    case "Adverbial Expressions": return "状语表达";
+    default: return pos;
   }
+}
 
-  /// 卡片内的双栏信息行：左侧标签容器 + 右侧内容，样式与原卡片保持一致。
-  ///
-  /// [labelStyle] / [valueStyle] 为语义文本角色；省略时分别回退
-  /// `bodyLarge` / `titleMedium`（对应原 16 / 18 号字）。
-  Widget _infoRow(
-    BuildContext context, {
-    required String label,
-    required String value,
-    required double labelWidth,
-    required Color labelColor,
-    double? height,
-    TextStyle? labelStyle,
-    TextStyle? valueStyle,
-    bool isArabicValue = false,
-    bool expandValue = false,
-    BorderRadius? labelRadius,
-  }) {
+/// 卡片内的双栏信息行：左侧标签容器 + 右侧内容，样式与原卡片保持一致。
+///
+/// [labelStyle] / [valueStyle] 为语义文本角色；省略时分别回退
+/// `bodyLarge` / `titleMedium`（对应原 16 / 18 号字）。
+///
+/// 由 [WordCard] 紧凑模式、[WordCardDetailBody] 详情模式与翻卡组件
+/// `FlipWordCard` 的正面共用，保证卡片信息行只有一处实现。
+class WordCardInfoRow extends StatelessWidget {
+  final String label;
+  final String value;
+  final double labelWidth;
+  final Color labelColor;
+  final double? height;
+  final TextStyle? labelStyle;
+  final TextStyle? valueStyle;
+  final bool isArabicValue;
+  final bool expandValue;
+  final BorderRadius? labelRadius;
+
+  const WordCardInfoRow({
+    super.key,
+    required this.label,
+    required this.value,
+    required this.labelWidth,
+    required this.labelColor,
+    this.height,
+    this.labelStyle,
+    this.valueStyle,
+    this.isArabicValue = false,
+    this.expandValue = false,
+    this.labelRadius,
+  });
+
+  @override
+  Widget build(BuildContext context) {
     final TextTheme textTheme = Theme.of(context).textTheme;
     final TextStyle resolvedValueStyle = valueStyle ?? textTheme.titleMedium!;
     return SizedBox(
@@ -686,6 +681,59 @@ class WordCard extends StatelessWidget {
       ),
     );
   }
+}
+
+/// 单词卡片顶部的阿语发音按钮：点击朗读 [word] 的 `arabic`。
+///
+/// 由 [WordCard] 与翻卡组件 `FlipWordCard` 共用，保证阿语展示风格一致。
+class WordCardArabicButton extends StatelessWidget {
+  final WordItem word;
+  final double width;
+  final double height;
+
+  const WordCardArabicButton({
+    super.key,
+    required this.word,
+    required this.width,
+    required this.height,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Button(
+      size: Size(width, height),
+      icon: const Icon(Icons.volume_up, size: 24.0),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadiusGeometry.vertical(top: Radius.circular(AppRadius.card))),
+      onPressed: (){
+        playTextToSpeech(word.arabic);
+      },
+      child: ButtonLabel(child: Text(word.arabic, style: arabicStyle(context, base: withoutColor(Theme.of(context).textTheme.displayLarge!)))),
+    );
+  }
+}
+
+/// 单词卡片组件
+/// 
+/// 显示一个阿语单词在上，下有中文解释的卡片
+/// 
+/// [word] :单词数据 参考Global.wordData中单个单词储存的数据结构
+/// 
+/// [width] :限定宽度，默认全屏
+/// 
+/// [height] :限定高度，默认自动
+/// 
+/// [useMask] :是否显示高斯遮罩
+/// 
+/// [compact] :紧凑模式，用于词汇总览网格与查找结果等固定尺寸单元。
+/// 保持紧凑布局，仅在分类非空时追加一行小标签，绝不溢出；
+/// 为false（默认）时展示可滚动的“词形信息”区域，适合详解弹窗与学习页面
+class WordCard extends StatelessWidget {
+  final WordItem word;
+  final double? width;
+  final double? height;
+  final bool useMask;
+  final bool compact;
+  const WordCard({super.key, required this.word, this.width, this.height, this.useMask = true, this.compact = false});
 
   /// 紧凑模式内容：固定高度内按比例分配信息行，分类标签行超出时被裁剪，绝不溢出
   Widget _buildCompactBody(BuildContext context, double useWidth, double useHeight) {
@@ -696,14 +744,14 @@ class WordCard extends StatelessWidget {
       children: [
         Expanded(
           flex: 3,
-          child: _infoRow(context,
+          child: WordCardInfoRow(
             label: "中文", value: word.chinese, labelWidth: useWidth * 0.2,
             labelColor: labelOdd, labelStyle: textTheme.bodyLarge, valueStyle: textTheme.headlineSmall),
         ),
         const Divider(height: 0),
         Expanded(
           flex: 6,
-          child: _infoRow(context,
+          child: WordCardInfoRow(
             label: "解释", value: word.explanation, labelWidth: useWidth * 0.2,
             labelColor: labelEven, labelStyle: textTheme.titleMedium, valueStyle: textTheme.bodyLarge, expandValue: true),
         ),
@@ -725,120 +773,11 @@ class WordCard extends StatelessWidget {
         ],
         Expanded(
           flex: 3,
-          child: _infoRow(context,
+          child: WordCardInfoRow(
             label: "归属课程", value: word.className, labelWidth: useWidth * 0.2,
             labelColor: labelOdd, valueStyle: textTheme.titleMedium,
             labelRadius: BorderRadius.only(bottomLeft: Radius.circular(AppRadius.card))),
         ),
-      ],
-    );
-  }
-
-  /// 详情模式内容：中文、解释、词形信息（可滚动）、归属课程
-  Widget _buildDetailedBody(BuildContext context, double useWidth, double useHeight) {
-    final Color labelOdd = Theme.of(context).colorScheme.primaryContainer;
-    final Color labelEven = Theme.of(context).colorScheme.secondaryContainer;
-    final double labelWidth = useWidth * 0.2;
-    final double rowHeight = useHeight * 0.12;
-    final TextTheme textTheme = Theme.of(context).textTheme;
-    final List<Widget> morphRows = [];
-    void addMorphRow(Widget row) {
-      if(morphRows.isNotEmpty) morphRows.add(const Divider(height: 0));
-      morphRows.add(row);
-    }
-    if(word.root.isNotEmpty) {
-      addMorphRow(_infoRow(context,
-        label: "词根", value: word.root, labelWidth: labelWidth, height: rowHeight,
-        labelColor: labelOdd, labelStyle: textTheme.bodyMedium, valueStyle: textTheme.titleMedium, isArabicValue: true));
-    }
-    if(word.pos.isNotEmpty) {
-      addMorphRow(_infoRow(context,
-        label: "词性", value: _posLabel(word.pos), labelWidth: labelWidth, height: rowHeight,
-        labelColor: labelEven, labelStyle: textTheme.bodyMedium, valueStyle: textTheme.bodyLarge));
-    }
-    if(word.plural.isNotEmpty) {
-      addMorphRow(_infoRow(context,
-        label: "复数", value: word.plural, labelWidth: labelWidth, height: rowHeight,
-        labelColor: labelOdd, labelStyle: textTheme.bodyMedium, valueStyle: textTheme.titleMedium, isArabicValue: true));
-    }
-    if(word.gender != null) {
-      addMorphRow(_infoRow(context,
-        label: "阴阳性", value: word.gender! ? "阳性" : "阴性", labelWidth: labelWidth, height: rowHeight,
-        labelColor: labelEven, labelStyle: textTheme.bodyMedium, valueStyle: textTheme.bodyLarge));
-    }
-    if(word.present.isNotEmpty) {
-      addMorphRow(_infoRow(context,
-        label: "现在式", value: word.present, labelWidth: labelWidth, height: rowHeight,
-        labelColor: labelOdd, labelStyle: textTheme.bodyMedium, valueStyle: textTheme.titleMedium, isArabicValue: true));
-    }
-    if(word.masdar.isNotEmpty) {
-      addMorphRow(_infoRow(context,
-        label: "动名词", value: word.masdar, labelWidth: labelWidth, height: rowHeight,
-        labelColor: labelEven, labelStyle: textTheme.bodyMedium, valueStyle: textTheme.titleMedium, isArabicValue: true));
-    }
-    if(word.categories.isNotEmpty) {
-      addMorphRow(
-        IntrinsicHeight(
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Container(
-                width: labelWidth,
-                padding: EdgeInsets.symmetric(vertical: 4.0),
-                decoration: BoxDecoration(color: labelOdd),
-                alignment: Alignment.center,
-                child: Text("类别", style: textTheme.bodyMedium),
-              ),
-              Expanded(
-                child: Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 8.0, vertical: 6.0),
-                  child: CategoryChips(categories: word.categories),
-                ),
-              ),
-            ],
-          ),
-        ),
-      );
-    }
-    return Column(
-      children: [
-        _infoRow(context,
-          label: "中文", value: word.chinese, labelWidth: labelWidth, height: useHeight * 0.14,
-          labelColor: labelOdd, labelStyle: textTheme.bodyLarge, valueStyle: textTheme.headlineSmall),
-        const Divider(height: 0),
-        Expanded(
-          child: SingleChildScrollView(
-            child: Column(
-              children: [
-                _infoRow(context,
-                  label: "解释", value: word.explanation, labelWidth: labelWidth, height: useHeight * 0.24,
-                  labelColor: labelEven, labelStyle: textTheme.titleMedium, valueStyle: textTheme.bodyLarge, expandValue: true),
-                if(morphRows.isNotEmpty) ...[
-                  Container(
-                    width: double.infinity,
-                    height: useHeight * 0.1,
-                    padding: EdgeInsets.symmetric(horizontal: 12.0),
-                    color: Theme.of(context).colorScheme.secondaryContainer,
-                    alignment: Alignment.centerLeft,
-                    child: Row(
-                      children: [
-                        Icon(Icons.auto_stories_outlined, size: 16.0),
-                        SizedBox(width: 4.0),
-                        Text("词形信息", style: textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.bold)),
-                      ],
-                    ),
-                  ),
-                  ...morphRows,
-                ],
-              ],
-            ),
-          ),
-        ),
-        const Divider(height: 0),
-        _infoRow(context,
-          label: "归属课程", value: word.className, labelWidth: labelWidth, height: useHeight * 0.14,
-          labelColor: labelOdd, labelStyle: textTheme.bodyLarge, valueStyle: textTheme.titleMedium,
-          labelRadius: BorderRadius.only(bottomLeft: Radius.circular(AppRadius.card))),
       ],
     );
   }
@@ -852,15 +791,7 @@ class WordCard extends StatelessWidget {
     return Column(
       mainAxisAlignment: MainAxisAlignment.start,
       children: [
-        Button(
-          size: Size(useWidth, useHeight * 0.3),
-          icon: const Icon(Icons.volume_up, size: 24.0),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadiusGeometry.vertical(top: Radius.circular(AppRadius.card))),
-          onPressed: (){
-            playTextToSpeech(word.arabic);
-          },
-          child: ButtonLabel(child: Text(word.arabic, style: arabicStyle(context, base: withoutColor(Theme.of(context).textTheme.displayLarge!)))),
-        ),
+        WordCardArabicButton(word: word, width: useWidth, height: useHeight * 0.3),
         Stack(
           children: [
             Container(
@@ -872,7 +803,7 @@ class WordCard extends StatelessWidget {
               ),
               child: compact
                 ? _buildCompactBody(context, useWidth, useHeight)
-                : _buildDetailedBody(context, useWidth, useHeight)
+                : WordCardDetailBody(word: word, width: useWidth, height: useHeight)
             ),
             StatefulBuilder(
               builder: (context, setLocalState) {
@@ -909,6 +840,132 @@ class WordCard extends StatelessWidget {
             )
           ],
         )
+      ],
+    );
+  }
+}
+
+/// 单词卡片详情主体：中文、解释、词形信息（可滚动）、类别与归属课程。
+///
+/// 由 [WordCard]（`compact: false`）与翻卡组件 `FlipWordCard` 的反面共用，
+/// 避免详情布局出现第二份漂移实现。
+///
+/// [width] / [height] 与 [WordCard] 的 `useWidth` / `useHeight` 语义一致：
+/// 使用时通常放入高度为 [height] 的 0.6 倍的容器中，行高按 [height] 的
+/// 固定比例分配。
+class WordCardDetailBody extends StatelessWidget {
+  final WordItem word;
+  final double width;
+  final double height;
+  const WordCardDetailBody({super.key, required this.word, required this.width, required this.height});
+
+  @override
+  Widget build(BuildContext context) {
+    final double useWidth = width;
+    final double useHeight = height;
+    final Color labelOdd = Theme.of(context).colorScheme.primaryContainer;
+    final Color labelEven = Theme.of(context).colorScheme.secondaryContainer;
+    final double labelWidth = useWidth * 0.2;
+    final double rowHeight = useHeight * 0.12;
+    final TextTheme textTheme = Theme.of(context).textTheme;
+    final List<Widget> morphRows = [];
+    void addMorphRow(Widget row) {
+      if(morphRows.isNotEmpty) morphRows.add(const Divider(height: 0));
+      morphRows.add(row);
+    }
+    if(word.root.isNotEmpty) {
+      addMorphRow(WordCardInfoRow(
+        label: "词根", value: word.root, labelWidth: labelWidth, height: rowHeight,
+        labelColor: labelOdd, labelStyle: textTheme.bodyMedium, valueStyle: textTheme.titleMedium, isArabicValue: true));
+    }
+    if(word.pos.isNotEmpty) {
+      addMorphRow(WordCardInfoRow(
+        label: "词性", value: _wordPosLabel(word.pos), labelWidth: labelWidth, height: rowHeight,
+        labelColor: labelEven, labelStyle: textTheme.bodyMedium, valueStyle: textTheme.bodyLarge));
+    }
+    if(word.plural.isNotEmpty) {
+      addMorphRow(WordCardInfoRow(
+        label: "复数", value: word.plural, labelWidth: labelWidth, height: rowHeight,
+        labelColor: labelOdd, labelStyle: textTheme.bodyMedium, valueStyle: textTheme.titleMedium, isArabicValue: true));
+    }
+    if(word.gender != null) {
+      addMorphRow(WordCardInfoRow(
+        label: "阴阳性", value: word.gender! ? "阳性" : "阴性", labelWidth: labelWidth, height: rowHeight,
+        labelColor: labelEven, labelStyle: textTheme.bodyMedium, valueStyle: textTheme.bodyLarge));
+    }
+    if(word.present.isNotEmpty) {
+      addMorphRow(WordCardInfoRow(
+        label: "现在式", value: word.present, labelWidth: labelWidth, height: rowHeight,
+        labelColor: labelOdd, labelStyle: textTheme.bodyMedium, valueStyle: textTheme.titleMedium, isArabicValue: true));
+    }
+    if(word.masdar.isNotEmpty) {
+      addMorphRow(WordCardInfoRow(
+        label: "动名词", value: word.masdar, labelWidth: labelWidth, height: rowHeight,
+        labelColor: labelEven, labelStyle: textTheme.bodyMedium, valueStyle: textTheme.titleMedium, isArabicValue: true));
+    }
+    if(word.categories.isNotEmpty) {
+      addMorphRow(
+        IntrinsicHeight(
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Container(
+                width: labelWidth,
+                padding: EdgeInsets.symmetric(vertical: 4.0),
+                decoration: BoxDecoration(color: labelOdd),
+                alignment: Alignment.center,
+                child: Text("类别", style: textTheme.bodyMedium),
+              ),
+              Expanded(
+                child: Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 8.0, vertical: 6.0),
+                  child: CategoryChips(categories: word.categories),
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+    return Column(
+      children: [
+        WordCardInfoRow(
+          label: "中文", value: word.chinese, labelWidth: labelWidth, height: useHeight * 0.14,
+          labelColor: labelOdd, labelStyle: textTheme.bodyLarge, valueStyle: textTheme.headlineSmall),
+        const Divider(height: 0),
+        Expanded(
+          child: SingleChildScrollView(
+            child: Column(
+              children: [
+                WordCardInfoRow(
+                  label: "解释", value: word.explanation, labelWidth: labelWidth, height: useHeight * 0.24,
+                  labelColor: labelEven, labelStyle: textTheme.titleMedium, valueStyle: textTheme.bodyLarge, expandValue: true),
+                if(morphRows.isNotEmpty) ...[
+                  Container(
+                    width: double.infinity,
+                    height: useHeight * 0.1,
+                    padding: EdgeInsets.symmetric(horizontal: 12.0),
+                    color: Theme.of(context).colorScheme.secondaryContainer,
+                    alignment: Alignment.centerLeft,
+                    child: Row(
+                      children: [
+                        Icon(Icons.auto_stories_outlined, size: 16.0),
+                        SizedBox(width: 4.0),
+                        Text("词形信息", style: textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.bold)),
+                      ],
+                    ),
+                  ),
+                  ...morphRows,
+                ],
+              ],
+            ),
+          ),
+        ),
+        const Divider(height: 0),
+        WordCardInfoRow(
+          label: "归属课程", value: word.className, labelWidth: labelWidth, height: useHeight * 0.14,
+          labelColor: labelOdd, labelStyle: textTheme.bodyLarge, valueStyle: textTheme.titleMedium,
+          labelRadius: BorderRadius.only(bottomLeft: Radius.circular(AppRadius.card))),
       ],
     );
   }
