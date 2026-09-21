@@ -6,6 +6,8 @@ import 'package:url_launcher/url_launcher.dart';
 
 import 'package:arabic_learning/widgets/kit.dart' show Button, SettingItem, SettingRedirctButton, SettingRow;
 import 'package:arabic_learning/widgets/overlays.dart' show alart, showSnackBar;
+import 'package:arabic_learning/core/extensions.dart';
+import 'package:arabic_learning/theme/tokens.dart' show AppRadius;
 import 'package:arabic_learning/models/config.dart' show RegularConfig;
 import 'package:arabic_learning/services/global_state.dart';
 import 'package:arabic_learning/services/app_data.dart';
@@ -212,7 +214,7 @@ class _SettingPage extends State<SettingPage> {
                       children: [
                         Button(
                           size: Size(mediaQuery.size.width * 0.4,mediaQuery.size.height * 0.06),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.horizontal(left: Radius.circular(25.0))),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.horizontal(left: Radius.circular(AppRadius.card))),
                           onPressed: () {
                             context.read<Global>().uiLogger.info(
                               "跳转: SettingPage => DownloadPage",
@@ -228,7 +230,7 @@ class _SettingPage extends State<SettingPage> {
                         ),
                         Button(
                           size: Size(mediaQuery.size.width * 0.4,mediaQuery.size.height * 0.06),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.horizontal(right: Radius.circular(25.0))),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.horizontal(right: Radius.circular(AppRadius.card))),
                           onPressed: () async {
                             context.read<Global>().uiLogger.info("选择手动导入单词");
                             PlatformFile? result =
@@ -348,7 +350,7 @@ class _SettingPage extends State<SettingPage> {
                             "神经网络合成语音",
                             overflow: TextOverflow.ellipsis,
                             style: TextStyle(
-                              color: !kIsWeb && AppData().modelTTSDownloaded ? null : Colors.grey,
+                              color: !kIsWeb && AppData().modelTTSDownloaded ? null : context.semanticColors.disabled,
                             ),
                           ),
                         ),
@@ -437,7 +439,7 @@ class _SettingPage extends State<SettingPage> {
                               "去github上点个star~",
                               style: TextStyle(
                                 fontSize: 8.0,
-                                color: Colors.grey,
+                                color: Theme.of(context).colorScheme.onSurfaceVariant,
                               ),
                             ),
                           ],

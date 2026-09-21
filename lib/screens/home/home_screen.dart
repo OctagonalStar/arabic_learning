@@ -4,6 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import 'package:arabic_learning/core/date_utils.dart';
+import 'package:arabic_learning/core/extensions.dart';
+import 'package:arabic_learning/theme/tokens.dart' show AppRadius;
 import 'package:arabic_learning/widgets/kit.dart' show Button;
 import 'package:arabic_learning/widgets/overlays.dart' show alart;
 import 'package:arabic_learning/widgets/shared.dart' show StatCard;
@@ -38,8 +40,8 @@ class HomePage extends StatelessWidget {
               label: '连胜天数',
               value: getStrokeDays(AppData().config.learning).toString(),
               statusIcon: AppData().config.learning.lastDate == daysSinceEpoch()
-                ? Icon(Icons.done, size: 15.0, color: Colors.tealAccent)
-                : Icon(Icons.error_outline, size: 15.0, color: Colors.amber),
+                ? Icon(Icons.done, size: 15.0, color: context.semanticColors.success)
+                : Icon(Icons.error_outline, size: 15.0, color: context.semanticColors.warning),
             ),
             StatCard(
               width: mediaQuery.size.width * 0.50,
@@ -120,8 +122,8 @@ class _DailyWord extends State<DailyWord> {
           Navigator.of(context).push(MaterialPageRoute(builder: (context) => Scaffold(appBar: AppBar(title: Text("设置")) , body: SettingPage())));
         }
       },
-      backgroundColor: Theme.of(context).colorScheme.onPrimary.withAlpha(150),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.vertical(bottom: Radius.circular(25.0))),
+      backgroundColor: Theme.of(context).colorScheme.primaryContainer,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.vertical(bottom: Radius.circular(AppRadius.card))),
       size: Size(mediaQuery.size.width * 0.9, mediaQuery.size.height * 0.3),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,

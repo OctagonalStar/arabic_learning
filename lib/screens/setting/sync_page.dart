@@ -8,6 +8,7 @@ import 'package:provider/provider.dart';
 import 'package:arabic_learning/widgets/kit.dart' show Button, SettingItem;
 import 'package:arabic_learning/widgets/overlays.dart' show alart, showSnackBar;
 import 'package:arabic_learning/widgets/shared.dart' show appInputDecoration;
+import 'package:arabic_learning/core/extensions.dart';
 import 'package:arabic_learning/services/sync.dart';
 import 'package:arabic_learning/models/config.dart';
 import 'package:arabic_learning/services/global_state.dart';
@@ -77,7 +78,7 @@ class _DataSyncPage extends State<DataSyncPage> {
                       if(snapshot.hasError) {
                         return Row(
                           children: [
-                            Icon(Icons.circle, color: Colors.redAccent, size: 18),
+                            Icon(Icons.circle, color: context.semanticColors.error, size: 18),
                             Text("在测试中遇到了未知的异常", style: Theme.of(context).textTheme.labelSmall)
                           ],
                         );
@@ -88,7 +89,7 @@ class _DataSyncPage extends State<DataSyncPage> {
                       if(snapshot.hasData) {
                         return Row(
                           children: [
-                            Icon(Icons.circle, color: snapshot.data![1] ? Colors.greenAccent : snapshot.data![0] ? Colors.amber : Colors.redAccent, size: 18)
+                            Icon(Icons.circle, color: snapshot.data![1] ? context.semanticColors.success : snapshot.data![0] ? context.semanticColors.warning : context.semanticColors.error, size: 18)
                           ],
                         );
                       }
@@ -106,7 +107,7 @@ class _DataSyncPage extends State<DataSyncPage> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text("上传数据"),
-                        Text("将本地配置上传到WebDAV服务器", style: TextStyle(color: Colors.grey, fontSize: 8.0))
+                        Text("将本地配置上传到WebDAV服务器", style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 8.0))
                       ],
                     )
                   ),
@@ -144,7 +145,7 @@ class _DataSyncPage extends State<DataSyncPage> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text("恢复数据"),
-                        Text("从WebDAV服务器恢复配置", style: TextStyle(color: Colors.grey, fontSize: 8.0))
+                        Text("从WebDAV服务器恢复配置", style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 8.0))
                       ],
                     )
                   ),
@@ -191,7 +192,7 @@ class _DataSyncPage extends State<DataSyncPage> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text("导出数据"),
-                        Text("将当前软件数据作为文件导出", style: TextStyle(color: Colors.grey, fontSize: 8.0))
+                        Text("将当前软件数据作为文件导出", style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 8.0))
                       ],
                     ),
                   ),
@@ -228,7 +229,7 @@ class _DataSyncPage extends State<DataSyncPage> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text("导入数据"),
-                        Text("将文件中的配置覆盖软件配置", style: TextStyle(color: Colors.grey, fontSize: 8.0))
+                        Text("将文件中的配置覆盖软件配置", style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 8.0))
                       ],
                     ),
                   ),

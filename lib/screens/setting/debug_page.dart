@@ -6,6 +6,7 @@ import 'package:provider/provider.dart';
 
 import 'package:arabic_learning/widgets/kit.dart' show Button, TextContainer;
 import 'package:arabic_learning/widgets/shared.dart' show SettingCard;
+import 'package:arabic_learning/core/extensions.dart';
 import 'package:arabic_learning/core/statics.dart';
 import 'package:arabic_learning/services/global_state.dart';
 import 'package:arabic_learning/services/app_data.dart';
@@ -57,9 +58,9 @@ class _DebugPage extends State<DebugPage> {
       body: ListView(
         controller: controller,
         children: [
-          TextContainer(text: "该页面为软件调试/测试和bug反馈使用，非必要请勿开启日志捕获，以免性能损耗", style: TextStyle(color: Colors.redAccent)),
+          TextContainer(text: "该页面为软件调试/测试和bug反馈使用，非必要请勿开启日志捕获，以免性能损耗", style: TextStyle(color: Theme.of(context).colorScheme.error)),
           SettingCard(
-            color: Theme.of(context).colorScheme.onPrimary,
+            color: Theme.of(context).colorScheme.surfaceContainerHighest,
             padding: EdgeInsets.only(left: 16.0, right: 16.0),
             child: Row(
               children: [
@@ -80,7 +81,7 @@ class _DebugPage extends State<DebugPage> {
             ),
           ),
           SettingCard(
-            color: Theme.of(context).colorScheme.onSecondary,
+            color: Theme.of(context).colorScheme.surfaceContainerLow,
             padding: EdgeInsets.only(left: 16.0, right: 16.0),
             child: Row(
               children: [
@@ -120,7 +121,7 @@ class _DebugPage extends State<DebugPage> {
                     return Container(
                       width: MediaQuery.of(context).size.width * 0.9,
                       decoration: BoxDecoration(
-                        color: Theme.of(context).colorScheme.onPrimary,
+                        color: Theme.of(context).colorScheme.surfaceContainerLow,
                         borderRadius: index == 0 
                           ? BorderRadius.vertical(top: Radius.circular(10.0)) 
                           : index == AppData().internalLogCapture.length-1 
@@ -129,7 +130,7 @@ class _DebugPage extends State<DebugPage> {
                       ),
                       margin: EdgeInsets.all(2.0),
                       padding: EdgeInsets.all(4.0),
-                      child: SelectableText(logLine, style: TextStyle(color: logLine.contains("[SERVER]") ? Colors.redAccent : logLine.contains("WARNING") ? Colors.amberAccent : logLine.contains("FINE") ? Colors.grey : null)),
+                      child: SelectableText(logLine, style: TextStyle(color: logLine.contains("[SERVER]") ? context.semanticColors.error : logLine.contains("WARNING") ? context.semanticColors.warning : logLine.contains("FINE") ? Theme.of(context).colorScheme.onSurfaceVariant : null)),
                     );
                   }
                 ),
@@ -141,7 +142,7 @@ class _DebugPage extends State<DebugPage> {
             children: [
               Row(
                 children: [
-                  Expanded(child: TextContainer(text: "调试信息中可能包含部分敏感信息，若要发给他人请先自行检查", style: TextStyle(color: Colors.redAccent))),
+                  Expanded(child: TextContainer(text: "调试信息中可能包含部分敏感信息，若要发给他人请先自行检查", style: TextStyle(color: Theme.of(context).colorScheme.error))),
                   Button(
                     onPressed: () {
                       Clipboard.setData(ClipboardData(text: debugInfo.join("\n")));

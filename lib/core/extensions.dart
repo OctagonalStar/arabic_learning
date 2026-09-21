@@ -3,7 +3,18 @@
 
 import 'dart:math';
 
+import 'package:arabic_learning/theme/tokens.dart' show AppSemanticColors;
 import 'package:flutter/material.dart';
+
+/// 语义色（成功 / 警告 / 错误 / 禁用）便捷访问。
+///
+/// 主题由 `buildTheme` 挂载 [AppSemanticColors]；此处额外提供按当前
+/// `ColorScheme` 现算的回退，保证未挂载自定义主题的局部测试 / 预览也能取值。
+extension SemanticColorsContext on BuildContext {
+  AppSemanticColors get semanticColors =>
+      Theme.of(this).extension<AppSemanticColors>() ??
+      AppSemanticColors.of(Theme.of(this).colorScheme);
+}
 
 extension StringExtensions on String {
   bool isArabic() {

@@ -9,6 +9,7 @@ import 'package:arabic_learning/models/dict.dart';
 import 'package:arabic_learning/models/reading.dart';
 import 'package:arabic_learning/services/global_state.dart';
 import 'package:arabic_learning/services/app_data.dart';
+import 'package:arabic_learning/core/extensions.dart';
 import 'package:arabic_learning/core/statics.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart' show Clipboard, ClipboardData;
@@ -58,7 +59,7 @@ class _LocalPKSelectPage extends State<LocalPKSelectPage> {
       appBar: AppBar(title: Text("局域网联机")),
       body: Column(
         children: [
-          TextContainer(text: "该功能还处在预览阶段，出现问题请及时提交反馈", style: TextStyle(color: Colors.redAccent)),
+          TextContainer(text: "该功能还处在预览阶段，出现问题请及时提交反馈", style: TextStyle(color: Theme.of(context).colorScheme.error)),
           SizedBox(height: mediaQuery.size.height * 0.02),
           Button(
             size: Size(mediaQuery.size.width * 0.8, mediaQuery.size.height * 0.1),
@@ -290,10 +291,13 @@ class _ServerHostWatingPage extends State<ServerHostWatingPage> {
                 padding: EdgeInsets.all(8.0),
                 decoration: BoxDecoration(
                   borderRadius: StaticsVar.br,
+                  // 二维码需要白底深色模块才能被相机稳定识别，属于光学要求，
+                  // 与主题深浅无关，故保留纯白。
                   color: Colors.white
                 ),
                 child: QrImageView(
                   data: context.read<PKServer>().connectpwd!,
+                  // 二维码模块必须深色于白底，固定白底保证扫描可靠性。
                   backgroundColor: Colors.white,
                   version: QrVersions.auto,
                   size: min(mediaQuery.size.width, mediaQuery.size.height) * 0.8,
@@ -395,10 +399,12 @@ class ClientWatingPage extends StatelessWidget {
             padding: EdgeInsets.all(8.0),
             decoration: BoxDecoration(
               borderRadius: StaticsVar.br,
+              // 二维码需白底深色模块以保证扫描识别率（同上方说明）。
               color: Colors.white
             ),
             child: QrImageView(
               data: context.read<PKServer>().connectpwd!,
+              // 二维码模块必须深色于白底，固定白底保证扫描可靠性。
               backgroundColor: Colors.white,
               version: QrVersions.auto,
               size: min(mediaQuery.size.width, mediaQuery.size.height) * 0.8,
@@ -449,7 +455,7 @@ class PKPreparePage extends StatelessWidget {
                   height: mediaQuery.size.height * 0.3,
                   width: mediaQuery.size.width * 0.4,
                   decoration: BoxDecoration(
-                    color: Theme.of(context).colorScheme.onPrimary,
+                    color: Theme.of(context).colorScheme.primaryContainer,
                     borderRadius: StaticsVar.br
                   ),
                   child: Column(
@@ -460,12 +466,14 @@ class PKPreparePage extends StatelessWidget {
                       ? Text("已准备")
                       : Button(
                         size: Size.fromHeight(mediaQuery.size.height * 0.1),
+                        // 卡片本身为 primaryContainer，按钮改用更高一层的容器色区分。
+                        backgroundColor: Theme.of(context).colorScheme.surfaceContainerHighest,
                         onPressed: (){
                           context.read<PKServer>().setPrepare();
                         }, 
                         child: Text("准备")
                       ),
-                      if(context.watch<PKServer>().preparedP1) Icon(Icons.done, color: Colors.greenAccent, size: 36)
+                      if(context.watch<PKServer>().preparedP1) Icon(Icons.done, color: context.semanticColors.success, size: 36)
                     ],
                   ),
                 ),
@@ -474,7 +482,7 @@ class PKPreparePage extends StatelessWidget {
                   height: mediaQuery.size.height * 0.3,
                   width: mediaQuery.size.width * 0.4,
                   decoration: BoxDecoration(
-                    color: Theme.of(context).colorScheme.onSecondary,
+                    color: Theme.of(context).colorScheme.secondaryContainer,
                     borderRadius: StaticsVar.br
                   ),
                   child: Column(
@@ -482,7 +490,7 @@ class PKPreparePage extends StatelessWidget {
                       Text("对方", style: Theme.of(context).textTheme.headlineSmall),
                       SizedBox(height: mediaQuery.size.height * 0.05),
                       Text("${context.watch<PKServer>().preparedP2 ? "已" : "未"}准备"),
-                      if(context.watch<PKServer>().preparedP2) Icon(Icons.done, color: Colors.greenAccent, size: 36)
+                      if(context.watch<PKServer>().preparedP2) Icon(Icons.done, color: context.semanticColors.success, size: 36)
                     ],
                   ),
                 )

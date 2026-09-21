@@ -11,6 +11,7 @@ import 'dart:ui' show ImageFilter;
 
 import 'package:arabic_learning/core/extensions.dart';
 import 'package:arabic_learning/core/statics.dart';
+import 'package:arabic_learning/theme/tokens.dart' show AppRadius, AppSemanticColors;
 import 'package:arabic_learning/models/dict.dart' show ClassItem, SourceItem, WordItem;
 import 'package:arabic_learning/models/reading.dart' show ClassSelection;
 import 'package:arabic_learning/services/app_data.dart';
@@ -77,7 +78,7 @@ Future<ClassSelection> popSelectClasses(BuildContext context, {bool withCache = 
 
   ClassSelection? selectedClasses = await showModalBottomSheet<ClassSelection>(
     context: context,
-    shape: RoundedRectangleBorder(side: BorderSide(width: 1.0, color: Theme.of(context).colorScheme.onSurface.withAlpha(150)), borderRadius: StaticsVar.br),
+    shape: RoundedRectangleBorder(side: BorderSide(width: 1.0, color: Theme.of(context).colorScheme.outlineVariant), borderRadius: StaticsVar.br),
     isDismissible: false,
     isScrollControlled: appData.isWideScreen,
     enableDrag: true,
@@ -124,7 +125,7 @@ List<Widget> classesSelectionList(BuildContext context, Function (ClassItem) onC
         margin: EdgeInsets.all(16.0),
         padding: EdgeInsets.all(8.0),
         decoration: BoxDecoration(
-          color: Theme.of(context).colorScheme.onPrimary.withAlpha(150),
+          color: Theme.of(context).colorScheme.surfaceContainerHigh,
           borderRadius: StaticsVar.br,
         ),
         child: Text(
@@ -142,7 +143,7 @@ List<Widget> classesSelectionList(BuildContext context, Function (ClassItem) onC
         Container(
           margin: EdgeInsets.all(2),
           decoration: BoxDecoration(
-            color: isEven ? Theme.of(context).colorScheme.primaryContainer.withAlpha(150) : Theme.of(context).colorScheme.secondaryContainer.withAlpha(150),
+            color: isEven ? Theme.of(context).colorScheme.primaryContainer : Theme.of(context).colorScheme.secondaryContainer,
             borderRadius: BorderRadius.circular(8),
           ),
           child: StatefulBuilder(
@@ -166,7 +167,7 @@ List<Widget> classesSelectionList(BuildContext context, Function (ClassItem) onC
   if(widgetList.isEmpty) {
     context.read<Global>().uiLogger.warning("用户未导入可用词库");
     widgetList.add(
-      Center(child: Text('啥啥词库都没导入，你学个啥呢？\n自己去 设置 -> 数据设置 -> 导入词库', style: TextStyle(fontSize: 24.0, color: Colors.redAccent),))
+      Center(child: Text('啥啥词库都没导入，你学个啥呢？\n自己去 设置 -> 数据设置 -> 导入词库', style: TextStyle(fontSize: 24.0, color: context.semanticColors.error),))
     );
   }
   context.read<Global>().uiLogger.info("课程选择列表构建完成");
@@ -219,7 +220,7 @@ class TextContainer extends StatelessWidget {
       margin: EdgeInsets.all(16.0),
       padding: EdgeInsets.all(8.0),
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.onPrimary.withAlpha(150),
+        color: Theme.of(context).colorScheme.surfaceContainerHigh,
         borderRadius: StaticsVar.br,
       ),
       child: (animated)
@@ -358,11 +359,15 @@ class ChooseButtonBox extends StatefulWidget {
 }
 class _ChooseButtonBoxState extends State<ChooseButtonBox> {
   Color? color;
+  Color? onColor;
   bool isChoosed = false;
 
   @override
   Widget build(BuildContext context) {
-    color ??= widget.cl ?? Theme.of(context).colorScheme.primaryContainer;
+    final ColorScheme scheme = Theme.of(context).colorScheme;
+    final AppSemanticColors semantic = context.semanticColors;
+    color ??= widget.cl ?? scheme.primaryContainer;
+    onColor ??= widget.cl == null ? scheme.onPrimaryContainer : scheme.onSurface;
     return AnimatedContainer(
       margin: EdgeInsets.all(8.0),
       duration: widget.isAnimated ? Durations.medium4 : Duration(),
@@ -379,32 +384,39 @@ class _ChooseButtonBoxState extends State<ChooseButtonBox> {
             bool? ans = widget.chose(widget.index);
             if(ans != null) {
               if(widget.isAnimated) {
-                color = Colors.amber;
+                color = semantic.warning;
+                onColor = semantic.onWarning;
                 Future.delayed(Durations.medium4, (){
                   setState(() {
                     if(ans) {
-                      color = Colors.greenAccent;
+                      color = semantic.success;
+                      onColor = semantic.onSuccess;
                     } else {
-                      color = Colors.redAccent;
+                      color = scheme.error;
+                      onColor = scheme.onError;
                     }
                   });
                 });
               } else {
                 if(ans) {
-                  color = Colors.greenAccent;
+                  color = semantic.success;
+                  onColor = semantic.onSuccess;
                 } else {
-                  color = Colors.redAccent;
+                  color = scheme.error;
+                  onColor = scheme.onError;
                 }
               }
             } else {
               setState(() {
-                color = Theme.of(context).colorScheme.primaryContainer;
+                color = scheme.primaryContainer;
+                onColor = scheme.onPrimaryContainer;
               });
             }
           });
         },
         size: Size(widget.width ?? 200, widget.height ?? 50),
         backgroundColor: Colors.transparent,
+        foregroundColor: onColor,
         shadowColor: Colors.transparent,
         child: widget.child,
       ),
@@ -435,7 +447,7 @@ class CategoryChips extends StatelessWidget {
         return Container(
           padding: EdgeInsets.symmetric(horizontal: dense ? 6.0 : 10.0, vertical: dense ? 1.0 : 4.0),
           decoration: BoxDecoration(
-            color: Theme.of(context).colorScheme.secondaryContainer.withAlpha(180),
+            color: Theme.of(context).colorScheme.secondaryContainer,
             borderRadius: StaticsVar.br,
           ),
           child: Text(
@@ -476,7 +488,7 @@ class CategoryFilter extends StatelessWidget {
       margin: EdgeInsets.all(8.0),
       padding: EdgeInsets.all(8.0),
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.onPrimary.withAlpha(150),
+        color: Theme.of(context).colorScheme.surfaceContainerHighest,
         borderRadius: StaticsVar.br,
       ),
       child: Column(
@@ -517,14 +529,14 @@ class CategoryFilter extends StatelessWidget {
                 showCheckmark: false,
                 visualDensity: VisualDensity.compact,
                 materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                selectedColor: Theme.of(context).colorScheme.secondaryContainer.withAlpha(200),
-                backgroundColor: Theme.of(context).colorScheme.onPrimary.withAlpha(120),
+                selectedColor: Theme.of(context).colorScheme.secondaryContainer,
+                backgroundColor: Theme.of(context).colorScheme.surfaceContainerLow,
                 shape: RoundedRectangleBorder(
                   borderRadius: StaticsVar.br,
                   side: BorderSide(
                     color: isSelected
                       ? Theme.of(context).colorScheme.secondary
-                      : Theme.of(context).colorScheme.outline.withAlpha(120),
+                      : Theme.of(context).colorScheme.outlineVariant,
                   ),
                 ),
                 onSelected: (bool value) {
@@ -648,8 +660,8 @@ class WordCard extends StatelessWidget {
 
   /// 紧凑模式内容：固定高度内按比例分配信息行，分类标签行超出时被裁剪，绝不溢出
   Widget _buildCompactBody(BuildContext context, double useWidth, double useHeight) {
-    final Color labelOdd = Theme.of(context).colorScheme.onSecondary.withAlpha(150);
-    final Color labelEven = Theme.of(context).colorScheme.onPrimary.withAlpha(150);
+    final Color labelOdd = Theme.of(context).colorScheme.primaryContainer;
+    final Color labelEven = Theme.of(context).colorScheme.secondaryContainer;
     return Column(
       children: [
         Expanded(
@@ -686,7 +698,7 @@ class WordCard extends StatelessWidget {
           child: _infoRow(context,
             label: "归属课程", value: word.className, labelWidth: useWidth * 0.2,
             labelColor: labelOdd, valueFontSize: 18.0,
-            labelRadius: BorderRadius.only(bottomLeft: Radius.circular(25.0))),
+            labelRadius: BorderRadius.only(bottomLeft: Radius.circular(AppRadius.card))),
         ),
       ],
     );
@@ -694,8 +706,8 @@ class WordCard extends StatelessWidget {
 
   /// 详情模式内容：中文、解释、词形信息（可滚动）、归属课程
   Widget _buildDetailedBody(BuildContext context, double useWidth, double useHeight) {
-    final Color labelOdd = Theme.of(context).colorScheme.onSecondary.withAlpha(150);
-    final Color labelEven = Theme.of(context).colorScheme.onPrimary.withAlpha(150);
+    final Color labelOdd = Theme.of(context).colorScheme.primaryContainer;
+    final Color labelEven = Theme.of(context).colorScheme.secondaryContainer;
     final double labelWidth = useWidth * 0.2;
     final double rowHeight = useHeight * 0.12;
     final List<Widget> morphRows = [];
@@ -775,7 +787,7 @@ class WordCard extends StatelessWidget {
                     width: double.infinity,
                     height: useHeight * 0.1,
                     padding: EdgeInsets.symmetric(horizontal: 12.0),
-                    color: Theme.of(context).colorScheme.secondaryContainer.withAlpha(120),
+                    color: Theme.of(context).colorScheme.secondaryContainer,
                     alignment: Alignment.centerLeft,
                     child: Row(
                       children: [
@@ -795,7 +807,7 @@ class WordCard extends StatelessWidget {
         _infoRow(context,
           label: "归属课程", value: word.className, labelWidth: labelWidth, height: useHeight * 0.14,
           labelColor: labelOdd, labelFontSize: 16.0, valueFontSize: 18.0,
-          labelRadius: BorderRadius.only(bottomLeft: Radius.circular(25.0))),
+          labelRadius: BorderRadius.only(bottomLeft: Radius.circular(AppRadius.card))),
       ],
     );
   }
@@ -812,7 +824,7 @@ class WordCard extends StatelessWidget {
         Button(
           size: Size(useWidth, useHeight * 0.3),
           icon: const Icon(Icons.volume_up, size: 24.0),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadiusGeometry.vertical(top: Radius.circular(25.0))),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadiusGeometry.vertical(top: Radius.circular(AppRadius.card))),
           onPressed: (){
             playTextToSpeech(word.arabic);
           },
@@ -824,8 +836,8 @@ class WordCard extends StatelessWidget {
               width: useWidth,
               height: useHeight * 0.6,
               decoration: BoxDecoration(
-                color: Theme.of(context).colorScheme.onInverseSurface,
-                borderRadius: BorderRadius.vertical(bottom: Radius.circular(25.0)),
+                color: Theme.of(context).colorScheme.surfaceContainerHighest,
+                borderRadius: BorderRadius.vertical(bottom: Radius.circular(AppRadius.card)),
               ),
               child: compact
                 ? _buildCompactBody(context, useWidth, useHeight)
@@ -842,7 +854,7 @@ class WordCard extends StatelessWidget {
                   curve: StaticsVar.curve,
                   builder: (context, value, child) {
                     return ClipRRect(
-                      borderRadius: BorderRadiusGeometry.vertical(bottom: Radius.circular(25.0)),
+                      borderRadius: BorderRadiusGeometry.vertical(bottom: Radius.circular(AppRadius.card)),
                       child: value == 0.0 ? null : BackdropFilter(
                         filter: ImageFilter.blur(sigmaX: 15.0 * value,sigmaY: 15.0 * value),
                         enabled: true,
@@ -850,7 +862,7 @@ class WordCard extends StatelessWidget {
                           size: Size(useWidth, useHeight * 0.6),
                           backgroundColor: Colors.transparent,
                           shadowColor: Colors.transparent,
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadiusGeometry.vertical(bottom: Radius.circular(25.0))),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadiusGeometry.vertical(bottom: Radius.circular(AppRadius.card))),
                           onPressed: (){
                             setLocalState(() {
                               hide = false;
@@ -878,6 +890,7 @@ class Button extends StatelessWidget {
   final AxisDirection iconDirection;
   final Size? size;
   final Color? backgroundColor;
+  final Color? foregroundColor;
   final Color? shadowColor;
   final EdgeInsetsGeometry padding;
   final OutlinedBorder? shape;
@@ -889,6 +902,7 @@ class Button extends StatelessWidget {
     this.icon,
     this.onPressed,
     this.backgroundColor,
+    this.foregroundColor,
     this.shape,
     this.size,
     this.shadowColor,
@@ -899,9 +913,23 @@ class Button extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final ColorScheme scheme = Theme.of(context).colorScheme;
+    // 默认采用 M3 填充色调按钮配色（primaryContainer / onPrimaryContainer）；
+    // 显式指定容器背景色时自动匹配对应的 onXxx 前景色，未知背景回退 onSurface，
+    // 需要更精确对比度的调用方仍可传入 [foregroundColor] 覆盖。
+    final Color background = backgroundColor ?? scheme.primaryContainer;
+    final Color foreground = foregroundColor ??
+        (background == scheme.primaryContainer
+            ? scheme.onPrimaryContainer
+            : background == scheme.secondaryContainer
+                ? scheme.onSecondaryContainer
+                : background == scheme.errorContainer
+                    ? scheme.onErrorContainer
+                    : scheme.onSurface);
     return ElevatedButton(
       style: ElevatedButton.styleFrom(
-        backgroundColor: backgroundColor ?? Theme.of(context).colorScheme.onPrimary,
+        backgroundColor: background,
+        foregroundColor: foreground,
         shadowColor: shadowColor,
         fixedSize: size,
         padding: padding,
@@ -1048,9 +1076,9 @@ class SettingRedirctButton extends StatelessWidget {
     return ElevatedButton(
       style: ElevatedButton.styleFrom(
         minimumSize: Size.fromHeight(mediaQuery.size.height * 0.08),
-        backgroundColor: Theme.of(
-          context,
-        ).colorScheme.onPrimary.withAlpha(150),
+        // 设置项面板为 surfaceContainerHighest，此处用低一层的容器色区分行。
+        backgroundColor: Theme.of(context).colorScheme.surfaceContainerLow,
+        foregroundColor: Theme.of(context).colorScheme.onSurface,
         shape: BeveledRectangleBorder(),
       ),
       onPressed: () {
@@ -1103,7 +1131,7 @@ class SettingRow extends StatelessWidget {
               Text(leading),
               if(note != null) Text(
                 note!,
-                style: TextStyle(fontSize: 12.0, color: Colors.grey),
+                style: TextStyle(fontSize: 12.0, color: Theme.of(context).colorScheme.onSurfaceVariant),
               ),
             ],
           ),
@@ -1131,8 +1159,8 @@ class SettingItem extends StatelessWidget {
         padding: padding,
         margin: EdgeInsets.all(4.0),
         decoration: BoxDecoration(
-          color: Theme.of(context).colorScheme.onPrimary.withAlpha(150),
-          borderRadius: BorderRadius.vertical(top: Radius.circular(index == 0 ? 25.0 : 5.0), bottom: Radius.circular(index == children.length-1 ? 25.0 : 5.0)),
+          color: Theme.of(context).colorScheme.surfaceContainerHighest,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(index == 0 ? AppRadius.card : 5.0), bottom: Radius.circular(index == children.length-1 ? AppRadius.card : 5.0)),
         ),
         clipBehavior: Clip.antiAlias,
         child: children[index],

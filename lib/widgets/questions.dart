@@ -185,16 +185,12 @@ class SpellQuestion extends StatefulWidget {
 class _SpellQuestion extends State<SpellQuestion> {
   TextEditingController controller = TextEditingController();
   bool isChecked = false;
-  late Color cl;
+  bool? isCorrect;
 
   void check(String value) {
     setState(() {
       isChecked = true;
-      if(widget.onCheck(value)) {
-        cl = Colors.greenAccent;
-      } else {
-        cl = Colors.redAccent;
-      }
+      isCorrect = widget.onCheck(value);
     });
   }
 
@@ -223,8 +219,14 @@ class _SpellQuestion extends State<SpellQuestion> {
             width: mediaQuery.size.width * 0.6,
             child: TweenAnimationBuilder(
               tween: ColorTween(
-                begin: Theme.of(context).colorScheme.onPrimaryFixed,
-                end: isChecked ? cl.withAlpha(180) : Theme.of(context).colorScheme.onPrimaryFixed
+                // 默认填 surfaceContainerHighest；作答后叠加低透明度语义色，
+                // 文字沿用 onSurface，深/浅两态均保持可读。
+                begin: Theme.of(context).colorScheme.surfaceContainerHighest,
+                end: isChecked
+                  ? ((isCorrect ?? false)
+                      ? context.semanticColors.success
+                      : context.semanticColors.error).withAlpha(64)
+                  : Theme.of(context).colorScheme.surfaceContainerHighest
               ),
               duration: Durations.medium2,
               curve: StaticsVar.curve,

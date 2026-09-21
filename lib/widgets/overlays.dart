@@ -78,12 +78,12 @@ void viewAnswer(BuildContext context, WordItem wordData) async {
   MediaQueryData mediaQuery = MediaQuery.of(context);
   showBottomSheet(
     context: context, 
-    shape: RoundedSuperellipseBorder(side: BorderSide(width: 1.0, color: Theme.of(context).colorScheme.onSurface), borderRadius: StaticsVar.br),
+    shape: RoundedSuperellipseBorder(side: BorderSide(width: 1.0, color: Theme.of(context).colorScheme.outlineVariant), borderRadius: StaticsVar.br),
     enableDrag: true,
     builder: (context) {
       return Container(
         decoration: BoxDecoration(
-          color: Theme.of(context).colorScheme.onPrimary,
+          color: Theme.of(context).colorScheme.surfaceContainerLow,
           borderRadius: StaticsVar.br,
         ),
         child: Column(

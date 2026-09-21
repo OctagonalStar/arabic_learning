@@ -413,7 +413,7 @@ class _ConcludePageState extends State<ConcludePage> {
           ConclusionCard(
             visible: visible1,
             slideFromLeft: true,
-            color: Theme.of(context).colorScheme.onPrimary,
+            color: Theme.of(context).colorScheme.primaryContainer,
             contentBuilder: (context, value) => Row(
               children: [
                 Expanded(child: SizedBox()),
@@ -428,7 +428,7 @@ class _ConcludePageState extends State<ConcludePage> {
           ConclusionCard(
             visible: visible2,
             slideFromLeft: false,
-            color: Theme.of(context).colorScheme.onSecondary,
+            color: Theme.of(context).colorScheme.secondaryContainer,
             contentBuilder: (context, value) => Row(
               children: [
                 CircularProgressIndicator(value: value * (widget.data[1]/widget.data[0])),
@@ -443,7 +443,7 @@ class _ConcludePageState extends State<ConcludePage> {
           ConclusionCard(
             visible: visible3,
             slideFromLeft: true,
-            color: Theme.of(context).colorScheme.onPrimary,
+            color: Theme.of(context).colorScheme.primaryContainer,
             contentBuilder: (context, value) => Row(
               children: [
                 Expanded(child: SizedBox()),

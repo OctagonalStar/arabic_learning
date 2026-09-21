@@ -8,6 +8,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import 'package:arabic_learning/widgets/kit.dart' show Button, popSelectClasses;
+import 'package:arabic_learning/theme/tokens.dart' show AppRadius;
 import 'package:arabic_learning/widgets/overlays.dart' show showSnackBar;
 import 'package:arabic_learning/widgets/shared.dart' show ButtonLabel;
 import 'package:arabic_learning/services/words.dart';
@@ -33,9 +34,9 @@ class LearningPage extends StatelessWidget {
             Column(
               children: [
                 Button(
-                  backgroundColor: Theme.of(context).colorScheme.onPrimary.withAlpha(150),
+                  backgroundColor: Theme.of(context).colorScheme.primaryContainer,
                   size: Size(mediaQuery.size.width * 0.4, mediaQuery.size.height * 0.15),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadiusGeometry.vertical(top: Radius.circular(25.0))),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadiusGeometry.vertical(top: Radius.circular(AppRadius.card))),
                   onPressed: () {
                     shiftToStudy(context);
                   },
@@ -49,9 +50,9 @@ class LearningPage extends StatelessWidget {
                   ),
                 ),
                 Button(
-                  backgroundColor: Theme.of(context).colorScheme.onSecondary.withAlpha(150),
+                  backgroundColor: Theme.of(context).colorScheme.secondaryContainer,
                   size: Size(mediaQuery.size.width * 0.4, mediaQuery.size.height * 0.1),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadiusGeometry.vertical(bottom: Radius.circular(25.0))),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadiusGeometry.vertical(bottom: Radius.circular(AppRadius.card))),
                   onPressed: (){
                     context.read<Global>().uiLogger.info("跳转: SettingPage => QuestionsSettingPage");
                     Navigator.of(context).push(MaterialPageRoute(builder: (context) => QuestionsSettingPage()));
@@ -62,7 +63,7 @@ class LearningPage extends StatelessWidget {
               ],
             ),
             Button(
-              backgroundColor: Theme.of(context).colorScheme.onPrimary.withAlpha(150),
+              backgroundColor: Theme.of(context).colorScheme.primaryContainer,
               size: Size(mediaQuery.size.width * 0.4, mediaQuery.size.height * 0.25),
               onPressed: (){
                 context.read<Global>().uiLogger.info("跳转: LearningPage => ForeFSRSSettingPage");
@@ -87,7 +88,7 @@ class LearningPage extends StatelessWidget {
         SizedBox(height: mediaQuery.size.height * 0.05),
         if(FSRS().config.pushAmount != 0) ...[
           Button(
-            backgroundColor: Theme.of(context).colorScheme.onPrimary.withAlpha(150),
+            backgroundColor: Theme.of(context).colorScheme.primaryContainer,
             size: Size(mediaQuery.size.width * 0.8, mediaQuery.size.height * 0.15),
             onPressed: (){
               if(AppData().wordData.words.isEmpty) {
@@ -138,7 +139,7 @@ class LearningPage extends StatelessWidget {
         ],
         SizedBox(height: mediaQuery.size.height * 0.05),
         Button(
-          backgroundColor: Theme.of(context).colorScheme.onPrimary.withAlpha(150),
+          backgroundColor: Theme.of(context).colorScheme.primaryContainer,
           size: Size(mediaQuery.size.width * 0.8, mediaQuery.size.height * 0.2),
           onPressed: (){
             context.read<Global>().uiLogger.info("跳转: LearningPage => WordCardOverViewPage");

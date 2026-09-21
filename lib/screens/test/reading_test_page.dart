@@ -10,6 +10,7 @@ import 'package:arabic_learning/models/reading.dart';
 import 'package:arabic_learning/services/app_data.dart';
 import 'package:arabic_learning/core/statics.dart';
 import 'package:arabic_learning/core/ai_prompt.dart';
+import 'package:arabic_learning/theme/tokens.dart' show AppSemanticColors;
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart' show Clipboard, ClipboardData, DeviceOrientation, SystemChrome;
@@ -49,30 +50,32 @@ class ReadingUnitButton extends StatelessWidget {
       if(!tags.contains(question.type)) tags.add(question.type);
     }
 
+    final ColorScheme scheme = Theme.of(context).colorScheme;
+    final AppSemanticColors semantic = context.semanticColors;
     late Color difficultyColor;
     switch(unit.difficulty){
       case >= 9 :{
-        difficultyColor = Colors.black87;
+        difficultyColor = scheme.error;
         break;
       }
       case >= 7 :{
-        difficultyColor = Colors.deepPurple;
+        difficultyColor = scheme.tertiary;
         break;
       }
       case >= 5 :{
-        difficultyColor = Colors.red;
+        difficultyColor = semantic.warning;
         break;
       }
       case >= 3 :{
-        difficultyColor = Colors.lime;
+        difficultyColor = semantic.success;
         break;
       }
       case >= 1 :{
-        difficultyColor = Colors.teal;
+        difficultyColor = scheme.primary;
         break;
       }
       case >= 0 : {
-        difficultyColor = Colors.cyan;
+        difficultyColor = scheme.secondary;
         break;
       }
     }
@@ -118,7 +121,7 @@ class ReadingUnitButton extends StatelessWidget {
                       fit: BoxFit.contain,
                       child: Text(
                         unit.difficulty.toString(), 
-                        style: TextStyle(fontSize: 64, shadows: [Shadow(blurRadius: 5, color: Colors.white)])
+                        style: TextStyle(fontSize: 64, shadows: [Shadow(blurRadius: 5, color: Theme.of(context).colorScheme.primaryContainer)])
                       ),
                     ),
                   ],
@@ -134,7 +137,7 @@ class ReadingUnitButton extends StatelessWidget {
                         unit.title,
                         maxLines: 1,
                         textDirection: unit.title.textDirection,
-                        style: Theme.of(context).primaryTextTheme.headlineLarge,
+                        style: Theme.of(context).textTheme.headlineLarge,
                       ),
                     ),
                     Wrap(
@@ -142,8 +145,16 @@ class ReadingUnitButton extends StatelessWidget {
                       spacing: 4.0,
                       runSpacing: 4.0,
                       children: [
-                        TagMark(tag: unit.type == 1 ? "阅读理解" : "完形填空", color: Colors.teal),
-                        ...List.generate(tags.length, (index) => TagMark(tag: tags[index], color: Colors.indigo)),
+                        TagMark(
+                          tag: unit.type == 1 ? "阅读理解" : "完形填空",
+                          background: scheme.primaryContainer,
+                          foreground: scheme.onPrimaryContainer,
+                        ),
+                        ...List.generate(tags.length, (index) => TagMark(
+                          tag: tags[index],
+                          background: scheme.secondaryContainer,
+                          foreground: scheme.onSecondaryContainer,
+                        )),
                       ]
                     ),
                   ],
@@ -163,7 +174,7 @@ class ReadingUnitButton extends StatelessWidget {
                     ),
                     padding: EdgeInsets.all(8.0),
                     child: Text("历史正确率:${unit.corrects.isEmpty ? "无数据" : (correctTime/(unit.corrects.length * unit.questions.length)).toStringAsFixed(2)}",
-                      style: Theme.of(context).primaryTextTheme.bodyLarge),
+                      style: Theme.of(context).textTheme.bodyLarge?.copyWith(color: scheme.onPrimaryContainer)),
                   )
                 ],
               )
@@ -177,18 +188,19 @@ class ReadingUnitButton extends StatelessWidget {
 
 class TagMark extends StatelessWidget {
   final String tag;
-  final Color color;
-  const TagMark({super.key, required this.tag, required this.color});
+  final Color background;
+  final Color foreground;
+  const TagMark({super.key, required this.tag, required this.background, required this.foreground});
 
   @override
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: color,
+        color: background,
         borderRadius: StaticsVar.br
       ),
       padding: EdgeInsets.all(4.0),
-      child: Text(tag, style: Theme.of(context).primaryTextTheme.labelMedium),
+      child: Text(tag, style: Theme.of(context).textTheme.labelMedium?.copyWith(color: foreground)),
     );
   }
 }
@@ -403,7 +415,7 @@ class _ReadingQuestionPage extends State<ReadingQuestionPage> {
                 return ListView(
                   padding: EdgeInsets.all(16.0),
                   children: [
-                    if(index != widget.unit.questions.length) TextContainer(text: widget.unit.questions[index].riddle, style: Theme.of(context).primaryTextTheme.headlineLarge),
+                    if(index != widget.unit.questions.length) TextContainer(text: widget.unit.questions[index].riddle, style: Theme.of(context).textTheme.headlineLarge),
                     if(index != widget.unit.questions.length) ChangeNotifierProvider<SingleSelectionNotifier>.value(
                       value: choose[index],
                       builder: (context, child) {
@@ -415,7 +427,7 @@ class _ReadingQuestionPage extends State<ReadingQuestionPage> {
                           children: List.generate(widget.unit.questions[index].answers.length, (i) {
                             return TableRow(
                               decoration: BoxDecoration(
-                                color: context.watch<SingleSelectionNotifier>().value == i ? Colors.greenAccent : null,
+                                color: context.watch<SingleSelectionNotifier>().value == i ? Theme.of(context).colorScheme.primaryContainer : null,
                                 borderRadius: StaticsVar.br
                               ),
                               children: [
@@ -431,7 +443,7 @@ class _ReadingQuestionPage extends State<ReadingQuestionPage> {
                                       }
                                     },
                                     size: Size.fromWidth(mediaQuery.size.width * 0.2),
-                                    child: Text(options[index][i], style: Theme.of(context).primaryTextTheme.headlineMedium),
+                                    child: Text(options[index][i], style: Theme.of(context).textTheme.headlineMedium),
                                   ),
                                 )
                               ]
@@ -521,7 +533,8 @@ class TypeChoose extends StatelessWidget {
   Widget build(BuildContext context) {
     return ElevatedButton(
       style: ElevatedButton.styleFrom(
-        backgroundColor: Theme.of(context).colorScheme.onPrimary.withAlpha(150),
+        backgroundColor: Theme.of(context).colorScheme.surfaceContainerHighest,
+        foregroundColor: Theme.of(context).colorScheme.onSurface,
         fixedSize: widget != null && height != null ? Size(widget!, height!) : null,
         shape: RoundedRectangleBorder(borderRadius: StaticsVar.br),
       ),
@@ -609,7 +622,7 @@ class _QuestionConfigPage extends State<QuestionConfigPage> {
         promptEditController.text = buildPrompt(qc: qconfig,useSafe: false);
         showModalBottomSheet(
           context: context, 
-          shape: RoundedRectangleBorder(borderRadius: StaticsVar.br, side: BorderSide(width: 1.0, color: Theme.of(context).colorScheme.onSurface)),
+          shape: RoundedRectangleBorder(borderRadius: StaticsVar.br, side: BorderSide(width: 1.0, color: Theme.of(context).colorScheme.outlineVariant)),
           builder: (context) {
             return Container(
               padding: EdgeInsets.all(16.0),
@@ -897,6 +910,7 @@ class ReadingResultPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     MediaQueryData mediaQuery = MediaQuery.of(context);
+    final AppSemanticColors semantic = context.semanticColors;
 
     List<bool> correctList = [];
     for(int i = 0;i < selection.length; i++){
@@ -961,14 +975,14 @@ class ReadingResultPage extends StatelessWidget {
                                     width: mediaQuery.size.width * 0.4,
                                     child: Column(
                                       children: [
-                                        Text("问题: \n${unit.questions[index].riddle}\n你的答案: \n${selection[index] == null ? "未选择" : options[index][selection[index]!]}", style: Theme.of(context).primaryTextTheme.bodyLarge),
+                                        Text("问题: \n${unit.questions[index].riddle}\n你的答案: \n${selection[index] == null ? "未选择" : options[index][selection[index]!]}", style: Theme.of(context).textTheme.bodyLarge),
                                         SizedBox(
                                           width: mediaQuery.size.width * 0.4,
                                           child: Opacity(
                                             opacity: (cp-1*index*(1-cp) < 0 ? 0 : cp-1*index*(1-cp)),
                                             child: Transform.scale(
                                               scale: 1.5 - 0.5*(cp-1*index*(1-cp) < 0 ? 0 : cp-1*index*(1-cp)),
-                                              child: FittedBox(fit: BoxFit.scaleDown, child: Icon(correctList[index] ? Icons.check : Icons.clear, color: correctList[index] ? Colors.greenAccent : Colors.redAccent, size: 96))
+                                              child: FittedBox(fit: BoxFit.scaleDown, child: Icon(correctList[index] ? Icons.check : Icons.clear, color: correctList[index] ? semantic.success : semantic.error, size: 96))
                                             ),
                                           ),
                                         )
@@ -980,13 +994,13 @@ class ReadingResultPage extends StatelessWidget {
                                   offset: Offset(mediaQuery.size.width * (1-(sp-1*index*(1-sp) < 0 ? 0 : sp-1*index*(1-sp))), 0),
                                   child: Container(
                                     decoration: BoxDecoration(
-                                      color: Theme.of(context).colorScheme.onPrimary,
+                                      color: Theme.of(context).colorScheme.surfaceContainerHighest,
                                       borderRadius: StaticsVar.br
                                     ),
                                     width: mediaQuery.size.width * 0.5, 
                                     padding: EdgeInsets.all(8.0),
                                     margin: EdgeInsets.all(8.0),
-                                    child: Text("正确答案: \n${unit.questions[index].answers[0]}\n解析: \n${unit.questions[index].analysis}", style: Theme.of(context).primaryTextTheme.bodyLarge),
+                                    child: Text("正确答案: \n${unit.questions[index].answers[0]}\n解析: \n${unit.questions[index].analysis}", style: Theme.of(context).textTheme.bodyLarge),
                                   ),
                                 ),
                               ],

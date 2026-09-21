@@ -5,6 +5,7 @@ import 'package:arabic_learning/models/config.dart';
 import 'package:arabic_learning/services/global_state.dart';
 import 'package:arabic_learning/services/app_data.dart';
 import 'package:arabic_learning/core/statics.dart';
+import 'package:arabic_learning/theme/tokens.dart' show AppRadius;
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -44,7 +45,7 @@ class _QuestionsSettingPage extends State<QuestionsSettingPage> {
           padding: EdgeInsets.all(8.0),
           // margin: EdgeInsets.all(4.0),
           decoration: BoxDecoration(
-            color: isEven ? Theme.of(context).colorScheme.onPrimary : Theme.of(context).colorScheme.onSecondary,
+            color: isEven ? Theme.of(context).colorScheme.primaryContainer : Theme.of(context).colorScheme.secondaryContainer,
             borderRadius: BorderRadius.all(Radius.circular(16.0))
           ),
           height: mediaQuery.size.height * 0.08,
@@ -83,7 +84,7 @@ class _QuestionsSettingPage extends State<QuestionsSettingPage> {
         appBar: AppBar(title: Text("题型配置")),
         body: Column(
           children: [
-            if(!AppData().isWideScreen) TextContainer(text: "长按可拖动排序", style: TextStyle(color: Colors.grey), animated: true),
+            if(!AppData().isWideScreen) TextContainer(text: "长按可拖动排序", style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant), animated: true),
             Expanded(
               child: ReorderableListView(
                 onReorderItem: (oldIndex, newIndex) {
@@ -191,7 +192,7 @@ class _QuestionsSettingPage extends State<QuestionsSettingPage> {
                   if(value > 0.3) ...List.generate(castMap.length, (i) {
                     return Button(
                       size: Size(70 + 150 * value, mediaQuery.size.height * 0.1 * value),
-                      shape: i == 0 ? RoundedRectangleBorder(borderRadius: BorderRadiusGeometry.vertical(top: Radius.circular(25.0))) : BeveledRectangleBorder(),
+                      shape: i == 0 ? RoundedRectangleBorder(borderRadius: BorderRadiusGeometry.vertical(top: Radius.circular(AppRadius.card))) : BeveledRectangleBorder(),
                       onPressed: (){
                         context.read<Global>().uiLogger.info("添加题型类型: $i");
                         setState(() {
@@ -205,8 +206,8 @@ class _QuestionsSettingPage extends State<QuestionsSettingPage> {
                   }),
                   Button(
                     size: Size(70 + 150 * value, 70),
-                    backgroundColor: Theme.of(context).colorScheme.onPrimary,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadiusGeometry.vertical(bottom: Radius.circular(25.0), top: value < 0.4 ? Radius.circular(25.0) : Radius.zero)),
+                    backgroundColor: Theme.of(context).colorScheme.primaryContainer,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadiusGeometry.vertical(bottom: Radius.circular(AppRadius.card), top: value < 0.4 ? Radius.circular(AppRadius.card) : Radius.zero)),
                     onPressed: (){
                       context.read<Global>().uiLogger.fine("切换题型悬浮按钮状态");
                       setState(() {

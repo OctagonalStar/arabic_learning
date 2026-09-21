@@ -37,7 +37,7 @@ class ForeFSRSSettingPage extends StatelessWidget {
             children: [
               TextContainer(text: "参数配置", textAlign: TextAlign.center),
               SettingCard(
-                color: Theme.of(context).colorScheme.onPrimary,
+                color: Theme.of(context).colorScheme.surfaceContainerHighest,
                 margin: EdgeInsets.all(8.0),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -67,7 +67,7 @@ class ForeFSRSSettingPage extends StatelessWidget {
                 ),
               ),
               SettingCard(
-                color: Theme.of(context).colorScheme.onSecondary,
+                color: Theme.of(context).colorScheme.surfaceContainerLow,
                 margin: EdgeInsets.all(8.0),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -97,7 +97,7 @@ class ForeFSRSSettingPage extends StatelessWidget {
                 ),
               ),
               SettingCard(
-                color: Theme.of(context).colorScheme.onPrimary,
+                color: Theme.of(context).colorScheme.surfaceContainerHighest,
                 margin: EdgeInsets.all(8.0),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -128,7 +128,7 @@ class ForeFSRSSettingPage extends StatelessWidget {
                 ),
               ),
               SettingCard(
-                color: Theme.of(context).colorScheme.onSecondary,
+                color: Theme.of(context).colorScheme.surfaceContainerLow,
                 margin: EdgeInsets.all(8.0),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -155,7 +155,7 @@ class ForeFSRSSettingPage extends StatelessWidget {
                 ),
               ),
               SettingCard(
-                color: Theme.of(context).colorScheme.onSecondary,
+                color: Theme.of(context).colorScheme.surfaceContainerLow,
                 margin: EdgeInsets.all(8.0),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -197,7 +197,7 @@ class ForeFSRSSettingPage extends StatelessWidget {
                 ),
               ),
               if(!fsrs.config.selfEvaluate) SettingCard(
-                color: Theme.of(context).colorScheme.onPrimary,
+                color: Theme.of(context).colorScheme.surfaceContainerHighest,
                 margin: EdgeInsets.all(8.0),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -224,7 +224,7 @@ class ForeFSRSSettingPage extends StatelessWidget {
                 ),
               ),
               SettingCard(
-                color: Theme.of(context).colorScheme.onPrimary,
+                color: Theme.of(context).colorScheme.surfaceContainerHighest,
                 margin: EdgeInsets.all(8.0),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -262,6 +262,7 @@ class ForeFSRSSettingPage extends StatelessWidget {
                 padding: const EdgeInsets.only(top: 8.0, bottom: 8.0),
                 child: Button(
                   backgroundColor: Theme.of(context).colorScheme.errorContainer,
+                  foregroundColor: Theme.of(context).colorScheme.onErrorContainer,
                   size: Size.fromHeight(80),
                   shape: RoundedRectangleBorder(borderRadius: StaticsVar.br),
                   onPressed: (){
@@ -278,7 +279,7 @@ class ForeFSRSSettingPage extends StatelessWidget {
                               fsrs.save();
                               Navigator.popUntil(context, (route) => route.isFirst);
                             }, 
-                            child: Text("确认清空", style: TextStyle(color: Colors.red))
+                            child: Text("确认清空", style: TextStyle(color: Theme.of(context).colorScheme.error))
                           )
                         ],
                       )
@@ -425,7 +426,7 @@ class _MainFSRSPageState extends State<MainFSRSPage> {
                     size: Size(mediaQuery.size.width * 0.8, mediaQuery.size.height * 0.4),
                     textAlign: TextAlign.center,
                   ),
-                  Icon(Icons.arrow_upward, size: 48.0, color: Colors.grey)
+                  Icon(Icons.arrow_upward, size: 48.0, color: Theme.of(context).colorScheme.onSurfaceVariant)
                 ],
               ),
             );

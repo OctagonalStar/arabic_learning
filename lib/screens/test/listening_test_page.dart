@@ -3,6 +3,7 @@ import 'package:arabic_learning/models/reading.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import 'package:arabic_learning/core/extensions.dart';
 import 'package:arabic_learning/core/statics.dart';
 import 'package:arabic_learning/services/global_state.dart';
 import 'package:arabic_learning/services/app_data.dart';
@@ -259,7 +260,7 @@ class _MainListeningPageState extends State<MainListeningPage> {
         Container(
           padding: EdgeInsets.all(16.0),
             decoration: BoxDecoration(
-              color: Colors.teal,
+              color: Theme.of(context).colorScheme.primaryContainer,
             ),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -277,7 +278,11 @@ class _MainListeningPageState extends State<MainListeningPage> {
           Container(
             padding: EdgeInsets.all(16.0),
             decoration: BoxDecoration(
-              color: marks.contains(i) ? Colors.amber.withAlpha(125) : i.isEven ? Theme.of(context).colorScheme.onPrimary : Theme.of(context).colorScheme.onSecondary,
+              color: marks.contains(i)
+                ? context.semanticColors.warning.withAlpha(77)
+                : i.isEven
+                  ? Theme.of(context).colorScheme.surfaceContainerLow
+                  : Theme.of(context).colorScheme.surfaceContainerHigh,
             ),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -342,7 +347,7 @@ class _MainListeningPageState extends State<MainListeningPage> {
             children: [
               TextContainer(text: "当前播放数/总数: $index/${(widget.words.length * widget.playTimes)}",textAlign: TextAlign.center,),
               TextContainer(text: state, style: TextStyle(fontSize: 32.0), size: Size(mediaQuery.size.width * 0.8, mediaQuery.size.height * 0.4),textAlign: TextAlign.center,),
-              TextContainer(text: counter, style: TextStyle(fontSize: 36.0, color: Colors.redAccent), size: Size(mediaQuery.size.width * 0.6, mediaQuery.size.height * 0.1),textAlign: TextAlign.center,),
+              TextContainer(text: counter, style: TextStyle(fontSize: 36.0, color: Theme.of(context).colorScheme.error), size: Size(mediaQuery.size.width * 0.6, mediaQuery.size.height * 0.1),textAlign: TextAlign.center,),
               Button(
                 icon: Icon(stage == 1 ? Icons.flag : Icons.play_arrow, size: 32.0,),
                 padding: EdgeInsets.all(16.0),

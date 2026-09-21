@@ -43,10 +43,10 @@ class StatCard extends StatelessWidget {
       margin: EdgeInsets.all(4.0),
       padding: EdgeInsets.all(16.0),
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.secondaryContainer.withAlpha(150),
+        color: Theme.of(context).colorScheme.secondaryContainer,
         boxShadow: [
           BoxShadow(
-            color: Theme.of(context).colorScheme.surfaceBright.withAlpha(150),
+            color: Theme.of(context).colorScheme.shadow.withAlpha(51),
             offset: Offset(2, 4),
             blurRadius: 8.0,
           ),
@@ -76,7 +76,8 @@ class StatCard extends StatelessWidget {
 
 /// 设置页参数卡片
 ///
-/// [color] 为卡片背景色（调用方传入 onPrimary / onSecondary 等）；
+/// [color] 为卡片背景色（调用方传入 `surfaceContainerHighest` /
+/// `surfaceContainerLow` 等容器色，配合默认 `onSurface` 文字保证对比度）；
 /// [child] 为卡片内容；[padding] 默认 8.0；[margin] 默认不设置（null），
 /// 调用处按原代码显式传入，保证与抽取前完全一致。
 class SettingCard extends StatelessWidget {
@@ -146,7 +147,7 @@ class ConclusionCard extends StatelessWidget {
           borderRadius: StaticsVar.br,
           boxShadow: [
             BoxShadow(
-              color: Theme.of(context).colorScheme.surfaceBright,
+              color: Theme.of(context).colorScheme.shadow.withAlpha(51),
               spreadRadius: 5,
               blurRadius: 7,
               offset: Offset(0, 3),
@@ -206,18 +207,18 @@ class PKScoreRow extends StatelessWidget {
               height: mediaQuery.size.height * 0.1,
               width: math.min(value*2, 1) * mediaQuery.size.width * (0.5 + 0.25*scoreBias),
               decoration: BoxDecoration(
-                color: Theme.of(context).colorScheme.onPrimary,
+                color: Theme.of(context).colorScheme.primaryContainer,
               ),
-              child: Text(leftText(value), style: Theme.of(context).textTheme.headlineMedium, textAlign: TextAlign.end),
+              child: Text(leftText(value), style: Theme.of(context).textTheme.headlineMedium?.copyWith(color: Theme.of(context).colorScheme.onPrimaryContainer), textAlign: TextAlign.end),
             ),
             Container(
               padding: EdgeInsets.all(16.0),
               height: mediaQuery.size.height * 0.1,
               width: math.min(value*2, 1) * mediaQuery.size.width * (0.5 - 0.25*scoreBias),
               decoration: BoxDecoration(
-                color: Theme.of(context).colorScheme.onSecondary,
+                color: Theme.of(context).colorScheme.secondaryContainer,
               ),
-              child: Text(rightText(value), style: Theme.of(context).textTheme.headlineMedium, textAlign: TextAlign.start),
+              child: Text(rightText(value), style: Theme.of(context).textTheme.headlineMedium?.copyWith(color: Theme.of(context).colorScheme.onSecondaryContainer), textAlign: TextAlign.start),
             ),
           ],
         );
