@@ -16,6 +16,7 @@ import 'package:arabic_learning/services/global_state.dart' show Global;
 import 'package:arabic_learning/theme/tokens.dart' show AppBreakpoints, AppMotion;
 import 'package:arabic_learning/widgets/feedback.dart' show LoadingIndicator;
 import 'package:arabic_learning/widgets/kit.dart';
+import 'package:arabic_learning/widgets/motion.dart' show CrossFadeSwitcher;
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -35,6 +36,7 @@ class MyApp extends StatelessWidget {
         initialData: false,
         builder: (context, asyncSnapshot) {
           final Global global = context.read<Global>();
+          final Widget child;
           if(!(asyncSnapshot.data??false)) {
             // 加载页：使用主题 surface 语义色，不再硬编码纯黑。
             final bool platformDark = WidgetsBinding
@@ -45,32 +47,38 @@ class MyApp extends StatelessWidget {
                     : global.lightThemeData)
                 .colorScheme
                 .surface;
-            return Container(
+            child = Container(
+              key: const ValueKey<String>('app-loading'),
               width: double.infinity,
               height: double.infinity,
               color: loadingSurface,
               child: const Center(child: LoadingIndicator()),
             );
+          } else {
+            child = Consumer<Global>(
+              key: const ValueKey<String>('app-content'),
+              builder: (context, global, child) => MaterialApp(
+                title: StaticsVar.appName,
+                theme: global.lightThemeData,
+                darkTheme: global.darkThemeData,
+                themeMode: global.themeMode,
+                // 主题色 / 深浅色切换走统一动效 token，切换过程平滑过渡。
+                themeAnimationDuration: AppMotion.medium,
+                themeAnimationCurve: AppMotion.emphasizedCurve,
+                // 在 MaterialApp 之下、Navigator 之上下发响应式数据：
+                // home 与所有 push 出的路由共享同一份 AdaptiveData，
+                // 取代原先在 build 期写 AppData().isWideScreen 的副作用。
+                builder: (context, child) => AdaptiveScope(
+                  data: AdaptiveData.fromMediaQuery(context),
+                  child: child ?? const SizedBox.shrink(),
+                ),
+                home: const MyHomePage()
+              )
+            );
           }
-          return Consumer<Global>(
-            builder: (context, global, child) => MaterialApp(
-              title: StaticsVar.appName,
-              theme: global.lightThemeData,
-              darkTheme: global.darkThemeData,
-              themeMode: global.themeMode,
-              // 主题色 / 深浅色切换走统一动效 token，切换过程平滑过渡。
-              themeAnimationDuration: AppMotion.medium,
-              themeAnimationCurve: AppMotion.emphasizedCurve,
-              // 在 MaterialApp 之下、Navigator 之上下发响应式数据：
-              // home 与所有 push 出的路由共享同一份 AdaptiveData，
-              // 取代原先在 build 期写 AppData().isWideScreen 的副作用。
-              builder: (context, child) => AdaptiveScope(
-                data: AdaptiveData.fromMediaQuery(context),
-                child: child ?? const SizedBox.shrink(),
-              ),
-              home: const MyHomePage()
-            )
-          );
+          // 加载 → 主界面交叉淡入：两种状态携带不同 key 才会触发切换动画，
+          // FutureBuilder 的等待/完成语义保持不变。
+          return CrossFadeSwitcher(child: child);
         }
       );
   }

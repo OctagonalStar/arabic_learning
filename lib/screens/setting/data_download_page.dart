@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:arabic_learning/widgets/feedback.dart' show LoadingIndicator;
 import 'package:arabic_learning/widgets/kit.dart' show Button, SettingItem;
+import 'package:arabic_learning/widgets/motion.dart' show CrossFadeSwitcher;
 import 'package:arabic_learning/widgets/overlays.dart' show alart, showSnackBar;
 import 'package:arabic_learning/models/dict.dart';
 import 'package:flutter/material.dart';
@@ -39,10 +40,19 @@ class DownloadPage extends StatelessWidget {
       body: SafeArea(top: false, child: FutureBuilder(
         future: downloadList(context),
         builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting || snapshot.data == null) {
-            return Center(child: LoadingIndicator());
-          }
-          return ListView(children: snapshot.data!);
+          final bool loading = snapshot.connectionState == ConnectionState.waiting || snapshot.data == null;
+          // 加载 → 列表交叉淡入：两种状态携带不同 key 才会触发切换动画。
+          return CrossFadeSwitcher(
+            child: loading
+                ? const Center(
+                    key: ValueKey<String>('download-loading'),
+                    child: LoadingIndicator(),
+                  )
+                : ListView(
+                    key: const ValueKey<String>('download-content'),
+                    children: snapshot.data!,
+                  ),
+          );
         },
       )),
     );

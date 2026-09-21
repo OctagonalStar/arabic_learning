@@ -1,5 +1,6 @@
 import 'package:arabic_learning/widgets/feedback.dart' show LoadingIndicator;
 import 'package:arabic_learning/widgets/kit.dart' show Button, TextContainer;
+import 'package:arabic_learning/widgets/motion.dart' show CrossFadeSwitcher;
 import 'package:arabic_learning/widgets/overlays.dart' show showSnackBar;
 import 'package:arabic_learning/services/global_state.dart' show Global;
 import 'package:arabic_learning/services/app_data.dart' show AppData;
@@ -58,14 +59,30 @@ class _PolicyPage extends State<PolicyPage> {
                   TextContainer(text: preAnnounce, selectable: true),
                   FutureBuilder(
                     future: tou, 
-                    builder: (context, snapshot) => snapshot.hasData ? MarkdownBody(data: snapshot.data!) : LoadingIndicator()
+                    builder: (context, snapshot) => CrossFadeSwitcher(
+                      // 加载 → 条款正文交叉淡入：两种状态使用不同 key。
+                      child: snapshot.hasData
+                        ? MarkdownBody(
+                            key: const ValueKey<String>('tou-content'),
+                            data: snapshot.data!,
+                          )
+                        : const LoadingIndicator(key: ValueKey<String>('tou-loading')),
+                    ),
                   ),
                   SizedBox(height: MediaQuery.of(context).size.height * 0.05),
                   Divider(),
                   SizedBox(height: MediaQuery.of(context).size.height * 0.05),
                   FutureBuilder(
                     future: pp, 
-                    builder: (context, snapshot) => snapshot.hasData ? MarkdownBody(data: snapshot.data!) : LoadingIndicator()
+                    builder: (context, snapshot) => CrossFadeSwitcher(
+                      // 加载 → 隐私条款正文交叉淡入：两种状态使用不同 key。
+                      child: snapshot.hasData
+                        ? MarkdownBody(
+                            key: const ValueKey<String>('pp-content'),
+                            data: snapshot.data!,
+                          )
+                        : const LoadingIndicator(key: ValueKey<String>('pp-loading')),
+                    ),
                   ),
                   SizedBox(height: MediaQuery.of(context).size.height),
                   if(!widget.isUpdate) TextField(

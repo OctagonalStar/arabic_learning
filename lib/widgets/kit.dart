@@ -911,7 +911,7 @@ class WordCard extends StatelessWidget {
   }
 }
 
-class Button extends StatelessWidget {
+class Button extends StatefulWidget {
   final Widget? child;
   final void Function()? onPressed;
   final Widget? icon;
@@ -940,13 +940,28 @@ class Button extends StatelessWidget {
   });
 
   @override
+  State<Button> createState() => _ButtonState();
+}
+
+class _ButtonState extends State<Button> {
+  /// 指针按压中：仅做视觉缩放反馈，不改变布局尺寸与命中区域。
+  bool _pressed = false;
+
+  void _setPressed(bool value) {
+    if(_pressed == value) return;
+    setState(() {
+      _pressed = value;
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
     final ColorScheme scheme = Theme.of(context).colorScheme;
     // 默认采用 M3 填充色调按钮配色（primaryContainer / onPrimaryContainer）；
     // 显式指定容器背景色时自动匹配对应的 onXxx 前景色，未知背景回退 onSurface，
     // 需要更精确对比度的调用方仍可传入 [foregroundColor] 覆盖。
-    final Color background = backgroundColor ?? scheme.primaryContainer;
-    final Color foreground = foregroundColor ??
+    final Color background = widget.backgroundColor ?? scheme.primaryContainer;
+    final Color foreground = widget.foregroundColor ??
         (background == scheme.primaryContainer
             ? scheme.onPrimaryContainer
             : background == scheme.secondaryContainer
@@ -954,50 +969,72 @@ class Button extends StatelessWidget {
                 : background == scheme.errorContainer
                     ? scheme.onErrorContainer
                     : scheme.onSurface);
-    return ElevatedButton(
+    // 透明背景按钮（如 WordCard 发音、ChooseButtonBox 选项）没有容器色，
+    // 以前景色作为 state layer 底色；前景也透明时回退 onSurface，保证亮暗模式可读。
+    final Color overlayBase = foreground.a == 0 ? scheme.onSurface : foreground;
+    final Widget button = ElevatedButton(
       style: ElevatedButton.styleFrom(
         backgroundColor: background,
         foregroundColor: foreground,
-        shadowColor: shadowColor,
-        fixedSize: size,
-        padding: padding,
-        shape: shape ?? RoundedRectangleBorder(borderRadius: StaticsVar.br)
+        shadowColor: widget.shadowColor,
+        fixedSize: widget.size,
+        padding: widget.padding,
+        shape: widget.shape ?? RoundedRectangleBorder(borderRadius: StaticsVar.br),
+        // 按压 / 悬停的 Material state layer（即时视觉反馈）。
+        overlayColor: overlayBase.withValues(alpha: 0.10),
+        animationDuration: AppMotion.quick,
       ),
       clipBehavior: Clip.hardEdge,
-      onPressed: onPressed,
-      child: icon==null 
-          ? child
-          : [AxisDirection.left, AxisDirection.right].contains(iconDirection)
+      onPressed: widget.onPressed,
+      child: widget.icon==null 
+          ? widget.child
+          : [AxisDirection.left, AxisDirection.right].contains(widget.iconDirection)
           ? Row(
             mainAxisSize: MainAxisSize.min,
-            mainAxisAlignment: alignment,
+            mainAxisAlignment: widget.alignment,
             children: [
-              if(iconDirection == AxisDirection.left) Padding(
+              if(widget.iconDirection == AxisDirection.left) Padding(
                 padding: const EdgeInsets.all(8.0),
-                child: icon!,
+                child: widget.icon!,
               ),
-              ?child,
-              if(iconDirection == AxisDirection.right) Padding(
+              ?widget.child,
+              if(widget.iconDirection == AxisDirection.right) Padding(
                 padding: const EdgeInsets.all(8.0),
-                child: icon!,
+                child: widget.icon!,
               )
             ],
           )
           : Column(
             mainAxisSize: MainAxisSize.min,
-            mainAxisAlignment: alignment,
+            mainAxisAlignment: widget.alignment,
             children: [
-              if(iconDirection == AxisDirection.up) Padding(
+              if(widget.iconDirection == AxisDirection.up) Padding(
                 padding: const EdgeInsets.all(8.0),
-                child: icon!,
+                child: widget.icon!,
               ),
-              ?child,
-              if(iconDirection == AxisDirection.down) Padding(
+              ?widget.child,
+              if(widget.iconDirection == AxisDirection.down) Padding(
                 padding: const EdgeInsets.all(8.0),
-                child: icon!,
+                child: widget.icon!,
               )
             ],
           )
+    );
+    // 禁用态与“减弱动态效果”下保持纯 ElevatedButton，不引入额外包装。
+    if(widget.onPressed == null ||
+        (MediaQuery.maybeDisableAnimationsOf(context) ?? false)) {
+      return button;
+    }
+    return Listener(
+      onPointerDown: (_) => _setPressed(true),
+      onPointerUp: (_) => _setPressed(false),
+      onPointerCancel: (_) => _setPressed(false),
+      child: AnimatedScale(
+        scale: _pressed ? 0.98 : 1.0,
+        duration: AppMotion.quick,
+        curve: AppMotion.standardCurve,
+        child: button,
+      ),
     );
   }
 }

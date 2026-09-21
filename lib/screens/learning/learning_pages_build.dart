@@ -19,6 +19,7 @@ import 'package:arabic_learning/theme/tokens.dart' show AppMotion;
 import 'package:arabic_learning/services/global_state.dart';
 import 'package:arabic_learning/services/app_data.dart';
 import 'package:arabic_learning/widgets/kit.dart' show Button, CategoryFilter, TextContainer, WordCard;
+import 'package:arabic_learning/widgets/motion.dart' show StaggeredEntrance;
 import 'package:arabic_learning/widgets/overlays.dart' show showSnackBar, viewAnswer;
 import 'package:arabic_learning/widgets/questions.dart' show ChoiceQuestions, ListeningQuestion, SpellQuestion, WordCardQuestion;
 import 'package:arabic_learning/widgets/shared.dart' show ConclusionCard, RevealableActionBar, appInputDecoration;
@@ -760,13 +761,17 @@ class _WordOverviewGrid extends StatelessWidget {
             childAspectRatio: cellWidth / side,
           ),
           itemBuilder: (context, index) {
-            return Center(
-              child: WordCard(
-                word: appData.wordData.words[classItem.wordIndexs[index]],
-                useMask: false,
-                compact: true,
-                width: cardSide,
-                height: cardSide,
+            // 仅首屏（前 N 项）做交错入场，懒加载出的后续项直接渲染。
+            return StaggeredEntrance(
+              index: index,
+              child: Center(
+                child: WordCard(
+                  word: appData.wordData.words[classItem.wordIndexs[index]],
+                  useMask: false,
+                  compact: true,
+                  width: cardSide,
+                  height: cardSide,
+                ),
               ),
             );
           }
@@ -943,13 +948,17 @@ class _WordLookupLayoutState extends State<WordLookupLayout> {
                       childAspectRatio: cellWidth / side,
                     ),
                     itemBuilder: (context, index) {
-                      return Center(
-                        child: WordCard(
-                          word: match[index],
-                          useMask: false,
-                          compact: true,
-                          width: cardSide,
-                          height: cardSide,
+                      // 检索结果可能很长：只对首屏前 N 项做交错入场。
+                      return StaggeredEntrance(
+                        index: index,
+                        child: Center(
+                          child: WordCard(
+                            word: match[index],
+                            useMask: false,
+                            compact: true,
+                            width: cardSide,
+                            height: cardSide,
+                          ),
                         ),
                       );
                     }

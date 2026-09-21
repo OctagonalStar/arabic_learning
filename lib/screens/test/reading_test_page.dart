@@ -3,6 +3,7 @@ import 'dart:math';
 
 import 'package:arabic_learning/widgets/feedback.dart' show LoadingIndicator;
 import 'package:arabic_learning/widgets/kit.dart' show Button, SettingItem, SettingRow, TextContainer;
+import 'package:arabic_learning/widgets/motion.dart' show StaggeredEntrance;
 import 'package:arabic_learning/widgets/overlays.dart' show alart;
 import 'package:arabic_learning/widgets/shared.dart' show ButtonLabel, appInputDecoration;
 import 'package:arabic_learning/core/extensions.dart';
@@ -51,9 +52,20 @@ class QuestionConfig {
   bool tashkeel = false;
 }
 
+/// 阅读题列表 → 详情页共享的 Hero tag。
+///
+/// [ReadingUnit] 没有自增 id，这里使用导入去重所用的内容哈希作为业务身份；
+/// 列表项再拼接其位置 [listIndex]，即使数据中出现内容完全相同的重复题目，
+/// 同一路由内的 tag 也不会冲突（未从列表进入时为 `x`，不参与飞行）。
+String readingUnitHeroTag(ReadingUnit unit, {int? listIndex}) =>
+    'reading-unit-${listIndex ?? 'x'}-${unit.getHash().join('-')}';
+
 class ReadingUnitButton extends StatelessWidget {
   final ReadingUnit unit;
-  const ReadingUnitButton({super.key, required this.unit});
+
+  /// 列表项位置：仅用于拼接唯一 Hero tag，不影响业务逻辑。
+  final int? listIndex;
+  const ReadingUnitButton({super.key, required this.unit, this.listIndex});
 
   @override
   Widget build(BuildContext context) {
@@ -107,7 +119,7 @@ class ReadingUnitButton extends StatelessWidget {
           onPressed: () {
             Navigator.push(
               context, 
-              MaterialPageRoute(builder: (context) => ReadingQuestionPage(unit: unit))
+              MaterialPageRoute(builder: (context) => ReadingQuestionPage(unit: unit, listIndex: listIndex))
             );
           }, 
           padding: EdgeInsetsGeometry.all(0.0),
@@ -146,11 +158,14 @@ class ReadingUnitButton extends StatelessWidget {
                   children: [
                     FittedBox(
                       fit: BoxFit.scaleDown,
-                      child: Text(
-                        unit.title,
-                        maxLines: 1,
-                        textDirection: unit.title.textDirection,
-                        style: Theme.of(context).textTheme.headlineLarge,
+                      child: Hero(
+                        tag: readingUnitHeroTag(unit, listIndex: listIndex),
+                        child: Text(
+                          unit.title,
+                          maxLines: 1,
+                          textDirection: unit.title.textDirection,
+                          style: Theme.of(context).textTheme.headlineLarge,
+                        ),
                       ),
                     ),
                     Wrap(
@@ -245,7 +260,10 @@ class _ReadingTestPage extends State<ReadingTestPage> {
           if(index == appData.readingData.units.length) {
             return TextContainer(text: "没有更多阅读题了，请点击右上角加号添加");
           }
-          return ReadingUnitButton(unit: appData.readingData.units[index]);
+          return StaggeredEntrance(
+            index: index,
+            child: ReadingUnitButton(unit: appData.readingData.units[index], listIndex: index),
+          );
         }
       )),
     );
@@ -385,7 +403,11 @@ class _ReadingTestAddLeading extends State<ReadingTestAddLeading> {
 
 class ReadingQuestionPage extends StatefulWidget {
   final ReadingUnit unit;
-  const ReadingQuestionPage({super.key, required this.unit});
+
+  /// 从阅读题列表进入时携带的列表项位置：用于匹配列表项标题的 Hero tag。
+  /// 其他入口为 null（tag 前缀 `x`），不会与列表项发生 Hero 飞行。
+  final int? listIndex;
+  const ReadingQuestionPage({super.key, required this.unit, this.listIndex});
 
   @override
   State<StatefulWidget> createState() => _ReadingQuestionPage();
@@ -418,7 +440,17 @@ class _ReadingQuestionPage extends State<ReadingQuestionPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text(widget.unit.title)),
+      appBar: AppBar(
+        // 与列表项标题共享 Hero：飞行中显式样式保持一致，避免 overlay 丢失
+        // AppBar 的 DefaultTextStyle 导致中途跳变。
+        title: Hero(
+          tag: readingUnitHeroTag(widget.unit, listIndex: widget.listIndex),
+          child: Text(
+            widget.unit.title,
+            style: Theme.of(context).appBarTheme.titleTextStyle,
+          ),
+        ),
+      ),
       body: SafeArea(
         top: false,
         child: LayoutBuilder(
