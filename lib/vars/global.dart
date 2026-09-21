@@ -57,15 +57,41 @@ class Global with ChangeNotifier {
   void conveySetting() {
     logger.info("处理配置文件");
 
-    Config oldConfig = Config.buildFromMap(jsonDecode(AppData().storage.getString("settingData")!));
-    if(oldConfig.lastVersion != AppData().config.lastVersion) {
-      logger.info("检测到当前版本与上次启动版本不同");
-      updateLogRequire = true;
-      oldConfig=oldConfig.copyWith(lastVersion: AppData().config.lastVersion);
+    final String? settingRaw = AppData().storage.getString("settingData");
+    if (settingRaw != null && settingRaw.isNotEmpty) {
+      Config oldConfig = Config.buildFromMap(jsonDecode(settingRaw));
+      if(oldConfig.lastVersion != AppData().config.lastVersion) {
+        logger.info("检测到当前版本与上次启动版本不同");
+        updateLogRequire = true;
+        oldConfig=oldConfig.copyWith(lastVersion: AppData().config.lastVersion);
+      }
+      AppData().config = oldConfig;
     }
 
-    AppData().config = oldConfig;
     logger.info("配置文件合成完成");
+  }
+
+  /// 从存储重新加载词库/阅读数据并重建搜索索引。
+  ///
+  /// 用于备份恢复/WebDAV 同步之后，避免继续使用恢复前的旧内存数据
+  /// （旧实现恢复后只重建了 Config）。正常启动不调用此方法，避免重复建树。
+  void reloadStoredData() {
+    logger.info("重新加载本地数据");
+    try {
+      final String? wordRaw = AppData().storage.getString("wordData");
+      if (wordRaw != null && wordRaw.isNotEmpty) {
+        AppData().wordData = DictData.buildFromMap(jsonDecode(wordRaw));
+        BKSearch.rebuild(AppData().wordData.words);
+      }
+
+      final String? readingRaw = AppData().storage.getString("readingData");
+      if (readingRaw != null && readingRaw.isNotEmpty) {
+        AppData().readingData = ReadingData.buildFromMap(jsonDecode(readingRaw));
+      }
+      notifyListeners();
+    } catch (e) {
+      logger.severe("重新加载本地词库/阅读数据失败: $e");
+    }
   }
 
   // 更新配置到存储中
@@ -146,6 +172,35 @@ class Global with ChangeNotifier {
     updateSetting(refresh: false);
     logger.info("学习进度保存完成");
   }
+}
+
+/// 词库导入结果摘要
+class DictImportResult {
+  /// 成功导入的有效词条数（不含因阿语/中文为空而跳过的词条）
+  final int importedCount;
+
+  /// 因阿语或中文为空而跳过的词条数
+  final int skippedCount;
+
+  /// 导入的课程（class）数量
+  final int classCount;
+
+  /// 实际使用的词库名称（优先元数据 name，回退文件名）
+  final String sourceName;
+
+  /// 是否为 JSONL 格式
+  final bool isJsonl;
+
+  const DictImportResult({
+    required this.importedCount,
+    required this.skippedCount,
+    required this.classCount,
+    required this.sourceName,
+    required this.isJsonl,
+  });
+
+  String get message =>
+      "导入词条: $importedCount\n跳过无效词条: $skippedCount\n课程数: $classCount\n词库名称: $sourceName";
 }
 
 class AppData {
@@ -248,7 +303,21 @@ class AppData {
   ///        }
   ///    }
   /// }
-  DictData dataFormater(Map<String, dynamic> data, DictData existData, String sourceName) {
+  /// 将[data]（`{类名: [词条...]}`）格式化为[DictData]。
+  ///
+  /// 兼容旧版JSON词库与新JSONL词库（解析后结构一致）：
+  /// - `explanation` 依次取 `explanation` / `example`；
+  /// - `root`、`categories` 及 `properties` 中的词性/复数/阴阳性/现在时/动名词缺省时使用默认值；
+  /// - 阿拉伯语或中文为空的词条会被跳过并计入[skipped]。
+  ///
+  /// [displayName] 为词库展示名（旧版JSON为空）；
+  /// 同名`sourceName`再次导入时会替换旧源数据而不是追加课程。
+  ({DictData data, int imported, int skipped}) dataFormater(
+    Map<String, dynamic> data,
+    DictData existData,
+    String sourceName, {
+    String displayName = "",
+  }) {
     logger.info("开始词汇格式化");
     
     // Use Maps for O(1) lookup speed instead of O(N) List.indexOf
@@ -264,21 +333,43 @@ class AppData {
     }
     
     int counter = existData.words.length;
+    int imported = 0;
+    int skipped = 0;
 
-    SourceItem? exSource;
-    // 查找已有数据中是否有同名的源数据组
-    for(SourceItem x in existData.classes) {
-      if(x.sourceJsonFileName == sourceName) exSource = x;
+    // 查找已有数据中是否有同名的源数据组；
+    // 同名导入时替换旧源（清空旧 subClasses，避免重复课程）。
+    int exSourceIndex = existData.classes.indexWhere(
+      (SourceItem x) => x.sourceJsonFileName == sourceName,
+    );
+    if(exSourceIndex == -1){
+      existData.classes.add(SourceItem(
+        sourceJsonFileName: sourceName,
+        displayName: displayName,
+        subClasses: [],
+      ));
+      exSourceIndex = existData.classes.length - 1;
+    } else {
+      SourceItem oldSource = existData.classes[exSourceIndex];
+      existData.classes[exSourceIndex] = SourceItem(
+        sourceJsonFileName: sourceName,
+        displayName: displayName.isNotEmpty ? displayName : oldSource.displayName,
+        subClasses: [],
+      );
     }
-    if(exSource == null){
-      existData.classes.add(SourceItem(sourceJsonFileName: sourceName, subClasses: []));
-      exSource = existData.classes.last;
-    }
+    SourceItem exSource = existData.classes[exSourceIndex];
 
     for(var className in data.keys){
       ClassItem exClass = ClassItem(className: className, wordIndexs: []);
       for(var word in data[className]){
-        String newRaw = word["arabic"];
+        String newRaw = _asString(word["arabic"]);
+        String newChinese = _asString(word["chinese"]);
+        // 阿语或中文为空的词条视为无效，跳过并计数
+        if (newRaw.trim().isEmpty || newChinese.trim().isEmpty) {
+          skipped++;
+          continue;
+        }
+        imported++;
+
         String newPure = newRaw.removeAracicExtensionPart().trim();
         int existingIndex = -1;
 
@@ -287,7 +378,7 @@ class AppData {
         } else if (pureWordMap.containsKey(newPure)) {
           int potentialIndex = pureWordMap[newPure]!;
           // Pure arabic is the same, but different vowels. Are they the same meaning?
-          if (chineseList[potentialIndex].hasSimilarMeaning(word["chinese"])) {
+          if (chineseList[potentialIndex].hasSimilarMeaning(newChinese)) {
             existingIndex = potentialIndex;
           }
         }
@@ -300,32 +391,132 @@ class AppData {
           continue;
         }
 
+        final Map<dynamic, dynamic> properties =
+            word["properties"] is Map ? word["properties"] as Map : const {};
+        bool? gender;
+        if (properties["gender"] is bool) gender = properties["gender"] as bool;
+
         exClass.wordIndexs.add(counter);
         existData.words.add(
           WordItem(
-            arabic: word["arabic"], 
-            chinese: word["chinese"], 
-            explanation: word["explanation"], 
+            arabic: newRaw, 
+            chinese: newChinese, 
+            explanation: _asString(word["explanation"] ?? word["example"]), 
             className: className, 
-            id: counter
+            id: counter,
+            root: _asString(word["root"]),
+            categories: word["categories"] is List
+                ? List<String>.from(word["categories"] as List)
+                : const [],
+            pos: _asString(properties["pos"]),
+            plural: _asString(properties["plural"]),
+            gender: gender,
+            present: _asString(properties["present"]),
+            masdar: _asString(properties["masdar"]),
           )
         );
         rawWordMap[newRaw] = counter;
         pureWordMap[newPure] = counter;
-        chineseList.add(word["chinese"]);
+        chineseList.add(newChinese);
         counter ++;
       }
       exSource.subClasses.add(exClass);
     }
-    return existData;
+    return (data: existData, imported: imported, skipped: skipped);
   }
 
-  void importDictData(Map<String, dynamic> importData, String source) {
+  static String _asString(dynamic value) => value == null ? "" : value.toString();
+
+  /// 导入词库原始文本，自动识别旧版JSON对象与新JSONL格式。
+  ///
+  /// [rawText] 支持：
+  /// - 旧版JSON对象文本：`{"课程名": [{"arabic":..,"chinese":..,"explanation":..}]}`
+  /// - 新JSONL文本：首行元数据 `{"metadata": true, "name": "..."}`（同时兼容拼写
+  ///   `matedata`），其后每行 `{"class": "1", "words": [{"arabic":..,"chinese":..,
+  ///   "example":..,"root":..,"categories":[..],"properties":{...}}]}`
+  ///
+  /// [source] 为词库文件名，作为`sourceJsonFileName`用于去重/替换。
+  DictImportResult importDictData(String rawText, String source) {
     logger.info("收到词汇导入请求");
-    wordData = dataFormater(importData, wordData, source);
+    final String text = rawText.trim();
+    bool isJsonl = false;
+    String displayName = "";
+    Map<String, dynamic> parsed;
+
+    // 优先尝试整体JSON解码：旧版JSON（含多行美化）可成功；
+    // JSONL 因多个独立对象相邻而解码失败，从而回退到逐行解析。
+    Map<String, dynamic>? wholeObject;
+    try {
+      final dynamic decoded = jsonDecode(text);
+      if (decoded is Map<String, dynamic>) wholeObject = decoded;
+    } catch (_) {
+      wholeObject = null;
+    }
+
+    if (wholeObject != null &&
+        !wholeObject.containsKey("metadata") &&
+        !wholeObject.containsKey("matedata") &&
+        !wholeObject.containsKey("words")) {
+      // 旧版JSON对象
+      parsed = wholeObject;
+    } else {
+      // 新JSONL：逐行解析，忽略空行与无法解析的行
+      isJsonl = true;
+      parsed = {};
+      for (final String rawLine in text.split("\n")) {
+        final String line = rawLine.trim();
+        if (line.isEmpty) continue;
+        dynamic decoded;
+        try {
+          decoded = jsonDecode(line);
+        } catch (_) {
+          continue;
+        }
+        if (decoded is! Map) continue;
+        final Map<String, dynamic> obj = Map<String, dynamic>.from(decoded);
+
+        // 元数据行（兼容旧拼写 matedata）
+        if (obj.containsKey("metadata") || obj.containsKey("matedata")) {
+          final dynamic name = obj["name"];
+          if (name is String && name.trim().isNotEmpty) displayName = name.trim();
+          continue;
+        }
+
+        // 课程单元行
+        if (obj.containsKey("words")) {
+          final dynamic words = obj["words"];
+          if (words is List) {
+            parsed[_normalizeClassName(obj["class"])] = words;
+          }
+        }
+      }
+    }
+
+    final ({DictData data, int imported, int skipped}) fmt =
+        dataFormater(parsed, wordData, source, displayName: displayName);
+    wordData = fmt.data;
     storage.setString("wordData", jsonEncode(wordData.toMap()));
-    BKSearch.init(wordData.words); // 重新建树
+    BKSearch.rebuild(wordData.words); // 强制重建搜索索引，保证新词立即可搜
     logger.info("词汇导入完成");
+
+    return DictImportResult(
+      importedCount: fmt.imported,
+      skippedCount: fmt.skipped,
+      classCount: parsed.length,
+      sourceName: displayName.isNotEmpty ? displayName : source,
+      isJsonl: isJsonl,
+    );
+  }
+
+  /// 将JSONL中的`class`字段（字符串或数字）统一规范为字符串
+  static String _normalizeClassName(dynamic value) {
+    if (value == null) return "";
+    if (value is String) return value;
+    if (value is int) return value.toString();
+    if (value is num) {
+      return value == value.toInt() ? value.toInt().toString() : value.toString();
+    }
+    return value.toString();
   }
 
   void saveReadingData(){

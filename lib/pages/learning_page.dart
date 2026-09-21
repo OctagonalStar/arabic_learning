@@ -87,43 +87,57 @@ class LearningPage extends StatelessWidget {
           ],
         ),
         SizedBox(height: mediaQuery.size.height * 0.05),
-        if(FSRS().config.pushAmount != 0) Button(
-          backgroundColor: Theme.of(context).colorScheme.onPrimary.withAlpha(150),
-          size: Size(mediaQuery.size.width * 0.8, mediaQuery.size.height * 0.15),
-          onPressed: (){
-            if(AppData().wordData.words.isEmpty) {
-              showSnackBar(context, "词库为空，无法推送！请先导入词库");
-              return;
-            }
-            final DateTime now = DateTime.now();
-            final int seed = now.year * 10000 + now.month * 100 + now.day;
-            final Set<WordItem> pushWords = {};
-            final Random rnd = Random(seed);
-            int tries = 0;
-            while(pushWords.length < FSRS().config.pushAmount && tries < FSRS().config.pushAmount * 10){
-              int chosen = rnd.nextInt(AppData().wordData.words.length);
-              DateTime? cardBirthday = FSRS().getCardBirthday(chosen);
-              if(cardBirthday == null || cardBirthday.difference(DateTime.now()).inDays == 0) {
-                pushWords.add(AppData().wordData.words.elementAt(chosen));
+        if(FSRS().config.pushAmount != 0) ...[
+          Button(
+            backgroundColor: Theme.of(context).colorScheme.onPrimary.withAlpha(150),
+            size: Size(mediaQuery.size.width * 0.8, mediaQuery.size.height * 0.15),
+            onPressed: (){
+              if(AppData().wordData.words.isEmpty) {
+                showSnackBar(context, "词库为空，无法推送！请先导入词库");
+                return;
               }
-              tries++;
-            }
-            pushWords.removeWhere((WordItem item) => FSRS().isContained(item.id));
-            if(pushWords.isEmpty) {
-              showSnackBar(context, "今日的推送已完成");
-              return;
-            }
-            context.read<Global>().uiLogger.info("跳转: LearningPage => FSRSLearningPage");
-            Navigator.push(
-              context, 
-              MaterialPageRoute(
-                builder: (context) => FSRSLearningPage(fsrs: FSRS(), words: pushWords.toList())
-              )
-            );
-          },
-          icon: Icon(Icons.push_pin, size: 24),
-          child: Expanded(child: FittedBox(child: Text("学习推送单词", style: TextStyle(fontSize: 40.0)))),
-        ),
+              // 分类筛选在 FSRS 设置中配置；仅限制随机候选池，其余推送逻辑保持不变
+              final Set<String> selectedCategories = FSRS().config.pushCategories.toSet();
+              List<int> candidateIndexes = List<int>.generate(AppData().wordData.words.length, (int index) => index);
+              if(selectedCategories.isNotEmpty) {
+                candidateIndexes = candidateIndexes
+                    .where((int index) => wordMatchesCategories(AppData().wordData.words[index], selectedCategories))
+                    .toList();
+              }
+              if(candidateIndexes.isEmpty) {
+                showSnackBar(context, "当前分类筛选下没有可推送的单词，请调整筛选条件");
+                return;
+              }
+              final DateTime now = DateTime.now();
+              final int seed = now.year * 10000 + now.month * 100 + now.day;
+              final Set<WordItem> pushWords = {};
+              final Random rnd = Random(seed);
+              int tries = 0;
+              while(pushWords.length < FSRS().config.pushAmount && tries < FSRS().config.pushAmount * 10){
+                int chosen = candidateIndexes[rnd.nextInt(candidateIndexes.length)];
+                DateTime? cardBirthday = FSRS().getCardBirthday(chosen);
+                if(cardBirthday == null || cardBirthday.difference(DateTime.now()).inDays == 0) {
+                  pushWords.add(AppData().wordData.words.elementAt(chosen));
+                }
+                tries++;
+              }
+              pushWords.removeWhere((WordItem item) => FSRS().isContained(item.id));
+              if(pushWords.isEmpty) {
+                showSnackBar(context, "今日的推送已完成");
+                return;
+              }
+              context.read<Global>().uiLogger.info("跳转: LearningPage => FSRSLearningPage");
+              Navigator.push(
+                context, 
+                MaterialPageRoute(
+                  builder: (context) => FSRSLearningPage(fsrs: FSRS(), words: pushWords.toList())
+                )
+              );
+            },
+            icon: Icon(Icons.push_pin, size: 24),
+            child: Expanded(child: FittedBox(child: Text("学习推送单词", style: TextStyle(fontSize: 40.0)))),
+          ),
+        ],
         SizedBox(height: mediaQuery.size.height * 0.05),
         Button(
           backgroundColor: Theme.of(context).colorScheme.onPrimary.withAlpha(150),

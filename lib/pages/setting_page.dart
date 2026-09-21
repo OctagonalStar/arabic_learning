@@ -1,5 +1,3 @@
-import 'dart:convert';
-
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
@@ -193,7 +191,7 @@ class _SettingPage extends State<SettingPage> {
                             PlatformFile? result =
                                 await FilePicker.pickFile(
                                   type: FileType.custom,
-                                  allowedExtensions: ['json'],
+                                  allowedExtensions: ['json', 'jsonl'],
                                 );
                             if (result != null) {
                               String jsonString;
@@ -226,16 +224,11 @@ class _SettingPage extends State<SettingPage> {
                                 context.read<Global>().uiLogger.fine(
                                   "文件读取完成，开始解析",
                                 );
-                                Map<String, dynamic> jsonData = json.decode(
-                                  jsonString,
-                                );
-                                AppData().importDictData(
-                                  jsonData,
-                                  platformFile.name,
-                                );
+                                final DictImportResult result = AppData()
+                                    .importDictData(jsonString, platformFile.name);
                                 alart(
                                   context,
-                                  "文件 \"${platformFile.name}\" \n已导入。",
+                                  "文件 \"${platformFile.name}\" \n已导入。\n${result.message}",
                                 );
                                 context.read<Global>().uiLogger.info("文件解析成功");
                               } catch (e) {

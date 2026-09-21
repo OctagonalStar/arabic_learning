@@ -158,6 +158,7 @@ class _DataSyncPage extends State<DataSyncPage> {
                         if(!webdav.isReachable) await webdav.connect();
                         if(context.mounted) await webdav.download(AppData().storage);
                         if(context.mounted) context.read<Global>().conveySetting();
+                        if(context.mounted) context.read<Global>().reloadStoredData();
                       } catch (e) {
                         if(!context.mounted) return;
                         alart(context, e.toString());
@@ -254,6 +255,7 @@ class _DataSyncPage extends State<DataSyncPage> {
                           context.read<Global>().uiLogger.fine("备份数据读取完成，开始解析");
                           AppData().storage.recovery(jsonDecode(jsonString));
                           if(context.mounted) context.read<Global>().conveySetting();
+                          if(context.mounted) context.read<Global>().reloadStoredData();
                           alart(context, "备份数据 \"${platformFile.name}\" \n已恢复\n部分设置可能需要软件重启后才能生效");
                           context.read<Global>().uiLogger.info("备份数据 \"${platformFile.name}\" \n已导入。");
                         } catch (e) {

@@ -116,7 +116,7 @@ List<Widget> classesSelectionList(BuildContext context, Function (ClassItem) onC
           borderRadius: StaticsVar.br,
         ),
         child: Text(
-          source.sourceJsonFileName,
+          source.name,
           style: TextStyle(
             fontSize: 16.0,
             fontWeight: FontWeight.bold,
@@ -494,6 +494,166 @@ class _ChooseButtonBoxState extends State<ChooseButtonBox> {
   }
 }
 
+/// 汇总当前词库中所有单词的分类标签
+/// 
+/// 返回顺序稳定：先按 [preferredOrder] 中出现的分级/常用分类排列，
+/// 其余分类按首次出现的顺序追加。不硬编码任何分类含义，仅用于筛选器展示排序。
+List<String> collectAllCategories() {
+  const List<String> preferredOrder = ["二级", "四级", "六级", "八级", "补充", "常用词", "生僻词", "短语"];
+  final Set<String> categories = <String>{};
+  for(WordItem word in AppData().wordData.words) {
+    categories.addAll(word.categories);
+  }
+  final List<String> ordered = [];
+  for(String category in preferredOrder) {
+    if(categories.remove(category)) ordered.add(category);
+  }
+  ordered.addAll(categories);
+  return ordered;
+}
+
+/// 判断单词是否满足分类筛选
+/// 
+/// 多选时采用 AND 语义：单词需包含 [selected] 中的全部分类；
+/// [selected] 为空表示不进行筛选。
+bool wordMatchesCategories(WordItem word, Set<String> selected) {
+  if(selected.isEmpty) return true;
+  return selected.every((String category) => word.categories.contains(category));
+}
+
+/// 分类标签组件
+/// 
+/// 将 [categories] 中的字符串原样渲染为标签，不做任何分组或含义解释
+/// 
+/// [categories] :分类字符串列表，为空时不渲染任何内容
+/// 
+/// [dense] :紧凑模式，使用更小的字号与内边距，适用于空间受限的卡片
+class CategoryChips extends StatelessWidget {
+  final List<String> categories;
+  final bool dense;
+  const CategoryChips({super.key, required this.categories, this.dense = false});
+
+  @override
+  Widget build(BuildContext context) {
+    if(categories.isEmpty) return const SizedBox.shrink();
+    return Wrap(
+      spacing: dense ? 4.0 : 6.0,
+      runSpacing: dense ? 4.0 : 6.0,
+      children: List<Widget>.generate(categories.length, (int index) {
+        final String category = categories[index];
+        return Container(
+          padding: EdgeInsets.symmetric(horizontal: dense ? 6.0 : 10.0, vertical: dense ? 1.0 : 4.0),
+          decoration: BoxDecoration(
+            color: Theme.of(context).colorScheme.secondaryContainer.withAlpha(180),
+            borderRadius: StaticsVar.br,
+          ),
+          child: Text(
+            category,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(
+              fontSize: dense ? 10.0 : 12.0,
+              color: Theme.of(context).colorScheme.onSecondaryContainer,
+            ),
+          ),
+        );
+      }),
+    );
+  }
+}
+
+/// 分类筛选组件
+/// 
+/// [available] :可供选择的分类列表（展示顺序由调用方决定，组件不硬编码顺序）
+/// 
+/// [selected] :当前已选择的分类集合
+/// 
+/// [onChanged] :选择变化时的回调，传出新的完整集合（调用方负责持有状态）
+/// 
+/// 多选时使用 AND 语义筛选单词，空集合表示不筛选；
+/// 非空时会出现“清除筛选”按钮。
+class CategoryFilter extends StatelessWidget {
+  final List<String> available;
+  final Set<String> selected;
+  final void Function(Set<String>) onChanged;
+  const CategoryFilter({super.key, required this.available, required this.selected, required this.onChanged});
+
+  @override
+  Widget build(BuildContext context) {
+    if(available.isEmpty) return const SizedBox.shrink();
+    return Container(
+      margin: EdgeInsets.all(8.0),
+      padding: EdgeInsets.all(8.0),
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.onPrimary.withAlpha(150),
+        borderRadius: StaticsVar.br,
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(Icons.filter_alt_outlined, size: 18.0),
+              SizedBox(width: 4.0),
+              Text("分类筛选", style: TextStyle(fontSize: 14.0, fontWeight: FontWeight.bold)),
+              Spacer(),
+              if(selected.isNotEmpty) TextButton(
+                style: TextButton.styleFrom(
+                  minimumSize: Size(0.0, 0.0),
+                  padding: EdgeInsets.symmetric(horizontal: 8.0),
+                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                ),
+                onPressed: () => onChanged(<String>{}),
+                child: Text("清除筛选", style: TextStyle(fontSize: 12.0)),
+              )
+            ],
+          ),
+          Wrap(
+            spacing: 6.0,
+            runSpacing: 6.0,
+            children: List<Widget>.generate(available.length, (int index) {
+              final String category = available[index];
+              final bool isSelected = selected.contains(category);
+              return FilterChip(
+                label: Text(
+                  category,
+                  style: TextStyle(
+                    fontSize: 12.0,
+                    color: isSelected ? Theme.of(context).colorScheme.onSecondaryContainer : null,
+                  ),
+                ),
+                selected: isSelected,
+                showCheckmark: false,
+                visualDensity: VisualDensity.compact,
+                materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                selectedColor: Theme.of(context).colorScheme.secondaryContainer.withAlpha(200),
+                backgroundColor: Theme.of(context).colorScheme.onPrimary.withAlpha(120),
+                shape: RoundedRectangleBorder(
+                  borderRadius: StaticsVar.br,
+                  side: BorderSide(
+                    color: isSelected
+                      ? Theme.of(context).colorScheme.secondary
+                      : Theme.of(context).colorScheme.outline.withAlpha(120),
+                  ),
+                ),
+                onSelected: (bool value) {
+                  final Set<String> next = Set<String>.of(selected);
+                  if(value) {
+                    next.add(category);
+                  } else {
+                    next.remove(category);
+                  }
+                  onChanged(next);
+                },
+              );
+            }),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 /// 单词卡片组件
 /// 
 /// 显示一个阿语单词在上，下有中文解释的卡片
@@ -505,12 +665,249 @@ class _ChooseButtonBoxState extends State<ChooseButtonBox> {
 /// [height] :限定高度，默认自动
 /// 
 /// [useMask] :是否显示高斯遮罩
+/// 
+/// [compact] :紧凑模式，用于词汇总览网格与查找结果等固定尺寸单元。
+/// 保持紧凑布局，仅在分类非空时追加一行小标签，绝不溢出；
+/// 为false（默认）时展示可滚动的“词形信息”区域，适合详解弹窗与学习页面
 class WordCard extends StatelessWidget {
   final WordItem word;
   final double? width;
   final double? height;
   final bool useMask;
-  const WordCard({super.key, required this.word, this.width, this.height, this.useMask = true});
+  final bool compact;
+  const WordCard({super.key, required this.word, this.width, this.height, this.useMask = true, this.compact = false});
+
+  /// 词性的中文展示（未知值原样显示）
+  String _posLabel(String pos) {
+    switch(pos) {
+      case "Nominals": return "名词";
+      case "Verbs": return "动词";
+      case "Phrases and Clauses": return "短语与从句";
+      case "Particles": return "虚词";
+      case "Adverbial Expressions": return "状语表达";
+      default: return pos;
+    }
+  }
+
+  /// 卡片内的双栏信息行：左侧标签容器 + 右侧内容，样式与原卡片保持一致
+  Widget _infoRow(
+    BuildContext context, {
+    required String label,
+    required String value,
+    required double labelWidth,
+    required Color labelColor,
+    double? height,
+    double labelFontSize = 16.0,
+    double valueFontSize = 18.0,
+    bool isArabicValue = false,
+    bool expandValue = false,
+    BorderRadius? labelRadius,
+  }) {
+    return SizedBox(
+      height: height,
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Container(
+            width: labelWidth,
+            decoration: BoxDecoration(
+              color: labelColor,
+              borderRadius: labelRadius,
+            ),
+            alignment: Alignment.center,
+            child: ClipRect(
+              child: FittedBox(
+                fit: BoxFit.scaleDown,
+                child: Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 4.0),
+                  child: Text(label, style: TextStyle(fontSize: labelFontSize)),
+                ),
+              ),
+            ),
+          ),
+          Expanded(
+            child: Center(
+              child: ClipRect(
+                child: Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 8.0),
+                  child: expandValue
+                    ? Text(
+                        value,
+                        style: TextStyle(fontSize: valueFontSize, fontFamily: isArabicValue ? context.read<Global>().arFont : null),
+                        textAlign: TextAlign.center,
+                        maxLines: 3,
+                        overflow: TextOverflow.ellipsis,
+                      )
+                    : FittedBox(
+                        fit: BoxFit.scaleDown,
+                        child: Text(
+                          value,
+                          style: TextStyle(fontSize: valueFontSize, fontFamily: isArabicValue ? context.read<Global>().arFont : null),
+                          textAlign: TextAlign.center,
+                        ),
+                      ),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// 紧凑模式内容：固定高度内按比例分配信息行，分类标签行超出时被裁剪，绝不溢出
+  Widget _buildCompactBody(BuildContext context, double useWidth, double useHeight) {
+    final Color labelOdd = Theme.of(context).colorScheme.onSecondary.withAlpha(150);
+    final Color labelEven = Theme.of(context).colorScheme.onPrimary.withAlpha(150);
+    return Column(
+      children: [
+        Expanded(
+          flex: 3,
+          child: _infoRow(context,
+            label: "中文", value: word.chinese, labelWidth: useWidth * 0.2,
+            labelColor: labelOdd, labelFontSize: 16.0, valueFontSize: 24.0),
+        ),
+        const Divider(height: 0),
+        Expanded(
+          flex: 6,
+          child: _infoRow(context,
+            label: "解释", value: word.explanation, labelWidth: useWidth * 0.2,
+            labelColor: labelEven, labelFontSize: 18.0, valueFontSize: 16.0, expandValue: true),
+        ),
+        const Divider(height: 0),
+        if(word.categories.isNotEmpty) ...[
+          Expanded(
+            flex: 2,
+            child: ClipRect(
+              child: Align(
+                alignment: Alignment.centerLeft,
+                child: Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 6.0),
+                  child: CategoryChips(categories: word.categories, dense: true),
+                ),
+              ),
+            ),
+          ),
+          const Divider(height: 0),
+        ],
+        Expanded(
+          flex: 3,
+          child: _infoRow(context,
+            label: "归属课程", value: word.className, labelWidth: useWidth * 0.2,
+            labelColor: labelOdd, valueFontSize: 18.0,
+            labelRadius: BorderRadius.only(bottomLeft: Radius.circular(25.0))),
+        ),
+      ],
+    );
+  }
+
+  /// 详情模式内容：中文、解释、词形信息（可滚动）、归属课程
+  Widget _buildDetailedBody(BuildContext context, double useWidth, double useHeight) {
+    final Color labelOdd = Theme.of(context).colorScheme.onSecondary.withAlpha(150);
+    final Color labelEven = Theme.of(context).colorScheme.onPrimary.withAlpha(150);
+    final double labelWidth = useWidth * 0.2;
+    final double rowHeight = useHeight * 0.12;
+    final List<Widget> morphRows = [];
+    void addMorphRow(Widget row) {
+      if(morphRows.isNotEmpty) morphRows.add(const Divider(height: 0));
+      morphRows.add(row);
+    }
+    if(word.root.isNotEmpty) {
+      addMorphRow(_infoRow(context,
+        label: "词根", value: word.root, labelWidth: labelWidth, height: rowHeight,
+        labelColor: labelOdd, labelFontSize: 14.0, valueFontSize: 18.0, isArabicValue: true));
+    }
+    if(word.pos.isNotEmpty) {
+      addMorphRow(_infoRow(context,
+        label: "词性", value: _posLabel(word.pos), labelWidth: labelWidth, height: rowHeight,
+        labelColor: labelEven, labelFontSize: 14.0, valueFontSize: 16.0));
+    }
+    if(word.plural.isNotEmpty) {
+      addMorphRow(_infoRow(context,
+        label: "复数", value: word.plural, labelWidth: labelWidth, height: rowHeight,
+        labelColor: labelOdd, labelFontSize: 14.0, valueFontSize: 18.0, isArabicValue: true));
+    }
+    if(word.gender != null) {
+      addMorphRow(_infoRow(context,
+        label: "阴阳性", value: word.gender! ? "阳性" : "阴性", labelWidth: labelWidth, height: rowHeight,
+        labelColor: labelEven, labelFontSize: 14.0, valueFontSize: 16.0));
+    }
+    if(word.present.isNotEmpty) {
+      addMorphRow(_infoRow(context,
+        label: "现在式", value: word.present, labelWidth: labelWidth, height: rowHeight,
+        labelColor: labelOdd, labelFontSize: 14.0, valueFontSize: 18.0, isArabicValue: true));
+    }
+    if(word.masdar.isNotEmpty) {
+      addMorphRow(_infoRow(context,
+        label: "动名词", value: word.masdar, labelWidth: labelWidth, height: rowHeight,
+        labelColor: labelEven, labelFontSize: 14.0, valueFontSize: 18.0, isArabicValue: true));
+    }
+    if(word.categories.isNotEmpty) {
+      addMorphRow(
+        IntrinsicHeight(
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Container(
+                width: labelWidth,
+                padding: EdgeInsets.symmetric(vertical: 4.0),
+                decoration: BoxDecoration(color: labelOdd),
+                alignment: Alignment.center,
+                child: Text("类别", style: TextStyle(fontSize: 14.0)),
+              ),
+              Expanded(
+                child: Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 8.0, vertical: 6.0),
+                  child: CategoryChips(categories: word.categories),
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+    return Column(
+      children: [
+        _infoRow(context,
+          label: "中文", value: word.chinese, labelWidth: labelWidth, height: useHeight * 0.14,
+          labelColor: labelOdd, labelFontSize: 16.0, valueFontSize: 24.0),
+        const Divider(height: 0),
+        Expanded(
+          child: SingleChildScrollView(
+            child: Column(
+              children: [
+                _infoRow(context,
+                  label: "解释", value: word.explanation, labelWidth: labelWidth, height: useHeight * 0.24,
+                  labelColor: labelEven, labelFontSize: 18.0, valueFontSize: 16.0, expandValue: true),
+                if(morphRows.isNotEmpty) ...[
+                  Container(
+                    width: double.infinity,
+                    height: useHeight * 0.1,
+                    padding: EdgeInsets.symmetric(horizontal: 12.0),
+                    color: Theme.of(context).colorScheme.secondaryContainer.withAlpha(120),
+                    alignment: Alignment.centerLeft,
+                    child: Row(
+                      children: [
+                        Icon(Icons.auto_stories_outlined, size: 16.0),
+                        SizedBox(width: 4.0),
+                        Text("词形信息", style: TextStyle(fontSize: 14.0, fontWeight: FontWeight.bold)),
+                      ],
+                    ),
+                  ),
+                  ...morphRows,
+                ],
+              ],
+            ),
+          ),
+        ),
+        const Divider(height: 0),
+        _infoRow(context,
+          label: "归属课程", value: word.className, labelWidth: labelWidth, height: useHeight * 0.14,
+          labelColor: labelOdd, labelFontSize: 16.0, valueFontSize: 18.0,
+          labelRadius: BorderRadius.only(bottomLeft: Radius.circular(25.0))),
+      ],
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -539,52 +936,9 @@ class WordCard extends StatelessWidget {
                 color: Theme.of(context).colorScheme.onInverseSurface,
                 borderRadius: BorderRadius.vertical(bottom: Radius.circular(25.0)),
               ),
-              child: Column(
-                children: [
-                  Row(
-                    children: [
-                      Container(
-                        height: useHeight*0.14,
-                        width: useWidth*0.2,
-                        decoration: BoxDecoration(
-                          color: Theme.of(context).colorScheme.onSecondary.withAlpha(150),
-                        ),
-                        child: Center(child: Text("中文", style: TextStyle(fontSize: 16),)),
-                      ),
-                      Expanded(child: FittedBox(fit: BoxFit.scaleDown, child: Text(word.chinese, style: TextStyle(fontSize: 24))))
-                    ],
-                  ),
-                  Divider(height: 0),
-                  Row(
-                    children: [
-                      Container(
-                        height: useHeight*0.32,
-                        width: useWidth*0.2,
-                        decoration: BoxDecoration(
-                          color: Theme.of(context).colorScheme.onPrimary.withAlpha(150),
-                        ),
-                        child: Center(child: Text("解释", style: TextStyle(fontSize: 18))),
-                      ),
-                      Expanded(child: Text(word.explanation, style: TextStyle(fontSize: 16), textAlign: TextAlign.center, maxLines: 3))
-                    ],
-                  ),
-                  Divider(height: 0),
-                  Row(
-                    children: [
-                      Container(
-                        height: useHeight*0.14,
-                        width: useWidth*0.2,
-                        decoration: BoxDecoration(
-                          color: Theme.of(context).colorScheme.onSecondary.withAlpha(150),
-                          borderRadius: BorderRadius.only(bottomLeft: Radius.circular(25.0))
-                        ),
-                        child: FittedBox(fit: BoxFit.scaleDown, child: Text("归属课程", style: TextStyle(fontSize: 16))),
-                      ),
-                      Expanded(child: FittedBox(fit: BoxFit.scaleDown, child: Text(word.className, style: TextStyle(fontSize: 18), textAlign: TextAlign.center)))
-                    ],
-                  )
-                ],
-              )
+              child: compact
+                ? _buildCompactBody(context, useWidth, useHeight)
+                : _buildDetailedBody(context, useWidth, useHeight)
             ),
             StatefulBuilder(
               builder: (context, setLocalState) {

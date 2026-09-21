@@ -28,6 +28,7 @@ class ForeFSRSSettingPage extends StatelessWidget {
       ),
       body: StatefulBuilder(
         builder: (context, setState) {
+          final List<String> availableCategories = collectAllCategories();
           return ListView(
             children: [
               TextContainer(text: "参数配置", textAlign: TextAlign.center),
@@ -194,7 +195,20 @@ class ForeFSRSSettingPage extends StatelessWidget {
                     ),
                     Text("单词推送 开启后每天会推送新单词 但数量不一定是你所指定的（大概率会少几个） 你可以在学习页面入口进入推送单词学习"),
                     Text("学习的推送单词会加入复习中"),
-                    Text("当天是否学习新单词对连胜计数没有影响 学不学可以看你心情")
+                    Text("当天是否学习新单词对连胜计数没有影响 学不学可以看你心情"),
+                    if(fsrs.config.pushAmount != 0 && availableCategories.isNotEmpty) ...[
+                      Divider(),
+                      Text("推送词分类筛选：仅从所选分类中推送新词；不选择表示不筛选。可多选，需同时满足所选全部分类。", style: Theme.of(context).textTheme.bodyMedium),
+                      CategoryFilter(
+                        available: availableCategories,
+                        selected: fsrs.config.pushCategories.toSet(),
+                        onChanged: (Set<String> value) {
+                          setState(() {
+                            fsrs.config = fsrs.config.copyWith(pushCategories: value.toList());
+                          });
+                        },
+                      )
+                    ]
                   ],
                 ),
               ),

@@ -360,7 +360,7 @@ class PKClassSelectionPage extends StatelessWidget {
             SizedBox(height: mediaQuery.size.height * 0.1),
             TextContainer(text: "你们双方有一下共有词库，请选择其中的课程开始", style: Theme.of(context).textTheme.headlineMedium),
             SizedBox(height: mediaQuery.size.height * 0.05),
-            ...List.generate(context.read<PKServer>().selectableSource.length, (int index) => Text(context.read<PKServer>().selectableSource[index].sourceJsonFileName), growable: false),
+            ...List.generate(context.read<PKServer>().selectableSource.length, (int index) => Text(context.read<PKServer>().selectableSource[index].name), growable: false),
             SizedBox(height: mediaQuery.size.height * 0.1),
             Button(
               onPressed: () async {

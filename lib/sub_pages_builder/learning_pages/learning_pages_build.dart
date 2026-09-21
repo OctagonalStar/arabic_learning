@@ -1,7 +1,8 @@
+import 'dart:async';
 import 'dart:math';
 
 import 'package:arabic_learning/funcs/fsrs_func.dart' show FSRS;
-import 'package:arabic_learning/funcs/utili.dart' show BKSearch, StringExtensions, getLevenshtein, getRandomWords, playTextToSpeech;
+import 'package:arabic_learning/funcs/utili.dart' show BKSearch, StringExtensions, getRandomWords, playTextToSpeech;
 import 'package:arabic_learning/vars/config_structure.dart';
 import 'package:flutter/material.dart';
 import 'package:fsrs/fsrs.dart' show Rating;
@@ -611,8 +612,35 @@ class _WordCardOverViewPage extends State<WordCardOverViewPage> {
   final TextEditingController searchController = TextEditingController();
   bool inSearch = false;
 
+  /// 已提交给检索的查询串（实时模式下经防抖更新，避免每次按键都触发检索）
+  String _query = "";
+  Timer? _searchDebounce;
+
+  void _toggleSearch() {
+    _searchDebounce?.cancel();
+    setState(() {
+      inSearch = !inSearch;
+      _query = inSearch ? searchController.text : "";
+    });
+  }
+
+  /// 实时模式：输入停顿 200ms 后再检索
+  void _onSearchChanged(String text) {
+    _searchDebounce?.cancel();
+    _searchDebounce = Timer(const Duration(milliseconds: 200), () {
+      if(mounted) setState(() => _query = text);
+    });
+  }
+
+  /// 立即检索（点击「查找」或回车）
+  void _searchNow(String text) {
+    _searchDebounce?.cancel();
+    setState(() => _query = text);
+  }
+
   @override
   void dispose() {
+    _searchDebounce?.cancel();
     searchController.dispose();
     super.dispose();
   }
@@ -647,16 +675,14 @@ class _WordCardOverViewPage extends State<WordCardOverViewPage> {
                         borderSide: BorderSide(color: Theme.of(context).colorScheme.outline),
                       ),
                       suffix: Button(
-                        onPressed: () => setState(() {}), 
+                        onPressed: () => _searchNow(searchController.text), 
                         child: Text("查找")
                       ),
                     ),
                     onSubmitted: (text) {
-                      setState(() {});
+                      _searchNow(text);
                     },
-                    onChanged: AppData().config.learning.wordLookupRealtime ? (text) {
-                      setState(() {});
-                    } : null,
+                    onChanged: AppData().config.learning.wordLookupRealtime ? _onSearchChanged : null,
                   ),
                 ),
               );
@@ -666,7 +692,7 @@ class _WordCardOverViewPage extends State<WordCardOverViewPage> {
         title: Text(inSearch ? "单词检索" : "单词总览"),
         actions: [
           IconButton(
-            onPressed: () => setState(() => inSearch = !inSearch),
+            onPressed: _toggleSearch,
             icon: inSearch ? Icon(Icons.search_off) : Icon(Icons.search)
           ),
           IconButton(
@@ -752,11 +778,11 @@ class _WordCardOverViewPage extends State<WordCardOverViewPage> {
       ),
 
       floatingActionButton: FloatingActionButton(
-        onPressed: () => setState(() => inSearch = !inSearch),
+        onPressed: _toggleSearch,
         child: inSearch ? Icon(Icons.search_off) : Icon(Icons.search)
       ),
 
-      body: inSearch ? WordLookupLayout(lookfor: searchController.text.removeAracicExtensionPart()) : WordCardOverViewLayout()
+      body: inSearch ? WordLookupLayout(lookfor: _query) : WordCardOverViewLayout()
     );
   }
 }
@@ -796,7 +822,7 @@ class _WordCardOverViewLayout extends State<WordCardOverViewLayout> {
         }
         final SourceItem jsonSource = appData.wordData.classes[jsonIndex];
         return ExpansionTile(
-          title: Text(jsonSource.sourceJsonFileName.trim()),
+          title: Text(jsonSource.name.trim()),
           minTileHeight: 64,
           onExpansionChanged: (value) {
             setState(() {
@@ -859,6 +885,7 @@ class _WordCardOverViewLayout extends State<WordCardOverViewLayout> {
                               child: WordCard(
                                 word: appData.wordData.words[classItem.wordIndexs[index]],
                                 useMask: false,
+                                compact: true,
                                 width: mediaQuery.size.width / (AppData().config.learning.overviewForceColumn == 0 ? (mediaQuery.size.width ~/ 300) : AppData().config.learning.overviewForceColumn),
                                 height: mediaQuery.size.width / (AppData().config.learning.overviewForceColumn == 0 ? (mediaQuery.size.width ~/ 300) : AppData().config.learning.overviewForceColumn),
                               ),
@@ -879,53 +906,31 @@ class _WordCardOverViewLayout extends State<WordCardOverViewLayout> {
   }
 }
 
-class WordLookupLayout extends StatelessWidget {
+class WordLookupLayout extends StatefulWidget {
   final String lookfor;
   const WordLookupLayout({super.key, required this.lookfor});
 
   @override
-  Widget build(BuildContext context) {
-    if(lookfor.isEmpty) return SizedBox();
-    MediaQueryData mediaQuery = MediaQuery.of(context);
-    List<WordItem> match = [];
-    if(lookfor.isArabic()) {
-      match.addAll(BKSearch.search(
-        WordItem(arabic: lookfor, chinese: lookfor, explanation: "", id: 0, className: ""), 
-        threshold: 4~/(lookfor.length * 0.5 + 1) // 输入越多 容差越小
-      )); // 从BK树找
+  State<WordLookupLayout> createState() => _WordLookupLayoutState();
+}
 
-      for(WordItem word in AppData().wordData.words) {
-        if(match.contains(word)) continue;
-        if(word.arabic.removeAracicExtensionPart().contains(lookfor.removeAracicExtensionPart())) {
-          match.add(word);
-          continue;
-        }
-        if(lookfor.length >=3 && getLevenshtein(lookfor.removeAracicExtensionPart(), word.arabic.removeAracicExtensionPart()) < 6~/(lookfor.length * 0.5 + 1)) {
-          match.add(word);
-          continue;
-        }
-      }
-      match.sort((WordItem a, WordItem b) => 
-        getLevenshtein(lookfor.removeAracicExtensionPart(), a.arabic.removeAracicExtensionPart()) - getLevenshtein(lookfor.removeAracicExtensionPart(), b.arabic.removeAracicExtensionPart())
-      );
-    } else {
-      for(WordItem word in AppData().wordData.words) {
-        if(match.contains(word)) continue;
-        if(word.chinese.contains(lookfor)) {
-          match.add(word);
-          continue;
-        }
-        if(lookfor.length >=3 && getLevenshtein(lookfor, word.chinese) < 4) {
-          if(!lookfor.split("").any((String char) => word.chinese.contains(char))) continue;
-          match.add(word);
-          continue;
-        }
-      }
-      match.sort((WordItem a, WordItem b) => 
-        a.chinese.contains(lookfor) ? -1 : a.chinese.contains(lookfor) ? 1 : getLevenshtein(lookfor, a.chinese) - getLevenshtein(lookfor, b.chinese)
-      );
+class _WordLookupLayoutState extends State<WordLookupLayout> {
+  /// 当前选择的分类（AND 语义，空集合=不筛选）
+  Set<String> selectedCategories = <String>{};
+
+  @override
+  Widget build(BuildContext context) {
+    // 使用索引化检索（归一化预计算 + 字符倒排 + 整词 BK-Tree），替代原全表扫描
+    final String lookfor = widget.lookfor.trim();
+    if(lookfor.isEmpty) return SizedBox();
+    final MediaQueryData mediaQuery = MediaQuery.of(context);
+    List<WordItem> match = BKSearch.lookup(lookfor);
+
+    // 分类筛选（AND）：所有检索途径的结果统一过滤
+    if(selectedCategories.isNotEmpty) {
+      match = match.where((WordItem word) => wordMatchesCategories(word, selectedCategories)).toList();
     }
-    
+
     context.read<Global>().uiLogger.finer("单词检索结果: $match");
     if(!AppData().config.learning.wordLookupRealtime){
       Future.delayed(Durations.medium1, () {
@@ -935,20 +940,40 @@ class WordLookupLayout extends StatelessWidget {
       }); 
     }
 
-    return GridView.builder(
-      itemCount: match.length,
-      gridDelegate: AppData().config.learning.overviewForceColumn == 0 ? SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: mediaQuery.size.width ~/ 300) : SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: AppData().config.learning.overviewForceColumn), 
-      itemBuilder: (context, index) {
-        return Container(
-          margin: EdgeInsets.all(8.0),
-          child: WordCard(
-            word: match[index],
-            useMask: false,
-            width: mediaQuery.size.width / (AppData().config.learning.overviewForceColumn == 0 ? (mediaQuery.size.width ~/ 300) : AppData().config.learning.overviewForceColumn),
-            height: mediaQuery.size.width / (AppData().config.learning.overviewForceColumn == 0 ? (mediaQuery.size.width ~/ 300) : AppData().config.learning.overviewForceColumn),
-          ),
-        );
-      }
+    final List<String> availableCategories = collectAllCategories();
+    final double cellSize = mediaQuery.size.width / (AppData().config.learning.overviewForceColumn == 0 ? (mediaQuery.size.width ~/ 300) : AppData().config.learning.overviewForceColumn);
+    return Column(
+      children: [
+        if(availableCategories.isNotEmpty) CategoryFilter(
+          available: availableCategories,
+          selected: selectedCategories,
+          onChanged: (Set<String> value) {
+            setState(() {
+              selectedCategories = value;
+            });
+          },
+        ),
+        Expanded(
+          child: (match.isEmpty && selectedCategories.isNotEmpty)
+            ? Center(child: Text("当前筛选条件下没有匹配的单词", style: TextStyle(fontSize: 16.0)))
+            : GridView.builder(
+                itemCount: match.length,
+                gridDelegate: AppData().config.learning.overviewForceColumn == 0 ? SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: mediaQuery.size.width ~/ 300) : SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: AppData().config.learning.overviewForceColumn), 
+                itemBuilder: (context, index) {
+                  return Container(
+                    margin: EdgeInsets.all(8.0),
+                    child: WordCard(
+                      word: match[index],
+                      useMask: false,
+                      compact: true,
+                      width: cellSize,
+                      height: cellSize,
+                    ),
+                  );
+                }
+              ),
+        ),
+      ],
     );
   }
 }

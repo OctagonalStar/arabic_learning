@@ -174,6 +174,9 @@ class FSRSConfig {
   final int pushAmount;
   final bool reinforceMemory;
 
+  /// 每日推送单词的分类筛选（AND 语义，空列表=不筛选）
+  final List<String> pushCategories;
+
   const FSRSConfig({
     bool? enabled,
     this.scheduler,
@@ -185,7 +188,8 @@ class FSRSConfig {
     bool? preferSimilar,
     bool? selfEvaluate,
     int? pushAmount,
-    bool? reinforceMemory
+    bool? reinforceMemory,
+    List<String>? pushCategories
   }) :
     enabled = enabled??false,
     cards = cards??const [],
@@ -196,7 +200,8 @@ class FSRSConfig {
     preferSimilar = preferSimilar??false,
     selfEvaluate = selfEvaluate??false,
     pushAmount = pushAmount??0,
-    reinforceMemory = reinforceMemory??false;
+    reinforceMemory = reinforceMemory??false,
+    pushCategories = pushCategories??const [];
   
   Map<String, dynamic> toMap(){
     return {
@@ -210,7 +215,8 @@ class FSRSConfig {
       "preferSimilar": preferSimilar,
       "selfEvaluate": selfEvaluate,
       "pushAmount": pushAmount,
-      "reinforceMemory": reinforceMemory
+      "reinforceMemory": reinforceMemory,
+      "pushCategories": pushCategories
     };
   }
 
@@ -225,7 +231,8 @@ class FSRSConfig {
     bool? preferSimilar,
     bool? selfEvaluate,
     int? pushAmount,
-    bool? reinforceMemory
+    bool? reinforceMemory,
+    List<String>? pushCategories
   }) {
     return FSRSConfig(
       enabled: enabled??this.enabled,
@@ -238,7 +245,8 @@ class FSRSConfig {
       preferSimilar: preferSimilar??this.preferSimilar,
       selfEvaluate: selfEvaluate??this.selfEvaluate,
       pushAmount: pushAmount??this.pushAmount,
-      reinforceMemory: reinforceMemory??this.reinforceMemory
+      reinforceMemory: reinforceMemory??this.reinforceMemory,
+      pushCategories: pushCategories??this.pushCategories
     );
   }
 
@@ -255,7 +263,10 @@ class FSRSConfig {
         preferSimilar: configData["preferSimilar"],
         selfEvaluate: configData["selfEvaluate"],
         pushAmount: configData["pushAmount"],
-        reinforceMemory: configData["reinforceMemory"]
+        reinforceMemory: configData["reinforceMemory"],
+        pushCategories: configData["pushCategories"] == null
+            ? const []
+            : List<String>.from(configData["pushCategories"])
       );
     }
     return FSRSConfig(enabled: false);
