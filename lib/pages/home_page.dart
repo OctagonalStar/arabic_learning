@@ -4,8 +4,9 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import 'package:arabic_learning/core/date_utils.dart';
-import 'package:arabic_learning/funcs/shared_widgets.dart';
-import 'package:arabic_learning/funcs/ui.dart';
+import 'package:arabic_learning/widgets/kit.dart' show Button;
+import 'package:arabic_learning/widgets/overlays.dart' show alart;
+import 'package:arabic_learning/widgets/shared.dart' show StatCard;
 import 'package:arabic_learning/services/words.dart';
 import 'package:arabic_learning/services/tts.dart';
 import 'package:arabic_learning/pages/setting_page.dart';

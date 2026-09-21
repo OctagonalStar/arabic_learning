@@ -1,7 +1,9 @@
 import 'dart:math';
 
-import 'package:arabic_learning/funcs/shared_widgets.dart';
-import 'package:arabic_learning/funcs/ui.dart';
+import 'package:arabic_learning/widgets/kit.dart' show Button, TextContainer, popSelectClasses;
+import 'package:arabic_learning/widgets/overlays.dart' show alart;
+import 'package:arabic_learning/widgets/questions.dart' show ChoiceQuestions;
+import 'package:arabic_learning/widgets/shared.dart' show PKScoreRow, appInputDecoration;
 import 'package:arabic_learning/services/words.dart';
 import 'package:arabic_learning/models/dict.dart';
 import 'package:arabic_learning/models/reading.dart';

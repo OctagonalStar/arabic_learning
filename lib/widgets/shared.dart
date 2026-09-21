@@ -7,7 +7,7 @@
 
 import 'dart:math' as math;
 
-import 'package:arabic_learning/funcs/ui.dart' show Button;
+import 'package:arabic_learning/widgets/kit.dart' show Button;
 import 'package:arabic_learning/core/statics.dart';
 import 'package:flutter/material.dart';
 

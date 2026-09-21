@@ -7,8 +7,9 @@ import 'package:arabic_learning/models/reading.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import 'package:arabic_learning/funcs/shared_widgets.dart';
-import 'package:arabic_learning/funcs/ui.dart';
+import 'package:arabic_learning/widgets/kit.dart' show Button, popSelectClasses;
+import 'package:arabic_learning/widgets/overlays.dart' show showSnackBar;
+import 'package:arabic_learning/widgets/shared.dart' show ButtonLabel;
 import 'package:arabic_learning/services/words.dart';
 import 'package:arabic_learning/services/global_state.dart';
 import 'package:arabic_learning/services/app_data.dart';

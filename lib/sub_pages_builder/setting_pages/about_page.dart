@@ -5,8 +5,8 @@ import 'package:provider/provider.dart';
 
 import 'package:arabic_learning/services/global_state.dart';
 import 'package:arabic_learning/services/app_data.dart';
-import 'package:arabic_learning/funcs/shared_widgets.dart';
-import 'package:arabic_learning/funcs/ui.dart';
+import 'package:arabic_learning/widgets/kit.dart' show Button, TextContainer;
+import 'package:arabic_learning/widgets/shared.dart' show SettingCard;
 import 'package:arabic_learning/sub_pages_builder/setting_pages/open_source_licenses.dart';
 
 class AboutPage extends StatelessWidget {

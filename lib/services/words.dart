@@ -1,5 +1,6 @@
 // 学习用词与布局辅助（原 lib/funcs/utili.dart 拆分）。
-// 包含选词、随机/相似词、选择题选项构建、连胜天数与按钮布局计算。
+// 包含选词、随机/相似词、选择题选项构建、连胜天数、按钮布局计算，
+// 以及分类汇总/分类筛选判断（原 lib/funcs/ui.dart 中的纯逻辑函数）。
 
 import 'dart:math';
 
@@ -115,4 +116,31 @@ List<String> buildChineseChoiceOptions(
 }) {
   final List<WordItem> optionWords = getRandomWords(4, dict, include: word, preferClass: !preferSimilar, rnd: rnd);
   return List.generate(4, (int index) => optionWords[index].chinese, growable: false);
+}
+
+/// 汇总当前词库中所有单词的分类标签
+/// 
+/// 返回顺序稳定：先按 [preferredOrder] 中出现的分级/常用分类排列，
+/// 其余分类按首次出现的顺序追加。不硬编码任何分类含义，仅用于筛选器展示排序。
+List<String> collectAllCategories() {
+  const List<String> preferredOrder = ["二级", "四级", "六级", "八级", "补充", "常用词", "生僻词", "短语"];
+  final Set<String> categories = <String>{};
+  for(WordItem word in AppData().wordData.words) {
+    categories.addAll(word.categories);
+  }
+  final List<String> ordered = [];
+  for(String category in preferredOrder) {
+    if(categories.remove(category)) ordered.add(category);
+  }
+  ordered.addAll(categories);
+  return ordered;
+}
+
+/// 判断单词是否满足分类筛选
+/// 
+/// 多选时采用 AND 语义：单词需包含 [selected] 中的全部分类；
+/// [selected] 为空表示不进行筛选。
+bool wordMatchesCategories(WordItem word, Set<String> selected) {
+  if(selected.isEmpty) return true;
+  return selected.every((String category) => word.categories.contains(category));
 }

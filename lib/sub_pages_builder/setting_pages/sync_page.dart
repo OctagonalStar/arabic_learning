@@ -5,8 +5,9 @@ import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import 'package:arabic_learning/funcs/shared_widgets.dart';
-import 'package:arabic_learning/funcs/ui.dart';
+import 'package:arabic_learning/widgets/kit.dart' show Button, SettingItem;
+import 'package:arabic_learning/widgets/overlays.dart' show alart, showSnackBar;
+import 'package:arabic_learning/widgets/shared.dart' show appInputDecoration;
 import 'package:arabic_learning/services/sync.dart';
 import 'package:arabic_learning/models/config.dart';
 import 'package:arabic_learning/services/global_state.dart';

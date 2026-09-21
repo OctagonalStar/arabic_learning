@@ -1,8 +1,9 @@
 import 'dart:convert';
 import 'dart:math';
 
-import 'package:arabic_learning/funcs/shared_widgets.dart';
-import 'package:arabic_learning/funcs/ui.dart';
+import 'package:arabic_learning/widgets/kit.dart' show Button, SettingItem, SettingRow, TextContainer;
+import 'package:arabic_learning/widgets/overlays.dart' show alart;
+import 'package:arabic_learning/widgets/shared.dart' show ButtonLabel, appInputDecoration;
 import 'package:arabic_learning/core/extensions.dart';
 import 'package:arabic_learning/core/selection.dart';
 import 'package:arabic_learning/models/reading.dart';

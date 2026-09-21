@@ -1,4 +1,5 @@
-import 'package:arabic_learning/funcs/ui.dart';
+import 'package:arabic_learning/widgets/kit.dart' show Button, TextContainer;
+import 'package:arabic_learning/widgets/overlays.dart' show showSnackBar;
 import 'package:arabic_learning/services/global_state.dart' show Global;
 import 'package:arabic_learning/services/app_data.dart' show AppData;
 import 'package:arabic_learning/core/statics.dart';

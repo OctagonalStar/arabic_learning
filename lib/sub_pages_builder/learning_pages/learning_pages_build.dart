@@ -4,7 +4,7 @@ import 'dart:math';
 import 'package:arabic_learning/services/fsrs.dart' show FSRS;
 import 'package:arabic_learning/services/search.dart' show BKSearch;
 import 'package:arabic_learning/core/extensions.dart' show StringExtensions;
-import 'package:arabic_learning/services/words.dart' show getRandomWords;
+import 'package:arabic_learning/services/words.dart' show collectAllCategories, getRandomWords, wordMatchesCategories;
 import 'package:arabic_learning/services/tts.dart' show playTextToSpeech;
 import 'package:arabic_learning/models/config.dart';
 import 'package:arabic_learning/models/dict.dart';
@@ -15,8 +15,10 @@ import 'package:provider/provider.dart';
 import 'package:arabic_learning/core/statics.dart';
 import 'package:arabic_learning/services/global_state.dart';
 import 'package:arabic_learning/services/app_data.dart';
-import 'package:arabic_learning/funcs/shared_widgets.dart';
-import 'package:arabic_learning/funcs/ui.dart';
+import 'package:arabic_learning/widgets/kit.dart' show Button, CategoryFilter, TextContainer, WordCard;
+import 'package:arabic_learning/widgets/overlays.dart' show showSnackBar, viewAnswer;
+import 'package:arabic_learning/widgets/questions.dart' show ChoiceQuestions, ListeningQuestion, SpellQuestion, WordCardQuestion;
+import 'package:arabic_learning/widgets/shared.dart' show ConclusionCard, RevealableActionBar, appInputDecoration;
 
 
 

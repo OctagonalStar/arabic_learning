@@ -1,6 +1,6 @@
 import 'dart:convert';
 
-import 'package:arabic_learning/main.dart' show MyApp;
+import 'package:arabic_learning/app.dart' show MyApp;
 import 'package:arabic_learning/models/config.dart';
 import 'package:arabic_learning/services/global_state.dart' show Global;
 import 'package:arabic_learning/core/statics.dart' show StaticsVar;
