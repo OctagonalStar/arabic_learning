@@ -58,10 +58,12 @@ dependencies:
   cupertino_icons: ^1.0.8
   bk_tree: ^0.1.2
   wakelock_plus: ^1.5.1
+  dynamic_color: ^2.1.0 # Material You 动态取色（Android/Linux/macOS/Windows，Web 无实现）
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
+  dynamic_color_testing: ^1.0.0 # 测试用 mock（无该包时移除）
 
   # The "flutter_lints" package below contains a set of recommended lints to
   # encourage good coding practices. The lint set provided by the package is

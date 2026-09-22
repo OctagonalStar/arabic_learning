@@ -1,0 +1,383 @@
+import 'dart:convert';
+
+import 'package:file_picker/file_picker.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+
+import 'package:arabic_learning/widgets/feedback.dart' show LoadingIndicator;
+import 'package:arabic_learning/widgets/kit.dart' show Button, SettingItem;
+import 'package:arabic_learning/widgets/overlays.dart' show alart, showSnackBar;
+import 'package:arabic_learning/widgets/shared.dart' show appInputDecoration;
+import 'package:arabic_learning/core/extensions.dart';
+import 'package:arabic_learning/services/sync.dart';
+import 'package:arabic_learning/models/config.dart';
+import 'package:arabic_learning/services/global_state.dart';
+import 'package:arabic_learning/services/app_data.dart';
+import 'package:arabic_learning/package_replacement/fake_dart_io.dart' if (dart.library.io) 'dart:io' as io;
+
+class DataSyncPage extends StatefulWidget {
+  const DataSyncPage({super.key});
+
+  @override
+  State<StatefulWidget> createState() => _DataSyncPage();
+}
+
+class _DataSyncPage extends State<DataSyncPage> {
+  bool? enabled;
+  bool isUploading = false;
+  bool isDownloading = false;
+
+  @override
+  Widget build(BuildContext context) {
+    context.read<Global>().uiLogger.info("构建 DataSyncPage");
+    enabled ??= AppData().config.webSync.enabled;
+    context.read<Global>().uiLogger.fine("获取WebDAV实例");
+    final WebDAV webdav = WebDAV(
+      uri: AppData().config.webSync.account.uri, 
+      user: AppData().config.webSync.account.userName,
+      password: AppData().config.webSync.account.passWord
+    );
+    MediaQueryData mediaQuery = MediaQuery.of(context);
+
+    return Scaffold(
+      appBar: AppBar(
+        title: Text("同步设置"),
+      ),
+      body: SafeArea(top: false, child: ListView(
+        children: [
+          SettingItem(
+            title: "远程",
+            padding: EdgeInsets.all(8.0),
+            children: [
+              Row(
+                children: [
+                  Icon(Icons.account_box, size: 36),
+                  Expanded(
+                    child: Text("WebDAV账户"),
+                  ),
+                  Button(
+                    onPressed: () async {
+                      await popAccountSetting(context);
+                      setState(() {});
+                    }, 
+                    child: Text("绑定")
+                  ),
+                ],
+              ),
+              Row(
+                children: [
+                  Text("联通性检查: "),
+                  if(AppData().config.webSync.account.uri.isEmpty) Text("未绑定", style: Theme.of(context).textTheme.labelSmall),
+                  FutureBuilder(
+                    future: WebDAV.test(
+                      AppData().config.webSync.account.uri, 
+                      AppData().config.webSync.account.userName,
+                      password: AppData().config.webSync.account.passWord
+                    ), 
+                    builder: (context, snapshot) {
+                      if(snapshot.hasError) {
+                        return Row(
+                          children: [
+                            Icon(Icons.circle, color: context.semanticColors.error, size: 18),
+                            Text("在测试中遇到了未知的异常", style: Theme.of(context).textTheme.labelSmall)
+                          ],
+                        );
+                      }
+                      if(snapshot.connectionState == ConnectionState.waiting) {
+                        return LoadingIndicator(size: 18, strokeWidth: 2);
+                      }
+                      if(snapshot.hasData) {
+                        return Row(
+                          children: [
+                            Icon(Icons.circle, color: snapshot.data![1] ? context.semanticColors.success : snapshot.data![0] ? context.semanticColors.warning : context.semanticColors.error, size: 18)
+                          ],
+                        );
+                      }
+                      return LoadingIndicator();
+                    },
+                  )
+                ],
+              ),
+              Row(
+                children: [
+                  Icon(Icons.cloud_upload),
+                  SizedBox(width: mediaQuery.size.width * 0.01),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text("上传数据"),
+                        Text("将本地配置上传到WebDAV服务器", style: Theme.of(context).textTheme.labelSmall?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant))
+                      ],
+                    )
+                  ),
+                  isUploading 
+                  ? LoadingIndicator()
+                  :Button(
+                    onPressed: () async {
+                      context.read<Global>().uiLogger.info("用户上传数据");
+                      setState(() {
+                        isUploading = true;
+                      });
+                      try{
+                        if(!webdav.isReachable) await webdav.connect();
+                        if(context.mounted) await webdav.upload(AppData().storage);
+                      } catch (e) {
+                        if(!context.mounted) return;
+                        alart(context, e.toString());
+                        setState(() {isUploading = false;});
+                        return;
+                      } 
+                      setState(() {isUploading = false;});
+                      if(!context.mounted) return;
+                      alart(context, "已上传");
+                    },
+                    child: Text("上传")
+                  )
+                ],
+              ),
+              Row(
+                children: [
+                  Icon(Icons.cloud_download),
+                  SizedBox(width: mediaQuery.size.width * 0.01),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text("恢复数据"),
+                        Text("从WebDAV服务器恢复配置", style: Theme.of(context).textTheme.labelSmall?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant))
+                      ],
+                    )
+                  ),
+                  isDownloading 
+                  ? LoadingIndicator()
+                  : Button(
+                    onPressed: () async {
+                      context.read<Global>().uiLogger.info("用户恢复数据");
+                      setState(() {
+                        isDownloading = true;
+                      });
+                      try{
+                        if(!webdav.isReachable) await webdav.connect();
+                        if(context.mounted) await webdav.download(AppData().storage);
+                        if(context.mounted) context.read<Global>().conveySetting();
+                        if(context.mounted) context.read<Global>().reloadStoredData();
+                      } catch (e) {
+                        if(!context.mounted) return;
+                        alart(context, e.toString());
+                        setState(() {isDownloading = false;});
+                        return;
+                      } 
+                      if(!context.mounted) return;
+                      setState(() {isDownloading = false;});
+                      alart(context, "已恢复\n部分设置可能需要软件重启后才能生效");
+                    },
+                    child: Text("恢复")
+                  )
+                ],
+              )
+            ],
+          ),
+          SettingItem(
+            title: "本地", 
+            padding: EdgeInsets.all(8.0),
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.start,
+                children: [
+                  Icon(Icons.output),
+                  SizedBox(width: mediaQuery.size.width * 0.01),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text("导出数据"),
+                        Text("将当前软件数据作为文件导出", style: Theme.of(context).textTheme.labelSmall?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant))
+                      ],
+                    ),
+                  ),
+                  Button(
+                    onPressed: () async {
+                      try{
+                        if(await FilePicker.saveFile(
+                          dialogTitle: "导出数据",
+                          windowsOptions: WindowsOptions(lockParentWindow: true),
+                          fileName: "export.json",
+                          bytes: utf8.encode(jsonEncode(AppData().storage.export())),
+                        ) != null) {
+                          if(context.mounted) {
+                            showSnackBar(context, "导出完成");
+                          }
+                        }
+                      } catch (e){
+                        if(!context.mounted) return;
+                        context.read<Global>().uiLogger.severe(e);
+                        showSnackBar(context, "导出时发生错误: $e");
+                      }
+                    }, 
+                    child: Text("导出")
+                  )
+                ],
+              ),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.start,
+                children: [
+                  Icon(Icons.input),
+                  SizedBox(width: mediaQuery.size.width * 0.01),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text("导入数据"),
+                        Text("将文件中的配置覆盖软件配置", style: Theme.of(context).textTheme.labelSmall?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant))
+                      ],
+                    ),
+                  ),
+                  Button(
+                    onPressed: () async {
+                      context.read<Global>().uiLogger.info("导入软件数据");
+                      PlatformFile? result = await FilePicker.pickFile(
+                        type: FileType.custom,
+                        allowedExtensions: ['json'],
+                      );
+                      if (result != null) {
+                        String jsonString;
+                        PlatformFile platformFile = result;
+                        if ((await platformFile.readAsBytes()).isNotEmpty){
+                          jsonString = utf8.decode(await platformFile.readAsBytes());
+                        } else if (platformFile.path != null && !kIsWeb) {
+                          jsonString = await io.File(platformFile.path!).readAsString();
+                        } else {
+                          if (!context.mounted) return;
+                          context.read<Global>().uiLogger.warning("备份数据导入错误: bytes和path均为null");
+                          alart(context, "文件 \"${platformFile.name}\" \n无法读取：bytes和path均为null。");
+                          return;
+                        }
+                        if (!context.mounted) return;
+                        try{
+                          context.read<Global>().uiLogger.fine("备份数据读取完成，开始解析");
+                          AppData().storage.recovery(jsonDecode(jsonString));
+                          if(context.mounted) context.read<Global>().conveySetting();
+                          if(context.mounted) context.read<Global>().reloadStoredData();
+                          alart(context, "备份数据 \"${platformFile.name}\" \n已恢复\n部分设置可能需要软件重启后才能生效");
+                          context.read<Global>().uiLogger.info("备份数据 \"${platformFile.name}\" \n已导入。");
+                        } catch (e) {
+                          if (!context.mounted) return;
+                          context.read<Global>().uiLogger.severe("文件 ${platformFile.name} 无效: $e");
+                          alart(context, '文件 ${platformFile.name} 无效：\n$e');
+                        }
+                      }
+                    }, 
+                    child: Text("导入")
+                  )
+                ],
+              ),
+            ]
+          )
+        ],
+      )),
+    );
+  }
+}
+
+
+Future<void> popAccountSetting(BuildContext context) async {
+  TextEditingController uriController = TextEditingController();
+  TextEditingController accountController = TextEditingController();
+  TextEditingController passwdController = TextEditingController(); 
+  await showDialog<List<String>>(
+    context: context,
+    builder: (BuildContext context) {
+      uriController.text = AppData().config.webSync.account.uri;
+      accountController.text = AppData().config.webSync.account.userName;
+      passwdController.text = AppData().config.webSync.account.passWord;
+      return AlertDialog(
+        title: Text("设置WebDAV同步"),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(
+              autocorrect: false,
+              controller: uriController,
+              maxLines: 1,
+              decoration: appInputDecoration(
+                context,
+                labelText: "WebDAV地址",
+                icon: Icon(Icons.webhook),
+              ),
+            ),
+            SizedBox(height: 20),
+            TextField(
+              autocorrect: false,
+              controller: accountController,
+              maxLines: 1,
+              decoration: appInputDecoration(
+                context,
+                labelText: "用户名",
+                icon: Icon(Icons.account_box_outlined),
+              ),
+            ),
+            SizedBox(height: 20),
+            TextField(
+              autocorrect: false,
+              controller: passwdController,
+              maxLines: 1,
+              keyboardType: TextInputType.visiblePassword,
+              decoration: appInputDecoration(
+                context,
+                labelText: "密码",
+                icon: Icon(Icons.password),
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          Button(
+            onPressed: () {
+              uriController.clear();
+              accountController.clear();
+              passwdController.clear();
+            },
+            child: Text("清空"),
+          ),
+          Button(
+            onPressed: () {
+              uriController.dispose();
+              accountController.dispose();
+              passwdController.dispose();
+              Navigator.pop(context);
+            },
+            child: Text("取消"),
+          ),
+          Button(
+            onPressed: (){
+              try{
+                Uri.parse(uriController.text);
+                if(uriController.text.isNotEmpty && !uriController.text.contains("http")) throw Exception("WebDAV URI must contain http");
+              } catch (e) {
+                alart(context, e.toString());
+                return;
+              }
+              AppData().config = AppData().config.copyWith(
+                webSync: AppData().config.webSync.copyWith(
+                  account: SyncAccountConfig(
+                    uri: uriController.text,
+                    userName: accountController.text,
+                    passWord: passwdController.text
+                  )
+                )
+              );
+              context.read<Global>().updateSetting();
+              uriController.dispose();
+              accountController.dispose();
+              passwdController.dispose();
+              Navigator.pop(context);
+            }, 
+            child: Text("确认")
+          ),
+        ],
+      );
+    }
+  );
+}

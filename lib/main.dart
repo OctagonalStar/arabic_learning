@@ -1,24 +1,19 @@
-import 'package:arabic_learning/funcs/noification.dart';
+// 应用入口（引导）。
+// 仅负责日志、屏幕方向、Android 后台任务、桌面窗口与 runApp；
+// 应用外壳 MyApp / MyHomePage 位于 lib/app.dart。
+
+import 'package:arabic_learning/app.dart' show MyApp;
+import 'package:arabic_learning/core/adaptive.dart' show shouldLockPortrait;
+import 'package:arabic_learning/core/statics.dart' show StaticsVar;
 import 'package:arabic_learning/package_replacement/fake_dart_io.dart' if (dart.library.io) 'dart:io' as io;
+import 'package:arabic_learning/services/global_state.dart' show Global;
+import 'package:arabic_learning/services/notifications.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_local_notifications/flutter_local_notifications.dart';
-import 'package:flutter_markdown_plus/flutter_markdown_plus.dart';
-import 'package:window_manager/window_manager.dart';
-import 'package:provider/provider.dart';
-import 'package:url_launcher/url_launcher.dart';
 import 'package:logging/logging.dart';
-
-import 'package:arabic_learning/funcs/ui.dart';
-import 'package:arabic_learning/funcs/utili.dart';
-import 'package:arabic_learning/vars/global.dart' show AppData, Global;
-import 'package:arabic_learning/vars/statics_var.dart' show StaticsVar;
-import 'package:arabic_learning/pages/home_page.dart';
-import 'package:arabic_learning/pages/learning_page.dart'show LearningPage;
-import 'package:arabic_learning/pages/setting_page.dart'show SettingPage;
-import 'package:arabic_learning/pages/test_page.dart' show TestPage;
-import 'package:arabic_learning/pages/leading_page.dart' show PolicyPage;
+import 'package:provider/provider.dart';
+import 'package:window_manager/window_manager.dart';
 import 'package:workmanager/workmanager.dart' show Workmanager, Constraints;
 
 void main() async {
@@ -35,10 +30,21 @@ void main() async {
   logger.info("日志加载成功");
   WidgetsFlutterBinding.ensureInitialized();
 
-  SystemChrome.setPreferredOrientations([
-    DeviceOrientation.portraitUp,
-    DeviceOrientation.portraitDown
-  ]);
+  // 定向策略：仅手机（非桌面 / 非 Web 且最短边 < 600）锁竖屏；
+  // 平板允许全部方向。桌面 / Web 上 SystemChrome 无副作用，直接跳过。
+  if (!kIsWeb && !StaticsVar.isDesktop) {
+    final view = WidgetsBinding.instance.platformDispatcher.views.first;
+    final double shortestSide =
+        view.physicalSize.shortestSide / view.devicePixelRatio;
+    if (shouldLockPortrait(shortestSide)) {
+      SystemChrome.setPreferredOrientations([
+        DeviceOrientation.portraitUp,
+        DeviceOrientation.portraitDown,
+      ]);
+    } else {
+      SystemChrome.setPreferredOrientations(DeviceOrientation.values);
+    }
+  }
 
   if(io.Platform.isAndroid) {
     Workmanager().initialize(callbackDispatcher);
@@ -61,7 +67,8 @@ void main() async {
       skipTaskbar: false,
       titleBarStyle: TitleBarStyle.normal,
       title: StaticsVar.appName,
-      minimumSize: Size(400, 700),
+      // 允许矮横屏窗口（如 480x420），不再强制较高的最小高度。
+      minimumSize: Size(480, 420),
     );
     windowManager.waitUntilReadyToShow(windowOptions, () async {
       await windowManager.show();
@@ -69,271 +76,10 @@ void main() async {
     });
     logger.info("窗口配置加载完成");
   }
-  // final global = Global();
-  // await global.init();
   runApp(
     ChangeNotifierProvider(
       create: (context) => Global(),
       child: MyApp(),
     ),
   );
-}
-
-class MyApp extends StatelessWidget {
-  const MyApp({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    context.read<Global>().uiLogger.warning("收到应用层构建请求");
-    return FutureBuilder(
-        future: context.read<Global>().init(),
-        initialData: false,
-        builder: (context, asyncSnapshot) {
-          if(!(asyncSnapshot.data??false)) {
-            return Material(child: Container(width: double.infinity, height: double.infinity, color: Colors.black ,child: Center(child: CircularProgressIndicator())));    
-          }
-          return Consumer<Global>(
-            builder: (context, global, child) => MaterialApp(
-              title: StaticsVar.appName,
-              themeMode: ThemeMode.system,
-              theme: global.themeData,
-              home: const MyHomePage()
-            )
-          );
-        }
-      );
-  }
-}
-
-
-class MyHomePage extends StatefulWidget {
-  const MyHomePage({super.key});
-
-  @override
-  State<MyHomePage> createState() => _MyHomePageState();
-}
-
-
-class _MyHomePageState extends State<MyHomePage> {
-  final PageController _pageController = PageController(initialPage: 0);
-
-  // 判断是否为桌面端的阈值（可根据需要调整）
-  static const double _desktopBreakpoint = 600;
-
-
-  // 构建桌面端布局（侧边导航）
-  Widget _buildDesktopLayout(BuildContext context) {
-    context.read<Global>().uiLogger.fine("构建 DesktopLayout");
-    return Row(
-      children: [
-        // 侧边导航栏
-        NavigationRail(
-          minWidth: MediaQuery.of(context).size.width * 0.05,
-          selectedIndex: _pageController.hasClients ? _pageController.page!.round() : 0,
-          onDestinationSelected: (int index) {
-            _onNavigationTapped(index);
-          },
-          labelType: NavigationRailLabelType.selected,
-          backgroundColor: Theme.of(context).colorScheme.onPrimary.withAlpha(150),
-          destinations: const [
-            NavigationRailDestination(
-              icon: Icon(Icons.home_outlined),
-              selectedIcon: Icon(Icons.home),
-              label: Text('主页'),
-            ),
-            NavigationRailDestination(
-              icon: Icon(Icons.book_outlined),
-              selectedIcon: Icon(Icons.book),
-              label: Text('学习'),
-            ),
-            NavigationRailDestination(
-              icon: Icon(Icons.edit_outlined),
-              selectedIcon: Icon(Icons.edit),
-              label: Text('测试'),
-            ),
-            NavigationRailDestination(
-              icon: Icon(Icons.settings_applications_outlined),
-              selectedIcon: Icon(Icons.settings_applications),
-              label: Text('设置'),
-            ),
-          ],
-        ),
-        // 垂直分隔线
-        const VerticalDivider(thickness: 1, width: 1),
-        // 主要内容区域
-        Expanded(
-          child: PageView(
-            scrollDirection: Axis.vertical,
-            controller: _pageController,
-            onPageChanged: (index) {
-              setState(() {});
-            },
-            // physics: const NeverScrollableScrollPhysics(), // 禁用滑动
-            children: [
-              HomePage(),
-              LearningPage(),
-              TestPage(),
-              SettingPage()
-            ],
-          ),
-        ),
-      ],
-    );
-  }
-
-  // 构建移动端布局（底部导航）
-  Widget _buildMobileLayout(BuildContext context) {
-    context.read<Global>().uiLogger.fine("构建 MobileLayout");
-    return Column(
-      children: [
-        // 主要内容区域
-        Expanded(
-          child: PageView(
-            controller: _pageController,
-            scrollDirection: Axis.horizontal,
-            onPageChanged: (index) {
-              setState(() {});
-            },
-            children: [
-              HomePage(),
-              LearningPage(),
-              TestPage(),
-              SettingPage()
-            ],
-          ),
-        ),
-        // 底部导航栏
-        NavigationBar(
-          selectedIndex: _pageController.hasClients ? _pageController.page!.round() : 0,
-          onDestinationSelected: (int index) {
-            _onNavigationTapped(index);
-          },
-          height: MediaQuery.of(context).size.height * 0.1,
-          animationDuration: Durations.medium2,
-          labelBehavior: NavigationDestinationLabelBehavior.onlyShowSelected,
-          backgroundColor: Theme.of(context).colorScheme.onPrimary.withAlpha(150),
-          destinations: const [
-            NavigationDestination(
-              icon: Icon(Icons.home_outlined),
-              selectedIcon: Icon(Icons.home),
-              label: '主页',
-            ),
-            NavigationDestination(
-              icon: Icon(Icons.book_outlined),
-              selectedIcon: Icon(Icons.book),
-              label: '学习',
-            ),
-            NavigationDestination(
-              icon: Icon(Icons.edit_outlined),
-              selectedIcon: Icon(Icons.edit),
-              label: '测试',
-            ),
-            NavigationDestination(
-              icon: Icon(Icons.settings_applications_outlined),
-              selectedIcon: Icon(Icons.settings_applications),
-              label: '设置',
-            ),
-          ]
-        )
-      ],
-    );
-  }
-
-  // 统一的导航点击处理
-  void _onNavigationTapped(int index) {
-    _pageController.animateToPage(
-      index,
-      duration: Durations.medium2,
-      curve: StaticsVar.curve,
-    );
-  }
-
-  @override
-  void dispose(){
-    _pageController.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    context.read<Global>().uiLogger.fine("构建 MyHomePage");
-    final global = context.watch<Global>();
-    
-    if(AppData().isFirstStart) {
-      return PolicyPage(isUpdate: false);
-    } else if (AppData().config.lastTermVersion != StaticsVar.termVersion) {
-      return PolicyPage(isUpdate: true);
-    }
-
-    if(io.Platform.isAndroid) {
-      FlutterLocalNotificationsPlugin()
-        .resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>()
-        ?.requestNotificationsPermission();
-    }
-
-    // 更新日志通知
-    if(global.updateLogRequire) {
-      context.read<Global>().uiLogger.info("预定更新日志通知");
-      global.updateLogRequire = false;
-      Future.delayed(Duration(seconds: 1), () async {
-        late final String changeLog;
-        changeLog = await rootBundle.loadString('CHANGELOG.md');
-        if(!context.mounted) return;
-        showModalBottomSheet(
-          context: context,
-          shape: RoundedSuperellipseBorder(side: BorderSide(width: 1.0, color: Theme.of(context).colorScheme.onSurface), borderRadius: StaticsVar.br),
-          enableDrag: true,
-          isDismissible: false,
-          isScrollControlled: true,
-          builder: (context) {
-            context.read<Global>().uiLogger.info("构建更新日志通知");
-            return Column(
-              children: [
-                TextContainer(text: "更新内容 软件版本: ${StaticsVar.appVersion.zfill(6)}"),
-                SizedBox(
-                  height: MediaQuery.of(context).size.height * 0.8,
-                  child: Markdown(data: changeLog)
-                ),
-                Button(
-                  onPressed: () {
-                    Navigator.pop(context);
-                  }, 
-                  child: Text("知道了")
-                )
-              ],
-            );
-          },
-        );
-      });
-    }
-
-    return Scaffold(
-      appBar: AppBar(
-        centerTitle: true,
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary.withAlpha(150),
-        title: Text(StaticsVar.appName),
-        actions: [
-          if(kIsWeb && !AppData().config.regular.hideAppDownloadButton) Button(
-            icon: Icon(Icons.add_to_home_screen),
-            child: Text('下载APP版本'),
-            onPressed: () {
-              launchUrl(Uri.parse("https://github.com/OctagonalStar/arabic_learning/releases/latest"));
-            }
-          ),
-        ],
-      ),
-      body: LayoutBuilder(
-        builder: (context, constraints) {
-          // 根据屏幕宽度决定使用哪种布局
-          if (constraints.maxWidth > _desktopBreakpoint) {
-            AppData().isWideScreen = true;
-            return _buildDesktopLayout(context);
-          } else {
-            AppData().isWideScreen = false;
-            return _buildMobileLayout(context);
-          }
-        },
-      ),
-    );
-  }
 }

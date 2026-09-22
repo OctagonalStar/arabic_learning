@@ -1,0 +1,438 @@
+import 'package:arabic_learning/models/dict.dart';
+import 'package:arabic_learning/models/reading.dart';
+import 'package:flutter/foundation.dart' show clampDouble;
+import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+
+import 'package:arabic_learning/core/extensions.dart';
+import 'package:arabic_learning/core/statics.dart';
+import 'package:arabic_learning/theme/tokens.dart' show AppMotion;
+import 'package:arabic_learning/services/global_state.dart';
+import 'package:arabic_learning/services/app_data.dart';
+import 'package:arabic_learning/theme/typography.dart';
+import 'package:arabic_learning/widgets/kit.dart' show Button, TextContainer, popSelectClasses;
+import 'package:arabic_learning/widgets/overlays.dart' show alart;
+import 'package:arabic_learning/services/words.dart';
+import 'package:arabic_learning/services/tts.dart';
+import 'package:wakelock_plus/wakelock_plus.dart';
+
+class ForeListeningSettingPage extends StatefulWidget {
+  const ForeListeningSettingPage({super.key});
+
+  @override
+  State<StatefulWidget> createState() => _ForeListeningSettingPage();
+}
+
+class _ForeListeningSettingPage extends State<ForeListeningSettingPage> {
+  double playRate = 1.0;
+  int playTimes = 3;
+  int interval = 5;
+  int intervalBetweenWords = 10;
+  ClassSelection selectedClasses = ClassSelection(selectedClass: List.empty(), countInReview: false);
+  
+
+  @override
+  Widget build(BuildContext context) {
+    context.read<Global>().uiLogger.info("构建 ForeListeningSettingPage");
+    MediaQueryData mediaQuery = MediaQuery.of(context);
+    int wordCount = getSelectedWords(AppData().wordData, selectedClasses.selectedClass).length;
+    return Scaffold(
+      appBar: AppBar(
+        title: Text('自主听写预设置'),
+      ),
+      body: SafeArea(top: false, child: Center(
+        child: ListView(
+          children: [
+            TextContainer(text: "请先完成以下选项以开始听写:"),
+            Container(
+              margin: EdgeInsets.all(16.0),
+              decoration: BoxDecoration(
+                color: Theme.of(context).colorScheme.surfaceContainer,
+                borderRadius: StaticsVar.br,
+              ),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.start,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  TextContainer(text: "1. 发音符号测试"),
+                  IconButton(
+                    onPressed: () {
+                      context.read<Global>().uiLogger.info("进行听写发音测试");
+                      playTextToSpeech("وَ");
+                    }, 
+                    icon: Icon(Icons.volume_up, size: 100)
+                  ),
+                  TextContainer(text: "点击以上按钮，等待约10秒。期间如果你能听到u和开口短音符音(wa)，则说明你当前音源支持发音符号。若不行请查阅“常见问题”"),
+                ],
+              )
+            ),
+            Button(
+              padding: EdgeInsets.all(16.0),
+              size: Size.fromHeight(clampDouble(mediaQuery.size.height * 0.1, 56.0, 96.0)),
+              onPressed: () async {
+                selectedClasses = await popSelectClasses(context, withCache: false, withReviewChoose: false);
+                setState(() {});
+              }, 
+              icon: Icon(Icons.arrow_forward_ios),
+              iconDirection: AxisDirection.right,
+              child: Expanded(child: Text("2. 选择听写课程"))
+            ),
+            Container(
+              margin: EdgeInsets.all(16.0),
+              padding: EdgeInsets.all(8.0),
+              decoration: BoxDecoration(
+                color: Theme.of(context).colorScheme.surfaceContainer,
+                borderRadius: StaticsVar.br,
+              ),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.start,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  TextContainer(text: "3. 听写设置"),
+                  Row(
+                    children: [
+                      Expanded(child: Text("单词播放语速")),
+                      SizedBox(
+                        width: mediaQuery.size.width * 0.6,
+                        child: Slider(
+                          value: playRate,
+                          min: 0.5,
+                          max: 1.5,
+                          divisions: 10,
+                          label: playRate.toStringAsFixed(1),
+                          onChanged: (double value) {
+                            setState(() {
+                              playRate = value;
+                            });
+                          }
+                        ),
+                      ),
+                      Text("${playRate.toStringAsFixed(1)}倍"),
+                    ],
+                  ),
+                  Row(
+                    children: [
+                      Expanded(child: Text("单词播放次数")),
+                      SizedBox(
+                        width: mediaQuery.size.width * 0.6,
+                        child: Slider(
+                          value: playTimes.toDouble(),
+                          min: 1,
+                          max: 5,
+                          divisions: 4,
+                          label: playTimes.toString(),
+                          onChanged: (double value) {
+                            setState(() {
+                              playTimes = value.toInt();
+                            });
+                          }
+                        ),
+                      ),
+                      Text("${playTimes.toString()}次"),
+                    ]
+                  ),
+                  Row(
+                    children: [
+                      Expanded(child: Text("不同单词间隔时间(秒)")),
+                      SizedBox(
+                        width: mediaQuery.size.width * 0.6,
+                        child: Slider(
+                          value: intervalBetweenWords.toDouble(),
+                          min: 1,
+                          max: 20,
+                          divisions: 19,
+                          label: intervalBetweenWords.toString(),
+                          onChanged: (double value) {
+                            setState(
+                              () {
+                                intervalBetweenWords = value.toInt();
+                              }
+                            );
+                          }
+                        ),
+                      ),
+                      Text("${intervalBetweenWords.toString()}秒"),
+                    ]
+                  ),
+                  Row(
+                    children: [
+                      Expanded(child: Text("同一单词间隔时间(秒)")),
+                      SizedBox(
+                        width: mediaQuery.size.width * 0.6,
+                        child: Slider(
+                          value: interval.toDouble(),
+                          min: 1,
+                          max: 15,
+                          divisions: 14,
+                          label: interval.toString(),
+                          onChanged: (double value) {
+                            setState(
+                              () {
+                                interval = value.toInt();
+                              }
+                            );
+                          }
+                        ),
+                      ),
+                      Text("${interval.toString()}秒"),
+                    ]
+                  ),
+                  TextContainer(text: "已选择了 $wordCount 个单词，大致需要${((wordCount * playTimes * (interval + 1) + wordCount * intervalBetweenWords)) ~/ 60}分钟 完成"),
+                ],
+              ),
+            ),
+            Button(
+              padding: EdgeInsets.all(16.0),
+              size: Size.fromHeight(100.0),
+              icon: Icon(Icons.rocket_launch, size: 32.0,),
+              onPressed: () {
+                if(selectedClasses.selectedClass.isEmpty) {
+                  alart(context, "是哪个小可爱没选课程就来听写了");
+                  return;
+                }
+                context.read<Global>().uiLogger.info("准备开始进行听写: 播放速度: $playRate;播放次数: $playTimes;播放间隔: $interval;词间隔: $intervalBetweenWords");
+                context.read<Global>().uiLogger.info("跳转 ForeListeningSettingPage => MainListeningPage");
+                Navigator.push(
+                  context, 
+                  MaterialPageRoute(
+                    builder: (context) => MainListeningPage(
+                      playRate: playRate, 
+                      playTimes: playTimes, 
+                      interval: interval, 
+                      intervalBetweenWords: intervalBetweenWords, 
+                      words: getSelectedWords(AppData().wordData, selectedClasses.selectedClass, doShuffle: true)
+                    )
+                  )
+                );
+              },
+              child: Text("听写，启动！", style: withoutColor(Theme.of(context).textTheme.headlineSmall!),),
+            ),
+          ],
+        )
+      )),
+    );
+  }
+}
+
+class MainListeningPage extends StatefulWidget {
+  final double playRate;
+  final int playTimes;
+  final int interval;
+  final int intervalBetweenWords;
+  final List<WordItem> words;
+  const MainListeningPage({super.key, required this.playRate, required this.playTimes, required this.interval, required this.intervalBetweenWords, required this.words});
+
+
+
+  @override
+  State<MainListeningPage> createState() => _MainListeningPageState();
+}
+
+class _MainListeningPageState extends State<MainListeningPage> {
+  int index = 0;
+  String state = "请点击开始按钮以开始听写";
+  String counter = "";
+  List<int> marks = [];
+  int stage = 0;
+  // 0: 播放前
+  // 1: 播放中
+  // 2: 听写完成
+  // 3: 答案页面
+
+  @override
+  void initState() {
+    WakelockPlus.enable();
+    super.initState();
+  }
+
+  @override
+  void dispose() {
+    WakelockPlus.disable();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    context.read<Global>().uiLogger.info("构建 MainListeningPage");
+    MediaQueryData mediaQuery = MediaQuery.of(context);
+    if(stage == 3) {
+      context.read<Global>().uiLogger.info("构建 MainListeningPage:答案页面");
+      // 答案页面
+      // creat list view:
+      List<Widget> list = [
+        Container(
+          padding: EdgeInsets.all(16.0),
+            decoration: BoxDecoration(
+              color: Theme.of(context).colorScheme.primaryContainer,
+            ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text("序号"),
+              Text("中文"),
+              Text("单词"),
+            ],
+          ),
+        )
+      ];
+      for(int i = 0; i < widget.words.length; i++) {
+        WordItem word = widget.words[i];
+        list.add(
+          Container(
+            padding: EdgeInsets.all(16.0),
+            decoration: BoxDecoration(
+              color: marks.contains(i)
+                ? context.semanticColors.warning.withAlpha(77)
+                : i.isEven
+                  ? Theme.of(context).colorScheme.surfaceContainerLow
+                  : Theme.of(context).colorScheme.surfaceContainerHigh,
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text((i + 1).toString()),
+                Text(word.chinese),
+                Text(word.arabic),
+              ],
+            ),
+          )
+        );
+      }
+      return Scaffold(
+        appBar: AppBar(
+          automaticallyImplyLeading: false,
+          title: Text("听写完成"),
+        ),
+        body: SafeArea(top: false, child: Column(
+          children: [
+            Expanded(
+              child: ListView(
+                children: list,
+              ),
+            ),
+            Button(
+              icon: Icon(Icons.arrow_back, size: 32.0,),
+              size: Size(mediaQuery.size.width * 0.9, clampDouble(mediaQuery.size.height * 0.1, 48.0, 96.0)),
+              onPressed: () {
+                Navigator.popUntil(context, (Route route) {return route.isFirst;});
+              },
+              child: Text("返回主页"),
+            )
+          ],
+        ))
+      );
+    }
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) {},
+      child: Scaffold(
+        appBar: AppBar(
+          automaticallyImplyLeading: false,
+          title: TweenAnimationBuilder<double>(
+            tween: Tween(
+              begin: 0.0,
+              end: index/(widget.words.length * widget.playTimes),
+            ),
+            duration: AppMotion.slow,
+            curve: AppMotion.standardCurve,
+            builder: (context, value, child) {
+              return LinearProgressIndicator(
+                borderRadius: StaticsVar.br,
+                minHeight: 25.0,
+                value: value,
+              );
+            },
+          ),
+        ),
+        body: SafeArea(top: false, child: LayoutBuilder(
+          builder: (BuildContext context, BoxConstraints constraints) {
+            final double height = constraints.maxHeight;
+            // 固定高度文本区按可用高度夹取；高度不足时整页可滚动兜底。
+            return SingleChildScrollView(
+              child: ConstrainedBox(
+                constraints: BoxConstraints(minHeight: constraints.maxHeight),
+                child: Center(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      TextContainer(text: "当前播放数/总数: $index/${(widget.words.length * widget.playTimes)}",textAlign: TextAlign.center,),
+                      TextContainer(text: state, style: Theme.of(context).textTheme.headlineLarge, size: Size(constraints.maxWidth * 0.8, clampDouble(height * 0.4, 140.0, 340.0)),textAlign: TextAlign.center,),
+                      TextContainer(text: counter, style: Theme.of(context).textTheme.displaySmall?.copyWith(color: Theme.of(context).colorScheme.error), size: Size(constraints.maxWidth * 0.6, clampDouble(height * 0.1, 48.0, 96.0)),textAlign: TextAlign.center,),
+                      Button(
+                        icon: Icon(stage == 1 ? Icons.flag : Icons.play_arrow, size: 32.0,),
+                        padding: EdgeInsets.all(16.0),
+                        size: Size.fromHeight(clampDouble(height * 0.15, 64.0, 150.0)),
+                        onPressed: (){
+                          if(stage == 1) {
+                            marks.add((index / widget.playTimes).floor());
+                          } else if(stage == 2) {
+                            setState(() {
+                              stage = 3;
+                            });
+                          } else {
+                            setState(() {
+                              stage++;
+                            });
+                            circlePlay(context);
+                          }
+                        },
+                        child: Text(stage == 1 ? "标记当前单词" : (stage == 2 ? "查看答案" : "开始听写(20秒倒计时)")),
+                      )
+                    ],
+                  ),
+                ),
+              ),
+            );
+          },
+        ))
+      ),
+    );
+  }
+
+  void circlePlay(BuildContext context) async {
+    setState(() {
+      state = "听写即将开始\n请准备好纸笔，调整设备音量\n听写*不设暂停*\n在下方20秒倒计时后，听写正式开始";
+    });
+    for (int i = 200; i >= 0; i--) {
+      setState(() {
+        counter = (i/10).toString();
+      });
+      await Future.delayed(Duration(milliseconds: 100));
+    }
+    for (WordItem x in widget.words) {
+      for(int t = 0; t < widget.playTimes; t++){ 
+        index++;
+        setState((){
+          state = "正在播放音频...";
+          counter = "-";
+        });
+        if(!context.mounted) return;
+        await playTextToSpeech(x.arabic, speed: widget.playRate);
+        setState((){
+          state = "播放间隔中...";
+        });
+        for(int i = widget.interval * 10; i >= 0; i--) {
+          setState(() {
+            counter = (i / 10).toString();
+          });
+          await Future.delayed(Duration(milliseconds: 100));
+        }
+      }
+      setState((){
+        state = "即将进入下一个单词...";
+      });
+      for(int i = (widget.intervalBetweenWords - widget.interval) * 10; i >= 0; i--) {
+        setState(() {
+          counter = (i / 10).toString();
+        });
+        await Future.delayed(Duration(milliseconds: 100));
+      }
+    }
+    setState((){
+      state = "听写已完成";
+      counter = "-";
+      stage ++;
+    });
+  }
+}

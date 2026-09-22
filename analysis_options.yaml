@@ -16,6 +16,9 @@ analyzer:
     - windows/**
     - macos/**
     - linux/**
+    # 由 dart_pubspec_licenses 生成的第三方许可证文本，含有大量不可避免的转义字符；
+    # 生成器 3.2.0 起不再输出 unnecessary_string_escapes 的 ignore 头，故整体排除分析。
+    - lib/oss_licenses.dart
 include: package:flutter_lints/flutter.yaml
 
 linter:

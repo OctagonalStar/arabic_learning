@@ -1,30 +1,48 @@
-// This is a basic Flutter widget test.
-//
-// To perform an interaction with a widget in your test, use the WidgetTester
-// utility in the flutter_test package. For example, you can send tap and scroll
-// gestures. You can also use WidgetTester to find child widgets in the widget
-// tree, read text, and verify that the values of widget properties are correct.
+import 'dart:convert';
 
+import 'package:arabic_learning/app.dart' show MyApp;
+import 'package:arabic_learning/models/config.dart';
+import 'package:arabic_learning/services/global_state.dart' show Global;
+import 'package:arabic_learning/core/statics.dart' show StaticsVar;
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:provider/provider.dart';
 
-import 'package:arabic_learning/main.dart';
+import 'helpers/test_env.dart';
 
 void main() {
-  testWidgets('Counter increments smoke test', (WidgetTester tester) async {
-    // Build our app and trigger a frame.
-    await tester.pumpWidget(const MyApp());
+  TestWidgetsFlutterBinding.ensureInitialized();
 
-    // Verify that our counter starts at 0.
-    expect(find.text('0'), findsOneWidget);
-    expect(find.text('1'), findsNothing);
+  setUp(() {
+    // path_provider 与 shared_preferences 均为平台插件，测试进程需在测试侧
+    // mock，避免触发 MissingPluginException（不修改生产代码）。
+    mockPathProvider();
+    mockStorage(<String, Object>{
+      // 非首次启动，且条款版本与当前版本一致，直接进入主页
+      'settingData': jsonEncode(
+        const Config(lastTermVersion: StaticsVar.termVersion).toMap(),
+      ),
+      'wordData': jsonEncode(<String, dynamic>{
+        'Words': <dynamic>[],
+        'Classes': <String, dynamic>{},
+      }),
+    });
+  });
 
-    // Tap the '+' icon and trigger a frame.
-    await tester.tap(find.byIcon(Icons.add));
-    await tester.pump();
+  testWidgets('应用冒烟：Global 初始化完成后展示主框架与首页', (WidgetTester tester) async {
+    await tester.pumpWidget(
+      ChangeNotifierProvider<Global>(
+        create: (BuildContext context) => Global(),
+        child: const MyApp(),
+      ),
+    );
 
-    // Verify that our counter has incremented.
-    expect(find.text('0'), findsNothing);
-    expect(find.text('1'), findsOneWidget);
+    // MyApp 用 FutureBuilder 等待 Global.init()，需要等待 loading 结束。
+    await tester.pumpAndSettle();
+
+    expect(find.byType(Scaffold), findsOneWidget);
+    expect(find.text(StaticsVar.appName), findsOneWidget);
+    expect(find.text('主页'), findsOneWidget);
+    expect(find.text('每日一词'), findsOneWidget);
   });
 }
