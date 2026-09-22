@@ -1,11 +1,12 @@
 import 'dart:math';
 
 import 'package:arabic_learning/models/dict.dart' show ClassItem, DictData, SourceItem, WordItem;
-import 'package:arabic_learning/screens/learning/fsrs_screens.dart' show FSRSReviewCardPage;
+import 'package:arabic_learning/screens/learning/fsrs_screens.dart' show FSRSLearningPage, FSRSReviewCardPage;
 import 'package:arabic_learning/services/app_data.dart' show AppData;
 import 'package:arabic_learning/services/fsrs.dart' show FSRS, FSRSConfig;
 import 'package:arabic_learning/services/global_state.dart' show Global;
 import 'package:arabic_learning/services/search.dart' show BKSearch;
+import 'package:arabic_learning/widgets/questions.dart' show ChoiceQuestions, ListeningQuestion, SpellQuestion;
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
@@ -86,6 +87,25 @@ void main() {
     expect(tester.takeException(), isNull);
   }
 
+  /// 泵起推送学习页（[words] 个新词），可继续通过 UI 推进。
+  Future<void> pumpLearningPage(WidgetTester tester, List<WordItem> words) async {
+    tester.view.physicalSize = const Size(400, 800);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    await tester.pumpWidget(
+      ChangeNotifierProvider<Global>(
+        create: (BuildContext context) => Global(),
+        child: MaterialApp(
+          home: FSRSLearningPage(words: words, fsrs: FSRS()),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(tester.takeException(), isNull);
+  }
+
   setUpAll(() async {
     mockPathProvider();
     mockStorage(<String, Object>{});
@@ -136,5 +156,67 @@ void main() {
 
     expect(tester.takeException(), isNull);
     expect(find.textContaining('用时:'), findsOneWidget);
+  });
+
+  testWidgets('默认配置仍为阿译中选择题（题型 2）', (WidgetTester tester) async {
+    await pumpReviewCard(tester);
+
+    expect(find.byType(ChoiceQuestions), findsOneWidget);
+    // 阿译中：题面为阿拉伯语，选项为中文释义
+    expect(find.text('相会'), findsOneWidget);
+  });
+
+  testWidgets('reviewQuestionSections: [3] 渲染拼写题且不抛异常', (WidgetTester tester) async {
+    FSRS().config = FSRSConfig(reviewQuestionSections: const [3]);
+    await pumpReviewCard(tester);
+
+    expect(find.byType(SpellQuestion), findsOneWidget);
+    // 拼写题展示中文释义作为提示
+    expect(find.text('相会'), findsOneWidget);
+  });
+
+  testWidgets('reviewQuestionSections: [1] 渲染中译阿选择题（中文题面）', (WidgetTester tester) async {
+    FSRS().config = FSRSConfig(reviewQuestionSections: const [1]);
+    await pumpReviewCard(tester);
+
+    expect(find.byType(ChoiceQuestions), findsOneWidget);
+    // 中译阿：题面为中文释义
+    expect(find.text('相会'), findsOneWidget);
+  });
+
+  testWidgets('听力题重复跳过只记录一次复习（Bug 1 回归）', (WidgetTester tester) async {
+    FSRS().config = FSRSConfig(reviewQuestionSections: const [4]);
+    await pumpReviewCard(tester);
+
+    expect(find.byType(ListeningQuestion), findsOneWidget);
+
+    // 首次跳过：新卡片被加入复习
+    await tester.tap(find.text('跳过听力题目'));
+    await tester.pumpAndSettle();
+    expect(tester.takeException(), isNull);
+    expect(FSRS().config.cards.length, 1);
+
+    // 第二次跳过必须是 no-op；否则 scheduler 为 null 会抛异常并重复记录
+    await tester.tap(find.text('跳过听力题目'));
+    await tester.pumpAndSettle();
+    expect(tester.takeException(), isNull);
+    expect(FSRS().config.cards.length, 1);
+  });
+
+  testWidgets('推送单词卡片题在最后一题可进入完成页（Bug 2 回归）', (WidgetTester tester) async {
+    FSRS().config = FSRSConfig(reviewQuestionSections: const [0]);
+    await pumpLearningPage(tester, <WordItem>[buildWords().first]);
+
+    // 学习阶段 -> 开始答题
+    await tester.tap(find.text('开始答题'));
+    await tester.pumpAndSettle();
+    expect(tester.takeException(), isNull);
+
+    // 单词卡片题：最后一题应显示「完成学习」并切到完成页
+    expect(find.text('完成学习'), findsOneWidget);
+    await tester.tap(find.text('完成学习'));
+    await tester.pumpAndSettle();
+    expect(tester.takeException(), isNull);
+    expect(find.textContaining('该课程学习已完成'), findsOneWidget);
   });
 }
