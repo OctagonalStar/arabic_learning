@@ -82,7 +82,6 @@ const allDependencies = <Package>[
   _jni,
   _jni_flutter,
   _jni_util,
-  _js,
   _json_annotation,
   _just_audio,
   _just_audio_platform_interface,
@@ -383,14 +382,14 @@ THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.''',
   );
 
-/// android_file_picker 1.0.1
+/// android_file_picker 1.1.1
 const _android_file_picker = Package(
     name: 'android_file_picker',
     description: 'Android implementation of the file_picker plugin, supporting file picking, saving, and Storage Access Framework (SAF) URI grants.',
-    homepage: 'https://github.com/miguelpruivo/flutter_file_picker/tree/master/packages/file_picker_android',
-    repository: 'https://github.com/miguelpruivo/flutter_file_picker/tree/master/packages/file_picker_android',
+    homepage: 'https://github.com/vicajilau/flutter_file_picker/tree/main/packages/file_picker_android',
+    repository: 'https://github.com/vicajilau/flutter_file_picker/tree/main/packages/file_picker_android',
     authors: [],
-    version: '1.0.1',
+    version: '1.1.1',
     spdxIdentifiers: ['MIT'],
     isMarkdown: false,
     isSdk: false,
@@ -419,13 +418,13 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.''',
   );
 
-/// archive 4.2.0
+/// archive 4.3.0
 const _archive = Package(
     name: 'archive',
     description: 'Provides encoders and decoders for various archive and compression formats such as zip, tar, bzip2, gzip, and zlib.',
     repository: 'https://github.com/brendan-duncan/archive',
     authors: [],
-    version: '4.2.0',
+    version: '4.3.0',
     spdxIdentifiers: ['MIT'],
     isMarkdown: false,
     isSdk: false,
@@ -854,13 +853,13 @@ THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.''',
   );
 
-/// clock 1.1.2
+/// clock 1.1.3
 const _clock = Package(
     name: 'clock',
     description: 'A fakeable wrapper for dart:core clock APIs.',
     repository: 'https://github.com/dart-lang/tools/tree/main/pkgs/clock',
     authors: [],
-    version: '1.1.2',
+    version: '1.1.3',
     spdxIdentifiers: ['Apache-2.0'],
     isMarkdown: false,
     isSdk: false,
@@ -1069,13 +1068,13 @@ const _clock = Package(
    limitations under the License.''',
   );
 
-/// code_assets 2.0.0
+/// code_assets 2.1.0
 const _code_assets = Package(
     name: 'code_assets',
     description: 'This library contains the hook protocol specification for bundling native code with Dart packages.',
     repository: 'https://github.com/dart-lang/native/tree/main/pkgs/code_assets',
     authors: [],
-    version: '2.0.0',
+    version: '2.1.0',
     spdxIdentifiers: ['BSD-3-Clause'],
     isMarkdown: false,
     isSdk: false,
@@ -1233,13 +1232,13 @@ THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.''',
   );
 
-/// cross_file 0.3.5+4
+/// cross_file 0.3.5+5
 const _cross_file = Package(
     name: 'cross_file',
     description: 'An abstraction to allow working with files across multiple platforms.',
     repository: 'https://github.com/flutter/packages/tree/main/packages/cross_file',
     authors: [],
-    version: '0.3.5+4',
+    version: '0.3.5+5',
     spdxIdentifiers: ['BSD-3-Clause'],
     isMarkdown: false,
     isSdk: false,
@@ -1388,13 +1387,13 @@ IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.''',
   );
 
-/// cupertino_ui 1.1.0
+/// cupertino_ui 1.1.1
 const _cupertino_ui = Package(
     name: 'cupertino_ui',
     description: 'The official Flutter Cupertino Design Library, implementing the iOS design system.',
     repository: 'https://github.com/flutter/packages/tree/main/packages/cupertino_ui',
     authors: [],
-    version: '1.1.0',
+    version: '1.1.1',
     spdxIdentifiers: ['BSD-3-Clause'],
     isMarkdown: false,
     isSdk: false,
@@ -1463,17 +1462,17 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.''',
   );
 
-/// dart_webrtc 1.8.1
+/// dart_webrtc 1.8.2
 const _dart_webrtc = Package(
     name: 'dart_webrtc',
     description: 'Use the dart/js library to re-wrap the webrtc js interface of the browser, to adapted common browsers.',
     homepage: 'https://github.com/flutter-webrtc/dart-webrtc',
     authors: [],
-    version: '1.8.1',
+    version: '1.8.2',
     spdxIdentifiers: ['MIT'],
     isMarkdown: false,
     isSdk: false,
-    dependencies: [PackageRef('collection'), PackageRef('js'), PackageRef('logging'), PackageRef('meta'), PackageRef('synchronized'), PackageRef('web'), PackageRef('webrtc_interface')],
+    dependencies: [PackageRef('collection'), PackageRef('logging'), PackageRef('meta'), PackageRef('synchronized'), PackageRef('web'), PackageRef('webrtc_interface')],
     devDependencies: [PackageRef('http'), PackageRef('test')],
     license: '''MIT License
 
@@ -1885,7 +1884,7 @@ Exhibit B - "Incompatible With Secondary Licenses" Notice
   defined by the Mozilla Public License, v. 2.0.''',
   );
 
-/// dio 5.11.0
+/// dio 5.11.1
 const _dio = Package(
     name: 'dio',
     description: '''A powerful HTTP networking package,
@@ -1896,7 +1895,7 @@ Custom adapters, Transformers, etc.
     homepage: 'https://github.com/cfug/dio',
     repository: 'https://github.com/cfug/dio/blob/main/dio',
     authors: [],
-    version: '5.11.0',
+    version: '5.11.1',
     spdxIdentifiers: ['MIT'],
     isMarkdown: false,
     isSdk: false,
@@ -1926,14 +1925,14 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.''',
   );
 
-/// dio_web_adapter 2.2.1
+/// dio_web_adapter 2.2.2
 const _dio_web_adapter = Package(
     name: 'dio_web_adapter',
     description: 'An adapter that supports Dio on Web.',
     homepage: 'https://github.com/cfug/dio',
     repository: 'https://github.com/cfug/dio/blob/main/plugins/web_adapter',
     authors: [],
-    version: '2.2.1',
+    version: '2.2.2',
     spdxIdentifiers: ['MIT'],
     isMarkdown: false,
     isSdk: false,
@@ -2731,19 +2730,19 @@ THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.''',
   );
 
-/// file_picker 12.0.0
+/// file_picker 12.3.0
 const _file_picker = Package(
     name: 'file_picker',
     description: 'A package that allows you to use a native file explorer to pick single or multiple absolute file paths, with extension filtering support.',
-    homepage: 'https://github.com/miguelpruivo/flutter_file_picker',
-    repository: 'https://github.com/miguelpruivo/flutter_file_picker',
+    homepage: 'https://github.com/vicajilau/flutter_file_picker',
+    repository: 'https://github.com/vicajilau/flutter_file_picker/tree/main/packages/file_picker',
     authors: [],
-    version: '12.0.0',
+    version: '12.3.0',
     spdxIdentifiers: ['MIT'],
     isMarkdown: false,
     isSdk: false,
     dependencies: [PackageRef('flutter'), PackageRef('file_picker_platform_interface'), PackageRef('android_file_picker'), PackageRef('file_picker_darwin'), PackageRef('file_picker_linux'), PackageRef('windows_file_picker'), PackageRef('file_picker_web'), PackageRef('cross_file')],
-    devDependencies: [PackageRef('flutter_lints'), PackageRef('flutter_test'), PackageRef('plugin_platform_interface')],
+    devDependencies: [PackageRef('flutter_test'), PackageRef('flutter_lints'), PackageRef('plugin_platform_interface')],
     license: '''MIT License
 
 Copyright (c) 2018 Miguel Ruivo
@@ -2767,14 +2766,14 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.''',
   );
 
-/// file_picker_darwin 1.0.1
+/// file_picker_darwin 1.2.0
 const _file_picker_darwin = Package(
     name: 'file_picker_darwin',
     description: 'Darwin (iOS and macOS) implementation of the file_picker plugin, supporting native file picking, saving, and directory selection.',
-    homepage: 'https://github.com/miguelpruivo/flutter_file_picker/tree/master/packages/file_picker_darwin',
-    repository: 'https://github.com/miguelpruivo/flutter_file_picker/tree/master/packages/file_picker_darwin',
+    homepage: 'https://github.com/vicajilau/flutter_file_picker/tree/main/packages/file_picker_darwin',
+    repository: 'https://github.com/vicajilau/flutter_file_picker/tree/main/packages/file_picker_darwin',
     authors: [],
-    version: '1.0.1',
+    version: '1.2.0',
     spdxIdentifiers: ['MIT'],
     isMarkdown: false,
     isSdk: false,
@@ -2803,14 +2802,14 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.''',
   );
 
-/// file_picker_linux 1.0.1
+/// file_picker_linux 1.1.0
 const _file_picker_linux = Package(
     name: 'file_picker_linux',
     description: 'Linux implementation of the file_picker plugin using GTK3 and XDG Desktop Portals for native file and directory picking.',
-    homepage: 'https://github.com/miguelpruivo/flutter_file_picker/tree/master/packages/file_picker_linux',
-    repository: 'https://github.com/miguelpruivo/flutter_file_picker/tree/master/packages/file_picker_linux',
+    homepage: 'https://github.com/vicajilau/flutter_file_picker/tree/main/packages/file_picker_linux',
+    repository: 'https://github.com/vicajilau/flutter_file_picker/tree/main/packages/file_picker_linux',
     authors: [],
-    version: '1.0.1',
+    version: '1.1.0',
     spdxIdentifiers: ['MIT'],
     isMarkdown: false,
     isSdk: false,
@@ -2839,14 +2838,14 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.''',
   );
 
-/// file_picker_platform_interface 3.0.1
+/// file_picker_platform_interface 3.4.0
 const _file_picker_platform_interface = Package(
     name: 'file_picker_platform_interface',
     description: 'A common platform interface for the file_picker plugin, defining the shared API surface and data contracts across platforms.',
-    homepage: 'https://github.com/miguelpruivo/flutter_file_picker/tree/master/packages/file_picker_platform_interface',
-    repository: 'https://github.com/miguelpruivo/flutter_file_picker/tree/master/packages/file_picker_platform_interface',
+    homepage: 'https://github.com/vicajilau/flutter_file_picker/tree/main/packages/file_picker_platform_interface',
+    repository: 'https://github.com/vicajilau/flutter_file_picker/tree/main/packages/file_picker_platform_interface',
     authors: [],
-    version: '3.0.1',
+    version: '3.4.0',
     spdxIdentifiers: ['MIT'],
     isMarkdown: false,
     isSdk: false,
@@ -2875,14 +2874,14 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.''',
   );
 
-/// file_picker_web 3.0.1
+/// file_picker_web 3.1.0
 const _file_picker_web = Package(
     name: 'file_picker_web',
     description: 'Web platform implementation of the file_picker plugin, providing browser file selection, file streaming, and file loading.',
-    homepage: 'https://github.com/miguelpruivo/flutter_file_picker/tree/master/packages/file_picker_web',
-    repository: 'https://github.com/miguelpruivo/flutter_file_picker/tree/master/packages/file_picker_web',
+    homepage: 'https://github.com/vicajilau/flutter_file_picker/tree/main/packages/file_picker_web',
+    repository: 'https://github.com/vicajilau/flutter_file_picker/tree/main/packages/file_picker_web',
     authors: [],
-    version: '3.0.1',
+    version: '3.1.0',
     spdxIdentifiers: ['MIT'],
     isMarkdown: false,
     isSdk: false,
@@ -3066,13 +3065,13 @@ ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.''',
   );
 
-/// flutter_local_notifications 22.3.0
+/// flutter_local_notifications 22.3.1
 const _flutter_local_notifications = Package(
     name: 'flutter_local_notifications',
     description: 'A cross platform plugin for displaying and scheduling local notifications for Flutter applications with the ability to customise for each platform.',
     homepage: 'https://github.com/MaikuB/flutter_local_notifications/tree/master/flutter_local_notifications',
     authors: [],
-    version: '22.3.0',
+    version: '22.3.1',
     spdxIdentifiers: ['BSD-3-Clause'],
     isMarkdown: false,
     isSdk: false,
@@ -3382,13 +3381,13 @@ const _flutter_web_plugins = Package(
     devDependencies: [PackageRef('flutter_test')],
   );
 
-/// flutter_webrtc 1.6.0
+/// flutter_webrtc 1.6.2+hotfix.3
 const _flutter_webrtc = Package(
     name: 'flutter_webrtc',
     description: 'Flutter WebRTC plugin for iOS/Android/Desktop/Web, based on GoogleWebRTC.',
     homepage: 'https://github.com/cloudwebrtc/flutter-webrtc',
     authors: [],
-    version: '1.6.0',
+    version: '1.6.2+hotfix.3',
     spdxIdentifiers: ['MIT'],
     isMarkdown: false,
     isSdk: false,
@@ -3493,13 +3492,13 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.''',
   );
 
-/// glob 2.1.3
+/// glob 2.2.0
 const _glob = Package(
     name: 'glob',
     description: 'A library to perform Bash-style file and directory globbing.',
     repository: 'https://github.com/dart-lang/tools/tree/main/pkgs/glob',
     authors: [],
-    version: '2.1.3',
+    version: '2.2.0',
     spdxIdentifiers: ['BSD-3-Clause'],
     isMarkdown: false,
     isSdk: false,
@@ -3575,18 +3574,18 @@ THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.''',
   );
 
-/// html 0.15.6
+/// html 0.15.7
 const _html = Package(
     name: 'html',
     description: 'APIs for parsing and manipulating HTML content outside the browser.',
     repository: 'https://github.com/dart-lang/tools/tree/main/pkgs/html',
     authors: [],
-    version: '0.15.6',
+    version: '0.15.7',
     spdxIdentifiers: [],
     isMarkdown: false,
     isSdk: false,
     dependencies: [PackageRef('csslib'), PackageRef('source_span')],
-    devDependencies: [PackageRef('path'), PackageRef('test')],
+    devDependencies: [PackageRef('path'), PackageRef('test'), PackageRef('web')],
     license: '''Copyright (c) 2006-2012 The Authors
 
 Contributors:
@@ -3735,13 +3734,13 @@ THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.''',
   );
 
-/// idb_shim 2.9.7+1
+/// idb_shim 2.9.9
 const _idb_shim = Package(
     name: 'idb_shim',
     description: 'indexed_db dart base interface with implementation for native (browser), file (io) and in memory.',
     homepage: 'https://github.com/tekartik/idb_shim.dart/tree/master/idb_shim',
     authors: [],
-    version: '2.9.7+1',
+    version: '2.9.9',
     spdxIdentifiers: ['BSD-2-Clause'],
     isMarkdown: false,
     isSdk: false,
@@ -3774,13 +3773,13 @@ OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.''',
   );
 
-/// image 4.9.2
+/// image 4.10.1
 const _image = Package(
     name: 'image',
     description: 'Dart Image Library provides server and web apps the ability to load, manipulate, and save images with various image file formats.',
     homepage: 'https://github.com/brendan-duncan/image',
     authors: [],
-    version: '4.9.2',
+    version: '4.10.1',
     spdxIdentifiers: ['MIT'],
     isMarkdown: false,
     isSdk: false,
@@ -3851,13 +3850,13 @@ THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.''',
   );
 
-/// io 1.0.5
+/// io 1.1.0
 const _io = Package(
     name: 'io',
     description: 'Utilities for the Dart VM Runtime including support for ANSI colors, file copying, and standard exit code values.',
     repository: 'https://github.com/dart-lang/tools/tree/main/pkgs/io',
     authors: [],
-    version: '1.0.5',
+    version: '1.1.0',
     spdxIdentifiers: ['BSD-3-Clause'],
     isMarkdown: false,
     isSdk: false,
@@ -3933,13 +3932,13 @@ THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.''',
   );
 
-/// jni_flutter 1.0.2
+/// jni_flutter 1.0.3
 const _jni_flutter = Package(
     name: 'jni_flutter',
     description: 'A library to access Flutter Android specific APIs from Dart.',
     repository: 'https://github.com/dart-lang/native/tree/main/pkgs/jni_flutter',
     authors: [],
-    version: '1.0.2',
+    version: '1.0.3',
     spdxIdentifiers: ['BSD-3-Clause'],
     isMarkdown: false,
     isSdk: false,
@@ -3987,47 +3986,6 @@ const _jni_util = Package(
     dependencies: [PackageRef('path')],
     devDependencies: [PackageRef('test')],
     license: '''Copyright 2026, the Dart project authors.
-
-Redistribution and use in source and binary forms, with or without
-modification, are permitted provided that the following conditions are
-met:
-
-    * Redistributions of source code must retain the above copyright
-      notice, this list of conditions and the following disclaimer.
-    * Redistributions in binary form must reproduce the above
-      copyright notice, this list of conditions and the following
-      disclaimer in the documentation and/or other materials provided
-      with the distribution.
-    * Neither the name of Google LLC nor the names of its
-      contributors may be used to endorse or promote products derived
-      from this software without specific prior written permission.
-
-THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-"AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
-OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.''',
-  );
-
-/// js 0.7.2
-const _js = Package(
-    name: 'js',
-    description: 'Annotations to create static Dart interfaces for JavaScript APIs.',
-    repository: 'https://github.com/dart-lang/sdk/tree/main/pkg/js',
-    authors: [],
-    version: '0.7.2',
-    spdxIdentifiers: ['BSD-3-Clause'],
-    isMarkdown: false,
-    isSdk: false,
-    dependencies: [],
-    devDependencies: [PackageRef('lints')],
-    license: '''Copyright 2012, the Dart project authors.
 
 Redistribution and use in source and binary forms, with or without
 modification, are permitted provided that the following conditions are
@@ -4609,13 +4567,13 @@ THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.''',
   );
 
-/// logger 2.7.0
+/// logger 2.8.0
 const _logger = Package(
     name: 'logger',
     description: 'Small, easy to use and extensible logger which prints beautiful logs.',
     repository: 'https://github.com/SourceHorizon/logger',
     authors: [],
-    version: '2.7.0',
+    version: '2.8.0',
     spdxIdentifiers: ['MIT'],
     isMarkdown: false,
     isSdk: false,
@@ -4984,13 +4942,13 @@ const _material_color_utilities = Package(
    limitations under the License.''',
   );
 
-/// material_ui 1.3.0
+/// material_ui 1.4.0
 const _material_ui = Package(
     name: 'material_ui',
     description: "The official Flutter Material UI Library, implementing Google's Material Design design system.",
     repository: 'https://github.com/flutter/packages/tree/main/packages/material_ui',
     authors: [],
-    version: '1.3.0',
+    version: '1.4.0',
     spdxIdentifiers: ['BSD-3-Clause'],
     isMarkdown: false,
     isSdk: false,
@@ -5064,18 +5022,18 @@ THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.''',
   );
 
-/// mime 2.0.0
+/// mime 2.1.0
 const _mime = Package(
     name: 'mime',
     description: 'Utilities for handling media (MIME) types, including determining a type from a file extension and file contents.',
     repository: 'https://github.com/dart-lang/tools/tree/main/pkgs/mime',
     authors: [],
-    version: '2.0.0',
+    version: '2.1.0',
     spdxIdentifiers: ['BSD-3-Clause'],
     isMarkdown: false,
     isSdk: false,
     dependencies: [],
-    devDependencies: [PackageRef('test')],
+    devDependencies: [PackageRef('http'), PackageRef('path'), PackageRef('test')],
     license: '''Copyright 2015, the Dart project authors.
 
 Redistribution and use in source and binary forms, with or without
@@ -5105,13 +5063,13 @@ THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.''',
   );
 
-/// mobile_scanner 7.4.0
+/// mobile_scanner 7.4.2
 const _mobile_scanner = Package(
     name: 'mobile_scanner',
     description: 'A universal Flutter barcode and QR code scanner using CameraX/ML Kit for Android, AVFoundation/Apple Vision for iOS & macOS, and ZXing for web.',
     repository: 'https://github.com/juliansteenbakker/mobile_scanner',
     authors: [],
-    version: '7.4.0',
+    version: '7.4.2',
     spdxIdentifiers: ['BSD-3-Clause'],
     isMarkdown: false,
     isSdk: false,
@@ -6267,18 +6225,18 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.''',
   );
 
-/// platform 3.1.6
+/// platform 3.2.0
 const _platform = Package(
     name: 'platform',
     description: 'A pluggable, mockable platform information abstraction for Dart.',
     repository: 'https://github.com/dart-lang/core/tree/main/pkgs/platform',
     authors: [],
-    version: '3.1.6',
+    version: '3.2.0',
     spdxIdentifiers: ['BSD-3-Clause'],
     isMarkdown: false,
     isSdk: false,
-    dependencies: [],
-    devDependencies: [PackageRef('test')],
+    dependencies: [PackageRef('meta')],
+    devDependencies: [PackageRef('path'), PackageRef('test')],
     license: '''Copyright 2017, the Dart project authors. All rights reserved.
 Redistribution and use in source and binary forms, with or without
 modification, are permitted provided that the following conditions are
@@ -6346,13 +6304,13 @@ ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.''',
   );
 
-/// pool 1.5.2
+/// pool 1.5.3
 const _pool = Package(
     name: 'pool',
     description: 'Manage a finite pool of resources. Useful for controlling concurrent file system or network requests.',
     repository: 'https://github.com/dart-lang/tools/tree/main/pkgs/pool',
     authors: [],
-    version: '1.5.2',
+    version: '1.5.3',
     spdxIdentifiers: ['BSD-3-Clause'],
     isMarkdown: false,
     isSdk: false,
@@ -6457,13 +6415,13 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.''',
   );
 
-/// pub_semver 2.2.0
+/// pub_semver 2.2.1
 const _pub_semver = Package(
     name: 'pub_semver',
     description: "Versions and version constraints implementing pub's versioning policy. This is very similar to vanilla semver, with a few corner cases.",
     repository: 'https://github.com/dart-lang/tools/tree/main/pkgs/pub_semver',
     authors: [],
-    version: '2.2.0',
+    version: '2.2.1',
     spdxIdentifiers: ['BSD-3-Clause'],
     isMarkdown: false,
     isSdk: false,
@@ -6498,13 +6456,13 @@ THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.''',
   );
 
-/// pubspec_parse 1.5.0
+/// pubspec_parse 1.6.0
 const _pubspec_parse = Package(
     name: 'pubspec_parse',
     description: 'Simple package for parsing pubspec.yaml files with a type-safe API and rich error reporting.',
     repository: 'https://github.com/dart-lang/tools/tree/main/pkgs/pubspec_parse',
     authors: [],
-    version: '1.5.0',
+    version: '1.6.0',
     spdxIdentifiers: ['BSD-3-Clause'],
     isMarkdown: false,
     isSdk: false,
@@ -7488,13 +7446,13 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.''',
   );
 
-/// sembast 3.8.9+1
+/// sembast 3.8.11
 const _sembast = Package(
     name: 'sembast',
     description: 'NoSQL persistent embedded file system document-based database for Dart VM and Flutter with encryption support.',
     homepage: 'https://github.com/tekartik/sembast.dart/tree/master/sembast',
     authors: [],
-    version: '3.8.9+1',
+    version: '3.8.11',
     spdxIdentifiers: ['BSD-3-Clause'],
     isMarkdown: false,
     isSdk: false,
@@ -7568,13 +7526,13 @@ ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.''',
   );
 
-/// shared_preferences_android 2.4.27
+/// shared_preferences_android 2.4.28
 const _shared_preferences_android = Package(
     name: 'shared_preferences_android',
     description: 'Android implementation of the shared_preferences plugin',
     repository: 'https://github.com/flutter/packages/tree/main/packages/shared_preferences/shared_preferences_android',
     authors: [],
-    version: '2.4.27',
+    version: '2.4.28',
     spdxIdentifiers: ['BSD-3-Clause'],
     isMarkdown: false,
     isSdk: false,
@@ -7607,17 +7565,17 @@ ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.''',
   );
 
-/// shared_preferences_foundation 2.5.6
+/// shared_preferences_foundation 2.5.7
 const _shared_preferences_foundation = Package(
     name: 'shared_preferences_foundation',
     description: 'iOS and macOS implementation of the shared_preferences plugin.',
     repository: 'https://github.com/flutter/packages/tree/main/packages/shared_preferences/shared_preferences_foundation',
     authors: [],
-    version: '2.5.6',
+    version: '2.5.7',
     spdxIdentifiers: ['BSD-3-Clause'],
     isMarkdown: false,
     isSdk: false,
-    dependencies: [PackageRef('flutter'), PackageRef('shared_preferences_platform_interface')],
+    dependencies: [PackageRef('flutter'), PackageRef('meta'), PackageRef('shared_preferences_platform_interface')],
     devDependencies: [PackageRef('flutter_test')],
     license: '''Copyright 2013 The Flutter Authors
 
@@ -7967,7 +7925,7 @@ THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.''',
   );
 
-/// sherpa_onnx 1.13.6
+/// sherpa_onnx 1.13.8
 const _sherpa_onnx = Package(
     name: 'sherpa_onnx',
     description: '''Speech recognition, speech synthesis, and speaker recognition using next-gen Kaldi with onnxruntime without Internet connection.
@@ -7975,7 +7933,7 @@ const _sherpa_onnx = Package(
     homepage: 'https://github.com/k2-fsa/sherpa-onnx',
     repository: 'https://github.com/k2-fsa/sherpa-onnx/tree/master/flutter',
     authors: [],
-    version: '1.13.6',
+    version: '1.13.8',
     spdxIdentifiers: ['Apache-2.0'],
     isMarkdown: false,
     isSdk: false,
@@ -8184,7 +8142,7 @@ const _sherpa_onnx = Package(
    limitations under the License.''',
   );
 
-/// sherpa_onnx_android_arm64 1.13.6
+/// sherpa_onnx_android_arm64 1.13.8
 const _sherpa_onnx_android_arm64 = Package(
     name: 'sherpa_onnx_android_arm64',
     description: '''Speech recognition, speech synthesis, and speaker recognition using next-gen Kaldi with onnxruntime without Internet connection. Android arm64-v8a native libraries.
@@ -8192,7 +8150,7 @@ const _sherpa_onnx_android_arm64 = Package(
     homepage: 'https://github.com/k2-fsa/sherpa-onnx',
     repository: 'https://github.com/k2-fsa/sherpa-onnx/tree/master/flutter',
     authors: [],
-    version: '1.13.6',
+    version: '1.13.8',
     spdxIdentifiers: ['Apache-2.0'],
     isMarkdown: false,
     isSdk: false,
@@ -8401,7 +8359,7 @@ const _sherpa_onnx_android_arm64 = Package(
    limitations under the License.''',
   );
 
-/// sherpa_onnx_android_armeabi 1.13.6
+/// sherpa_onnx_android_armeabi 1.13.8
 const _sherpa_onnx_android_armeabi = Package(
     name: 'sherpa_onnx_android_armeabi',
     description: '''Speech recognition, speech synthesis, and speaker recognition using next-gen Kaldi with onnxruntime without Internet connection. Android armeabi-v7a native libraries.
@@ -8409,7 +8367,7 @@ const _sherpa_onnx_android_armeabi = Package(
     homepage: 'https://github.com/k2-fsa/sherpa-onnx',
     repository: 'https://github.com/k2-fsa/sherpa-onnx/tree/master/flutter',
     authors: [],
-    version: '1.13.6',
+    version: '1.13.8',
     spdxIdentifiers: ['Apache-2.0'],
     isMarkdown: false,
     isSdk: false,
@@ -8618,7 +8576,7 @@ const _sherpa_onnx_android_armeabi = Package(
    limitations under the License.''',
   );
 
-/// sherpa_onnx_android_x86 1.13.6
+/// sherpa_onnx_android_x86 1.13.8
 const _sherpa_onnx_android_x86 = Package(
     name: 'sherpa_onnx_android_x86',
     description: '''Speech recognition, speech synthesis, and speaker recognition using next-gen Kaldi with onnxruntime without Internet connection. Android x86 native libraries.
@@ -8626,7 +8584,7 @@ const _sherpa_onnx_android_x86 = Package(
     homepage: 'https://github.com/k2-fsa/sherpa-onnx',
     repository: 'https://github.com/k2-fsa/sherpa-onnx/tree/master/flutter',
     authors: [],
-    version: '1.13.6',
+    version: '1.13.8',
     spdxIdentifiers: ['Apache-2.0'],
     isMarkdown: false,
     isSdk: false,
@@ -8835,7 +8793,7 @@ const _sherpa_onnx_android_x86 = Package(
    limitations under the License.''',
   );
 
-/// sherpa_onnx_android_x86_64 1.13.6
+/// sherpa_onnx_android_x86_64 1.13.8
 const _sherpa_onnx_android_x86_64 = Package(
     name: 'sherpa_onnx_android_x86_64',
     description: '''Speech recognition, speech synthesis, and speaker recognition using next-gen Kaldi with onnxruntime without Internet connection. Android x86_64 native libraries.
@@ -8843,7 +8801,7 @@ const _sherpa_onnx_android_x86_64 = Package(
     homepage: 'https://github.com/k2-fsa/sherpa-onnx',
     repository: 'https://github.com/k2-fsa/sherpa-onnx/tree/master/flutter',
     authors: [],
-    version: '1.13.6',
+    version: '1.13.8',
     spdxIdentifiers: ['Apache-2.0'],
     isMarkdown: false,
     isSdk: false,
@@ -9052,7 +9010,7 @@ const _sherpa_onnx_android_x86_64 = Package(
    limitations under the License.''',
   );
 
-/// sherpa_onnx_ios 1.13.6
+/// sherpa_onnx_ios 1.13.8
 const _sherpa_onnx_ios = Package(
     name: 'sherpa_onnx_ios',
     description: '''Speech recognition, speech synthesis, and speaker recognition using next-gen Kaldi with onnxruntime without Internet connection.
@@ -9060,7 +9018,7 @@ const _sherpa_onnx_ios = Package(
     homepage: 'https://github.com/k2-fsa/sherpa-onnx',
     repository: 'https://github.com/k2-fsa/sherpa-onnx/tree/master/flutter',
     authors: [],
-    version: '1.13.6',
+    version: '1.13.8',
     spdxIdentifiers: ['Apache-2.0'],
     isMarkdown: false,
     isSdk: false,
@@ -9269,7 +9227,7 @@ const _sherpa_onnx_ios = Package(
    limitations under the License.''',
   );
 
-/// sherpa_onnx_linux 1.13.6
+/// sherpa_onnx_linux 1.13.8
 const _sherpa_onnx_linux = Package(
     name: 'sherpa_onnx_linux',
     description: '''Speech recognition, speech synthesis, and speaker recognition using next-gen Kaldi with onnxruntime without Internet connection.
@@ -9277,7 +9235,7 @@ const _sherpa_onnx_linux = Package(
     homepage: 'https://github.com/k2-fsa/sherpa-onnx',
     repository: 'https://github.com/k2-fsa/sherpa-onnx/tree/master/flutter',
     authors: [],
-    version: '1.13.6',
+    version: '1.13.8',
     spdxIdentifiers: ['Apache-2.0'],
     isMarkdown: false,
     isSdk: false,
@@ -9486,7 +9444,7 @@ const _sherpa_onnx_linux = Package(
    limitations under the License.''',
   );
 
-/// sherpa_onnx_macos 1.13.6
+/// sherpa_onnx_macos 1.13.8
 const _sherpa_onnx_macos = Package(
     name: 'sherpa_onnx_macos',
     description: '''Speech recognition, speech synthesis, and speaker recognition using next-gen Kaldi with onnxruntime without Internet connection.
@@ -9494,7 +9452,7 @@ const _sherpa_onnx_macos = Package(
     homepage: 'https://github.com/k2-fsa/sherpa-onnx',
     repository: 'https://github.com/k2-fsa/sherpa-onnx/tree/master/flutter',
     authors: [],
-    version: '1.13.6',
+    version: '1.13.8',
     spdxIdentifiers: ['Apache-2.0'],
     isMarkdown: false,
     isSdk: false,
@@ -9703,7 +9661,7 @@ const _sherpa_onnx_macos = Package(
    limitations under the License.''',
   );
 
-/// sherpa_onnx_web 1.13.6
+/// sherpa_onnx_web 1.13.8
 const _sherpa_onnx_web = Package(
     name: 'sherpa_onnx_web',
     description: '''Web platform support for sherpa_onnx using WebAssembly.
@@ -9711,7 +9669,7 @@ const _sherpa_onnx_web = Package(
     homepage: 'https://github.com/k2-fsa/sherpa-onnx',
     repository: 'https://github.com/k2-fsa/sherpa-onnx/tree/master/flutter',
     authors: [],
-    version: '1.13.6',
+    version: '1.13.8',
     spdxIdentifiers: ['Apache-2.0'],
     isMarkdown: false,
     isSdk: false,
@@ -9920,7 +9878,7 @@ const _sherpa_onnx_web = Package(
    limitations under the License.''',
   );
 
-/// sherpa_onnx_windows 1.13.6
+/// sherpa_onnx_windows 1.13.8
 const _sherpa_onnx_windows = Package(
     name: 'sherpa_onnx_windows',
     description: '''Speech recognition, speech synthesis, and speaker recognition using next-gen Kaldi with onnxruntime without Internet connection.
@@ -9928,7 +9886,7 @@ const _sherpa_onnx_windows = Package(
     homepage: 'https://github.com/k2-fsa/sherpa-onnx',
     repository: 'https://github.com/k2-fsa/sherpa-onnx/tree/master/flutter',
     authors: [],
-    version: '1.13.6',
+    version: '1.13.8',
     spdxIdentifiers: ['Apache-2.0'],
     isMarkdown: false,
     isSdk: false,
@@ -40114,13 +40072,13 @@ THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.''',
   );
 
-/// stack_trace 1.12.1
+/// stack_trace 1.12.2
 const _stack_trace = Package(
     name: 'stack_trace',
     description: 'A package for manipulating stack traces and printing them readably.',
     repository: 'https://github.com/dart-lang/tools/tree/main/pkgs/stack_trace',
     authors: [],
-    version: '1.12.1',
+    version: '1.12.2',
     spdxIdentifiers: ['BSD-3-Clause'],
     isMarkdown: false,
     isSdk: false,
@@ -40237,13 +40195,13 @@ THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.''',
   );
 
-/// synchronized 3.4.1+2
+/// synchronized 3.4.2
 const _synchronized = Package(
     name: 'synchronized',
     description: 'Lock mechanism to prevent concurrent access to asynchronous code.',
     homepage: 'https://github.com/tekartik/synchronized.dart/tree/master/synchronized',
     authors: [],
-    version: '3.4.1+2',
+    version: '3.4.2',
     spdxIdentifiers: ['MIT'],
     isMarkdown: false,
     isSdk: false,
@@ -40552,18 +40510,18 @@ ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.''',
   );
 
-/// url_launcher_android 6.3.32
+/// url_launcher_android 6.3.33
 const _url_launcher_android = Package(
     name: 'url_launcher_android',
     description: 'Android implementation of the url_launcher plugin.',
     repository: 'https://github.com/flutter/packages/tree/main/packages/url_launcher/url_launcher_android',
     authors: [],
-    version: '6.3.32',
+    version: '6.3.33',
     spdxIdentifiers: ['BSD-3-Clause'],
     isMarkdown: false,
     isSdk: false,
     dependencies: [PackageRef('flutter'), PackageRef('meta'), PackageRef('url_launcher_platform_interface')],
-    devDependencies: [PackageRef('flutter_test'), PackageRef('plugin_platform_interface'), PackageRef('test')],
+    devDependencies: [PackageRef('flutter_test'), PackageRef('plugin_platform_interface')],
     license: '''Copyright 2013 The Flutter Authors
 
 Redistribution and use in source and binary forms, with or without modification,
@@ -40591,18 +40549,18 @@ ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.''',
   );
 
-/// url_launcher_ios 6.4.1
+/// url_launcher_ios 6.4.2
 const _url_launcher_ios = Package(
     name: 'url_launcher_ios',
     description: 'iOS implementation of the url_launcher plugin.',
     repository: 'https://github.com/flutter/packages/tree/main/packages/url_launcher/url_launcher_ios',
     authors: [],
-    version: '6.4.1',
+    version: '6.4.2',
     spdxIdentifiers: ['BSD-3-Clause'],
     isMarkdown: false,
     isSdk: false,
-    dependencies: [PackageRef('flutter'), PackageRef('url_launcher_platform_interface')],
-    devDependencies: [PackageRef('flutter_test'), PackageRef('plugin_platform_interface'), PackageRef('test')],
+    dependencies: [PackageRef('flutter'), PackageRef('meta'), PackageRef('url_launcher_platform_interface')],
+    devDependencies: [PackageRef('flutter_test'), PackageRef('plugin_platform_interface')],
     license: '''Copyright 2013 The Flutter Authors
 
 Redistribution and use in source and binary forms, with or without modification,
@@ -40630,18 +40588,18 @@ ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.''',
   );
 
-/// url_launcher_linux 3.2.2
+/// url_launcher_linux 3.2.3
 const _url_launcher_linux = Package(
     name: 'url_launcher_linux',
     description: 'Linux implementation of the url_launcher plugin.',
     repository: 'https://github.com/flutter/packages/tree/main/packages/url_launcher/url_launcher_linux',
     authors: [],
-    version: '3.2.2',
+    version: '3.2.3',
     spdxIdentifiers: ['BSD-3-Clause'],
     isMarkdown: false,
     isSdk: false,
-    dependencies: [PackageRef('flutter'), PackageRef('url_launcher_platform_interface')],
-    devDependencies: [PackageRef('flutter_test'), PackageRef('test')],
+    dependencies: [PackageRef('flutter'), PackageRef('meta'), PackageRef('url_launcher_platform_interface')],
+    devDependencies: [PackageRef('flutter_test')],
     license: '''Copyright 2013 The Flutter Authors
 
 Redistribution and use in source and binary forms, with or without modification,
@@ -40669,18 +40627,18 @@ ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.''',
   );
 
-/// url_launcher_macos 3.2.5
+/// url_launcher_macos 3.2.6
 const _url_launcher_macos = Package(
     name: 'url_launcher_macos',
     description: 'macOS implementation of the url_launcher plugin.',
     repository: 'https://github.com/flutter/packages/tree/main/packages/url_launcher/url_launcher_macos',
     authors: [],
-    version: '3.2.5',
+    version: '3.2.6',
     spdxIdentifiers: ['BSD-3-Clause'],
     isMarkdown: false,
     isSdk: false,
-    dependencies: [PackageRef('flutter'), PackageRef('url_launcher_platform_interface')],
-    devDependencies: [PackageRef('flutter_test'), PackageRef('test')],
+    dependencies: [PackageRef('flutter'), PackageRef('meta'), PackageRef('url_launcher_platform_interface')],
+    devDependencies: [PackageRef('flutter_test')],
     license: '''Copyright 2013 The Flutter Authors
 
 Redistribution and use in source and binary forms, with or without modification,
@@ -40786,18 +40744,18 @@ ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.''',
   );
 
-/// url_launcher_windows 3.1.5
+/// url_launcher_windows 3.1.6
 const _url_launcher_windows = Package(
     name: 'url_launcher_windows',
     description: 'Windows implementation of the url_launcher plugin.',
     repository: 'https://github.com/flutter/packages/tree/main/packages/url_launcher/url_launcher_windows',
     authors: [],
-    version: '3.1.5',
+    version: '3.1.6',
     spdxIdentifiers: ['BSD-3-Clause'],
     isMarkdown: false,
     isSdk: false,
-    dependencies: [PackageRef('flutter'), PackageRef('url_launcher_platform_interface')],
-    devDependencies: [PackageRef('flutter_test'), PackageRef('test')],
+    dependencies: [PackageRef('flutter'), PackageRef('meta'), PackageRef('url_launcher_platform_interface')],
+    devDependencies: [PackageRef('flutter_test')],
     license: '''Copyright 2013 The Flutter Authors
 
 Redistribution and use in source and binary forms, with or without modification,
@@ -40847,13 +40805,13 @@ The above copyright notice and this permission notice shall be included in all c
 THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.''',
   );
 
-/// vector_math 2.4.2
+/// vector_math 2.4.3
 const _vector_math = Package(
     name: 'vector_math',
     description: 'A vector math library for 2D and 3D applications, supporting 2D, 3D, and 4D matrices.',
     repository: 'https://github.com/flutter/core-packages/tree/main/packages/vector_math',
     authors: [],
-    version: '2.4.2',
+    version: '2.4.3',
     spdxIdentifiers: ['BSD-3-Clause'],
     isMarkdown: false,
     isSdk: false,
@@ -40927,13 +40885,13 @@ THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.''',
   );
 
-/// wakelock_plus 1.7.0
+/// wakelock_plus 1.8.0
 const _wakelock_plus = Package(
     name: 'wakelock_plus',
     description: 'Plugin that allows you to keep the device screen awake, i.e. prevent the screen from sleeping on Android, iOS, macOS, Windows, Linux, and web.',
     repository: 'https://github.com/fluttercommunity/wakelock_plus/tree/main/wakelock_plus',
     authors: [],
-    version: '1.7.0',
+    version: '1.8.0',
     spdxIdentifiers: ['BSD-3-Clause'],
     isMarkdown: false,
     isSdk: false,
@@ -40970,13 +40928,13 @@ OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.''',
   );
 
-/// wakelock_plus_platform_interface 1.6.0
+/// wakelock_plus_platform_interface 1.7.0
 const _wakelock_plus_platform_interface = Package(
     name: 'wakelock_plus_platform_interface',
     description: 'A common platform interface for the wakelock_plus plugin used by the different platform implementations.',
     repository: 'https://github.com/fluttercommunity/wakelock_plus/tree/main/wakelock_plus_platform_interface',
     authors: [],
-    version: '1.6.0',
+    version: '1.7.0',
     spdxIdentifiers: ['BSD-3-Clause'],
     isMarkdown: false,
     isSdk: false,
@@ -41376,14 +41334,14 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.''',
   );
 
-/// windows_file_picker 1.0.1
+/// windows_file_picker 1.3.0
 const _windows_file_picker = Package(
     name: 'windows_file_picker',
     description: 'Windows implementation of the file_picker plugin using Win32 COM APIs for native file and directory picking.',
-    homepage: 'https://github.com/miguelpruivo/flutter_file_picker/tree/master/packages/file_picker_windows',
-    repository: 'https://github.com/miguelpruivo/flutter_file_picker/tree/master/packages/file_picker_windows',
+    homepage: 'https://github.com/vicajilau/flutter_file_picker/tree/main/packages/file_picker_windows',
+    repository: 'https://github.com/vicajilau/flutter_file_picker/tree/main/packages/file_picker_windows',
     authors: [],
-    version: '1.0.1',
+    version: '1.3.0',
     spdxIdentifiers: ['MIT'],
     isMarkdown: false,
     isSdk: false,
@@ -41412,14 +41370,14 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.''',
   );
 
-/// workmanager 0.10.9
+/// workmanager 0.10.10
 const _workmanager = Package(
     name: 'workmanager',
     description: 'Flutter Workmanager. This plugin allows you to schedule background work on Android and iOS.',
     homepage: 'https://github.com/fluttercommunity/flutter_workmanager',
     repository: 'https://github.com/fluttercommunity/flutter_workmanager',
     authors: [],
-    version: '0.10.9',
+    version: '0.10.10',
     spdxIdentifiers: ['MIT'],
     isMarkdown: false,
     isSdk: false,
@@ -41449,14 +41407,14 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.''',
   );
 
-/// workmanager_android 0.10.8
+/// workmanager_android 0.10.9
 const _workmanager_android = Package(
     name: 'workmanager_android',
     description: 'Android implementation of the workmanager plugin.',
     homepage: 'https://github.com/fluttercommunity/flutter_workmanager',
     repository: 'https://github.com/fluttercommunity/flutter_workmanager',
     authors: [],
-    version: '0.10.8',
+    version: '0.10.9',
     spdxIdentifiers: ['MIT'],
     isMarkdown: false,
     isSdk: false,
@@ -41486,14 +41444,14 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.''',
   );
 
-/// workmanager_apple 0.9.10
+/// workmanager_apple 0.9.11
 const _workmanager_apple = Package(
     name: 'workmanager_apple',
     description: 'Apple platform (iOS/macOS) implementation of the workmanager plugin.',
     homepage: 'https://github.com/fluttercommunity/flutter_workmanager',
     repository: 'https://github.com/fluttercommunity/flutter_workmanager',
     authors: [],
-    version: '0.9.10',
+    version: '0.9.11',
     spdxIdentifiers: ['MIT'],
     isMarkdown: false,
     isSdk: false,
@@ -41559,14 +41517,14 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.''',
   );
 
-/// workmanager_platform_interface 0.10.4
+/// workmanager_platform_interface 0.10.5
 const _workmanager_platform_interface = Package(
     name: 'workmanager_platform_interface',
     description: 'A common platform interface for the workmanager plugin.',
     homepage: 'https://github.com/fluttercommunity/flutter_workmanager',
     repository: 'https://github.com/fluttercommunity/flutter_workmanager',
     authors: [],
-    version: '0.10.4',
+    version: '0.10.5',
     spdxIdentifiers: ['MIT'],
     isMarkdown: false,
     isSdk: false,
@@ -41707,13 +41665,13 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.''',
   );
 
-/// yaml 3.1.3
+/// yaml 3.1.4
 const _yaml = Package(
     name: 'yaml',
     description: 'A parser for YAML, a human-friendly data serialization standard',
     repository: 'https://github.com/dart-lang/tools/tree/main/pkgs/yaml',
     authors: [],
-    version: '3.1.3',
+    version: '3.1.4',
     spdxIdentifiers: ['MIT'],
     isMarkdown: false,
     isSdk: false,
