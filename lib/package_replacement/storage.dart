@@ -10,7 +10,7 @@ class SharedPreferences {
   late idb.IdbFactory idbFactory;
   late idb.Database db;
   late shpr.SharedPreferences prefs;
-  static const List<String> usedKeys = ["settingData", "wordData", "fsrsData", "readingData"]; // ! change this whenever add new setting key !
+  static const List<String> usedKeys = ["settingData", "wordData", "fsrsData", "readingData", "synonymData"]; // ! change this whenever add new setting key !
   Map<String, dynamic> dbCache = {}; // 使用缓存避免异步加载
 
   static Future<SharedPreferences> getInstance() async {
@@ -111,8 +111,13 @@ class SharedPreferences {
     try{
       if(!type) dbCache = {}; // create a new instance
       for(String keyName in usedKeys) {
-        setString(keyName, backup[keyName]);
-        logger.fine("完成键恢复: $keyName");
+        final dynamic v = backup[keyName];
+        if(v is String && v.isNotEmpty) {
+          setString(keyName, v);
+          logger.fine("完成键恢复: $keyName");
+        } else {
+          logger.fine("跳过缺失的键: $keyName");
+        }
       }
     } catch (e) {
       logger.severe("恢复数据出错: $e");

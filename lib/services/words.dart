@@ -11,6 +11,7 @@ import 'package:arabic_learning/models/config.dart' show LearningConfig;
 import 'package:arabic_learning/models/dict.dart' show ClassItem, DictData, SourceItem, WordItem;
 import 'package:arabic_learning/services/app_data.dart' show AppData;
 import 'package:arabic_learning/services/search.dart' show BKSearch;
+import 'package:arabic_learning/services/synonyms.dart' show SynonymStore;
 
 List<WordItem> getSelectedWords(DictData wordData , List<ClassItem> selectedClasses, {bool doShuffle = false, bool doDouble = false, int? shuffleSeed}) {
   List<WordItem> ans = [];
@@ -58,8 +59,10 @@ int getStrokeDays(LearningConfig config) {
 /// 如果[useSimilar]为真则使用与[include]相似的单词
 /// 如果[preferClass]为真则使用与[include]相同课程的单词
 /// 如果[allowRepet]为真则可能随机出现重复项
+/// 如果[avoidSynonyms]为真且指定了[include]，则排除与[include]释义完全相同
+/// 或被用户标记为同义的词条（仅以[include]为中心判断）
 /// 要集中进行随机的时候可以提供[rnd]实例避免重复创建实例
-List<WordItem> getRandomWords(int count, DictData dict, {WordItem? include, bool preferClass = true, bool allowRepet = false, bool shuffle = true, Random? rnd}){
+List<WordItem> getRandomWords(int count, DictData dict, {WordItem? include, bool preferClass = true, bool allowRepet = false, bool shuffle = true, bool avoidSynonyms = false, Random? rnd}){
   rnd ??= Random();
   List<WordItem> wordList = [];
   List<WordItem> rndRange = [];
@@ -87,7 +90,24 @@ List<WordItem> getRandomWords(int count, DictData dict, {WordItem? include, bool
     }
   }
   
-  if(rndRange.length + backupRndRange.length < count) backupRndRange = dict.words;
+  final bool filterSynonym = avoidSynonyms && include != null;
+  bool keepCandidate(WordItem candidate) {
+    if (!filterSynonym) return true;
+    if (candidate.id == include.id) return false;
+    return !SynonymStore().isSynonymWord(include, candidate);
+  }
+
+  if (filterSynonym) {
+    rndRange = rndRange.where(keepCandidate).toList();
+    backupRndRange = backupRndRange.where(keepCandidate).toList();
+  }
+  if (rndRange.length + backupRndRange.length < count) {
+    backupRndRange = filterSynonym ? dict.words.where(keepCandidate).toList() : dict.words;
+  }
+  // 极端兜底（词库过小/过滤过严）：放弃过滤以避免下方 do/while 死循环
+  if (rndRange.length + backupRndRange.length < count) {
+    backupRndRange = dict.words;
+  }
 
   do {
     while (wordList.length < count){
@@ -106,22 +126,34 @@ List<WordItem> getRandomWords(int count, DictData dict, {WordItem? include, bool
   return wordList;
 }
 
-/// 生成选择题的 4 个中文选项（包含 [word] 自身）
+/// 生成选择题的 4 个选项词（包含 [word] 自身），并排除同义/重复释义的干扰项。
 ///
 /// [preferSimilar] 为真时优先选择与 [word] 相似的单词（内部取反后传给
-/// [getRandomWords] 的 `preferClass`）。参数求值顺序、随机数消耗次数与顺序
-/// 均与原先在 fsrs_pages 中直接书写的
-/// `getRandomWords(4, dict, include: word, preferClass: !preferSimilar, rnd: rnd)`
-/// + `List.generate(4, (index) => optionWords[index].chinese, growable: false)`
-/// 完全一致。
+/// [getRandomWords] 的 `preferClass`）。始终以 [avoidSynonyms] 为真调用，
+/// 因此与 [word] 释义完全相同或被标记为同义的词条不会成为干扰项。
+List<WordItem> buildChineseChoiceOptionWords(
+  WordItem word,
+  DictData dict, {
+  required bool preferSimilar,
+  required Random rnd,
+}) {
+  return getRandomWords(4, dict, include: word, preferClass: !preferSimilar, rnd: rnd, avoidSynonyms: true);
+}
+
+/// 生成选择题的 4 个中文选项（包含 [word] 自身）
+///
+/// 委托 [buildChineseChoiceOptionWords] 构建选项词后映射为释义字符串，
+/// 保持单次 [getRandomWords] 调用与相同的随机数消耗。选项词会排除与
+/// [word] 同义或释义完全重复的干扰项。
 List<String> buildChineseChoiceOptions(
   WordItem word,
   DictData dict, {
   required bool preferSimilar,
   required Random rnd,
 }) {
-  final List<WordItem> optionWords = getRandomWords(4, dict, include: word, preferClass: !preferSimilar, rnd: rnd);
-  return List.generate(4, (int index) => optionWords[index].chinese, growable: false);
+  return buildChineseChoiceOptionWords(word, dict, preferSimilar: preferSimilar, rnd: rnd)
+      .map((WordItem optionWord) => optionWord.chinese)
+      .toList(growable: false);
 }
 
 /// 汇总当前词库中所有单词的分类标签

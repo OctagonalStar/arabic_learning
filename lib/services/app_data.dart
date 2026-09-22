@@ -12,8 +12,10 @@ import 'package:arabic_learning/core/statics.dart';
 import 'package:arabic_learning/models/config.dart' show Config;
 import 'package:arabic_learning/models/dict.dart' show ClassItem, DictData, SourceItem, WordItem;
 import 'package:arabic_learning/models/reading.dart' show ReadingData;
+import 'package:arabic_learning/models/synonym.dart' show SynonymData;
 import 'package:arabic_learning/services/fsrs.dart';
 import 'package:arabic_learning/services/search.dart';
+import 'package:arabic_learning/services/synonyms.dart';
 import 'package:arabic_learning/package_replacement/storage.dart';
 import 'package:arabic_learning/package_replacement/fake_dart_io.dart' if (dart.library.io) 'dart:io' as io;
 import 'package:arabic_learning/package_replacement/fake_sherpa_onnx.dart' if (dart.library.io) 'package:sherpa_onnx/sherpa_onnx.dart' as sherpa_onnx;
@@ -82,12 +84,14 @@ class AppData {
       if(!BKSearch.isReady) BKSearch.init(wordData.words);
       FSRS().init();
     }
+    SynonymStore().init();
     inited = true;
   }
 
   Future<void> initStorageValue() async {
       await storage.setString("wordData", jsonEncode({"Words": [], "Classes": {}}));
       await storage.setString("readingData", jsonEncode({"units": []}));
+      await storage.setString("synonymData", jsonEncode(const SynonymData().toMap()));
       wordData = DictData(words: [], classes: []);
       logger.info("配置表初始化完成");
   }

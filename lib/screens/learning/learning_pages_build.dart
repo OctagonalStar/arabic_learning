@@ -4,7 +4,7 @@ import 'dart:math';
 import 'package:arabic_learning/services/fsrs.dart' show FSRS;
 import 'package:arabic_learning/services/search.dart' show BKSearch;
 import 'package:arabic_learning/core/extensions.dart' show StringExtensions;
-import 'package:arabic_learning/services/words.dart' show collectAllCategories, getRandomWords, wordMatchesCategories;
+import 'package:arabic_learning/services/words.dart' show collectAllCategories, wordMatchesCategories;
 import 'package:arabic_learning/services/tts.dart' show playTextToSpeech;
 import 'package:arabic_learning/models/config.dart';
 import 'package:arabic_learning/models/dict.dart';
@@ -22,7 +22,7 @@ import 'package:arabic_learning/widgets/flip_word_card.dart' show FlipWordCard;
 import 'package:arabic_learning/widgets/kit.dart' show Button, CategoryFilter, TextContainer;
 import 'package:arabic_learning/widgets/motion.dart' show StaggeredEntrance;
 import 'package:arabic_learning/widgets/overlays.dart' show showSnackBar, viewAnswer;
-import 'package:arabic_learning/widgets/questions.dart' show ChoiceQuestions, ListeningQuestion, SpellQuestion, WordCardQuestion;
+import 'package:arabic_learning/widgets/questions.dart' show ChoiceQuestions, ListeningQuestion, SpellQuestion, TestItem, WordCardQuestion;
 import 'package:arabic_learning/widgets/shared.dart' show ConclusionCard, RevealableActionBar, appInputDecoration;
 
 
@@ -53,6 +53,9 @@ class _InLearningPageState extends State<InLearningPage> {
   final PageController controller = PageController(initialPage: 0);
   final bool isAutoPlay = AppData().config.audio.autoPlay;
   final List<TestItem> playedList = [];
+
+  /// 按 [TestItem] 对象记录已选索引（testList 可能被就地删改，按对象更稳）。
+  final Map<TestItem, int> chosenIndexByItem = <TestItem, int>{};
 
 
   void onSolve({required WordItem targetWord, 
@@ -233,9 +236,10 @@ class _InLearningPageState extends State<InLearningPage> {
                   choices: testItem.options!, 
                   allowAudio: testItem.testType == 2, 
                   onSelected: (value) {
+                    chosenIndexByItem[testItem] = value;
                     bool ans = value == testItem.correctIndex;
                     if(!ans) {
-                      Future.delayed(Duration(seconds: 1), (){if(context.mounted) viewAnswer(context, testItem.testWord);});
+                      Future.delayed(Duration(seconds: 1), (){if(context.mounted) viewAnswer(context, testItem.testWord, chosenWrong: testItem.optionWords![value]);});
                     }
                     onSolve(targetWord: testItem.testWord, isCorrect: ans, takentime: DateTime.now().difference(quizStart).inMilliseconds);
                     Future.delayed(Duration(milliseconds: 700) ,(){setState(() {
@@ -255,7 +259,7 @@ class _InLearningPageState extends State<InLearningPage> {
                       });
                     }, 
                     onTipClicked: (){
-                      viewAnswer(context, testItem.testWord);
+                      viewAnswer(context, testItem.testWord, chosenWrong: (chosenIndexByItem[testItem] != null && chosenIndexByItem[testItem] != testItem.correctIndex) ? testItem.optionWords![chosenIndexByItem[testItem]!] : null);
                     }
                   )
                 );
@@ -304,9 +308,10 @@ class _InLearningPageState extends State<InLearningPage> {
                       });
                       return false;
                     }
+                    chosenIndexByItem[testItem] = value;
                     bool ans = value == testItem.correctIndex;
                     if(!ans) {
-                      Future.delayed(Duration(seconds: 1), (){if(context.mounted) viewAnswer(context, testItem.testWord);});
+                      Future.delayed(Duration(seconds: 1), (){if(context.mounted) viewAnswer(context, testItem.testWord, chosenWrong: testItem.optionWords![value]);});
                     } 
                     onSolve(targetWord: testItem.testWord, isCorrect: ans, takentime: DateTime.now().difference(quizStart).inMilliseconds);
                     Future.delayed(Duration(milliseconds: 700) ,(){setState(() {
@@ -326,7 +331,7 @@ class _InLearningPageState extends State<InLearningPage> {
                       });
                     }, 
                     onTipClicked: (){
-                      viewAnswer(context, testItem.testWord);
+                      viewAnswer(context, testItem.testWord, chosenWrong: (chosenIndexByItem[testItem] != null && chosenIndexByItem[testItem] != testItem.correctIndex) ? testItem.optionWords![chosenIndexByItem[testItem]!] : null);
                     }
                   )
                 );
@@ -491,47 +496,6 @@ class _ConcludePageState extends State<ConcludePage> {
         );
       },
     );
-  }
-}
-
-@immutable
-class TestItem {
-  /// 测试单词
-  final WordItem testWord;
-
-  /// 测试类型
-  /// 0: 单词卡片
-  /// 1: 中译阿 选择题
-  /// 2: 阿译中 选择题
-  /// 3: 拼写题
-  /// 4: 听力题
-  final int testType;
-
-  /// 选择题和听力题的选项
-  final List<String>? options;
-
-  /// 选择题和听力题的正确血选项索引号
-  final int? correctIndex;
-
-  const TestItem({
-    required this.testWord,
-    required this.testType,
-    this.options,
-    this.correctIndex
-  });
-
-  static TestItem buildTestItem(WordItem word, int testType, DictData wordData,bool preferSimilar,Random rnd){
-    if(testType == 0 || testType == 3){
-      return TestItem(testWord: word, testType: testType);
-    } else {
-      final List<WordItem> optionWords = getRandomWords(4, wordData, include: word, preferClass: !preferSimilar, rnd: rnd);
-      return TestItem(
-        testWord: word, 
-        testType: testType,
-        options: List.generate(4, (int index) => ((testType == 2 || (testType == 4 && rnd.nextBool())) ? optionWords[index].chinese : optionWords[index].arabic), growable: false),
-        correctIndex: optionWords.indexOf(word)
-      );
-    }
   }
 }
 

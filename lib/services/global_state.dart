@@ -11,6 +11,7 @@ import 'package:arabic_learning/models/reading.dart' show ReadingData;
 import 'package:arabic_learning/services/app_data.dart' show AppData;
 import 'package:arabic_learning/services/fsrs.dart' show FSRS;
 import 'package:arabic_learning/services/search.dart' show BKSearch;
+import 'package:arabic_learning/services/synonyms.dart' show SynonymStore;
 import 'package:arabic_learning/theme/app_theme.dart' show buildTheme;
 import 'package:arabic_learning/theme/theme_resolver.dart'
     show ResolvedSchemes, ThemeResolver;
@@ -147,6 +148,8 @@ class Global with ChangeNotifier {
       if (readingRaw != null && readingRaw.isNotEmpty) {
         AppData().readingData = ReadingData.buildFromMap(jsonDecode(readingRaw));
       }
+
+      SynonymStore().reload();
       notifyListeners();
     } catch (e) {
       logger.severe("重新加载本地词库/阅读数据失败: $e");

@@ -2,6 +2,7 @@ import 'package:arabic_learning/models/config.dart';
 import 'package:arabic_learning/models/dict.dart';
 import 'package:arabic_learning/models/reading.dart';
 import 'package:arabic_learning/core/statics.dart';
+import 'package:arabic_learning/services/fsrs.dart' show FSRSConfig;
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
@@ -346,6 +347,42 @@ void main() {
         item.getHash(),
         isNot(const ClassItem(className: "第二课", wordIndexs: [0]).getHash()),
       );
+    });
+  });
+
+  group('FSRSConfig 复习/推送随机题型', () {
+    test('默认题型为 [2]（保持既有行为）', () {
+      expect(FSRSConfig().reviewQuestionSections, const [2]);
+    });
+
+    test('空集合回退到 [2]', () {
+      expect(
+        FSRSConfig(reviewQuestionSections: const []).reviewQuestionSections,
+        const [2],
+      );
+    });
+
+    test('越界值被过滤；全部越界时回退到 [2]', () {
+      expect(
+        FSRSConfig(reviewQuestionSections: const [9, -1, 3]).reviewQuestionSections,
+        const [3],
+      );
+      expect(
+        FSRSConfig(reviewQuestionSections: const [9, -1]).reviewQuestionSections,
+        const [2],
+      );
+    });
+
+    test('copyWith 覆盖题型集合，未指定时保持原值', () {
+      final FSRSConfig updated = FSRSConfig().copyWith(reviewQuestionSections: const [0, 4]);
+      expect(updated.reviewQuestionSections, const [0, 4]);
+      expect(updated.copyWith().reviewQuestionSections, const [0, 4]);
+    });
+
+    test('toMap 写出 reviewQuestionSections', () {
+      final Map<String, dynamic> map = FSRSConfig(reviewQuestionSections: const [1, 4]).toMap();
+      expect(map.containsKey("reviewQuestionSections"), isTrue);
+      expect(map["reviewQuestionSections"], const [1, 4]);
     });
   });
 

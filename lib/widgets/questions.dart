@@ -2,12 +2,14 @@
 // 承载选择题 ChoiceQuestions、单词卡片题 WordCardQuestion、
 // 拼写题 SpellQuestion 与听力题 ListeningQuestion。
 
+import 'dart:math' show Random;
+
 import 'package:arabic_learning/core/adaptive.dart' show AdaptiveScope;
 import 'package:arabic_learning/core/extensions.dart';
-import 'package:arabic_learning/models/dict.dart' show WordItem;
+import 'package:arabic_learning/models/dict.dart' show DictData, WordItem;
 import 'package:arabic_learning/services/global_state.dart';
 import 'package:arabic_learning/services/tts.dart';
-import 'package:arabic_learning/services/words.dart' show calculateButtonBoxLayout;
+import 'package:arabic_learning/services/words.dart' show calculateButtonBoxLayout, getRandomWords;
 import 'package:arabic_learning/theme/tokens.dart' show AppMotion;
 import 'package:arabic_learning/theme/typography.dart';
 import 'package:arabic_learning/widgets/flip_word_card.dart' show FlipWordCard;
@@ -386,4 +388,58 @@ class _ListeningQuestion extends State<ListeningQuestion> {
       ),
     );
   }
+}
+
+/// 单个待测单词及其题型、选项数据。
+///
+/// 学习页面与复习/推送页面共用，保证同一配置下题目构建方式一致。
+@immutable
+class TestItem {
+  /// 测试单词
+  final WordItem testWord;
+
+  /// 测试类型
+  /// 0: 单词卡片
+  /// 1: 中译阿 选择题
+  /// 2: 阿译中 选择题
+  /// 3: 拼写题
+  /// 4: 听力题
+  final int testType;
+
+  /// 选择题和听力题的选项
+  final List<String>? options;
+
+  /// 选择题和听力题的选项词（与 [options] 一一对应，用于取回选错的词条）
+  final List<WordItem>? optionWords;
+
+  /// 选择题和听力题的正确血选项索引号
+  final int? correctIndex;
+
+  const TestItem({
+    required this.testWord,
+    required this.testType,
+    this.options,
+    this.optionWords,
+    this.correctIndex
+  });
+
+  static TestItem buildTestItem(WordItem word, int testType, DictData wordData,bool preferSimilar,Random rnd){
+    if(testType == 0 || testType == 3){
+      return TestItem(testWord: word, testType: testType);
+    } else {
+      final List<WordItem> optionWords = getRandomWords(4, wordData, include: word, preferClass: !preferSimilar, rnd: rnd, avoidSynonyms: true);
+      return TestItem(
+        testWord: word, 
+        testType: testType,
+        options: List.generate(4, (int index) => ((testType == 2 || (testType == 4 && rnd.nextBool())) ? optionWords[index].chinese : optionWords[index].arabic), growable: false),
+        optionWords: optionWords,
+        correctIndex: optionWords.indexOf(word)
+      );
+    }
+  }
+
+  /// 从 [sections] 中随机挑选一个题型；单元素时直接返回且不消耗随机数
+  /// （保持既有确定性测试的随机序列不变）。
+  static int pickType(List<int> sections, Random rnd) =>
+      sections.length == 1 ? sections.first : sections[rnd.nextInt(sections.length)];
 }
