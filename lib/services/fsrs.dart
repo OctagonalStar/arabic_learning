@@ -164,7 +164,13 @@ class FSRSConfig {
   /// 每日推送单词的分类筛选（AND 语义，空列表=不筛选）
   final List<String> pushCategories;
 
-  const FSRSConfig({
+  /// 复习与每日推送随机使用的题型集合（每词随机取其一）。
+  /// 0: 单词卡片；1: 中译阿 选择题；2: 阿译中 选择题；
+  /// 3: 中译阿 拼写题；4: 听力题。
+  /// 与学习页面的 `QuizConfig.questionSections` 相互独立。
+  final List<int> reviewQuestionSections;
+
+  FSRSConfig({
     bool? enabled,
     this.scheduler,
     List<Card>? cards,
@@ -176,7 +182,8 @@ class FSRSConfig {
     bool? selfEvaluate,
     int? pushAmount,
     bool? reinforceMemory,
-    List<String>? pushCategories
+    List<String>? pushCategories,
+    List<int>? reviewQuestionSections
   }) :
     enabled = enabled??false,
     cards = cards??const [],
@@ -188,7 +195,16 @@ class FSRSConfig {
     selfEvaluate = selfEvaluate??false,
     pushAmount = pushAmount??0,
     reinforceMemory = reinforceMemory??false,
-    pushCategories = pushCategories??const [];
+    pushCategories = pushCategories??const [],
+    reviewQuestionSections = _normalizeSections(reviewQuestionSections);
+
+  /// 清洗题型集合：null/空/全部越界时回退到 `[2]`（保持旧行为），
+  /// 否则仅保留 0-4 的合法题型。
+  static List<int> _normalizeSections(List<int>? value) {
+    if(value == null || value.isEmpty) return const [2];
+    final List<int> filtered = value.where((int type) => type >= 0 && type <= 4).toList(growable: false);
+    return filtered.isEmpty ? const [2] : filtered;
+  }
   
   Map<String, dynamic> toMap(){
     return {
@@ -203,7 +219,8 @@ class FSRSConfig {
       "selfEvaluate": selfEvaluate,
       "pushAmount": pushAmount,
       "reinforceMemory": reinforceMemory,
-      "pushCategories": pushCategories
+      "pushCategories": pushCategories,
+      "reviewQuestionSections": reviewQuestionSections
     };
   }
 
@@ -219,7 +236,8 @@ class FSRSConfig {
     bool? selfEvaluate,
     int? pushAmount,
     bool? reinforceMemory,
-    List<String>? pushCategories
+    List<String>? pushCategories,
+    List<int>? reviewQuestionSections
   }) {
     return FSRSConfig(
       enabled: enabled??this.enabled,
@@ -233,7 +251,8 @@ class FSRSConfig {
       selfEvaluate: selfEvaluate??this.selfEvaluate,
       pushAmount: pushAmount??this.pushAmount,
       reinforceMemory: reinforceMemory??this.reinforceMemory,
-      pushCategories: pushCategories??this.pushCategories
+      pushCategories: pushCategories??this.pushCategories,
+      reviewQuestionSections: reviewQuestionSections??this.reviewQuestionSections
     );
   }
 
@@ -253,7 +272,10 @@ class FSRSConfig {
         reinforceMemory: configData["reinforceMemory"],
         pushCategories: configData["pushCategories"] == null
             ? const []
-            : List<String>.from(configData["pushCategories"])
+            : List<String>.from(configData["pushCategories"]),
+        reviewQuestionSections: configData["reviewQuestionSections"] == null
+            ? const [2]
+            : _normalizeSections(List<int>.from(configData["reviewQuestionSections"]))
       );
     }
     return FSRSConfig(enabled: false);
