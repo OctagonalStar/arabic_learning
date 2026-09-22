@@ -4,7 +4,7 @@ import 'dart:math';
 import 'package:arabic_learning/services/fsrs.dart' show FSRS;
 import 'package:arabic_learning/services/search.dart' show BKSearch;
 import 'package:arabic_learning/core/extensions.dart' show StringExtensions;
-import 'package:arabic_learning/services/words.dart' show collectAllCategories, getRandomWords, wordMatchesCategories;
+import 'package:arabic_learning/services/words.dart' show collectAllCategories, wordMatchesCategories;
 import 'package:arabic_learning/services/tts.dart' show playTextToSpeech;
 import 'package:arabic_learning/models/config.dart';
 import 'package:arabic_learning/models/dict.dart';
@@ -22,7 +22,7 @@ import 'package:arabic_learning/widgets/flip_word_card.dart' show FlipWordCard;
 import 'package:arabic_learning/widgets/kit.dart' show Button, CategoryFilter, TextContainer;
 import 'package:arabic_learning/widgets/motion.dart' show StaggeredEntrance;
 import 'package:arabic_learning/widgets/overlays.dart' show showSnackBar, viewAnswer;
-import 'package:arabic_learning/widgets/questions.dart' show ChoiceQuestions, ListeningQuestion, SpellQuestion, WordCardQuestion;
+import 'package:arabic_learning/widgets/questions.dart' show ChoiceQuestions, ListeningQuestion, SpellQuestion, TestItem, WordCardQuestion;
 import 'package:arabic_learning/widgets/shared.dart' show ConclusionCard, RevealableActionBar, appInputDecoration;
 
 
@@ -496,52 +496,6 @@ class _ConcludePageState extends State<ConcludePage> {
         );
       },
     );
-  }
-}
-
-@immutable
-class TestItem {
-  /// 测试单词
-  final WordItem testWord;
-
-  /// 测试类型
-  /// 0: 单词卡片
-  /// 1: 中译阿 选择题
-  /// 2: 阿译中 选择题
-  /// 3: 拼写题
-  /// 4: 听力题
-  final int testType;
-
-  /// 选择题和听力题的选项
-  final List<String>? options;
-
-  /// 选择题和听力题的选项词（与 [options] 一一对应，用于取回选错的词条）
-  final List<WordItem>? optionWords;
-
-  /// 选择题和听力题的正确血选项索引号
-  final int? correctIndex;
-
-  const TestItem({
-    required this.testWord,
-    required this.testType,
-    this.options,
-    this.optionWords,
-    this.correctIndex
-  });
-
-  static TestItem buildTestItem(WordItem word, int testType, DictData wordData,bool preferSimilar,Random rnd){
-    if(testType == 0 || testType == 3){
-      return TestItem(testWord: word, testType: testType);
-    } else {
-      final List<WordItem> optionWords = getRandomWords(4, wordData, include: word, preferClass: !preferSimilar, rnd: rnd, avoidSynonyms: true);
-      return TestItem(
-        testWord: word, 
-        testType: testType,
-        options: List.generate(4, (int index) => ((testType == 2 || (testType == 4 && rnd.nextBool())) ? optionWords[index].chinese : optionWords[index].arabic), growable: false),
-        optionWords: optionWords,
-        correctIndex: optionWords.indexOf(word)
-      );
-    }
   }
 }
 
