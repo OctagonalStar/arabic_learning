@@ -495,9 +495,14 @@ class FSRSReviewCardPage extends StatefulWidget {
 
 class _FSRSReviewCardPage extends State<FSRSReviewCardPage> {
   List<String>? options;
+  List<WordItem>? optionWords;
+  int? chosenIndex;
   bool choosed = false;
   final DateTime start = DateTime.now();
-  late final DateTime end;
+
+  /// 作答或点击详解时记录结束时间；二者都会赋值，故不能是 `late final`
+  /// （重复赋值会抛 `Field 'end' has already been initialized`）。
+  DateTime? end;
 
   @override
   Widget build(BuildContext context) {
@@ -505,18 +510,19 @@ class _FSRSReviewCardPage extends State<FSRSReviewCardPage> {
     MediaQueryData mediaQuery = MediaQuery.of(context);
     AppData appData = AppData();
     final List<WordItem> wordData = appData.wordData.words;
-    late final int correct;
 
     // 防止重建后选项丢失
     if(options == null){
       if(widget.fsrs.config.selfEvaluate) {
         options = const ["记得很清楚", "还记得", "回忆困难", "忘了"];
-        correct = -1;
       } else {
-        options = buildChineseChoiceOptions(wordData[widget.wordID], appData.wordData, preferSimilar: widget.fsrs.config.preferSimilar, rnd: widget.rnd);
-        correct  = options!.indexOf(appData.wordData.words[widget.wordID].chinese);
+        optionWords = buildChineseChoiceOptionWords(wordData[widget.wordID], appData.wordData, preferSimilar: widget.fsrs.config.preferSimilar, rnd: widget.rnd);
+        options = optionWords!.map((WordItem word) => word.chinese).toList(growable: false);
       }
     }
+    // 每次 build 都重新计算：late final 只在首次 build 赋值，重建后读取会抛
+    // LateInitializationError（点击详解无反应并报错）。
+    final int correct = widget.fsrs.config.selfEvaluate ? -1 : optionWords!.indexOf(wordData[widget.wordID]);
     
     return Material(
       child: ChoiceQuestions(
@@ -526,10 +532,11 @@ class _FSRSReviewCardPage extends State<FSRSReviewCardPage> {
         allowAudio: true, 
         allowAnitmation: !widget.fsrs.config.selfEvaluate,
         allowMutipleSelect: false,
-        hint: "单词ID: ${widget.wordID}${choosed ? " 用时: ${end.difference(start).inMilliseconds}毫秒" : ""}",
+        hint: "单词ID: ${widget.wordID}${choosed ? " 用时: ${end!.difference(start).inMilliseconds}毫秒" : ""}",
         onSelected: (value) {
           setState(() {
             choosed = true;
+            chosenIndex = value;
             end =  DateTime.now();
           });
           context.read<Global>().updateLearningStreak();
@@ -538,10 +545,10 @@ class _FSRSReviewCardPage extends State<FSRSReviewCardPage> {
             return true;
           } else {
             if(correct == value) {
-              widget.fsrs.produceCard(widget.wordID, duration: end.difference(start).inMilliseconds, isCorrect: true);
+              widget.fsrs.produceCard(widget.wordID, duration: end!.difference(start).inMilliseconds, isCorrect: true);
               return true;
             } else {
-              widget.fsrs.produceCard(widget.wordID, duration: end.difference(start).inMilliseconds, isCorrect: false);
+              widget.fsrs.produceCard(widget.wordID, duration: end!.difference(start).inMilliseconds, isCorrect: false);
               return false;
             }
           }
@@ -552,7 +559,8 @@ class _FSRSReviewCardPage extends State<FSRSReviewCardPage> {
           tipWidth: (value) => mediaQuery.size.width * 0.9 - mediaQuery.size.width * 0.5 * value,
           tipLabel: (value) => value == 0.0 ? "忘了？" : "详解",
           onTipClicked: (){
-            viewAnswer(context, wordData[widget.wordID]);
+            final WordItem? chosenWrong = (chosenIndex != null && correct >= 0 && chosenIndex != correct) ? optionWords![chosenIndex!] : null;
+            viewAnswer(context, wordData[widget.wordID], chosenWrong: chosenWrong);
             setState(() {
               choosed = true;
               end = DateTime.now();
@@ -587,13 +595,15 @@ class _FSRSLearningPageState extends State<FSRSLearningPage> {
   final PageController controllerLearning = PageController();
   final PageController controllerQuestions = PageController();
   bool corrected = false;
-  List<List<String>> options = [];
+  List<List<WordItem>> optionWords = [];
+  List<int?> chosenWrong = [];
 
   @override
   void initState() {
     final Random rnd = Random();
     for(WordItem word in widget.words) {
-      options.add(buildChineseChoiceOptions(word, AppData().wordData, preferSimilar: widget.fsrs.config.preferSimilar, rnd: rnd));
+      optionWords.add(buildChineseChoiceOptionWords(word, AppData().wordData, preferSimilar: widget.fsrs.config.preferSimilar, rnd: rnd));
+      chosenWrong.add(null);
     }
     super.initState();
   }
@@ -664,10 +674,11 @@ class _FSRSLearningPageState extends State<FSRSLearningPage> {
               });
             },
             itemBuilder: (context, index) {
-              final int correct = options[index].indexOf(widget.words[index].chinese);
+              final List<String> choices = optionWords[index].map((WordItem word) => word.chinese).toList(growable: false);
+              final int correct = optionWords[index].indexOf(widget.words[index]);
               return ChoiceQuestions(
                 mainWord: widget.words[index].arabic, 
-                choices: options[index], 
+                choices: choices, 
                 allowAudio: true, 
                 allowAnitmation: true,
                 allowMutipleSelect: true,
@@ -679,6 +690,7 @@ class _FSRSLearningPageState extends State<FSRSLearningPage> {
                     widget.fsrs.produceCard(widget.words[index].id);
                     return true;
                   } else {
+                    chosenWrong[index] = value;
                     return false;
                   }
                 },
@@ -687,7 +699,7 @@ class _FSRSLearningPageState extends State<FSRSLearningPage> {
                   tipWidth: (value) => mediaQuery.size.width * 0.9 - mediaQuery.size.width * 0.5 * value,
                   tipLabel: (value) => value == 0.0 ? "提示" : "查看详解",
                   onTipClicked: (){
-                    viewAnswer(context, widget.words[index]);
+                    viewAnswer(context, widget.words[index], chosenWrong: (chosenWrong[index] != null && chosenWrong[index] != correct) ? optionWords[index][chosenWrong[index]!] : null);
                   },
                   gapWidth: (value) => mediaQuery.size.width * 0.02 * value,
                   nextThreshold: 0.2,

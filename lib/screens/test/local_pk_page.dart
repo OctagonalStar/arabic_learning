@@ -533,14 +533,13 @@ class PKOngoingPage extends StatefulWidget {
 class _PKOngoingPage extends State<PKOngoingPage> {
   int state = 0;
   PageController pageController = PageController();
-  List<List<String>> choiceOptions = [];
+  List<List<WordItem>> choiceOptionWords = [];
 
   @override
   void initState() {
     Random rnd = Random(context.read<PKServer>().rndSeed);
     for(WordItem wordItem in context.read<PKServer>().pkState.testWords) {
-      List<WordItem> optionWords = getRandomWords(4, AppData().wordData, allowRepet: false, include: wordItem, shuffle: true, rnd: rnd);
-      choiceOptions.add(List.generate(4, (int index) => optionWords[index].chinese));
+      choiceOptionWords.add(getRandomWords(4, AppData().wordData, allowRepet: false, include: wordItem, shuffle: true, rnd: rnd, avoidSynonyms: true));
     }
     super.initState();
   }
@@ -597,14 +596,15 @@ class _PKOngoingPage extends State<PKOngoingPage> {
                         );
                       }
                     }
+                    final List<String> choices = choiceOptionWords[index].map((WordItem word) => word.chinese).toList(growable: false);
                     return ChoiceQuestions(
                       mainWord: context.read<PKServer>().pkState.testWords[index].arabic, 
-                      choices: choiceOptions[index], 
+                      choices: choices, 
                       allowAudio: true, 
                       allowAnitmation: false,
                       onSelected: (int choosed) {
                         pageController.nextPage(duration: AppMotion.medium, curve: AppMotion.standardCurve);
-                        if(choiceOptions[index][choosed] == context.read<PKServer>().pkState.testWords[index].chinese) {
+                        if(choiceOptionWords[index][choosed].id == context.read<PKServer>().pkState.testWords[index].id) {
                           context.read<PKServer>().updateState(true);
                           return true;
                         } else {

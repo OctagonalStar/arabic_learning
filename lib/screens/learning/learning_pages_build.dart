@@ -54,6 +54,9 @@ class _InLearningPageState extends State<InLearningPage> {
   final bool isAutoPlay = AppData().config.audio.autoPlay;
   final List<TestItem> playedList = [];
 
+  /// 按 [TestItem] 对象记录已选索引（testList 可能被就地删改，按对象更稳）。
+  final Map<TestItem, int> chosenIndexByItem = <TestItem, int>{};
+
 
   void onSolve({required WordItem targetWord, 
                 required bool isCorrect, 
@@ -233,9 +236,10 @@ class _InLearningPageState extends State<InLearningPage> {
                   choices: testItem.options!, 
                   allowAudio: testItem.testType == 2, 
                   onSelected: (value) {
+                    chosenIndexByItem[testItem] = value;
                     bool ans = value == testItem.correctIndex;
                     if(!ans) {
-                      Future.delayed(Duration(seconds: 1), (){if(context.mounted) viewAnswer(context, testItem.testWord);});
+                      Future.delayed(Duration(seconds: 1), (){if(context.mounted) viewAnswer(context, testItem.testWord, chosenWrong: testItem.optionWords![value]);});
                     }
                     onSolve(targetWord: testItem.testWord, isCorrect: ans, takentime: DateTime.now().difference(quizStart).inMilliseconds);
                     Future.delayed(Duration(milliseconds: 700) ,(){setState(() {
@@ -255,7 +259,7 @@ class _InLearningPageState extends State<InLearningPage> {
                       });
                     }, 
                     onTipClicked: (){
-                      viewAnswer(context, testItem.testWord);
+                      viewAnswer(context, testItem.testWord, chosenWrong: (chosenIndexByItem[testItem] != null && chosenIndexByItem[testItem] != testItem.correctIndex) ? testItem.optionWords![chosenIndexByItem[testItem]!] : null);
                     }
                   )
                 );
@@ -304,9 +308,10 @@ class _InLearningPageState extends State<InLearningPage> {
                       });
                       return false;
                     }
+                    chosenIndexByItem[testItem] = value;
                     bool ans = value == testItem.correctIndex;
                     if(!ans) {
-                      Future.delayed(Duration(seconds: 1), (){if(context.mounted) viewAnswer(context, testItem.testWord);});
+                      Future.delayed(Duration(seconds: 1), (){if(context.mounted) viewAnswer(context, testItem.testWord, chosenWrong: testItem.optionWords![value]);});
                     } 
                     onSolve(targetWord: testItem.testWord, isCorrect: ans, takentime: DateTime.now().difference(quizStart).inMilliseconds);
                     Future.delayed(Duration(milliseconds: 700) ,(){setState(() {
@@ -326,7 +331,7 @@ class _InLearningPageState extends State<InLearningPage> {
                       });
                     }, 
                     onTipClicked: (){
-                      viewAnswer(context, testItem.testWord);
+                      viewAnswer(context, testItem.testWord, chosenWrong: (chosenIndexByItem[testItem] != null && chosenIndexByItem[testItem] != testItem.correctIndex) ? testItem.optionWords![chosenIndexByItem[testItem]!] : null);
                     }
                   )
                 );
@@ -510,6 +515,9 @@ class TestItem {
   /// 选择题和听力题的选项
   final List<String>? options;
 
+  /// 选择题和听力题的选项词（与 [options] 一一对应，用于取回选错的词条）
+  final List<WordItem>? optionWords;
+
   /// 选择题和听力题的正确血选项索引号
   final int? correctIndex;
 
@@ -517,6 +525,7 @@ class TestItem {
     required this.testWord,
     required this.testType,
     this.options,
+    this.optionWords,
     this.correctIndex
   });
 
@@ -524,11 +533,12 @@ class TestItem {
     if(testType == 0 || testType == 3){
       return TestItem(testWord: word, testType: testType);
     } else {
-      final List<WordItem> optionWords = getRandomWords(4, wordData, include: word, preferClass: !preferSimilar, rnd: rnd);
+      final List<WordItem> optionWords = getRandomWords(4, wordData, include: word, preferClass: !preferSimilar, rnd: rnd, avoidSynonyms: true);
       return TestItem(
         testWord: word, 
         testType: testType,
         options: List.generate(4, (int index) => ((testType == 2 || (testType == 4 && rnd.nextBool())) ? optionWords[index].chinese : optionWords[index].arabic), growable: false),
+        optionWords: optionWords,
         correctIndex: optionWords.indexOf(word)
       );
     }

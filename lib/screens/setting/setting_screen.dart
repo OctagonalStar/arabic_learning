@@ -25,6 +25,8 @@ import 'package:arabic_learning/screens/setting/questions_setting_page.dart'
     show QuestionsSettingPage;
 import 'package:arabic_learning/screens/setting/sync_page.dart'
     show DataSyncPage;
+import 'package:arabic_learning/screens/setting/synonym_page.dart'
+    show SynonymPage;
 import 'package:arabic_learning/screens/learning/fsrs_screens.dart'
     show ForeFSRSSettingPage;
 import 'package:arabic_learning/package_replacement/fake_dart_io.dart'
@@ -296,6 +298,7 @@ class _SettingPage extends State<SettingPage> {
                   ],
                 ),
                 SettingRedirctButton(title: "题型配置",icon: Icons.quiz, target: QuestionsSettingPage()),
+                SettingRedirctButton(title: "同义词管理", icon: Icons.sync_alt, target: SynonymPage()),
                 SettingRedirctButton(title: "数据备份及同步", icon: Icons.sync, target: DataSyncPage()),
                 SettingRedirctButton(title: "复习配置", icon: Icons.bookmark, target: ForeFSRSSettingPage(forceChoosing: true)),
               ],
