@@ -90,6 +90,46 @@ void main() {
     expect(find.text('设置固定列数'), findsOneWidget);
   });
 
+  testWidgets('搜索页 Scaffold 不随输入法收缩（resizeToAvoidBottomInset == false）', (WidgetTester tester) async {
+    await pumpOverview(tester);
+
+    // 回归：默认 true 时键盘弹出会压缩 body，网格 LayoutBuilder 按更矮的
+    // 高度重算 cell 尺寸，导致搜索结果卡片整体缩小 / 重排。
+    final Scaffold scaffold = tester.widget<Scaffold>(find.byType(Scaffold));
+    expect(scaffold.resizeToAvoidBottomInset, isFalse,
+        reason: '键盘弹出不应改变页面可用高度（不得重排词卡网格）');
+  });
+
+  testWidgets('进入搜索聚焦输入框；打开词卡并关闭后输入框不再聚焦', (WidgetTester tester) async {
+    await pumpOverview(tester);
+
+    // 点击 FAB 进入搜索：输入框应获得焦点（等价于旧 autofocus 行为）。
+    await tester.tap(find.byType(FloatingActionButton));
+    await tester.pumpAndSettle();
+
+    final TextField field = tester.widget<TextField>(find.byType(TextField));
+    final FocusNode? focusNode = field.focusNode;
+    expect(focusNode, isNotNull, reason: '搜索输入框应由页面显式管理 FocusNode');
+    expect(focusNode!.hasFocus, isTrue, reason: '进入搜索应自动聚焦输入框');
+
+    // 触发检索，渲染出结果词卡。
+    await tester.enterText(find.byType(TextField), 'كلمة0');
+    await tester.pump();
+    await tester.tap(find.text('查找'));
+    await tester.pumpAndSettle();
+    expect(find.byType(FlipWordCard), findsWidgets, reason: '检索应至少渲染一个结果词卡');
+
+    // 打开词卡：应先收起输入法（清焦点）。
+    await tester.tap(find.byType(FlipWordCard).first);
+    await tester.pumpAndSettle();
+    expect(focusNode.hasFocus, isFalse, reason: '打开词卡时应取消输入框焦点（收起 IME）');
+
+    // 点击遮罩关闭展开层：焦点不应自动回到输入框，否则 IME 会重新弹出。
+    await tester.tapAt(const Offset(5, 5));
+    await tester.pumpAndSettle();
+    expect(focusNode.hasFocus, isFalse, reason: '关闭词卡后输入框不应重新获得焦点（IME 不重新弹出）');
+  });
+
   testWidgets('展开靠后的课程后，展开内容不会跑到屏幕上方之外', (WidgetTester tester) async {
     await pumpOverview(tester);
 

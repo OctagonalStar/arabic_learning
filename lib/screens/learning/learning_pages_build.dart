@@ -508,6 +508,9 @@ class WordCardOverViewPage extends StatefulWidget {
 
 class _WordCardOverViewPage extends State<WordCardOverViewPage> {
   final TextEditingController searchController = TextEditingController();
+  /// 搜索输入框焦点由页面显式管理：进入搜索时聚焦、退出或打开词卡时取消，
+  /// 避免输入法在弹层关闭后自动重新唤起。
+  final FocusNode _searchFocusNode = FocusNode();
   bool inSearch = false;
 
   /// 已提交给检索的查询串（实时模式下经防抖更新，避免每次按键都触发检索）
@@ -520,6 +523,13 @@ class _WordCardOverViewPage extends State<WordCardOverViewPage> {
       inSearch = !inSearch;
       _query = inSearch ? searchController.text : "";
     });
+    if (inSearch) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted && inSearch) _searchFocusNode.requestFocus();
+      });
+    } else {
+      _searchFocusNode.unfocus();
+    }
   }
 
   /// 实时模式：输入停顿 200ms 后再检索
@@ -539,6 +549,7 @@ class _WordCardOverViewPage extends State<WordCardOverViewPage> {
   @override
   void dispose() {
     _searchDebounce?.cancel();
+    _searchFocusNode.dispose();
     searchController.dispose();
     super.dispose();
   }
@@ -548,6 +559,9 @@ class _WordCardOverViewPage extends State<WordCardOverViewPage> {
     context.read<Global>().uiLogger.info("构建 WordCardOverViewPage: inSearch{$inSearch}");
     MediaQueryData mediaQuery = MediaQuery.of(context);
     return Scaffold(
+      // 搜索框位于 AppBar，键盘弹出时不应压缩 body：否则网格 LayoutBuilder
+      // 会按缩短后的高度重算卡片尺寸，导致搜索结果卡片整体缩放/重排。
+      resizeToAvoidBottomInset: false,
       appBar: AppBar(
         bottom: inSearch ? PreferredSize(
           preferredSize: Size(mediaQuery.size.width, 75), 
@@ -562,7 +576,7 @@ class _WordCardOverViewPage extends State<WordCardOverViewPage> {
                   child: TextField(
                     textDirection: searchController.text.textDirection,
                     controller: searchController,
-                    autofocus: true,
+                    focusNode: _searchFocusNode,
                     expands: false,
                     maxLines: 1,
                     decoration: appInputDecoration(

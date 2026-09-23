@@ -153,6 +153,9 @@ class _FlipWordCardState extends State<FlipWordCard> {
   /// 记录源矩形后打开展开层；展开层自身驱动移动 / 放大 / 翻转 / 遮罩动画。
   Future<void> _open(BuildContext context) async {
     if (_expanded) return;
+    // 展开词卡即离开检索输入场景：先收起输入法并清除输入框焦点，
+    // 否则弹层关闭后焦点回到输入框会让 IME 自动重新弹出。
+    FocusManager.instance.primaryFocus?.unfocus();
     final RenderBox? box = _cardKey.currentContext?.findRenderObject() as RenderBox?;
     if (box == null || !box.hasSize) return;
     final Rect sourceRect = box.localToGlobal(Offset.zero) & box.size;
