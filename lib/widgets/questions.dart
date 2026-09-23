@@ -1,6 +1,6 @@
 // 题目控件（原 lib/funcs/ui.dart 拆分）。
-// 承载选择题 ChoiceQuestions、单词卡片题 WordCardQuestion、
-// 拼写题 SpellQuestion 与听力题 ListeningQuestion。
+// 承载选择题 ChoiceQuestions、单词卡片题 WordCardQuestion、自我评级题
+// SelfRatingQuestion、拼写题 SpellQuestion 与听力题 ListeningQuestion。
 
 import 'dart:math' show Random;
 
@@ -72,7 +72,6 @@ class ChoiceQuestions extends StatefulWidget {
   State<StatefulWidget> createState() => _ChoiceQuestions();
 }
 class _ChoiceQuestions extends State<ChoiceQuestions> {
-  bool choosed = false;
   bool playing = false;
 
   @override
@@ -124,22 +123,21 @@ class _ChoiceQuestions extends State<ChoiceQuestions> {
             ),
             SizedBox(height: mediaQuery.size.height *0.01),
             ChooseButtons(
-              options: widget.choices, 
+              options: widget.choices,
               settingShowingMode: showingMode,
-              onSelected: (value) {
-                if(widget.allowMutipleSelect) return widget.onSelected(value);
-                if(choosed) {
-                  if(widget.onDisAllowMutipleSelect != null) return widget.onDisAllowMutipleSelect!(value);
-                  showSnackBar(context, "该页面不允许多次选择");
-                  return null;
-                } else {
-                  choosed = true;
-                  return widget.onSelected(value);
-                }
-              }, 
+              onSelected: widget.onSelected,
               isShowAnimation: widget.allowAnitmation,
               // 单选时判定后聚焦选中项并淡化其余选项；多选保持原样。
-              isSingleSelect: !widget.allowMutipleSelect
+              isSingleSelect: !widget.allowMutipleSelect,
+              // 单选作答后锁定全部选项（统一由 ChooseButtons 处理）。
+              lockAfterSelect: !widget.allowMutipleSelect,
+              onLockedTap: (int value) {
+                if(widget.onDisAllowMutipleSelect != null) {
+                  widget.onDisAllowMutipleSelect!(value);
+                  return;
+                }
+                showSnackBar(context, "该页面不允许多次选择");
+              },
             ),
             SizedBox(height: mediaQuery.size.height *0.01),
             if(widget.bottomWidget != null) widget.bottomWidget!,
@@ -171,10 +169,99 @@ class WordCardQuestion extends StatelessWidget {
         children: [
           if(hint != null) TextContainer(text: hint!, animated: true),
           SizedBox(height: mediaQuery.size.height * 0.01),
-          Expanded(child: FlipWordCard(word: word)),
+          Expanded(child: FlipWordCard(word: word, masked: true)),
+          SizedBox(height: mediaQuery.size.height *0.01),
           ?bottomWidget,
           SizedBox(height: mediaQuery.size.height * 0.05),
         ],
+      ),
+    );
+  }
+}
+
+/// 自我评级题目：单词卡片 + 评级选项。
+///
+/// 用于复习页的自我评级模式（或复习随机到单词卡片题型）：上方展示单词卡片
+/// （[masked] 控制是否遮挡释义，评级/揭示后由调用方置 false），下方为复用
+/// [ChooseButtons] 的评级选项（单选、评一次后锁定）。
+///
+/// 与 [ChoiceQuestions] / [WordCardQuestion] 同属 *Question 组件；[ChooseButtons]
+/// 仅供 *Question 组件复用，业务代码不应直接调用。
+class SelfRatingQuestion extends StatelessWidget {
+  /// 单词数据
+  final WordItem word;
+
+  /// 评级选项文案（由调用方决定，通常为 4 档 FSRS 评分）
+  final List<String> choices;
+
+  /// 选择后回调，传入选项索引；返回非 null 视为已判定
+  final bool? Function(int) onSelected;
+
+  /// 题目上方提示文本
+  final String? hint;
+
+  /// 选项下方组件（如翻页条）
+  final Widget? bottomWidget;
+
+  /// 是否遮挡释义（外部按“是否已评级/已揭示”控制）
+  final bool masked;
+
+  /// 卡片是否允许点击翻卡查看详情
+  final bool enableFlip;
+
+  /// 卡片宽度 / 高度（可选；缺省由 [FlipWordCard] 自适应）
+  final double? cardWidth;
+  final double? cardHeight;
+
+  const SelfRatingQuestion({
+    super.key,
+    required this.word,
+    required this.choices,
+    required this.onSelected,
+    this.hint,
+    this.bottomWidget,
+    this.masked = true,
+    this.enableFlip = true,
+    this.cardWidth,
+    this.cardHeight,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    context.read<Global>().uiLogger.info("构建自我评级题目，主单词: ${word.arabic}");
+    final MediaQueryData mediaQuery = MediaQuery.of(context);
+    final int showingMode = calculateButtonBoxLayout(choices, AdaptiveScope.of(context));
+    return Material(
+      child: Center(
+        child: Column(
+          children: [
+            if(hint != null) TextContainer(text: hint!, animated: true),
+            Expanded(
+              child: FlipWordCard(
+                word: word,
+                width: cardWidth,
+                height: cardHeight,
+                enableFlip: enableFlip,
+                masked: masked,
+              ),
+            ),
+            SizedBox(height: mediaQuery.size.height * 0.01),
+            ChooseButtons(
+              options: choices,
+              settingShowingMode: showingMode,
+              onSelected: onSelected,
+              isShowAnimation: false,
+              isSingleSelect: true,
+              lockAfterSelect: true,
+              onLockedTap: (int value) {
+                showSnackBar(context, "该页面不允许多次选择");
+              },
+            ),
+            SizedBox(height: mediaQuery.size.height * 0.01),
+            ?bottomWidget,
+            SizedBox(height: mediaQuery.size.height * 0.03),
+          ],
+        ),
       ),
     );
   }
@@ -355,28 +442,30 @@ class _ListeningQuestion extends State<ListeningQuestion> {
             ),
             SizedBox(height: mediaQuery.size.height *0.01),
             ChooseButtons(
-              options: widget.choices, 
+              options: widget.choices,
               settingShowingMode: showingMode,
-              onSelected: (value) {
-                if(widget.allowMutipleSelect) return widget.onSelected(value);
-                if(choosed) {
-                  if(widget.onDisAllowMutipleSelect != null) return widget.onDisAllowMutipleSelect!(value);
-                  showSnackBar(context, "该页面不允许多次选择");
-                  return null;
-                } else {
-                  choosed = true;
-                  return widget.onSelected(value);
-                }
-              }, 
+              onSelected: widget.onSelected,
               isShowAnimation: widget.allowAnitmation,
               // 单选时判定后聚焦选中项并淡化其余选项；多选保持原样。
-              isSingleSelect: !widget.allowMutipleSelect
+              isSingleSelect: !widget.allowMutipleSelect,
+              // 单选作答后锁定全部选项；「跳过」后由 locked 统一锁定。
+              lockAfterSelect: !widget.allowMutipleSelect,
+              locked: choosed,
+              onLockedTap: (int value) {
+                if(widget.onDisAllowMutipleSelect != null) {
+                  widget.onDisAllowMutipleSelect!(value);
+                  return;
+                }
+                showSnackBar(context, "该页面不允许多次选择");
+              },
             ),
             TextButton(
               onPressed: (){
-                choosed = true;
+                setState(() {
+                  choosed = true;
+                });
                 widget.onSelected(-1);
-              }, 
+              },
               child: Text("跳过听力题目")
             ),
             SizedBox(height: mediaQuery.size.height *0.01),

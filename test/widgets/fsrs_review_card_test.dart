@@ -6,7 +6,7 @@ import 'package:arabic_learning/services/app_data.dart' show AppData;
 import 'package:arabic_learning/services/fsrs.dart' show FSRS, FSRSConfig;
 import 'package:arabic_learning/services/global_state.dart' show Global;
 import 'package:arabic_learning/services/search.dart' show BKSearch;
-import 'package:arabic_learning/widgets/questions.dart' show ChoiceQuestions, ListeningQuestion, SpellQuestion;
+import 'package:arabic_learning/widgets/questions.dart' show ChoiceQuestions, ListeningQuestion, SelfRatingQuestion, SpellQuestion;
 import 'package:arabic_learning/widgets/flip_word_card.dart' show FlipWordCard;
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -246,6 +246,7 @@ void main() {
     FSRS().config = FSRSConfig(selfEvaluate: true);
     await pumpReviewCard(tester);
 
+    expect(find.byType(SelfRatingQuestion), findsOneWidget);
     expect(find.text('释义已隐藏'), findsOneWidget);
     expect(find.text('点击查看释义'), findsOneWidget);
 
@@ -255,5 +256,26 @@ void main() {
     expect(tester.takeException(), isNull);
     expect(find.text('释义已隐藏'), findsNothing);
     expect(find.text('词根'), findsOneWidget, reason: '翻卡后应展示详情');
+  });
+
+  testWidgets('自我评级后正面揭晓释义，且重复评级被锁定', (WidgetTester tester) async {
+    FSRS().config = FSRSConfig(selfEvaluate: true);
+    await pumpReviewCard(tester);
+
+    expect(find.byType(SelfRatingQuestion), findsOneWidget);
+    expect(find.text('释义已隐藏'), findsOneWidget);
+
+    // 评级后正面遮罩消失并展示中文释义。
+    await tester.tap(find.text('记得很清楚'));
+    await tester.pumpAndSettle();
+    expect(find.text('释义已隐藏'), findsNothing);
+    expect(find.text('相会'), findsOneWidget);
+
+    // 已锁定：再点其它评级不再作答，只弹出「不允许多次选择」提示。
+    await tester.tap(find.text('忘了'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 300));
+    expect(find.text('该页面不允许多次选择'), findsOneWidget);
+    expect(tester.takeException(), isNull);
   });
 }

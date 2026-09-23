@@ -14,6 +14,7 @@ import 'package:arabic_learning/models/dict.dart' show ClassItem, DictData, Sour
 import 'package:arabic_learning/models/reading.dart' show ReadingData;
 import 'package:arabic_learning/models/synonym.dart' show SynonymData;
 import 'package:arabic_learning/services/fsrs.dart';
+import 'package:arabic_learning/services/memberships.dart';
 import 'package:arabic_learning/services/search.dart';
 import 'package:arabic_learning/services/synonyms.dart';
 import 'package:arabic_learning/package_replacement/storage.dart';
@@ -80,8 +81,12 @@ class AppData {
 
     if(!isFirstStart) {
       wordData = DictData.buildFromMap(jsonDecode(storage.getString("wordData")!));
+      if (normalizeWordGenders()) {
+        storage.setString("wordData", jsonEncode(wordData.toMap()));
+      }
       readingData = ReadingData.buildFromMap(jsonDecode(storage.getString("readingData") ?? "{\"units\": []}"));
       if(!BKSearch.isReady) BKSearch.init(wordData.words);
+      WordMembershipIndex.instance.rebuild(wordData.classes);
       FSRS().init();
     }
     SynonymStore().init();
@@ -93,6 +98,7 @@ class AppData {
       await storage.setString("readingData", jsonEncode({"units": []}));
       await storage.setString("synonymData", jsonEncode(const SynonymData().toMap()));
       wordData = DictData(words: [], classes: []);
+      WordMembershipIndex.instance.rebuild(wordData.classes);
       logger.info("配置表初始化完成");
   }
 
@@ -154,7 +160,10 @@ class AppData {
   /// 兼容旧版JSON词库与新JSONL词库（解析后结构一致）：
   /// - `explanation` 依次取 `explanation` / `example`；
   /// - `root`、`categories` 及 `properties` 中的词性/复数/阴阳性/现在时/动名词缺省时使用默认值；
-  /// - 阿拉伯语或中文为空的词条会被跳过并计入[skipped]。
+  /// - 阿拉伯语或中文为空的词条会被跳过并计入[skipped]；
+  /// - 命中的已有词条会用新词库的词形信息补充/覆盖（新库优先）：`root`/`pos`/`plural`/
+  ///   `present`/`masdar` 非空即覆盖，`gender` 非 null 即覆盖，`categories` 取并集，
+  ///   `explanation` 仅在旧值为空时填入；`arabic`/`chinese`/`className`/`id` 保留旧值。
   ///
   /// [displayName] 为词库展示名（旧版JSON为空）；
   /// 同名`sourceName`再次导入时会替换旧源数据而不是追加课程。
@@ -229,38 +238,42 @@ class AppData {
           }
         }
 
-        if (existingIndex != -1) {
-          // If it already exists globally, just add it to this class
-          if(!exClass.wordIndexs.contains(existingIndex)) {
-            exClass.wordIndexs.add(existingIndex);
-          }
-          continue;
-        }
-
         final Map<dynamic, dynamic> properties =
             word["properties"] is Map ? word["properties"] as Map : const {};
+        final String pos = _asString(properties["pos"]);
         bool? gender;
         if (properties["gender"] is bool) gender = properties["gender"] as bool;
 
-        exClass.wordIndexs.add(counter);
-        existData.words.add(
-          WordItem(
-            arabic: newRaw, 
-            chinese: newChinese, 
-            explanation: _asString(word["explanation"] ?? word["example"]), 
-            className: className, 
-            id: counter,
-            root: _asString(word["root"]),
-            categories: word["categories"] is List
-                ? List<String>.from(word["categories"] as List)
-                : const [],
-            pos: _asString(properties["pos"]),
-            plural: _asString(properties["plural"]),
-            gender: gender,
-            present: _asString(properties["present"]),
-            masdar: _asString(properties["masdar"]),
-          )
+        final WordItem incoming = WordItem(
+          arabic: newRaw,
+          chinese: newChinese,
+          explanation: _asString(word["explanation"] ?? word["example"]),
+          className: className,
+          id: existingIndex != -1 ? existingIndex : counter,
+          root: _asString(word["root"]),
+          categories: word["categories"] is List
+              ? List<String>.from(word["categories"] as List)
+              : const [],
+          pos: pos,
+          plural: _asString(properties["plural"]),
+          // 仅名词有阴阳性；非名词在词库中的 gender 为占位值，导入时忽略。
+          gender: WordItem.normalizeGender(pos, gender),
+          present: _asString(properties["present"]),
+          masdar: _asString(properties["masdar"]),
         );
+
+        if (existingIndex != -1) {
+          // 命中已有词条：归属到本课程，并补充/覆盖词形信息，不新增词条。
+          if(!exClass.wordIndexs.contains(existingIndex)) {
+            exClass.wordIndexs.add(existingIndex);
+          }
+          existData.words[existingIndex] =
+              existData.words[existingIndex].supplement(incoming);
+          continue;
+        }
+
+        exClass.wordIndexs.add(counter);
+        existData.words.add(incoming);
         rawWordMap[newRaw] = counter;
         pureWordMap[newPure] = counter;
         chineseList.add(newChinese);
@@ -269,6 +282,30 @@ class AppData {
       exSource.subClasses.add(exClass);
     }
     return (data: existData, imported: imported, skipped: skipped);
+  }
+
+  /// 数据纠正：仅名词（[WordItem.posNominals]）有阴阳性。过渡版本会为所有非
+  /// 名词词条写入占位 gender（恒为 true），此处统一置空；名词及词性未知
+  /// （pos 为空）的旧数据保持不变。
+  ///
+  /// 返回是否有词条被改动（调用方据此决定是否回写存储）。
+  bool normalizeWordGenders() {
+    bool changed = false;
+    // 词表可能来自 const DictData（不可变列表），复制后再改写以保证通用性。
+    final List<WordItem> words = List<WordItem>.of(wordData.words);
+    for (int i = 0; i < words.length; i++) {
+      final WordItem word = words[i];
+      final bool? fixed = WordItem.normalizeGender(word.pos, word.gender);
+      if (fixed != word.gender) {
+        words[i] = word.withGender(fixed);
+        changed = true;
+      }
+    }
+    if (changed) {
+      wordData = DictData(words: words, classes: wordData.classes);
+      logger.info("已纠正非名词词条的阴阳性占位数据");
+    }
+    return changed;
   }
 
   static String _asString(dynamic value) => value == null ? "" : value.toString();
@@ -341,8 +378,10 @@ class AppData {
     final ({DictData data, int imported, int skipped}) fmt =
         dataFormater(parsed, wordData, source, displayName: displayName);
     wordData = fmt.data;
+    normalizeWordGenders();
     storage.setString("wordData", jsonEncode(wordData.toMap()));
     BKSearch.rebuild(wordData.words); // 强制重建搜索索引，保证新词立即可搜
+    WordMembershipIndex.instance.rebuild(wordData.classes);
     logger.info("词汇导入完成");
 
     return DictImportResult(

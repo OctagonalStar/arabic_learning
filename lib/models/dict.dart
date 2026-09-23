@@ -161,6 +161,60 @@ class WordItem {
     this.masdar = ""
   });
 
+  /// 名词词性标识：仅名词具有阴阳性。
+  static const String posNominals = "Nominals";
+
+  /// 规范化阴阳性：仅名词（[posNominals]）保留 [gender]；其余已知非名词词性的
+  /// `gender` 在词库中仅为占位值（恒为 true），一律置空。`pos` 为空表示词性
+  /// 未知（旧数据），无法判定，原样保留。
+  static bool? normalizeGender(String pos, bool? gender) {
+    if (pos.isEmpty) return gender;
+    return pos == posNominals ? gender : null;
+  }
+
+  /// 复制并仅替换阴阳性，其余字段不变。
+  WordItem withGender(bool? gender) {
+    return WordItem(
+      arabic: arabic,
+      chinese: chinese,
+      explanation: explanation,
+      className: className,
+      id: id,
+      root: root,
+      categories: categories,
+      pos: pos,
+      plural: plural,
+      gender: gender,
+      present: present,
+      masdar: masdar,
+    );
+  }
+
+  /// 用新导入的 [incoming] 补充本词条（一词多词库命中时调用）：
+  /// - 词形字段（root/pos/plural/present/masdar）非空即覆盖本地值；gender 非 null 即覆盖；
+  /// - categories 取并集；
+  /// - explanation 仅当本词条为空时采用 incoming；
+  /// - arabic / chinese / className / id 始终保留本地值（释义不合并，归属由反查索引表达）；
+  /// - 合并后的词性若非名词（[posNominals]），其 gender 一律规范化为 null。
+  WordItem supplement(WordItem incoming) {
+    final String mergedPos = incoming.pos.isNotEmpty ? incoming.pos : pos;
+    final bool? mergedGender = incoming.gender ?? gender;
+    return WordItem(
+      arabic: arabic,
+      chinese: chinese,
+      explanation: explanation.isNotEmpty ? explanation : incoming.explanation,
+      className: className,
+      id: id,
+      root: incoming.root.isNotEmpty ? incoming.root : root,
+      categories: <String>{...categories, ...incoming.categories}.toList(growable: false),
+      pos: mergedPos,
+      plural: incoming.plural.isNotEmpty ? incoming.plural : plural,
+      gender: normalizeGender(mergedPos, mergedGender),
+      present: incoming.present.isNotEmpty ? incoming.present : present,
+      masdar: incoming.masdar.isNotEmpty ? incoming.masdar : masdar,
+    );
+  }
+
   Map<String, dynamic> toMap(){
     return {
       "arabic": arabic,

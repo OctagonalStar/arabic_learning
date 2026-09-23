@@ -266,7 +266,8 @@ class TextContainer extends StatelessWidget {
 /// 多选（`ChoiceQuestions.allowMutipleSelect`）应保持 false，以免干扰继续选择。
 /// 默认为false
 ///
-/// 该组件在 [ChoiceQuestions] 被调用，若非必要，你不应使用此组件
+/// 该组件供各 *Question 组件（ChoiceQuestions / ListeningQuestion /
+/// SelfRatingQuestion）复用；业务代码不应直接调用。
 class ChooseButtons extends StatefulWidget {
   final List<String> options;
   final bool? Function(int) onSelected;
@@ -274,12 +275,24 @@ class ChooseButtons extends StatefulWidget {
   final int settingShowingMode; // 0: 1 Row, 1: 2 Rows, 2: 4 Rows
   final bool isSingleSelect;
 
+  /// 是否在首次选择后锁定全部选项（单选作答后禁止再次选择）。
+  final bool lockAfterSelect;
+
+  /// 外部强制锁定（如听力题「跳过」后禁止再作答）；true 时忽略所有选项点击。
+  final bool locked;
+
+  /// 锁定时再次点击任意选项的回调，传入被点击的选项索引。
+  final void Function(int index)? onLockedTap;
+
   const ChooseButtons({super.key, 
                       required this.options, 
                       required this.onSelected, 
                       this.isShowAnimation = false, 
                       this.settingShowingMode = -1,
-                      this.isSingleSelect = false});
+                      this.isSingleSelect = false,
+                      this.lockAfterSelect = false,
+                      this.locked = false,
+                      this.onLockedTap});
   @override
   State<ChooseButtons> createState() => _ChooseButtonsState();
 }
@@ -287,6 +300,11 @@ class ChooseButtons extends StatefulWidget {
 class _ChooseButtonsState extends State<ChooseButtons> {
   /// 已有判定结果的选项索引（单选聚焦的锚点）；`null` 表示尚无判定。
   int? _judgedIndex;
+
+  /// 内部锁定：`lockAfterSelect` 为真且已产生首次选择后置位。
+  bool _locked = false;
+
+  bool get _isLocked => widget.locked || _locked;
 
   /// 子按钮产生判定结果（`chose` 返回非 null）时记录，用于选中聚焦。
   void _onJudged(int index) {
@@ -299,11 +317,13 @@ class _ChooseButtonsState extends State<ChooseButtons> {
   @override
   void didUpdateWidget(ChooseButtons oldWidget) {
     super.didUpdateWidget(oldWidget);
-    // 选项 / 模式变化（PageView 可能复用 element）时重置聚焦，避免残留旧状态。
+    // 选项 / 模式变化（PageView 可能复用 element）时重置聚焦与锁定，避免残留旧状态。
     if(oldWidget.isShowAnimation != widget.isShowAnimation ||
         oldWidget.isSingleSelect != widget.isSingleSelect ||
+        oldWidget.lockAfterSelect != widget.lockAfterSelect ||
         !listEquals(oldWidget.options, widget.options)) {
       _judgedIndex = null;
+      _locked = false;
     }
   }
 
@@ -317,7 +337,14 @@ class _ChooseButtonsState extends State<ChooseButtons> {
       buttonWidgets.add(
         ChooseButtonBox(
           index: i,
-          chose: widget.onSelected,
+          chose: (int index) {
+            if(_isLocked) {
+              widget.onLockedTap?.call(index);
+              return null;
+            }
+            if(widget.lockAfterSelect) _locked = true;
+            return widget.onSelected(index);
+          },
           width: widget.settingShowingMode == 0 ? mediaQuery.size.width * 0.2 : widget.settingShowingMode == 1 ? mediaQuery.size.width * 0.45 : mediaQuery.size.width * 0.85,
           height: widget.settingShowingMode == 0 ? mediaQuery.size.height * 0.15 : widget.settingShowingMode == 1 ? mediaQuery.size.height * 0.12 : mediaQuery.size.height * 0.09,
           isAnimated: widget.isShowAnimation,
