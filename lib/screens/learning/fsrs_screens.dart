@@ -17,6 +17,7 @@ import 'package:arabic_learning/services/global_state.dart';
 import 'package:arabic_learning/services/app_data.dart';
 import 'package:arabic_learning/services/words.dart';
 import 'package:arabic_learning/services/fsrs.dart';
+import 'package:arabic_learning/services/push_session.dart';
 
 class ForeFSRSSettingPage extends StatelessWidget {
   final bool forceChoosing;
@@ -754,15 +755,28 @@ class _FSRSReviewCardPage extends State<FSRSReviewCardPage> {
 class FSRSLearningPage extends StatefulWidget {
   final List<WordItem> words;
   final FSRS fsrs;
-  const FSRSLearningPage({super.key, required this.words, required this.fsrs});
+
+  /// 断点恢复参数：横向阶段（0=卡片, 1=答题）与两个纵向页索引。
+  final int initialPhase;
+  final int initialLearningIndex;
+  final int initialQuestionIndex;
+
+  const FSRSLearningPage({
+    super.key,
+    required this.words,
+    required this.fsrs,
+    this.initialPhase = 0,
+    this.initialLearningIndex = 0,
+    this.initialQuestionIndex = 0,
+  });
 
   @override
   State<FSRSLearningPage> createState() => _FSRSLearningPageState();
 }
 class _FSRSLearningPageState extends State<FSRSLearningPage> {
-  final PageController controllerHor = PageController();
-  final PageController controllerLearning = PageController();
-  final PageController controllerQuestions = PageController();
+  late final PageController controllerHor;
+  late final PageController controllerLearning;
+  late final PageController controllerQuestions;
   final Random rnd = Random();
   bool corrected = false;
 
@@ -772,10 +786,25 @@ class _FSRSLearningPageState extends State<FSRSLearningPage> {
 
   @override
   void initState() {
+    // 断点恢复：阶段与页索引按当前词数收敛到合法范围
+    final int n = widget.words.length;
+    final int phase = widget.initialPhase.clamp(0, 2);
+    final int maxIndex = n > 0 ? n - 1 : 0;
+    final int li = widget.initialLearningIndex.clamp(0, maxIndex);
+    final int qi = widget.initialQuestionIndex.clamp(0, maxIndex);
+    controllerHor = PageController(initialPage: phase);
+    controllerLearning = PageController(initialPage: li);
+    controllerQuestions = PageController(initialPage: qi);
+
     for(WordItem word in widget.words) {
       final int type = TestItem.pickType(widget.fsrs.config.reviewQuestionSections, rnd);
       testItems.add(TestItem.buildTestItem(word, type, AppData().wordData, widget.fsrs.config.preferSimilar, rnd));
       chosenWrong.add(null);
+    }
+    // 进入即写入本次断点（词库为空时不写）
+    if(n > 0) {
+      final int anchor = phase == 0 ? li : qi;
+      PushSessionStore.save(PushCheckpoint(day: pushDayKey(DateTime.now()), phase: phase, wordId: widget.words[anchor].id, wordCount: n));
     }
     super.initState();
   }
@@ -831,12 +860,30 @@ class _FSRSLearningPageState extends State<FSRSLearningPage> {
         scrollDirection: Axis.horizontal,
         physics: NeverScrollableScrollPhysics(),
         controller: controllerHor,
+        onPageChanged: (value) {
+          // 阶段 2=完成：清除断点；阶段 1=答题：以当前答题词写入断点
+          if(value == 2) {
+            PushSessionStore.clear();
+          } else if(value == 1) {
+            final int n = widget.words.length;
+            if(n > 0) {
+              final int idx = controllerQuestions.hasClients
+                  ? controllerQuestions.page!.round().clamp(0, n - 1)
+                  : 0;
+              PushSessionStore.save(PushCheckpoint(day: pushDayKey(DateTime.now()), phase: 1, wordId: widget.words[idx].id, wordCount: n));
+            }
+          }
+        },
         children: [
           // 学习阶段的
           PageView.builder(
             scrollDirection: Axis.vertical,
             controller: controllerLearning,
             itemCount: widget.words.length,
+            onPageChanged: (value) {
+              // 卡片阶段翻页即更新断点锚点
+              PushSessionStore.save(PushCheckpoint(day: pushDayKey(DateTime.now()), phase: 0, wordId: widget.words[value].id, wordCount: widget.words.length));
+            },
             itemBuilder: (context, index) {
               return Column(
                 children: [
@@ -870,6 +917,8 @@ class _FSRSLearningPageState extends State<FSRSLearningPage> {
                 // 防止跳过
                 corrected = false;
               });
+              // 答题阶段翻页即更新断点锚点
+              PushSessionStore.save(PushCheckpoint(day: pushDayKey(DateTime.now()), phase: 1, wordId: widget.words[value].id, wordCount: widget.words.length));
             },
             itemBuilder: (context, index) {
               final TestItem testItem = testItems[index];

@@ -51,7 +51,7 @@ The old pre-refactor paths no longer exist: `pages/`, `sub_pages_builder/`, `var
 ## Storage & data
 
 - `lib/package_replacement/storage.dart` defines a **custom class also named `SharedPreferences`** (a wrapper, not the plugin). Web uses idb_shim IndexedDB (falling back to shared_preferences); everything else uses shared_preferences. Import this wrapper, not the plugin.
-- **Backup contract:** only keys listed in `usedKeys` (`settingData`, `wordData`, `fsrsData`, `readingData`) are saved/restored. Any new top-level storage key MUST be added there or it is silently dropped from WebDAV backup and local export.
+- **Backup contract:** only keys listed in `usedKeys` (`settingData`, `wordData`, `fsrsData`, `readingData`, `synonymData`, `pushSessionData`) are saved/restored. Any new top-level storage key MUST be added there or it is silently dropped from WebDAV backup and local export.
 - Settings mutate the immutable `Config` via `AppData().config = AppData().config.copyWith(...)` then `Global.updateSetting()` (persists + `notifyListeners`), not via provider state. After restoring data, call `Global.conveySetting()` to rebuild `Config`.
 - `AppData.basePath` is a `late final` assigned only when `!kIsWeb` — never read it on Web. TTS model and cache files use `path_provider`, separate from key-value storage.
 - Word data is stored as one JSON string under `wordData` (`{"Words":[...],"Classes":{fileName:{className:[indexes]}}}`). `WordItem.id` is positional and omitted from `toMap`; import JSON uses a different schema (`{ClassName:[{arabic,chinese,explanation}]}`) transformed by `AppData.dataFormater`. WebDAV/local export is JSON keyed by `usedKeys` whose values are themselves JSON strings (double-encoded).
