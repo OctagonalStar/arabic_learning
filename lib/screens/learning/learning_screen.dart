@@ -1,5 +1,3 @@
-import 'dart:math';
-
 import 'package:arabic_learning/core/adaptive.dart' show AdaptiveTabBody;
 import 'package:arabic_learning/services/fsrs.dart';
 import 'package:arabic_learning/screens/setting/questions_setting_page.dart' show QuestionsSettingPage;
@@ -17,6 +15,7 @@ import 'package:arabic_learning/widgets/shared.dart' show ButtonLabel;
 import 'package:arabic_learning/services/words.dart';
 import 'package:arabic_learning/services/global_state.dart';
 import 'package:arabic_learning/services/app_data.dart';
+import 'package:arabic_learning/services/push_session.dart';
 import 'package:arabic_learning/screens/learning/fsrs_screens.dart' show FSRSLearningPage, ForeFSRSSettingPage;
 import 'package:arabic_learning/screens/learning/learning_pages_build.dart';
 
@@ -110,41 +109,36 @@ class LearningPage extends StatelessWidget {
                     showSnackBar(context, "词库为空，无法推送！请先导入词库");
                     return;
                   }
-                  // 分类筛选在 FSRS 设置中配置；仅限制随机候选池，其余推送逻辑保持不变
-                  final Set<String> selectedCategories = FSRS().config.pushCategories.toSet();
-                  List<int> candidateIndexes = List<int>.generate(AppData().wordData.words.length, (int index) => index);
-                  if(selectedCategories.isNotEmpty) {
-                    candidateIndexes = candidateIndexes
-                        .where((int index) => wordMatchesCategories(AppData().wordData.words[index], selectedCategories))
-                        .toList();
-                  }
-                  if(candidateIndexes.isEmpty) {
+                  // 分类筛选在 FSRS 设置中配置；日期种子保证同一天重进得到同一批词
+                  final DateTime now = DateTime.now();
+                  final DailyPushPlan plan = buildDailyPushPlan(now: now, fsrs: FSRS(), wordData: AppData().wordData);
+                  if(plan.noCandidates) {
                     showSnackBar(context, "当前分类筛选下没有可推送的单词，请调整筛选条件");
                     return;
                   }
-                  final DateTime now = DateTime.now();
-                  final int seed = now.year * 10000 + now.month * 100 + now.day;
-                  final Set<WordItem> pushWords = {};
-                  final Random rnd = Random(seed);
-                  int tries = 0;
-                  while(pushWords.length < FSRS().config.pushAmount && tries < FSRS().config.pushAmount * 10){
-                    int chosen = candidateIndexes[rnd.nextInt(candidateIndexes.length)];
-                    DateTime? cardBirthday = FSRS().getCardBirthday(chosen);
-                    if(cardBirthday == null || cardBirthday.difference(DateTime.now()).inDays == 0) {
-                      pushWords.add(AppData().wordData.words.elementAt(chosen));
-                    }
-                    tries++;
-                  }
-                  pushWords.removeWhere((WordItem item) => FSRS().isContained(item.id));
-                  if(pushWords.isEmpty) {
+                  if(plan.words.isEmpty) {
+                    PushSessionStore.clear();
                     showSnackBar(context, "今日的推送已完成");
                     return;
+                  }
+                  // 读取当天断点并换算为恢复位置；词库规模变化视为断点失效
+                  final PushCheckpoint? cp = PushSessionStore.load();
+                  int initialPhase = 0, initialLearningIndex = 0, initialQuestionIndex = 0;
+                  if(cp != null && cp.day == pushDayKey(now) && cp.wordCount == AppData().wordData.words.length && (cp.phase == 0 || cp.phase == 1)) {
+                    int anchor = plan.words.indexWhere((WordItem w) => w.id == cp.wordId);
+                    if(anchor < 0) anchor = 0;
+                    initialPhase = cp.phase;
+                    if(cp.phase == 0) {
+                      initialLearningIndex = anchor;
+                    } else {
+                      initialQuestionIndex = anchor;
+                    }
                   }
                   context.read<Global>().uiLogger.info("跳转: LearningPage => FSRSLearningPage");
                   Navigator.push(
                     context, 
                     MaterialPageRoute(
-                      builder: (context) => FSRSLearningPage(fsrs: FSRS(), words: pushWords.toList())
+                      builder: (context) => FSRSLearningPage(fsrs: FSRS(), words: plan.words, initialPhase: initialPhase, initialLearningIndex: initialLearningIndex, initialQuestionIndex: initialQuestionIndex)
                     )
                   );
                 },

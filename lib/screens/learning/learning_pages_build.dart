@@ -508,6 +508,9 @@ class WordCardOverViewPage extends StatefulWidget {
 
 class _WordCardOverViewPage extends State<WordCardOverViewPage> {
   final TextEditingController searchController = TextEditingController();
+  /// 搜索输入框焦点由页面显式管理：进入搜索时聚焦、退出或打开词卡时取消，
+  /// 避免输入法在弹层关闭后自动重新唤起。
+  final FocusNode _searchFocusNode = FocusNode();
   bool inSearch = false;
 
   /// 已提交给检索的查询串（实时模式下经防抖更新，避免每次按键都触发检索）
@@ -520,6 +523,13 @@ class _WordCardOverViewPage extends State<WordCardOverViewPage> {
       inSearch = !inSearch;
       _query = inSearch ? searchController.text : "";
     });
+    if (inSearch) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted && inSearch) _searchFocusNode.requestFocus();
+      });
+    } else {
+      _searchFocusNode.unfocus();
+    }
   }
 
   /// 实时模式：输入停顿 200ms 后再检索
@@ -539,6 +549,7 @@ class _WordCardOverViewPage extends State<WordCardOverViewPage> {
   @override
   void dispose() {
     _searchDebounce?.cancel();
+    _searchFocusNode.dispose();
     searchController.dispose();
     super.dispose();
   }
@@ -548,6 +559,9 @@ class _WordCardOverViewPage extends State<WordCardOverViewPage> {
     context.read<Global>().uiLogger.info("构建 WordCardOverViewPage: inSearch{$inSearch}");
     MediaQueryData mediaQuery = MediaQuery.of(context);
     return Scaffold(
+      // 搜索框位于 AppBar，键盘弹出时不应压缩 body：否则网格 LayoutBuilder
+      // 会按缩短后的高度重算卡片尺寸，导致搜索结果卡片整体缩放/重排。
+      resizeToAvoidBottomInset: false,
       appBar: AppBar(
         bottom: inSearch ? PreferredSize(
           preferredSize: Size(mediaQuery.size.width, 75), 
@@ -562,7 +576,7 @@ class _WordCardOverViewPage extends State<WordCardOverViewPage> {
                   child: TextField(
                     textDirection: searchController.text.textDirection,
                     controller: searchController,
-                    autofocus: true,
+                    focusNode: _searchFocusNode,
                     expands: false,
                     maxLines: 1,
                     decoration: appInputDecoration(
@@ -595,14 +609,11 @@ class _WordCardOverViewPage extends State<WordCardOverViewPage> {
               showModalBottomSheet(
                 context: context, 
                 builder: (context) {
-                  return BottomSheet(
-                    onClosing: () {
-                      
-                    },
-                    builder: (context) {
-                      int forceCloumn = AppData().config.learning.overviewForceColumn;
-                      bool lookupRealtime = AppData().config.learning.wordLookupRealtime;
-                      return StatefulBuilder(
+                  // 主题的 bottomSheetTheme 已统一提供拖拽横条（showDragHandle: true），
+                  // 这里不能再嵌套 BottomSheet，否则会渲染出两条拖拽横条。
+                  int forceCloumn = AppData().config.learning.overviewForceColumn;
+                  bool lookupRealtime = AppData().config.learning.wordLookupRealtime;
+                  return StatefulBuilder(
                         builder: (context, setLocalState) {
                           return Column(
                             mainAxisSize: MainAxisSize.min,
@@ -662,8 +673,6 @@ class _WordCardOverViewPage extends State<WordCardOverViewPage> {
                           );
                         }
                       );
-                    },
-                  );
                 }
               );
             }, 
@@ -685,11 +694,66 @@ class _WordCardOverViewPage extends State<WordCardOverViewPage> {
   }
 }
 
-class WordCardOverViewLayout extends StatefulWidget {
+class WordCardOverViewLayout extends StatelessWidget {
   const WordCardOverViewLayout({super.key});
 
   @override
-  State<StatefulWidget> createState() => _WordCardOverViewLayout();
+  Widget build(BuildContext context) {
+    final AppData appData = AppData();
+    // 单一滚动列表：词库 -> 班级 -> 网格全部在同一滚动视图中按“内容固有高度”
+    // 展开，不再用两个嵌套 ListView + 固定像素 animateTo（旧实现会把被展开的
+    // 行顶出屏幕、下方留下大片空白）。展开时用 [_revealOnExpand] 让该行对齐
+    // 视口顶部，保证展开内容可见。
+    return ListView.builder(
+      itemCount: appData.wordData.classes.length,
+      itemBuilder: (BuildContext context, int jsonIndex) {
+        final SourceItem jsonSource = appData.wordData.classes[jsonIndex];
+        return ExpansionTile(
+          title: Text(jsonSource.name.trim()),
+          minTileHeight: 64,
+          onExpansionChanged: (value) {
+            if (value) _revealOnExpand(context);
+          },
+          children: [
+            for (final ClassItem classItem in jsonSource.subClasses)
+              Builder(
+                builder: (BuildContext classContext) {
+                  return ExpansionTile(
+                    title: Text(classItem.className.trim()),
+                    minTileHeight: 62,
+                    onExpansionChanged: (value) {
+                      if (value) _revealOnExpand(classContext);
+                    },
+                    children: [
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 8.0),
+                        child: _WordOverviewGrid(classItem: classItem),
+                      ),
+                    ],
+                  );
+                },
+              ),
+          ],
+        );
+      },
+    );
+  }
+}
+
+/// 展开后把当前行对齐到视口顶部，避免展开内容落在屏幕外。
+///
+/// 放在帧回调里执行：ExpansionTile 展开只向下增高，行首位置不变，因此即便
+/// 展开动画尚未结束，对齐行首也能得到稳定结果。
+void _revealOnExpand(BuildContext context) {
+  WidgetsBinding.instance.addPostFrameCallback((_) {
+    if (!context.mounted) return;
+    Scrollable.ensureVisible(
+      context,
+      alignment: 0.0,
+      duration: AppMotion.mediumShort,
+      curve: AppMotion.standardCurve,
+    );
+  });
 }
 
 /// 词汇总览 / 查找网格列数：用户固定列数（>0）优先，否则按可用宽度约每
@@ -700,152 +764,64 @@ int _overviewGridColumns(double availableWidth) {
   return max(1, availableWidth ~/ 300);
 }
 
-/// 词汇总览中单个班级的网格：列数与 cell 尺寸由网格区域的可用宽高共同决定。
-///
-/// cell 边长取 `min(可用宽度/列数, 可用高度)`：保证 cell 为方形且不会高于
-/// 容器可视高度，矮屏下自动缩小；间隙由 margin 等效的内边距提供。
+/// 词汇总览中单个班级的网格：按可用宽度自适应列数，cell 为正方形，整块高度
+/// 由“行数 × cell 边长”推导（`SizedBox` 固定高度 + 不可滚动 GridView），
+/// 因此可嵌在外层滚动列表中按内容自然展开，且保持懒加载。
 class _WordOverviewGrid extends StatelessWidget {
   const _WordOverviewGrid({required this.classItem});
 
   final ClassItem classItem;
 
+  /// 网格四周内边距与 cell 间距。
+  static const double _pad = 4.0;
+  static const double _gap = 8.0;
+
   @override
   Widget build(BuildContext context) {
     final AppData appData = AppData();
+    if (classItem.wordIndexs.isEmpty) return const SizedBox.shrink();
     return LayoutBuilder(
       builder: (BuildContext context, BoxConstraints constraints) {
         final int columns = _overviewGridColumns(constraints.maxWidth);
-        final double cellWidth = constraints.maxWidth / columns;
-        final double side = max(min(cellWidth, constraints.maxHeight), 1.0);
-        final double cardSide = max(side - 16.0, 0.0);
-        return GridView.builder(
-          itemCount: classItem.wordIndexs.length,
-          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-            crossAxisCount: columns,
-            // 高度 = side，宽度 = cellWidth；两者相等时为正方形。
-            childAspectRatio: cellWidth / side,
-          ),
-          itemBuilder: (context, index) {
-            // 仅首屏（前 N 项）做交错入场，懒加载出的后续项直接渲染。
-            return StaggeredEntrance(
-              index: index,
-              child: Center(
-                child: FlipWordCard(
-                  word: appData.wordData.words[classItem.wordIndexs[index]],
-                  width: cardSide,
-                  height: cardSide,
-                ),
-              ),
-            );
-          }
+        // cell 宽度 = (可用宽度 - 左右内边距 - 列间距) / 列数；正方形故高度相等。
+        final double cellWidth = max(
+          (constraints.maxWidth - _pad * 2 - _gap * (columns - 1)) / columns,
+          1.0,
         );
-      },
-    );
-  }
-}
-
-class _WordCardOverViewLayout extends State<WordCardOverViewLayout> {
-  final ScrollController jsonController = ScrollController();
-  final ScrollController classController = ScrollController();
-  bool allowJsonScorll = true;
-  bool allowClassScorll = false;
-
-  @override
-  void dispose(){
-    jsonController.dispose();
-    classController.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final AppData appData = AppData();
-
-    // 外层用 LayoutBuilder 取页面实际可视高度：内部所有“预留滚动空间”的
-    // 高度都基于可视高度而非整屏高度，矮横屏下不会因该值超过可视区域而溢出。
-    return LayoutBuilder(
-      builder: (BuildContext context, BoxConstraints constraints) {
-        final double viewportHeight = constraints.maxHeight;
-        return ListView.builder(
-          physics: allowJsonScorll ? null : NeverScrollableScrollPhysics(),
-          controller: jsonController,
-          itemCount: appData.wordData.classes.length + 1,
-          itemBuilder: (context, jsonIndex) {
-            if(jsonIndex == appData.wordData.classes.length) {
-              return SizedBox(height: viewportHeight);
-            }
-            final SourceItem jsonSource = appData.wordData.classes[jsonIndex];
-            return ExpansionTile(
-              title: Text(jsonSource.name.trim()),
-              minTileHeight: 64,
-              onExpansionChanged: (value) {
-                setState(() {
-                  allowClassScorll = value;
-                  allowJsonScorll = !value; // 展开json后锁定首个ListView，禁止滑动
-                });
-                jsonController.animateTo(
-                  (66 * jsonIndex).toDouble(), 
-                  duration: AppMotion.mediumShort, 
-                  curve: AppMotion.standardCurve
-                );
-              },
-              children: [
-                SizedBox(
-                  height: viewportHeight * 0.9,
-                  child: ListView.builder(
-                    physics: allowClassScorll ? null : NeverScrollableScrollPhysics(),
-                    controller: classController,
-                    itemCount: jsonSource.subClasses.length + 1,
-                    itemBuilder: (context, classIndex) {
-                      if(classIndex == jsonSource.subClasses.length) {
-                        return SizedBox(height: viewportHeight); // 避免0.9空间估计不足
-                      }
-                      final ClassItem classItem = jsonSource.subClasses[classIndex];
-                      return ExpansionTile(
-                        title: Text(classItem.className.trim()),
-                        minTileHeight: 62,
-                        onExpansionChanged: (value) {
-                          setState(() {
-                            allowClassScorll = !value;
-                          });
-                          if(value) {
-                            classController.animateTo(
-                              (64 * classIndex).toDouble(), 
-                              duration: AppMotion.mediumShort, 
-                              curve: AppMotion.standardCurve
-                            );
-                            jsonController.animateTo(
-                              (66 * (jsonIndex + 1)).toDouble(), 
-                              duration: AppMotion.mediumShort, 
-                              curve: AppMotion.standardCurve
-                            );
-                          } else {
-                            jsonController.animateTo(
-                              (66 * jsonIndex).toDouble(), 
-                              duration: AppMotion.mediumShort, 
-                              curve: AppMotion.standardCurve
-                            );
-                          }
-                        },
-                        children: [
-                          SizedBox(
-                            height: viewportHeight * 0.8,
-                            child: _WordOverviewGrid(classItem: classItem),
-                          ),
-                          SizedBox(height: viewportHeight * 0.5)
-                        ],
-                      );
-                    }
+        final int rows = (classItem.wordIndexs.length + columns - 1) ~/ columns;
+        final double gridHeight =
+            _pad * 2 + rows * cellWidth + max(0, rows - 1) * _gap;
+        return SizedBox(
+          height: gridHeight,
+          child: GridView.builder(
+            physics: const NeverScrollableScrollPhysics(),
+            padding: const EdgeInsets.all(_pad),
+            itemCount: classItem.wordIndexs.length,
+            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: columns,
+              mainAxisSpacing: _gap,
+              crossAxisSpacing: _gap,
+              childAspectRatio: 1.0,
+            ),
+            itemBuilder: (context, index) {
+              return StaggeredEntrance(
+                index: index,
+                child: Center(
+                  child: FlipWordCard(
+                    word: appData.wordData.words[classItem.wordIndexs[index]],
+                    width: cellWidth,
+                    height: cellWidth,
                   ),
                 ),
-              ],
-            );
-          }
+              );
+            },
+          ),
         );
       },
     );
   }
 }
+
 
 class WordLookupLayout extends StatefulWidget {
   final String lookfor;

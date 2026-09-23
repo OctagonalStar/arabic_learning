@@ -1053,12 +1053,14 @@ class SettingRedirctButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     MediaQueryData mediaQuery = MediaQuery.of(context);
+    final ColorScheme scheme = Theme.of(context).colorScheme;
     return ElevatedButton(
       style: ElevatedButton.styleFrom(
         minimumSize: Size.fromHeight(mediaQuery.size.height * 0.08),
-        // 设置项面板为 surfaceContainerHighest，此处用低一层的容器色区分行。
-        backgroundColor: Theme.of(context).colorScheme.surfaceContainerLow,
-        foregroundColor: Theme.of(context).colorScheme.onSurface,
+        // 与 SettingItem 卡片形成同一容器的“更亮一层”，整块设置项观感统一；
+        // 前置图标用主题主色、尾部箭头用次级前景，稳定传达“可跳转”。
+        backgroundColor: scheme.surfaceContainerHighest,
+        foregroundColor: scheme.onSurface,
         shape: BeveledRectangleBorder(),
       ),
       onPressed: () {
@@ -1073,9 +1075,9 @@ class SettingRedirctButton extends StatelessWidget {
       },
       child: Row(
         children: [
-          Icon(icon),
+          Icon(icon, color: scheme.primary),
           Expanded(child: Text(title)),
-          Icon(Icons.arrow_forward_ios),
+          Icon(Icons.arrow_forward_ios, size: 16.0, color: scheme.onSurfaceVariant),
         ],
       ),
     );
@@ -1133,13 +1135,16 @@ class SettingItem extends StatelessWidget {
   Widget build(BuildContext context) {
     context.read<Global>().uiLogger.info("构建 SettingItem: $title");
     MediaQueryData mediaQuery = MediaQuery.of(context);
+    final ColorScheme scheme = Theme.of(context).colorScheme;
     List<Container> decoratedContainers = List.generate(children.length, (int index) {
       return Container(
         width: mediaQuery.size.width * 0.90,
         padding: padding,
         margin: EdgeInsets.all(4.0),
         decoration: BoxDecoration(
-          color: Theme.of(context).colorScheme.surfaceContainerHighest,
+          // 统一用 surfaceContainerLow 作为分区卡片底色；分区内各设置项
+          // （SettingRow / SettingRedirctButton）再用更高一层的容器色区分。
+          color: scheme.surfaceContainerLow,
           borderRadius: BorderRadius.vertical(top: Radius.circular(index == 0 ? AppRadius.card : 5.0), bottom: Radius.circular(index == children.length-1 ? AppRadius.card : 5.0)),
         ),
         clipBehavior: Clip.antiAlias,
@@ -1151,7 +1156,17 @@ class SettingItem extends StatelessWidget {
       mainAxisAlignment: MainAxisAlignment.start,
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        TextContainer(text: title),
+        // 分区标题：主题主色 + 加粗，避免再叠一层灰色容器造成色彩杂乱。
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16.0, 16.0, 16.0, 4.0),
+          child: Text(
+            title,
+            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+              color: scheme.primary,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        ),
         Center(
           child: Column(
             children: decoratedContainers,

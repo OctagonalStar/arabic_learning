@@ -16,6 +16,8 @@
 - 多种题型可自由配置与排序：单词卡片、中译阿选择题、阿译中选择题、拼写题、听力题
 - 题型内/题型间/全局三级乱序
 - 偏好易混词或同课词
+- 单词卡片支持点击翻面：居中放大展开，查看词根、词性、复数、阴阳性、现在式、动名词等完整信息
+- 首页「每日一词」：每天随机一个单词，点击可朗读
 
 ### 规律复习（FSRS）
 
@@ -26,8 +28,10 @@
 - 可自由配置期望提取率、评分限时（优秀/良好）
 - 自我评级模式
 - 每日单词推送，学习即加入复习计划
+- 每日推送支持断点续传：中途退出后同日再次进入，可回到上次的卡片/答题进度
+- 推送词可从指定分类中筛选
 - 复习与每日推送支持多选题型，每个单词在所选题型中随机出题（两板块共用配置，独立于学习板块）
-- 强化记忆循环：同一到期卡片在队列中交错出现多次
+- 强化记忆循环：同一到期卡片在队列中交错出现最多 3 次
 
 ### 测试
 
@@ -36,16 +40,19 @@
 
 ### 阅读题
 
-- 通过AI API或导入Json新建阅读题
+- 通过 AI API、AI Prompt 提示词或导入 JSON 新建阅读题
 - 自定义文章主题、难度、题目生成数量
 - 支持阅读理解与完形填空
+- 可切换是否要求完整发音符号
+- 结果页展示每题正确答案与解析，列表显示历史正确率
 
 ### 词库管理
 
-- 从Github[此仓库](https://github.com/JYinherit/Arabiclearning)线上下载词库
-- 本地 JSON 文件导入
+- 从 GitHub 多源在线下载词库（[@JYinherit 词库](https://github.com/JYinherit/Arabiclearning)、[@OctagonalStar 词库数据集](https://github.com/OctagonalStar/arabic_chinese_edu_words_dataset)）
+- 本地 JSON / JSONL 文件导入
 - 词汇总览：按词库-课程分级展示，支持网格列数自定义
-- 词汇查找：阿语/中文双向搜索，支持 BK 树模糊匹配及编辑距离容错
+- 词汇查找：阿语/中文双向搜索，支持词根精确匹配（空格分隔）、BK 树模糊匹配与编辑距离容错；中文释义按「，；,;、」分段建索引；可开关实时检索
+- 同义词管理：答题时可将易混选项标记为「同义/不同」，并在设置中查看与管理标记
 
 ### 数据同步
 
@@ -54,15 +61,16 @@
 
 ### 音频与 TTS
 
-- 系统 TTS / 在线 TTS/ 神经网络语音合成（sherpa-onnx / VITS）
+- 系统 TTS / 在线 TTS（TextReadTTS.com）/ 神经网络语音合成（sherpa-onnx VITS）
 - 播放速度可调（0.5x – 1.5x）
 - 自动播放发音（学习中进入阿译中选择题时自动朗读）
 
 ### 个性化
 
 - 多种主题色
-- Material UI
-- 深色模式
+- Material 3（M3 / Material You）设计
+- 动态取色（Android/桌面支持，Web 自动回退主题色）
+- 深色模式（跟随系统 / 强制浅色 / 强制深色）
 - 备用字体（阿语 Vazirmatn / 中文 NotoSansSC）
 
 ### 统计
@@ -88,27 +96,28 @@
 ## 技术栈
 
 - **框架**：Flutter/Dart
-- **状态管理**：Provider
+- **状态管理**：Provider（仅全局 `Global`，其余为单例服务）
 - **复习算法**：FSRS
 - **音频**：flutter_tts / just_audio / sherpa_onnx
 - **联机**：flutter_webrtc
 - **同步**：webdav_client
-- **搜索**：BK 树
+- **搜索**：自研 BK 树 + 字符倒排索引 + 阿拉伯语词干提取（词根匹配）
 - **存储**：shared_preferences / idb_shim（Web IndexedDB）
+- **动态取色**：dynamic_color
 
 ## 构建
 
-> 使用 Flutter 框架版本 **3.47.5**（Android 需 AGP **9.1.0** / Gradle **9.3.1**。
+> 使用 Flutter **3.47.5**（Dart SDK `^3.11.0`）；Android 构建另需 AGP **9.1.0** / Gradle **9.3.1**。
 
 ```bash
 flutter pub get
 flutter run
 ```
 
-各平台构建产物参见 GitHub Releases 和 Github Action。
+各平台构建产物参见 GitHub Releases 和 GitHub Actions。
 
 ## 许可证
 
 [AGPL-3.0](LICENSE)
 
-Copyright (C) 2025 OctagonalStar
+Copyright (C) 2025-2026 OctagonalStar

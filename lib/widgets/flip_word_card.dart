@@ -88,62 +88,74 @@ class _FlipWordCardState extends State<FlipWordCard> {
   @override
   Widget build(BuildContext context) {
     final MediaQueryData mediaQuery = MediaQuery.of(context);
-    final double useWidth = widget.width ?? mediaQuery.size.width * 0.9;
-    final double useHeight = widget.height ?? mediaQuery.size.height * 0.5;
+    return LayoutBuilder(
+      builder: (BuildContext context, BoxConstraints constraints) {
+        // 显式宽高始终优先；未显式指定时，高度优先填满父级给出的有界高度
+        // （如 `Expanded` 中的题目区），仅在高度无界时回退屏幕高度的一半。
+        final double useWidth = widget.width ?? mediaQuery.size.width * 0.9;
+        final double useHeight = widget.height ??
+            (constraints.hasBoundedHeight
+                ? constraints.maxHeight
+                : mediaQuery.size.height * 0.5);
 
-    // startOnBack 已直接呈现全部详情，属静态展示，不参与翻卡交互。
-    if (widget.startOnBack) {
-      return SizedBox(
-        key: _cardKey,
-        width: useWidth,
-        height: useHeight,
-        child: _FlipCardSurface(
-          word: widget.word,
+        // startOnBack 已直接呈现全部详情，属静态展示，不参与翻卡交互。
+        if (widget.startOnBack) {
+          return SizedBox(
+            key: _cardKey,
+            width: useWidth,
+            height: useHeight,
+            child: _FlipCardSurface(
+              word: widget.word,
+              width: useWidth,
+              height: useHeight,
+              showBack: true,
+              masked: widget.masked,
+            ),
+          );
+        }
+
+        final Widget card = SizedBox(
+          key: _cardKey,
           width: useWidth,
           height: useHeight,
-          showBack: true,
-          masked: widget.masked,
-        ),
-      );
-    }
+          child: _FlipCardSurface(
+            word: widget.word,
+            width: useWidth,
+            height: useHeight,
+            showBack: false,
+            // 展开期间原位卡片整体透明，不再绘制遮挡层，避免读屏 / 测试树里
+            // 残留第二份“释义已隐藏”。
+            masked: widget.masked && !_expanded,
+            hintText: widget.enableFlip
+                ? (widget.masked ? _maskedHint : _expandHint)
+                : null,
+          ),
+        );
 
-    final Widget card = SizedBox(
-      key: _cardKey,
-      width: useWidth,
-      height: useHeight,
-      child: _FlipCardSurface(
-        word: widget.word,
-        width: useWidth,
-        height: useHeight,
-        showBack: false,
-        // 展开期间原位卡片整体透明，不再绘制遮挡层，避免读屏 / 测试树里
-        // 残留第二份“释义已隐藏”。
-        masked: widget.masked && !_expanded,
-        hintText: widget.enableFlip
-            ? (widget.masked ? _maskedHint : _expandHint)
-            : null,
-      ),
-    );
+        if (!widget.enableFlip) return card;
 
-    if (!widget.enableFlip) return card;
-
-    return GestureDetector(
-      behavior: HitTestBehavior.opaque,
-      onTap: () => _open(context),
-      // 展开期间原位卡片不再参与语义树，避免读屏重复播报。
-      child: ExcludeSemantics(
-        excluding: _expanded,
-        child: Opacity(
-          opacity: _expanded ? 0.0 : 1.0,
-          child: card,
-        ),
-      ),
+        return GestureDetector(
+          behavior: HitTestBehavior.opaque,
+          onTap: () => _open(context),
+          // 展开期间原位卡片不再参与语义树，避免读屏重复播报。
+          child: ExcludeSemantics(
+            excluding: _expanded,
+            child: Opacity(
+              opacity: _expanded ? 0.0 : 1.0,
+              child: card,
+            ),
+          ),
+        );
+      },
     );
   }
 
   /// 记录源矩形后打开展开层；展开层自身驱动移动 / 放大 / 翻转 / 遮罩动画。
   Future<void> _open(BuildContext context) async {
     if (_expanded) return;
+    // 展开词卡即离开检索输入场景：先收起输入法并清除输入框焦点，
+    // 否则弹层关闭后焦点回到输入框会让 IME 自动重新弹出。
+    FocusManager.instance.primaryFocus?.unfocus();
     final RenderBox? box = _cardKey.currentContext?.findRenderObject() as RenderBox?;
     if (box == null || !box.hasSize) return;
     final Rect sourceRect = box.localToGlobal(Offset.zero) & box.size;
@@ -536,9 +548,15 @@ class _FlipCardSectionLabel extends StatelessWidget {
   }
 }
 
+/// 词形信息（词根 / 词性 / 复数 / 阴阳性 / 现在式 / 动名词）相对详情正文的
+/// 字号放大系数：这些字段是学习者最需要看清的信息，统一放大 50%。
+const double _morphTextBoost = 1.5;
+
 /// 词形信息芯片：上标签 / 下值的小型信息块；值过长时以省略号兜底。
 ///
 /// 字号 / 内边距 / 圆角 / 边框随 [scale] 放大，系统 `textScaler` 仍会叠加。
+/// 其中标签与值额外乘以 [_morphTextBoost]（+50%），使词根 / 复数 / 现在式 /
+/// 动名词等词形信息比说明性文字更醒目。
 class _FlipCardMorphChip extends StatelessWidget {
   final String label;
   final String value;
@@ -556,9 +574,10 @@ class _FlipCardMorphChip extends StatelessWidget {
   Widget build(BuildContext context) {
     final ColorScheme scheme = Theme.of(context).colorScheme;
     final TextTheme textTheme = Theme.of(context).textTheme;
-    final TextStyle valueStyle = _scaledTextStyle(textTheme.labelLarge, scale, color: scheme.onSurface);
+    final double textScale = scale * _morphTextBoost;
+    final TextStyle valueStyle = _scaledTextStyle(textTheme.labelLarge, textScale, color: scheme.onSurface);
     return Container(
-      padding: EdgeInsets.symmetric(horizontal: AppSpacing.xs * scale, vertical: AppSpacing.xxs * scale),
+      padding: EdgeInsets.symmetric(horizontal: AppSpacing.xs * scale, vertical: AppSpacing.xxs * textScale),
       decoration: BoxDecoration(
         color: scheme.surfaceContainerLow,
         borderRadius: BorderRadius.circular(AppRadius.control * scale),
@@ -570,7 +589,7 @@ class _FlipCardMorphChip extends StatelessWidget {
         children: [
           Text(
             label,
-            style: _scaledTextStyle(textTheme.labelSmall, scale, color: scheme.onSurfaceVariant),
+            style: _scaledTextStyle(textTheme.labelSmall, textScale, color: scheme.onSurfaceVariant),
           ),
           Text(
             value,

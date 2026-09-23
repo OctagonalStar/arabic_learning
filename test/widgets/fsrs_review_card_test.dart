@@ -7,6 +7,7 @@ import 'package:arabic_learning/services/fsrs.dart' show FSRS, FSRSConfig;
 import 'package:arabic_learning/services/global_state.dart' show Global;
 import 'package:arabic_learning/services/search.dart' show BKSearch;
 import 'package:arabic_learning/widgets/questions.dart' show ChoiceQuestions, ListeningQuestion, SpellQuestion;
+import 'package:arabic_learning/widgets/flip_word_card.dart' show FlipWordCard;
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
@@ -218,5 +219,41 @@ void main() {
     await tester.pumpAndSettle();
     expect(tester.takeException(), isNull);
     expect(find.textContaining('该课程学习已完成'), findsOneWidget);
+  });
+
+  testWidgets('推送学习做题阶段点击「提示」打开详解（Scaffold 上下文回归）', (WidgetTester tester) async {
+    // 回归：_bottomBar 曾用 State.context 调 viewAnswer，而 FSRSLearningPage 的
+    // Scaffold 在 build 内创建，State.context 位于其上层，导致 showBottomSheet
+    // 抛 "No Scaffold widget found"、点击详解无反应。修复后传入 itemBuilder 的
+    // context（Scaffold 之下）。
+    FSRS().config = FSRSConfig(reviewQuestionSections: const [2]);
+    await pumpLearningPage(tester, <WordItem>[buildWords().first]);
+
+    await tester.tap(find.text('开始答题'));
+    await tester.pumpAndSettle();
+    expect(find.byType(ChoiceQuestions), findsOneWidget);
+
+    expect(find.text('提示'), findsOneWidget);
+    await tester.tap(find.text('提示'));
+    await tester.pumpAndSettle();
+
+    expect(tester.takeException(), isNull);
+    expect(find.text('我知道了'), findsOneWidget, reason: '详解弹层应打开');
+  });
+
+  testWidgets('自我评级复习卡可翻卡揭示释义', (WidgetTester tester) async {
+    // 回归：selfEvaluate 模式下卡片曾设 enableFlip:false，点击无法翻开。
+    FSRS().config = FSRSConfig(selfEvaluate: true);
+    await pumpReviewCard(tester);
+
+    expect(find.text('释义已隐藏'), findsOneWidget);
+    expect(find.text('点击查看释义'), findsOneWidget);
+
+    await tester.tap(find.byType(FlipWordCard));
+    await tester.pumpAndSettle();
+
+    expect(tester.takeException(), isNull);
+    expect(find.text('释义已隐藏'), findsNothing);
+    expect(find.text('词根'), findsOneWidget, reason: '翻卡后应展示详情');
   });
 }

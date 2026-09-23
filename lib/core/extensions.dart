@@ -24,11 +24,17 @@ extension StringExtensions on String {
 
   /// 文本方向：包含阿拉伯语字符时为 RTL，否则为 LTR
   TextDirection get textDirection => isArabic() ? TextDirection.rtl : TextDirection.ltr;
+  /// 去掉单词的扩展部分，得到用于 BK 树索引 / 检索的“干净”词形。
+  ///
+  /// 依次移除：发音符号（harakat/tashkeel）、括号内内容（半角 `()` 与全角
+  /// `（）`）、斜杠及其后内容（半角 `/` 与全角 `／`，不要求斜杠前有空格）、
+  /// 空格后的 `ج` / `-` / `م` 标记及其后内容、阿拉伯语逗号 / 句点及其后内容。
   String removeAracicExtensionPart(){
     String res = this;
     res = res.replaceAll(RegExp(r'[\u064B-\u065F\u0640\u0670\u06D6-\u06ED]'), ""); 
-    res = res.replaceAll(RegExp(r'\(.*\)'), ""); // for "قَلَمٌ (ج: أَقْلَامٌ)"
-    res = res.replaceAll(RegExp(r'\ [ج\-/م][^]*$'), ""); // for "ميلادي م ميلاد" "جَدِيدٌ / جَدِيدَةٌ"
+    res = res.replaceAll(RegExp(r'[（(][^）)]*[）)]'), ""); // for "قَلَمٌ (ج: أَقْلَامٌ)" / "（…）"
+    res = res.replaceAll(RegExp(r'[/／][^]*$'), ""); // for "جَدِيدٌ/جَدِيدَةٌ"（不要求空格）
+    res = res.replaceAll(RegExp(r'\ [ج\-م][^]*$'), ""); // for "ميلادي م ميلاد"
     res = res.replaceAll(RegExp(r'[،.][^]*$'), ""); // for "متواصل، متواصل"
     return res;
   }

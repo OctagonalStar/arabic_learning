@@ -266,12 +266,26 @@ final _arabicStemmer = ArabicStemmer();
 
 /// 获取单词用于相似度计算的词根。
 ///
-/// 优先使用词库提供的[WordItem.root]（去除分隔空格）；为空时回退到[ArabicStemmer]提取。
+/// 优先使用词库提供的 [WordItem.root]（去掉发音符号 / 括号 / 斜杠后缀等扩展
+/// 部分并去除分隔空格）；为空时回退到 [ArabicStemmer] 从词形提取。
+///
+/// 词库文本里的 `root` 偶尔夹带发音符号或 `(…)`、`/…` 说明，若直接作为
+/// BK 树键会污染相似度计算，故此处统一走 [StringExtensions.removeAracicExtensionPart]。
 String wordRoot(WordItem word) {
-  final String provided = word.root.replaceAll(' ', '').trim();
+  final String provided =
+      _arabicStemmer.normalize(word.root).replaceAll(RegExp(r'\s+'), '');
   if (provided.isNotEmpty) return provided;
   return _arabicStemmer.extractRoot(word.arabic);
 }
+
+/// 将用户输入归一化为词根键，用于精确词根匹配（去除发音符号/空白，统一阿列夫等）。
+String normalizeRootKey(String input) => wordRoot(WordItem(
+  arabic: input.replaceAll(RegExp(r'\s+'), ''),
+  chinese: input,
+  explanation: "",
+  id: -1,
+  className: "",
+));
 
 /// 将词库提供的词性字符串映射为[ArabicPOS]。
 ///
@@ -357,6 +371,13 @@ class VocabularyOptimizer {
     }
     return resultWords;
   }
+
+  /// 返回词根恰好等于 [root] 的所有单词（未命中返回空列表）。
+  List<WordItem> wordsForRoot(String root) {
+    final Set<WordItem>? words = _rootToWordsMap[root];
+    if (words == null || words.isEmpty) return const <WordItem>[];
+    return List<WordItem>.unmodifiable(words);
+  }
 }
 
 /// 词汇检索索引（用于「查找单词」）。
@@ -373,6 +394,9 @@ class VocabularyLookupIndex {
   final VocabularyOptimizer _optimizer;
   final List<String> _arNorm;
   final List<String> _zh;
+
+  /// 中文释义分段倒排：token -> 词 id（按 [，；,;、] 切分）
+  final Map<String, List<int>> _zhTokenExact;
   final Map<String, List<int>> _arExact;
   final Map<String, List<int>> _arChars;
   final _SimpleBKTree? _arTree;
@@ -382,6 +406,7 @@ class VocabularyLookupIndex {
     this._optimizer,
     this._arNorm,
     this._zh,
+    this._zhTokenExact,
     this._arExact,
     this._arChars,
     this._arTree,
@@ -394,6 +419,7 @@ class VocabularyLookupIndex {
 
     final Map<String, List<int>> arExact = {};
     final Map<String, List<int>> arChars = {};
+    final Map<String, List<int>> zhTokenExact = {};
 
     for(int i = 0; i < words.length; i++) {
       final String a = arNorm[i];
@@ -403,6 +429,12 @@ class VocabularyLookupIndex {
           (arChars[ch] ??= <int>[]).add(i);
         }
       }
+      // 中文释义按分隔符切分建倒排，供分段精确命中排序使用
+      for(final String rawToken in zh[i].split(RegExp(r'[，；,;、]'))) {
+        final String token = rawToken.trim();
+        if(token.isEmpty) continue;
+        (zhTokenExact[token] ??= <int>[]).add(i);
+      }
     }
 
     return VocabularyLookupIndex._(
@@ -410,6 +442,7 @@ class VocabularyLookupIndex {
       optimizer,
       arNorm,
       zh,
+      zhTokenExact,
       arExact,
       arChars,
       arExact.isEmpty
@@ -467,7 +500,24 @@ class VocabularyLookupIndex {
       }
     }
 
-    result.sort((int a, int b) => getLevenshtein(q, _arNorm[a]).compareTo(getLevenshtein(q, _arNorm[b])));
+    // 精确词根加权：命中已知词根时，其家族优先展示
+    final Set<int> exactRootIds = <int>{};
+    final String qKey = normalizeRootKey(query);
+    if (qKey.isNotEmpty) {
+      for (final WordItem w in _optimizer.wordsForRoot(qKey)) {
+        if (w.id >= 0 && w.id < _words.length) {
+          exactRootIds.add(w.id);
+          if (added.add(w.id)) result.add(w.id);
+        }
+      }
+    }
+
+    result.sort((int a, int b) {
+      final bool ea = exactRootIds.contains(a);
+      final bool eb = exactRootIds.contains(b);
+      if (ea != eb) return ea ? -1 : 1;
+      return getLevenshtein(q, _arNorm[a]).compareTo(getLevenshtein(q, _arNorm[b]));
+    });
     return [for(final int i in result) _words[i]];
   }
 
@@ -486,10 +536,23 @@ class VocabularyLookupIndex {
         if(query.split('').any((String ch) => c.contains(ch)) && added.add(i)) result.add(i);
       }
     }
+    final Set<int> exactTokenIds = <int>{};
+    final List<int>? tokenHits = _zhTokenExact[query];
+    if(tokenHits != null) exactTokenIds.addAll(tokenHits);
     result.sort((int a, int b) {
+      // ① 整串完全相等
+      final bool eqA = _zh[a] == query;
+      final bool eqB = _zh[b] == query;
+      if(eqA != eqB) return eqA ? -1 : 1;
+      // ② 释义分段（token）精确命中
+      final bool tokA = exactTokenIds.contains(a);
+      final bool tokB = exactTokenIds.contains(b);
+      if(tokA != tokB) return tokA ? -1 : 1;
+      // ③ 整串包含
       final bool containA = _zh[a].contains(query);
       final bool containB = _zh[b].contains(query);
       if(containA != containB) return containA ? -1 : 1;
+      // ④ 整串编辑距离
       return getLevenshtein(query, _zh[a]).compareTo(getLevenshtein(query, _zh[b]));
     });
     return [for(final int i in result) _words[i]];

@@ -5,6 +5,7 @@
 
 import 'package:flutter/material.dart';
 
+import 'package:arabic_learning/theme/page_transitions.dart';
 import 'package:arabic_learning/theme/tokens.dart';
 
 /// 构建应用主题。
@@ -41,17 +42,18 @@ ThemeData buildTheme(
     splashFactory: InkSparkle.splashFactory,
 
     // —— 页面转场 ——
-    // 全平台统一使用 Material 3 的 FadeForwards 转场（Android U 风格）：
-    // 新页淡入 + 旧页左移，避免各平台系统默认转场造成观感不一致。
-    // 所有 `MaterialPageRoute` 自动继承，无需在调用点单独指定。
+    // 全平台统一使用 M3 的 FadeForwards（共享轴 X：新页淡入 + 旧页左移），
+    // 时长由 AppPageTransitionsBuilder 取自 AppMotion，避免各平台系统默认
+    // 转场造成观感不一致。所有 `MaterialPageRoute` 自动继承，无需在调用点
+    // 单独指定。
     pageTransitionsTheme: const PageTransitionsTheme(
       builders: <TargetPlatform, PageTransitionsBuilder>{
-        TargetPlatform.android: FadeForwardsPageTransitionsBuilder(),
-        TargetPlatform.iOS: FadeForwardsPageTransitionsBuilder(),
-        TargetPlatform.linux: FadeForwardsPageTransitionsBuilder(),
-        TargetPlatform.macOS: FadeForwardsPageTransitionsBuilder(),
-        TargetPlatform.windows: FadeForwardsPageTransitionsBuilder(),
-        TargetPlatform.fuchsia: FadeForwardsPageTransitionsBuilder(),
+        TargetPlatform.android: AppPageTransitionsBuilder(),
+        TargetPlatform.iOS: AppPageTransitionsBuilder(),
+        TargetPlatform.linux: AppPageTransitionsBuilder(),
+        TargetPlatform.macOS: AppPageTransitionsBuilder(),
+        TargetPlatform.windows: AppPageTransitionsBuilder(),
+        TargetPlatform.fuchsia: AppPageTransitionsBuilder(),
       },
     ),
 
