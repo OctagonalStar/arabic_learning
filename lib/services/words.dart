@@ -70,9 +70,10 @@ List<WordItem> getRandomWords(int count, DictData dict, {WordItem? include, bool
 
   if(include != null){
     wordList.add(include);
+    // 按词条 id 在全部词库/课程中反查归属，兼容一词多课（不依赖单值 className）。
     for(SourceItem source in dict.classes){
-      if(source.subClasses.any((ClassItem item) => item.className == include.className)){
-        ClassItem course = source.subClasses.singleWhere((ClassItem item) => item.className == include.className);
+      for(ClassItem course in source.subClasses){
+        if(!course.wordIndexs.contains(include.id)) continue;
         for(int index in course.wordIndexs){
           if(preferClass){
             rndRange.add(dict.words[index]);

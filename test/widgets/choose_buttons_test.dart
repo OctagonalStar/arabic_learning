@@ -20,6 +20,8 @@ void main() {
     bool isShowAnimation = true,
     bool isSingleSelect = false,
     bool disableAnimations = false,
+    bool lockAfterSelect = false,
+    void Function(int index)? onLockedTap,
   }) async {
     tester.view.physicalSize = const Size(800, 600);
     tester.view.devicePixelRatio = 1.0;
@@ -43,6 +45,8 @@ void main() {
                       onSelected: onSelected,
                       isShowAnimation: isShowAnimation,
                       isSingleSelect: isSingleSelect,
+                      lockAfterSelect: lockAfterSelect,
+                      onLockedTap: onLockedTap,
                       settingShowingMode: 2,
                     ),
                   ),
@@ -299,5 +303,28 @@ void main() {
     await tapOption(tester, 1);
     await tester.pumpAndSettle();
     expect(hapticCalls.last.arguments, 'HapticFeedbackType.mediumImpact');
+  });
+
+  testWidgets('lockAfterSelect：首次选择后锁定全部选项并触发 onLockedTap', (WidgetTester tester) async {
+    final List<int> calls = <int>[];
+    final List<int> locked = <int>[];
+    await pumpChoose(
+      tester,
+      onSelected: (int index) { calls.add(index); return true; },
+      isSingleSelect: true,
+      lockAfterSelect: true,
+      onLockedTap: (int index) => locked.add(index),
+    );
+
+    await tapOption(tester, 0);
+    await tester.pumpAndSettle();
+    expect(calls, <int>[0]);
+
+    // 已锁定：点击其它选项不再作答，只回调 onLockedTap。
+    await tapOption(tester, 1);
+    await tester.pumpAndSettle();
+    expect(calls, <int>[0], reason: '锁定后不应再触发 onSelected');
+    expect(locked, <int>[1], reason: '锁定点击应回调 onLockedTap');
+    expect(tester.takeException(), isNull);
   });
 }

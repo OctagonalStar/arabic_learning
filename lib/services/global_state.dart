@@ -10,6 +10,7 @@ import 'package:arabic_learning/models/dict.dart' show DictData;
 import 'package:arabic_learning/models/reading.dart' show ReadingData;
 import 'package:arabic_learning/services/app_data.dart' show AppData;
 import 'package:arabic_learning/services/fsrs.dart' show FSRS;
+import 'package:arabic_learning/services/memberships.dart' show WordMembershipIndex;
 import 'package:arabic_learning/services/search.dart' show BKSearch;
 import 'package:arabic_learning/services/synonyms.dart' show SynonymStore;
 import 'package:arabic_learning/theme/app_theme.dart' show buildTheme;
@@ -141,7 +142,11 @@ class Global with ChangeNotifier {
       final String? wordRaw = AppData().storage.getString("wordData");
       if (wordRaw != null && wordRaw.isNotEmpty) {
         AppData().wordData = DictData.buildFromMap(jsonDecode(wordRaw));
+        if (AppData().normalizeWordGenders()) {
+          AppData().storage.setString("wordData", jsonEncode(AppData().wordData.toMap()));
+        }
         BKSearch.rebuild(AppData().wordData.words);
+        WordMembershipIndex.instance.rebuild(AppData().wordData.classes);
       }
 
       final String? readingRaw = AppData().storage.getString("readingData");

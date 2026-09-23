@@ -128,47 +128,81 @@ Widget _buildFileRow(BuildContext context, Dio dio, dynamic f) {
   bool inDownloading = false;
   return StatefulBuilder(
     builder: (context, setLocalState) {
+      // 下载与更新共用：拉取远端词库文本并交给导入器。
+      // 导入器按 sourceJsonFileName 去重，同名词库会被替换而非叠加。
+      Future<void> fetchAndImport({required bool isUpdate}) async {
+        setLocalState(() {
+          inDownloading = true;
+        });
+        final String action = isUpdate ? "更新" : "下载";
+        try {
+          context.read<Global>().uiLogger.info(
+            "$action词库: $fileName:${f["download_url"]}",
+          );
+          var response = await dio.getUri(Uri.parse(f["download_url"]));
+          if (!context.mounted) return;
+          if (response.statusCode == 200) {
+            // JSONL/旧版JSON均按原始文本交给导入器（自动识别格式）
+            final String rawText = response.data is String
+                ? response.data.toString()
+                : jsonEncode(response.data);
+            final DictImportResult result = AppData().importDictData(
+              rawText,
+              fileName,
+            );
+            showSnackBar(context, "$action成功: $fileName\n${result.message}");
+            setLocalState(() {
+              inDownloading = false;
+              downloaded = true;
+            });
+          } else {
+            context.read<Global>().uiLogger.severe(
+              "词库[$fileName]$action失败: HTTP ${response.statusCode}",
+            );
+            alart(context, "$action失败\nHTTP ${response.statusCode}");
+            setLocalState(() {
+              inDownloading = false;
+            });
+          }
+        } catch (e) {
+          context.read<Global>().uiLogger.severe("词库[$fileName]$action失败: $e");
+          alart(context, "$action失败\n${e.toString()}");
+          setLocalState(() {
+            inDownloading = false;
+          });
+        }
+      }
+
+      final Widget actionButton;
+      if (inDownloading) {
+        actionButton = LoadingIndicator();
+      } else if (downloaded) {
+        // 已下载：提供「更新」，重新拉取线上最新版本并替换本词库
+        actionButton = Button(
+          icon: Icon(Icons.refresh),
+          onPressed: () {
+            alart(
+              context,
+              "确认更新词库「$fileName」？\n将重新下载线上最新版本并替换本词库。",
+              onConfirmed: () => fetchAndImport(isUpdate: true),
+            );
+          },
+          child: Text("更新"),
+        );
+      } else {
+        actionButton = Button(
+          icon: Icon(Icons.download),
+          onPressed: () => fetchAndImport(isUpdate: false),
+          child: Text("下载"),
+        );
+      }
+
       return Row(
         mainAxisAlignment: MainAxisAlignment.center,
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           Expanded(child: Text(fileName)),
-          inDownloading
-              ? LoadingIndicator()
-              : Button(
-                  icon: Icon(downloaded ? Icons.done : Icons.download),
-                  onPressed: () async {
-                    if (downloaded) return;
-                    setLocalState(() {
-                      inDownloading = true;
-                    });
-                    try {
-                      context.read<Global>().uiLogger.info("下载词库: $fileName:${f["download_url"]}");
-                      var response = await dio.getUri(Uri.parse(f["download_url"]));
-                      if (!context.mounted) return;
-                      if (response.statusCode == 200) {
-                        // JSONL/旧版JSON均按原始文本交给导入器（自动识别格式）
-                        final String rawText = response.data is String
-                            ? response.data.toString()
-                            : jsonEncode(response.data);
-                        final DictImportResult result = AppData().importDictData(rawText, fileName);
-                        showSnackBar(context, "下载成功: $fileName\n${result.message}");
-                        setLocalState(() {
-                          inDownloading = false;
-                          downloaded = true;
-                        });
-                      }
-                    } catch (e) {
-                      context.read<Global>().uiLogger.severe("词库[$fileName]下载失败: $e");
-                      alart(context, "下载失败\n${e.toString()}");
-                      setLocalState(() {
-                        inDownloading = false;
-                        downloaded = false;
-                      });
-                    }
-                  },
-                  child: Text(downloaded ? "已下载" : "下载"),
-                ),
+          actionButton,
         ],
       );
     },

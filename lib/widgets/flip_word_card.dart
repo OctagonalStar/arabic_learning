@@ -1,10 +1,11 @@
 // 翻卡式单词卡片组件（项目中唯一的单词卡片实现）。
 //
 // 卡片由顶部“阿语 + 发音”按钮与主体组成，主体按使用场景切换布局：
-// - 正面摘要（默认，词汇总览 / 查找网格单元同样复用）：中文 / 解释 /
-//   归属课程三行彩色标签，按 flex 分配高度并由 FittedBox 等比缩小兜底；
+// - 正面摘要（默认，词汇总览 / 查找网格单元同样复用）：中文 / 解释两行
+//   彩色标签，按 flex 分配高度并由 FittedBox 等比缩小兜底；
 // - 反面详情（翻卡后 / `startOnBack`）：中文与解释组成的释义区、词形信息
-//   芯片网格、类别标签与归属课程页脚；在给定尺寸内一次性展示全部非空
+//   芯片网格、类别标签与归属课程页脚（一词多词库/多课程时逐行列出）；在给定
+//   尺寸内一次性展示全部非空
 //   字段，不滚动；字号等按可用宽高响应式放大，超大内容由等比缩小兜底
 //   （详见 `_FlipCardDetailBody` 与 `_detailScale`）。
 //
@@ -21,6 +22,7 @@ import 'dart:math' as math;
 import 'dart:ui' show ImageFilter;
 
 import 'package:arabic_learning/models/dict.dart' show WordItem;
+import 'package:arabic_learning/services/memberships.dart' show WordMembership, WordMembershipIndex;
 import 'package:arabic_learning/services/tts.dart' show playTextToSpeech;
 import 'package:arabic_learning/theme/tokens.dart' show AppMotion, AppRadius, AppSpacing;
 import 'package:arabic_learning/theme/typography.dart' show arabicStyle, withoutColor;
@@ -39,9 +41,9 @@ const String _collapseHint = '点击卡片或空白处关闭';
 
 /// 翻卡式单词卡片。
 ///
-/// 正面显示中文、解释与归属课程；点击后卡片移动到屏幕中心、放大并翻转到
-/// 背面，以分组详情一次性展示该词的全部信息（无滚动）。点击卡片 / 遮罩 /
-/// 系统返回可反向关闭。
+/// 正面显示中文与解释；点击后卡片移动到屏幕中心、放大并翻转到背面，以分组
+/// 详情一次性展示该词的全部信息（归属课程仅在背面逐行列出，无滚动）。点击
+/// 卡片 / 遮罩 / 系统返回可反向关闭。
 ///
 /// [word] :单词数据
 ///
@@ -64,6 +66,10 @@ class FlipWordCard extends StatefulWidget {
   final bool masked;
   final bool startOnBack;
 
+  /// 该词的全部归属（词库名 › 课程名）。为空时自动查询全局反查索引，
+  /// 仍为空再回退到旧的单值 [WordItem.className]。
+  final List<WordMembership>? memberships;
+
   const FlipWordCard({
     super.key,
     required this.word,
@@ -72,6 +78,7 @@ class FlipWordCard extends StatefulWidget {
     this.enableFlip = true,
     this.masked = false,
     this.startOnBack = false,
+    this.memberships,
   });
 
   @override
@@ -84,6 +91,19 @@ class _FlipWordCardState extends State<FlipWordCard> {
 
   /// 展开层打开期间隐藏原位卡片，避免与展开层卡片重影。
   bool _expanded = false;
+
+  /// 解析该词的全部归属：外部传入优先，其次全局反查索引，最后回退旧单值 className。
+  List<WordMembership> get _memberships {
+    final List<WordMembership> resolved =
+        widget.memberships ?? WordMembershipIndex.instance.of(widget.word.id);
+    if (resolved.isNotEmpty) return resolved;
+    if (widget.word.className.isNotEmpty) {
+      return <WordMembership>[
+        WordMembership(source: '', course: widget.word.className),
+      ];
+    }
+    return const <WordMembership>[];
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -110,6 +130,7 @@ class _FlipWordCardState extends State<FlipWordCard> {
               height: useHeight,
               showBack: true,
               masked: widget.masked,
+              memberships: _memberships,
             ),
           );
         }
@@ -123,6 +144,7 @@ class _FlipWordCardState extends State<FlipWordCard> {
             width: useWidth,
             height: useHeight,
             showBack: false,
+            memberships: _memberships,
             // 展开期间原位卡片整体透明，不再绘制遮挡层，避免读屏 / 测试树里
             // 残留第二份“释义已隐藏”。
             masked: widget.masked && !_expanded,
@@ -174,6 +196,7 @@ class _FlipWordCardState extends State<FlipWordCard> {
         return _FlipWordCardOverlay(
           word: widget.word,
           masked: widget.masked,
+          memberships: _memberships,
           sourceRect: sourceRect,
           reduceMotion: reduceMotion,
           onCloseCompleted: _onOverlayClosed,
@@ -206,12 +229,14 @@ class _FlipCardSurface extends StatelessWidget {
   final bool showBack;
   final bool masked;
   final String? hintText;
+  final List<WordMembership> memberships;
 
   const _FlipCardSurface({
     required this.word,
     required this.width,
     required this.height,
     required this.showBack,
+    required this.memberships,
     this.masked = false,
     this.hintText,
   });
@@ -223,7 +248,7 @@ class _FlipCardSurface extends StatelessWidget {
     // 有提示行时信息区占 0.6，静态卡没有提示行则占 0.7，避免底部留白。
     final double bodyShare = hintText == null ? 0.7 : 0.6;
     final Widget body = showBack
-        ? _FlipCardDetailBody(word: word)
+        ? _FlipCardDetailBody(word: word, memberships: memberships)
         : _FlipCardFrontBody(word: word, width: width);
     return ClipRRect(
       borderRadius: AppRadius.cardBorder,
@@ -232,15 +257,17 @@ class _FlipCardSurface extends StatelessWidget {
         child: Column(
           children: [
             WordCardArabicButton(word: word, width: width, height: height * 0.3),
-            SizedBox(
-              width: width,
-              height: height * bodyShare,
-              child: Stack(
-                fit: StackFit.expand,
-                children: [
-                  body,
-                  _FlipCardMaskOverlay(masked: masked),
-                ],
+            Expanded(
+              child: SizedBox(
+                width: width,
+                height: height * bodyShare,
+                child: Stack(
+                  fit: StackFit.expand,
+                  children: [
+                    body,
+                    _FlipCardMaskOverlay(masked: masked),
+                  ],
+                ),
               ),
             ),
             if (hintText != null)
@@ -267,7 +294,7 @@ class _FlipCardSurface extends StatelessWidget {
   }
 }
 
-/// 正面摘要：仅中文 / 解释 / 归属课程。
+/// 正面摘要：仅中文与解释（归属信息只出现在反面详情）。
 ///
 /// 所有行按 flex 分配高度且内容经 FittedBox 缩放，任意卡片尺寸下都不溢出。
 class _FlipCardFrontBody extends StatelessWidget {
@@ -296,14 +323,7 @@ class _FlipCardFrontBody extends StatelessWidget {
           flex: 5,
           child: WordCardInfoRow(
             label: "解释", value: word.explanation, labelWidth: labelWidth,
-            labelColor: labelEven, labelStyle: textTheme.titleMedium, valueStyle: textTheme.bodyLarge, expandValue: true),
-        ),
-        const Divider(height: 0),
-        Expanded(
-          flex: 3,
-          child: WordCardInfoRow(
-            label: "归属课程", value: word.className, labelWidth: labelWidth,
-            labelColor: labelOdd, labelStyle: textTheme.bodyLarge, valueStyle: textTheme.titleMedium,
+            labelColor: labelEven, labelStyle: textTheme.titleMedium, valueStyle: textTheme.bodyLarge, expandValue: true,
             labelRadius: BorderRadius.only(bottomLeft: Radius.circular(AppRadius.card))),
         ),
       ],
@@ -317,7 +337,7 @@ class _FlipCardFrontBody extends StatelessWidget {
 /// - 释义区：中文最醒目（headlineSmall 加粗），解释为可读段落；
 /// - 词形信息：自适应 [Wrap] 的紧凑“标签 / 值”芯片网格（词根、词性、复数、
 ///   阴阳性、现在式、动名词，逐项判空）；
-/// - 类别：标签 chips；页脚：归属课程。
+/// - 类别：标签 chips；页脚：归属课程（一条归属一行，逐行列出）。
 ///
 /// 所有元素的字号 / 图标 / 内边距 / 间距先按下述缩放因子 [scale] 显式放大，
 /// 再按固有尺寸布局（宽度锁定为可用宽度，保证文本正常换行），最后由
@@ -328,8 +348,9 @@ class _FlipCardFrontBody extends StatelessWidget {
 /// 字号上继续叠加，不覆盖用户的无障碍文字缩放。
 class _FlipCardDetailBody extends StatelessWidget {
   final WordItem word;
+  final List<WordMembership> memberships;
 
-  const _FlipCardDetailBody({required this.word});
+  const _FlipCardDetailBody({required this.word, required this.memberships});
 
   @override
   Widget build(BuildContext context) {
@@ -417,46 +438,45 @@ class _FlipCardDetailBody extends StatelessWidget {
                     SizedBox(height: gapXs),
                     CategoryChips(categories: word.categories, dense: true, scale: scale),
                   ],
-                  // ── 页脚：归属课程 ──
-                  if (word.className.isNotEmpty) ...[
-                    SizedBox(height: AppSpacing.sm * scale),
-                    Container(
-                      width: double.infinity,
-                      padding: EdgeInsets.symmetric(
-                        horizontal: gapXs,
-                        vertical: gapXxs,
-                      ),
-                      decoration: BoxDecoration(
-                        color: scheme.primaryContainer,
-                        borderRadius: BorderRadius.circular(AppRadius.control * scale),
-                      ),
-                      child: Row(
-                        children: [
-                          Icon(Icons.menu_book_outlined, size: 14.0 * scale, color: scheme.onPrimaryContainer),
-                          SizedBox(width: gapXxs),
-                          // 标签在极窄卡片上可收缩（省略号兜底），避免固定宽度
-                          // 与右侧课程名抢占空间造成 Row 溢出。
-                          Flexible(
-                            child: Text(
-                              "归属课程",
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: _scaledTextStyle(textTheme.labelSmall, scale, color: scheme.onPrimaryContainer),
+                  // ── 页脚：归属课程（可能跨多词库 / 多课程） ──
+                  if (memberships.isNotEmpty) ...[
+                    SizedBox(height: gapXs),
+                    _FlipCardSectionLabel(
+                      icon: Icons.menu_book_outlined,
+                      label: "归属课程",
+                      scale: scale,
+                    ),
+                    SizedBox(height: gapXxs),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: <Widget>[
+                        for (final WordMembership membership in memberships)
+                          Padding(
+                            padding: EdgeInsets.only(bottom: gapXxs),
+                            child: Container(
+                              width: double.infinity,
+                              padding: EdgeInsets.symmetric(
+                                horizontal: gapXs,
+                                vertical: gapXxs,
+                              ),
+                              decoration: BoxDecoration(
+                                color: scheme.primaryContainer,
+                                borderRadius: BorderRadius.circular(AppRadius.control * scale),
+                              ),
+                              child: Text(
+                                membership.label,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                textAlign: TextAlign.end,
+                                style: _scaledTextStyle(
+                                  textTheme.labelMedium,
+                                  scale,
+                                  color: scheme.onPrimaryContainer,
+                                ),
+                              ),
                             ),
                           ),
-                          SizedBox(width: gapXs),
-                          Expanded(
-                            flex: 2,
-                            child: Text(
-                              word.className,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              textAlign: TextAlign.end,
-                              style: _scaledTextStyle(textTheme.labelMedium, scale, color: scheme.onPrimaryContainer),
-                            ),
-                          ),
-                        ],
-                      ),
+                      ],
                     ),
                   ],
                 ],
@@ -804,6 +824,7 @@ class _FlipWordCardOverlay extends StatefulWidget {
   final Rect sourceRect;
   final bool reduceMotion;
   final bool masked;
+  final List<WordMembership> memberships;
   final VoidCallback onCloseCompleted;
 
   const _FlipWordCardOverlay({
@@ -811,6 +832,7 @@ class _FlipWordCardOverlay extends StatefulWidget {
     required this.sourceRect,
     required this.reduceMotion,
     required this.masked,
+    required this.memberships,
     required this.onCloseCompleted,
   });
 
@@ -911,6 +933,7 @@ class _FlipWordCardOverlayState extends State<_FlipWordCardOverlay> with SingleT
                             width: currentRect.width,
                             height: currentRect.height,
                             showBack: true,
+                            memberships: widget.memberships,
                             hintText: _collapseHint,
                           ),
                         )
@@ -919,6 +942,7 @@ class _FlipWordCardOverlayState extends State<_FlipWordCardOverlay> with SingleT
                           width: currentRect.width,
                           height: currentRect.height,
                           showBack: false,
+                          memberships: widget.memberships,
                           masked: widget.masked,
                           hintText: widget.masked ? _maskedHint : _expandHint,
                         ),

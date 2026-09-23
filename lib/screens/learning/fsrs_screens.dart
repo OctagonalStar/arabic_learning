@@ -9,7 +9,7 @@ import 'package:provider/provider.dart';
 import 'package:arabic_learning/widgets/flip_word_card.dart' show FlipWordCard;
 import 'package:arabic_learning/widgets/kit.dart' show Button, CategoryFilter, TextContainer;
 import 'package:arabic_learning/widgets/overlays.dart' show alart, viewAnswer;
-import 'package:arabic_learning/widgets/questions.dart' show ChoiceQuestions, ListeningQuestion, SpellQuestion, TestItem, WordCardQuestion;
+import 'package:arabic_learning/widgets/questions.dart' show ChoiceQuestions, ListeningQuestion, SelfRatingQuestion, SpellQuestion, TestItem, WordCardQuestion;
 import 'package:arabic_learning/widgets/shared.dart' show RevealableActionBar, SettingCard;
 import 'package:arabic_learning/core/statics.dart';
 import 'package:arabic_learning/theme/tokens.dart' show AppMotion;
@@ -682,15 +682,14 @@ class _FSRSReviewCardPage extends State<FSRSReviewCardPage> {
     final Widget question;
 
     if(selfRated) {
-      question = ChoiceQuestions(
-        mainWord: "[selfEvaluate]",
-        // 自我评级卡同样允许翻卡：遮挡释义时点击卡片即可翻开查看详情。
-        midWidget: FlipWordCard(word: wordData[widget.wordID], width: mediaQuery.size.width * 0.8, height: clampDouble(mediaQuery.size.height * 0.4, 150.0, 340.0), enableFlip: true, masked: !choosed),
-        choices: const ["记得很清楚", "还记得", "回忆困难", "忘了"],
-        allowAudio: true,
-        allowAnitmation: false,
-        allowMutipleSelect: false,
+      question = SelfRatingQuestion(
+        word: wordData[widget.wordID],
         hint: _hint(),
+        // 自我评级卡同样允许翻卡：遮挡释义时点击卡片即可翻开查看详情。
+        masked: !choosed,
+        cardWidth: mediaQuery.size.width * 0.8,
+        cardHeight: clampDouble(mediaQuery.size.height * 0.4, 150.0, 340.0),
+        choices: const ["记得很清楚", "还记得", "回忆困难", "忘了"],
         onSelected: (value) {
           setState(() {
             choosed = true;
@@ -886,8 +885,9 @@ class _FSRSLearningPageState extends State<FSRSLearningPage> {
             },
             itemBuilder: (context, index) {
               return Column(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                 children: [
-                  Expanded(child: FlipWordCard(word: widget.words[index], masked: true)),
+                  FlipWordCard(word: widget.words[index], masked: true),
                   Button(
                     size: Size(mediaQuery.size.width * 0.8, clampDouble(mediaQuery.size.height * 0.15, 64.0, 170.0)),
                     icon: Icon(index == widget.words.length-1 ? Icons.arrow_forward : Icons.arrow_downward),

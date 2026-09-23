@@ -1,5 +1,6 @@
 import 'package:arabic_learning/models/dict.dart' show WordItem;
 import 'package:arabic_learning/services/global_state.dart' show Global;
+import 'package:arabic_learning/services/memberships.dart' show WordMembership;
 import 'package:arabic_learning/widgets/flip_word_card.dart' show FlipWordCard;
 import 'package:arabic_learning/widgets/overlays.dart' show viewAnswer;
 import 'package:arabic_learning/widgets/questions.dart' show WordCardQuestion;
@@ -72,15 +73,14 @@ void main() {
     return null;
   }
 
-  testWidgets('正面仅显示中文 / 解释 / 归属与查看提示，不含详情字段', (WidgetTester tester) async {
+  testWidgets('正面仅显示中文 / 解释与查看提示，不含详情字段', (WidgetTester tester) async {
     await pumpCard(tester, child: const FlipWordCard(word: word));
 
     expect(find.text('中文'), findsOneWidget);
     expect(find.text('写'), findsOneWidget);
     expect(find.text('解释'), findsOneWidget);
     expect(find.text('书写；写作，用笔记录文字'), findsOneWidget);
-    expect(find.text('归属课程'), findsOneWidget);
-    expect(find.text('第二课'), findsOneWidget);
+    expect(find.text('归属课程'), findsNothing, reason: '正面不显示归属信息');
     expect(find.text('点击查看更多信息'), findsOneWidget);
     // 正面不应出现详情字段
     for (final String label in <String>['词根', '词性', '复数', '阴阳性', '现在式', '动名词', '类别']) {
@@ -98,8 +98,8 @@ void main() {
     for (final String label in <String>['词根', '词性', '复数', '阴阳性', '现在式', '动名词', '类别']) {
       expect(find.text(label), findsOneWidget, reason: '背面应显示 $label');
     }
-    // 原位正面仍以透明态保留在树中，归属课程在正面 / 背面各有一处。
-    expect(find.text('归属课程'), findsNWidgets(2));
+    // 归属课程只在背面出现（正面已不再显示）。
+    expect(find.text('归属课程'), findsOneWidget);
     expect(find.text('动词'), findsOneWidget); // 词性中文化
     expect(find.text('阳性'), findsOneWidget);
     expect(find.text('基础'), findsOneWidget); // 类别标签
@@ -210,7 +210,9 @@ void main() {
     await tester.tap(find.text('下一题'));
     expect(taps, 1);
 
-    await tester.tap(find.text('点击查看更多信息'));
+    // WordCardQuestion 现已遮挡释义（masked: true），提示为「点击查看释义」。
+    expect(find.text('释义已隐藏'), findsOneWidget);
+    await tester.tap(find.text('点击查看释义'));
     await tester.pumpAndSettle();
     expect(find.text('词根'), findsOneWidget);
     // 展开层覆盖期间底部组件仍在原树中，推进逻辑未被改动。
@@ -441,13 +443,12 @@ void main() {
           child: FlipWordCard(word: word, width: side, height: side),
         );
 
-        // 与正面卡一致：中文 / 解释 / 归属课程标签行 + 查看提示。
+        // 与正面卡一致：中文 / 解释标签行 + 查看提示（归属信息只在背面）。
         expect(find.text('中文'), findsOneWidget);
         expect(find.text('写'), findsOneWidget);
         expect(find.text('解释'), findsOneWidget);
         expect(find.text('书写；写作，用笔记录文字'), findsOneWidget);
-        expect(find.text('归属课程'), findsOneWidget);
-        expect(find.text('第二课'), findsOneWidget);
+        expect(find.text('归属课程'), findsNothing, reason: '正面网格卡不显示归属');
         expect(find.text('点击查看更多信息'), findsOneWidget);
         // 翻卡前不展示详情字段。
         for (final String label in <String>[
@@ -490,6 +491,27 @@ void main() {
       expect(find.text(label), findsOneWidget, reason: '详解弹层应显示 $label');
     }
     expect(find.byType(SingleChildScrollView), findsNothing);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('背面列出全部归属：多词库 / 多课程，词库名 › 课程名', (WidgetTester tester) async {
+    await pumpCard(
+      tester,
+      child: const FlipWordCard(
+        word: word,
+        enableFlip: false,
+        startOnBack: true,
+        memberships: <WordMembership>[
+          WordMembership(source: '词库A', course: '第一课'),
+          WordMembership(source: '词库B', course: '课程一'),
+        ],
+      ),
+    );
+
+    expect(find.text('归属课程'), findsOneWidget);
+    expect(find.text('词库A › 第一课'), findsOneWidget);
+    expect(find.text('词库B › 课程一'), findsOneWidget);
+    expect(find.text('第二课'), findsNothing, reason: '显式归属应覆盖旧单值 className');
     expect(tester.takeException(), isNull);
   });
 }
