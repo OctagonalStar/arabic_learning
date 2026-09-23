@@ -228,5 +228,84 @@ void main() {
       expect(data.words[2].gender, isFalse, reason: '词性未知的旧数据原样保留');
       expect(AppData().normalizeWordGenders(), isFalse, reason: '再次调用应无改动');
     });
+
+    test('跨词库导入：第二词以 م 开头的短语不再被误并（严格释义）', () {
+      AppData().importDictData(
+        '{"旧库":[{"arabic":"كَتَبَ، يَكْتُبُ، كِتَابَةً","chinese":"写, 书写"}]}',
+        'old.json',
+      );
+      expect(AppData().wordData.words.length, 1);
+
+      AppData().importDictData(
+        '{"词纲":['
+        '{"arabic":"كُتُبٌ مَدْرَسِيَّةٌ","chinese":"教科书"},'
+        '{"arabic":"كَتَبَ","chinese":"写，写作"}'
+        ']}',
+        'syllabus.json',
+      );
+
+      final DictData data = AppData().wordData;
+      expect(data.words.length, 3, reason: '锚点 + 教科书 + 写，写作，三条均不被误并');
+      expect(
+        data.words.any((WordItem w) => w.arabic == 'كُتُبٌ مَدْرَسِيَّةٌ' && w.chinese == '教科书'),
+        isTrue,
+      );
+      expect(data.words.any((WordItem w) => w.arabic == 'كَتَبَ'), isTrue);
+    });
+
+    test('身份键相同但释义不同时不合并，只并入释义相似的那条', () {
+      AppData().importDictData('{"A":[{"arabic":"كِتَابٌ","chinese":"书"}]}', 'a.json');
+      AppData().importDictData('{"B":[{"arabic":"كِتَابُ","chinese":"桌子"}]}', 'b.json');
+      expect(AppData().wordData.words.length, 2, reason: '释义不同 -> 不合并');
+
+      AppData().importDictData('{"C":[{"arabic":"كتاب","chinese":"书"}]}', 'c.json');
+      final DictData data = AppData().wordData;
+      expect(data.words.length, 2, reason: '与第 0 条释义相同 -> 合并而非新增');
+      expect(data.classes.length, 3);
+      expect(data.classes[2].subClasses.single.wordIndexs, [0]);
+    });
+
+    test('删除词库仅解除归属并保留共享词条', () {
+      AppData().importDictData('{"A":[{"arabic":"كتاب","chinese":"书"}]}', 'a.json');
+      AppData().importDictData(
+        '{"B":[{"arabic":"كتاب","chinese":"书"},{"arabic":"قلم","chinese":"笔"}]}',
+        'b.json',
+      );
+      expect(AppData().wordData.words.length, 2);
+      expect(AppData().wordData.classes.length, 2);
+
+      final String? removed = AppData().deleteDictSource('a.json');
+      expect(removed, isNotNull);
+
+      final DictData data = AppData().wordData;
+      expect(data.classes.length, 1);
+      expect(data.classes.single.sourceJsonFileName, 'b.json');
+      expect(data.words.length, 2, reason: '词条本体保留，不重排位置');
+      expect(
+        WordMembershipIndex.instance.of(0).map((WordMembership m) => m.source).toList(),
+        <String>['b.json'],
+      );
+      expect(AppData().deleteDictSource('missing.json'), isNull);
+    });
+
+    test('清理未归属词条：重排 words 与所有 wordIndexs', () {
+      AppData().importDictData('{"A":[{"arabic":"كتاب","chinese":"书"}]}', 'a.json');
+      AppData().importDictData(
+        '{"B":[{"arabic":"قلم","chinese":"笔"},{"arabic":"بيت","chinese":"房子"}]}',
+        'b.json',
+      );
+      AppData().deleteDictSource('a.json');
+      expect(AppData().unreferencedWordIds(), <int>{0});
+
+      final ({int removedWords, int removedCards}) r =
+          AppData().compactUnreferencedWords();
+      expect(r.removedWords, 1);
+      final DictData data = AppData().wordData;
+      expect(data.words.length, 2);
+      expect(data.words[0].arabic, 'قلم');
+      expect(data.words[1].arabic, 'بيت');
+      expect(data.classes.single.subClasses.single.wordIndexs, <int>[0, 1]);
+      expect(AppData().unreferencedWordIds(), isEmpty);
+    });
   });
 }

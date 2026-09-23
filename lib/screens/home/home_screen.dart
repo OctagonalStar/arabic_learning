@@ -14,7 +14,7 @@ import 'package:arabic_learning/widgets/overlays.dart' show alart;
 import 'package:arabic_learning/widgets/shared.dart' show StatCard;
 import 'package:arabic_learning/services/words.dart';
 import 'package:arabic_learning/services/tts.dart';
-import 'package:arabic_learning/screens/setting/setting_screen.dart';
+import 'package:arabic_learning/screens/setting/dict_manage_page.dart';
 import 'package:arabic_learning/models/dict.dart';
 import 'package:arabic_learning/services/global_state.dart';
 import 'package:arabic_learning/services/app_data.dart';
@@ -144,8 +144,8 @@ class _DailyWord extends State<DailyWord> {
             playing = false;
           });
         } else {
-          context.read<Global>().uiLogger.info("跳转: DailyWord => SettingPage");
-          Navigator.of(context).push(MaterialPageRoute(builder: (context) => Scaffold(appBar: AppBar(title: Text("设置")) , body: SafeArea(top: false, child: SettingPage()))));
+          context.read<Global>().uiLogger.info("跳转: DailyWord => DictManagePage");
+          Navigator.of(context).push(MaterialPageRoute(builder: (context) => const DictManagePage()));
         }
       },
       backgroundColor: Theme.of(context).colorScheme.primaryContainer,
@@ -163,7 +163,7 @@ class _DailyWord extends State<DailyWord> {
           FittedBox(
             fit: BoxFit.scaleDown,
             child: Column(
-              children: AppData().wordCount == 0 ? [Text("当前未导入词库数据\n请点此以跳转设置页面导入")]
+              children: AppData().wordCount == 0 ? [Text("当前未导入词库数据\n请点此以管理词库")]
                 : [
                 Text(
                   data.arabic,
