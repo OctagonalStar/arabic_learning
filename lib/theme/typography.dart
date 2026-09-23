@@ -35,9 +35,14 @@ TextStyle arabicTextStyle(BuildContext context, String text, {TextStyle? base}) 
 ///
 /// 用于颜色需继续由外层 `DefaultTextStyle` 决定的场景，避免文本角色自带颜色
 /// 覆盖动态前景色（例如选择题按钮在变黄 / 变红绿时切换的前景色）。
+///
+/// 必须强制 `inherit: true`：外层 `Theme.of(context).textTheme.*` 在 `MaterialApp`
+/// 下常带 `inherit: false`，若沿用该值，`Text` 不会合并 `DefaultTextStyle`，
+/// 剥离颜色后无颜色可继承，最终回退到引擎默认色（白色）——浅色模式下按钮文字
+/// 就会变成不可读的白字。
 TextStyle withoutColor(TextStyle base) {
   return TextStyle(
-    inherit: base.inherit,
+    inherit: true,
     fontFamily: base.fontFamily,
     fontFamilyFallback: base.fontFamilyFallback,
     fontSize: base.fontSize,
