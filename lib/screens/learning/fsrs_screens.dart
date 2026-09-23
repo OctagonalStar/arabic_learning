@@ -683,7 +683,8 @@ class _FSRSReviewCardPage extends State<FSRSReviewCardPage> {
     if(selfRated) {
       question = ChoiceQuestions(
         mainWord: "[selfEvaluate]",
-        midWidget: FlipWordCard(word: wordData[widget.wordID], width: mediaQuery.size.width * 0.8, height: clampDouble(mediaQuery.size.height * 0.4, 150.0, 340.0), enableFlip: false, masked: !choosed),
+        // 自我评级卡同样允许翻卡：遮挡释义时点击卡片即可翻开查看详情。
+        midWidget: FlipWordCard(word: wordData[widget.wordID], width: mediaQuery.size.width * 0.8, height: clampDouble(mediaQuery.size.height * 0.4, 150.0, 340.0), enableFlip: true, masked: !choosed),
         choices: const ["记得很清楚", "还记得", "回忆困难", "忘了"],
         allowAudio: true,
         allowAnitmation: false,
@@ -779,7 +780,7 @@ class _FSRSLearningPageState extends State<FSRSLearningPage> {
     super.initState();
   }
 
-  Widget _bottomBar(MediaQueryData mediaQuery, int index, int correct) {
+  Widget _bottomBar(BuildContext context, MediaQueryData mediaQuery, int index, int correct) {
     return RevealableActionBar(
       revealed: corrected,
       tipWidth: (value) => mediaQuery.size.width * 0.9 - mediaQuery.size.width * 0.5 * value,
@@ -894,7 +895,7 @@ class _FSRSLearningPageState extends State<FSRSLearningPage> {
                       return false;
                     }
                   },
-                  bottomWidget: _bottomBar(mediaQuery, index, correct),
+                  bottomWidget: _bottomBar(context, mediaQuery, index, correct),
                 );
               } else if(testItem.testType == 3) {
                 return SpellQuestion(
@@ -912,7 +913,7 @@ class _FSRSLearningPageState extends State<FSRSLearningPage> {
                     widget.fsrs.produceCard(testItem.testWord.id);
                     return ok;
                   },
-                  bottomWidget: _bottomBar(mediaQuery, index, correct),
+                  bottomWidget: _bottomBar(context, mediaQuery, index, correct),
                 );
               } else if(testItem.testType == 4) {
                 return ListeningQuestion(
@@ -940,7 +941,7 @@ class _FSRSLearningPageState extends State<FSRSLearningPage> {
                       return false;
                     }
                   },
-                  bottom: _bottomBar(mediaQuery, index, correct),
+                  bottom: _bottomBar(context, mediaQuery, index, correct),
                 );
               } else {
                 // 单词卡片题（type 0）
