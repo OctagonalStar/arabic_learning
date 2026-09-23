@@ -162,6 +162,22 @@ class ReadingUnitButton extends StatelessWidget {
                       fit: BoxFit.scaleDown,
                       child: Hero(
                         tag: readingUnitHeroTag(unit, listIndex: listIndex),
+                        // 飞行中 Overlay 内没有 AppBar 的 DefaultTextStyle 与源侧
+                        // FittedBox，需显式单行 + 缩放，否则标题会换行并被飞行框
+                        // 裁切，落地时突然显示完整标题。
+                        flightShuttleBuilder: (BuildContext flightContext, Animation<double> animation, HeroFlightDirection direction, BuildContext fromHeroContext, BuildContext toHeroContext) {
+                          return FittedBox(
+                            fit: BoxFit.scaleDown,
+                            child: Text(
+                              unit.title,
+                              maxLines: 1,
+                              softWrap: false,
+                              overflow: TextOverflow.ellipsis,
+                              textDirection: unit.title.textDirection,
+                              style: Theme.of(flightContext).appBarTheme.titleTextStyle,
+                            ),
+                          );
+                        },
                         child: Text(
                           unit.title,
                           maxLines: 1,
@@ -447,8 +463,27 @@ class _ReadingQuestionPage extends State<ReadingQuestionPage> {
         // AppBar 的 DefaultTextStyle 导致中途跳变。
         title: Hero(
           tag: readingUnitHeroTag(widget.unit, listIndex: widget.listIndex),
+          // 与列表项 Hero 共用同一 shuttle：push/pop 两个方向都单行缩放，
+          // 避免飞行中软换行 + 紧致飞行框裁切。
+          flightShuttleBuilder: (BuildContext flightContext, Animation<double> animation, HeroFlightDirection direction, BuildContext fromHeroContext, BuildContext toHeroContext) {
+            return FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Text(
+                widget.unit.title,
+                maxLines: 1,
+                softWrap: false,
+                overflow: TextOverflow.ellipsis,
+                textDirection: widget.unit.title.textDirection,
+                style: Theme.of(flightContext).appBarTheme.titleTextStyle,
+              ),
+            );
+          },
           child: Text(
             widget.unit.title,
+            maxLines: 1,
+            softWrap: false,
+            overflow: TextOverflow.ellipsis,
+            textDirection: widget.unit.title.textDirection,
             style: Theme.of(context).appBarTheme.titleTextStyle,
           ),
         ),

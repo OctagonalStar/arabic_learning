@@ -1,6 +1,10 @@
 import 'package:arabic_learning/models/reading.dart';
 import 'package:arabic_learning/screens/test/reading_test_page.dart'
-    show ReadingQuestionPage, ReadingTestAddLeading, readingTextScaler;
+    show
+        ReadingQuestionPage,
+        ReadingTestAddLeading,
+        readingTextScaler,
+        readingUnitHeroTag;
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -83,6 +87,52 @@ void main() {
 
     // 进入第二页（4 张来源卡片，原本 0.2 倍屏高会撑破 Column）
     await tester.tap(find.text('阅读理解'));
+    await tester.pumpAndSettle();
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('Hero 飞行中标题保持单行缩放（不换行、不裁切）', (WidgetTester tester) async {
+    final ReadingUnit unit = buildUnit();
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: Center(
+            child: Builder(
+              builder: (BuildContext context) => TextButton(
+                onPressed: () => Navigator.push(
+                  context,
+                  MaterialPageRoute<void>(
+                    builder: (_) => ReadingQuestionPage(unit: unit, listIndex: 0),
+                  ),
+                ),
+                child: Hero(
+                  tag: readingUnitHeroTag(unit, listIndex: 0),
+                  child: const Text('打开阅读题'),
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+
+    await tester.tap(find.text('打开阅读题'));
+    await tester.pump(); // 启动转场
+    await tester.pump(const Duration(milliseconds: 100)); // 转场中途
+
+    // 转场途中源/目标 Hero 均被占位符替换，标题只可能来自飞行 shuttle。
+    final Finder shuttleTitle = find.byWidgetPredicate(
+      (Widget widget) =>
+          widget is Text && widget.data == unit.title && widget.softWrap == false,
+    );
+    expect(shuttleTitle, findsOneWidget);
+    expect(tester.widget<Text>(shuttleTitle).maxLines, 1);
+    // shuttle 必须由 FittedBox 包裹：缩放适配飞行框而非换行后被裁切。
+    expect(
+      find.ancestor(of: shuttleTitle, matching: find.byType(FittedBox)),
+      findsOneWidget,
+    );
+
     await tester.pumpAndSettle();
     expect(tester.takeException(), isNull);
   });
