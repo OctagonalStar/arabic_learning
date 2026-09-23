@@ -394,6 +394,9 @@ class VocabularyLookupIndex {
   final VocabularyOptimizer _optimizer;
   final List<String> _arNorm;
   final List<String> _zh;
+
+  /// 中文释义分段倒排：token -> 词 id（按 [，；,;、] 切分）
+  final Map<String, List<int>> _zhTokenExact;
   final Map<String, List<int>> _arExact;
   final Map<String, List<int>> _arChars;
   final _SimpleBKTree? _arTree;
@@ -403,6 +406,7 @@ class VocabularyLookupIndex {
     this._optimizer,
     this._arNorm,
     this._zh,
+    this._zhTokenExact,
     this._arExact,
     this._arChars,
     this._arTree,
@@ -415,6 +419,7 @@ class VocabularyLookupIndex {
 
     final Map<String, List<int>> arExact = {};
     final Map<String, List<int>> arChars = {};
+    final Map<String, List<int>> zhTokenExact = {};
 
     for(int i = 0; i < words.length; i++) {
       final String a = arNorm[i];
@@ -424,6 +429,12 @@ class VocabularyLookupIndex {
           (arChars[ch] ??= <int>[]).add(i);
         }
       }
+      // 中文释义按分隔符切分建倒排，供分段精确命中排序使用
+      for(final String rawToken in zh[i].split(RegExp(r'[，；,;、]'))) {
+        final String token = rawToken.trim();
+        if(token.isEmpty) continue;
+        (zhTokenExact[token] ??= <int>[]).add(i);
+      }
     }
 
     return VocabularyLookupIndex._(
@@ -431,6 +442,7 @@ class VocabularyLookupIndex {
       optimizer,
       arNorm,
       zh,
+      zhTokenExact,
       arExact,
       arChars,
       arExact.isEmpty
@@ -524,10 +536,23 @@ class VocabularyLookupIndex {
         if(query.split('').any((String ch) => c.contains(ch)) && added.add(i)) result.add(i);
       }
     }
+    final Set<int> exactTokenIds = <int>{};
+    final List<int>? tokenHits = _zhTokenExact[query];
+    if(tokenHits != null) exactTokenIds.addAll(tokenHits);
     result.sort((int a, int b) {
+      // ① 整串完全相等
+      final bool eqA = _zh[a] == query;
+      final bool eqB = _zh[b] == query;
+      if(eqA != eqB) return eqA ? -1 : 1;
+      // ② 释义分段（token）精确命中
+      final bool tokA = exactTokenIds.contains(a);
+      final bool tokB = exactTokenIds.contains(b);
+      if(tokA != tokB) return tokA ? -1 : 1;
+      // ③ 整串包含
       final bool containA = _zh[a].contains(query);
       final bool containB = _zh[b].contains(query);
       if(containA != containB) return containA ? -1 : 1;
+      // ④ 整串编辑距离
       return getLevenshtein(query, _zh[a]).compareTo(getLevenshtein(query, _zh[b]));
     });
     return [for(final int i in result) _words[i]];

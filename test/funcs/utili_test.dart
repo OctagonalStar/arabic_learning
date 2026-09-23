@@ -296,4 +296,68 @@ void main() {
       expect(ids.contains(3), isFalse);
     });
   });
+
+  group('中文释义分段检索', () {
+    setUpAll(() {
+      BKSearch.rebuild(<WordItem>[
+        WordItem(
+          arabic: 'فوري',
+          chinese: '即席翻译',
+          explanation: '',
+          className: 'c',
+          id: 0,
+        ),
+        WordItem(
+          arabic: 'ترجمة',
+          chinese: '翻译，小传',
+          explanation: '',
+          className: 'c',
+          id: 1,
+        ),
+        WordItem(
+          arabic: 'نقل',
+          chinese: '翻译',
+          explanation: '',
+          className: 'c',
+          id: 2,
+        ),
+        WordItem(
+          arabic: 'قلم',
+          chinese: '笔',
+          explanation: '',
+          className: 'c',
+          id: 3,
+        ),
+      ]);
+    });
+
+    test('整串相等 > 分段精确 > 子串包含', () {
+      final List<int> ids =
+          BKSearch.lookup('翻译').map((WordItem w) => w.id).toList();
+      expect(ids.first, 2); // 整串完全相等
+      expect(ids.indexOf(1), lessThan(ids.indexOf(0))); // 分段命中优先于子串命中
+    });
+
+    test('半角分号 / 顿号分隔同样生效', () {
+      BKSearch.rebuild(<WordItem>[
+        WordItem(
+          arabic: 'a',
+          chinese: '翻译;小传',
+          explanation: '',
+          className: 'c',
+          id: 0,
+        ),
+        WordItem(
+          arabic: 'b',
+          chinese: '即席翻译',
+          explanation: '',
+          className: 'c',
+          id: 1,
+        ),
+      ]);
+      final List<int> ids =
+          BKSearch.lookup('翻译').map((WordItem w) => w.id).toList();
+      expect(ids.first, 0);
+    });
+  });
 }
