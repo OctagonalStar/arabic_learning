@@ -1,4 +1,5 @@
 import 'package:arabic_learning/core/adaptive.dart' show AdaptiveData;
+import 'package:arabic_learning/core/extensions.dart' show StringExtensions;
 import 'package:arabic_learning/services/words.dart';
 import 'package:arabic_learning/services/search.dart';
 import 'package:arabic_learning/models/config.dart';
@@ -131,6 +132,102 @@ void main() {
 
     test('初始化后 isReady 为真', () {
       expect(BKSearch.isReady, isTrue);
+    });
+  });
+
+  group('removeAracicExtensionPart（BK 树键归一化）', () {
+    String clean(String s) => s.removeAracicExtensionPart().trim();
+
+    test('移除发音符号', () {
+      expect(clean('قَلَمٌ'), 'قلم');
+    });
+
+    test('移除半角括号内容', () {
+      expect(clean('قلم (ج: أقلام)'), 'قلم');
+    });
+
+    test('移除全角括号内容', () {
+      expect(clean('قلم（ج: أقلام）'), 'قلم');
+    });
+
+    test('移除斜杠及其后内容（含空格）', () {
+      expect(clean('جديد / جديدة'), 'جديد');
+    });
+
+    test('移除斜杠及其后内容（无空格）', () {
+      expect(clean('جديد/جديدة'), 'جديد');
+    });
+
+    test('移除阿拉伯语逗号及其后内容', () {
+      expect(clean('متواصل، متواصل'), 'متواصل');
+    });
+
+    test('组合：发音符号 + 括号 + 斜杠', () {
+      expect(clean('مَكْتَبٌ (ج: مَكَاتِبُ) / مَكْتَبَةٌ'), 'مكتب');
+    });
+  });
+
+  group('wordRoot（词根 BK 树键归一化）', () {
+    test('词根中的发音符号 / 括号被移除', () {
+      const WordItem w = WordItem(
+        arabic: 'مكتب',
+        chinese: '书桌',
+        explanation: '',
+        className: '第一课',
+        id: 0,
+        root: 'ك ت ب',
+      );
+      expect(wordRoot(w), 'كتب');
+    });
+
+    test('词根缺失时回退到词形提取', () {
+      const WordItem w = WordItem(
+        arabic: 'كتاب',
+        chinese: '书',
+        explanation: '',
+        className: '第一课',
+        id: 1,
+      );
+      expect(wordRoot(w), isNotEmpty);
+    });
+  });
+
+  group('BKSearch 建索引时归一化词形', () {
+    setUpAll(() {
+      BKSearch.rebuild(<WordItem>[
+        const WordItem(
+          arabic: 'قَلَمٌ (ج: أَقْلَامٌ)',
+          chinese: '笔',
+          explanation: '名词',
+          className: '第一课',
+          id: 10,
+          root: 'ق ل م',
+          pos: 'Nominals',
+        ),
+        const WordItem(
+          arabic: 'جَدِيدٌ/جَدِيدَةٌ',
+          chinese: '新的',
+          explanation: '形容词',
+          className: '第一课',
+          id: 11,
+          root: 'ج د د',
+          pos: 'Nominals',
+        ),
+      ]);
+    });
+
+    test('带括号 / 发音符号的词可用干净词形检索到', () {
+      expect(
+        BKSearch.lookup('قلم').any((WordItem w) => w.id == 10),
+        isTrue,
+      );
+    });
+
+    test('带斜杠的词可用斜杠前的词形检索到', () {
+      expect(
+        BKSearch.lookup('جديد').any((WordItem w) => w.id == 11),
+        isTrue,
+      );
     });
   });
 }

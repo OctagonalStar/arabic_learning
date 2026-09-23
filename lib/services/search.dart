@@ -266,9 +266,14 @@ final _arabicStemmer = ArabicStemmer();
 
 /// 获取单词用于相似度计算的词根。
 ///
-/// 优先使用词库提供的[WordItem.root]（去除分隔空格）；为空时回退到[ArabicStemmer]提取。
+/// 优先使用词库提供的 [WordItem.root]（去掉发音符号 / 括号 / 斜杠后缀等扩展
+/// 部分并去除分隔空格）；为空时回退到 [ArabicStemmer] 从词形提取。
+///
+/// 词库文本里的 `root` 偶尔夹带发音符号或 `(…)`、`/…` 说明，若直接作为
+/// BK 树键会污染相似度计算，故此处统一走 [StringExtensions.removeAracicExtensionPart]。
 String wordRoot(WordItem word) {
-  final String provided = word.root.replaceAll(' ', '').trim();
+  final String provided =
+      word.root.removeAracicExtensionPart().replaceAll(' ', '').trim();
   if (provided.isNotEmpty) return provided;
   return _arabicStemmer.extractRoot(word.arabic);
 }
