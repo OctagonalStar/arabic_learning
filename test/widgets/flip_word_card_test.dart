@@ -324,6 +324,11 @@ void main() {
     expectLarger(smallFooter, largeFooter, '归属页脚');
     expectLarger(smallChinese, largeChinese, '释义文字');
 
+    // 词形信息（词根 / 词性 / 复数 / 阴阳性 / 现在式 / 动名词）应明显大于
+    // 说明性分组标题（当前为 +50% 放大）。
+    expect(largeMorph, greaterThan(largeSection),
+        reason: '词形芯片字号应大于分组标题');
+
     final double ratio = largeSection / smallSection;
     expect(ratio, greaterThan(1.4), reason: '大卡片上应明显放大');
     expect(ratio, lessThanOrEqualTo(2.0 + 1e-6), reason: '放大倍数不得超过上限');

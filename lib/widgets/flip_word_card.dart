@@ -536,9 +536,15 @@ class _FlipCardSectionLabel extends StatelessWidget {
   }
 }
 
+/// 词形信息（词根 / 词性 / 复数 / 阴阳性 / 现在式 / 动名词）相对详情正文的
+/// 字号放大系数：这些字段是学习者最需要看清的信息，统一放大 50%。
+const double _morphTextBoost = 1.5;
+
 /// 词形信息芯片：上标签 / 下值的小型信息块；值过长时以省略号兜底。
 ///
 /// 字号 / 内边距 / 圆角 / 边框随 [scale] 放大，系统 `textScaler` 仍会叠加。
+/// 其中标签与值额外乘以 [_morphTextBoost]（+50%），使词根 / 复数 / 现在式 /
+/// 动名词等词形信息比说明性文字更醒目。
 class _FlipCardMorphChip extends StatelessWidget {
   final String label;
   final String value;
@@ -556,9 +562,10 @@ class _FlipCardMorphChip extends StatelessWidget {
   Widget build(BuildContext context) {
     final ColorScheme scheme = Theme.of(context).colorScheme;
     final TextTheme textTheme = Theme.of(context).textTheme;
-    final TextStyle valueStyle = _scaledTextStyle(textTheme.labelLarge, scale, color: scheme.onSurface);
+    final double textScale = scale * _morphTextBoost;
+    final TextStyle valueStyle = _scaledTextStyle(textTheme.labelLarge, textScale, color: scheme.onSurface);
     return Container(
-      padding: EdgeInsets.symmetric(horizontal: AppSpacing.xs * scale, vertical: AppSpacing.xxs * scale),
+      padding: EdgeInsets.symmetric(horizontal: AppSpacing.xs * scale, vertical: AppSpacing.xxs * textScale),
       decoration: BoxDecoration(
         color: scheme.surfaceContainerLow,
         borderRadius: BorderRadius.circular(AppRadius.control * scale),
@@ -570,7 +577,7 @@ class _FlipCardMorphChip extends StatelessWidget {
         children: [
           Text(
             label,
-            style: _scaledTextStyle(textTheme.labelSmall, scale, color: scheme.onSurfaceVariant),
+            style: _scaledTextStyle(textTheme.labelSmall, textScale, color: scheme.onSurfaceVariant),
           ),
           Text(
             value,
