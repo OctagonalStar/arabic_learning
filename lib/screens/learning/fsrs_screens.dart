@@ -887,8 +887,7 @@ class _FSRSLearningPageState extends State<FSRSLearningPage> {
             itemBuilder: (context, index) {
               return Column(
                 children: [
-                  FlipWordCard(word: widget.words[index], masked: true),
-                  Expanded(child: SizedBox()),
+                  Expanded(child: FlipWordCard(word: widget.words[index], masked: true)),
                   Button(
                     size: Size(mediaQuery.size.width * 0.8, clampDouble(mediaQuery.size.height * 0.15, 64.0, 170.0)),
                     icon: Icon(index == widget.words.length-1 ? Icons.arrow_forward : Icons.arrow_downward),

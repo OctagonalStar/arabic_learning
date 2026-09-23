@@ -88,56 +88,65 @@ class _FlipWordCardState extends State<FlipWordCard> {
   @override
   Widget build(BuildContext context) {
     final MediaQueryData mediaQuery = MediaQuery.of(context);
-    final double useWidth = widget.width ?? mediaQuery.size.width * 0.9;
-    final double useHeight = widget.height ?? mediaQuery.size.height * 0.5;
+    return LayoutBuilder(
+      builder: (BuildContext context, BoxConstraints constraints) {
+        // 显式宽高始终优先；未显式指定时，高度优先填满父级给出的有界高度
+        // （如 `Expanded` 中的题目区），仅在高度无界时回退屏幕高度的一半。
+        final double useWidth = widget.width ?? mediaQuery.size.width * 0.9;
+        final double useHeight = widget.height ??
+            (constraints.hasBoundedHeight
+                ? constraints.maxHeight
+                : mediaQuery.size.height * 0.5);
 
-    // startOnBack 已直接呈现全部详情，属静态展示，不参与翻卡交互。
-    if (widget.startOnBack) {
-      return SizedBox(
-        key: _cardKey,
-        width: useWidth,
-        height: useHeight,
-        child: _FlipCardSurface(
-          word: widget.word,
+        // startOnBack 已直接呈现全部详情，属静态展示，不参与翻卡交互。
+        if (widget.startOnBack) {
+          return SizedBox(
+            key: _cardKey,
+            width: useWidth,
+            height: useHeight,
+            child: _FlipCardSurface(
+              word: widget.word,
+              width: useWidth,
+              height: useHeight,
+              showBack: true,
+              masked: widget.masked,
+            ),
+          );
+        }
+
+        final Widget card = SizedBox(
+          key: _cardKey,
           width: useWidth,
           height: useHeight,
-          showBack: true,
-          masked: widget.masked,
-        ),
-      );
-    }
+          child: _FlipCardSurface(
+            word: widget.word,
+            width: useWidth,
+            height: useHeight,
+            showBack: false,
+            // 展开期间原位卡片整体透明，不再绘制遮挡层，避免读屏 / 测试树里
+            // 残留第二份“释义已隐藏”。
+            masked: widget.masked && !_expanded,
+            hintText: widget.enableFlip
+                ? (widget.masked ? _maskedHint : _expandHint)
+                : null,
+          ),
+        );
 
-    final Widget card = SizedBox(
-      key: _cardKey,
-      width: useWidth,
-      height: useHeight,
-      child: _FlipCardSurface(
-        word: widget.word,
-        width: useWidth,
-        height: useHeight,
-        showBack: false,
-        // 展开期间原位卡片整体透明，不再绘制遮挡层，避免读屏 / 测试树里
-        // 残留第二份“释义已隐藏”。
-        masked: widget.masked && !_expanded,
-        hintText: widget.enableFlip
-            ? (widget.masked ? _maskedHint : _expandHint)
-            : null,
-      ),
-    );
+        if (!widget.enableFlip) return card;
 
-    if (!widget.enableFlip) return card;
-
-    return GestureDetector(
-      behavior: HitTestBehavior.opaque,
-      onTap: () => _open(context),
-      // 展开期间原位卡片不再参与语义树，避免读屏重复播报。
-      child: ExcludeSemantics(
-        excluding: _expanded,
-        child: Opacity(
-          opacity: _expanded ? 0.0 : 1.0,
-          child: card,
-        ),
-      ),
+        return GestureDetector(
+          behavior: HitTestBehavior.opaque,
+          onTap: () => _open(context),
+          // 展开期间原位卡片不再参与语义树，避免读屏重复播报。
+          child: ExcludeSemantics(
+            excluding: _expanded,
+            child: Opacity(
+              opacity: _expanded ? 0.0 : 1.0,
+              child: card,
+            ),
+          ),
+        );
+      },
     );
   }
 

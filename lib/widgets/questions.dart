@@ -171,8 +171,7 @@ class WordCardQuestion extends StatelessWidget {
         children: [
           if(hint != null) TextContainer(text: hint!, animated: true),
           SizedBox(height: mediaQuery.size.height * 0.01),
-          FlipWordCard(word: word),
-          Expanded(child: SizedBox()),
+          Expanded(child: FlipWordCard(word: word)),
           ?bottomWidget,
           SizedBox(height: mediaQuery.size.height * 0.05),
         ],
