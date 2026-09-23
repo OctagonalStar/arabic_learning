@@ -273,10 +273,19 @@ final _arabicStemmer = ArabicStemmer();
 /// BK 树键会污染相似度计算，故此处统一走 [StringExtensions.removeAracicExtensionPart]。
 String wordRoot(WordItem word) {
   final String provided =
-      word.root.removeAracicExtensionPart().replaceAll(' ', '').trim();
+      _arabicStemmer.normalize(word.root).replaceAll(RegExp(r'\s+'), '');
   if (provided.isNotEmpty) return provided;
   return _arabicStemmer.extractRoot(word.arabic);
 }
+
+/// 将用户输入归一化为词根键，用于精确词根匹配（去除发音符号/空白，统一阿列夫等）。
+String normalizeRootKey(String input) => wordRoot(WordItem(
+  arabic: input.replaceAll(RegExp(r'\s+'), ''),
+  chinese: input,
+  explanation: "",
+  id: -1,
+  className: "",
+));
 
 /// 将词库提供的词性字符串映射为[ArabicPOS]。
 ///
@@ -361,6 +370,13 @@ class VocabularyOptimizer {
       if (words != null) resultWords.addAll(words);
     }
     return resultWords;
+  }
+
+  /// 返回词根恰好等于 [root] 的所有单词（未命中返回空列表）。
+  List<WordItem> wordsForRoot(String root) {
+    final Set<WordItem>? words = _rootToWordsMap[root];
+    if (words == null || words.isEmpty) return const <WordItem>[];
+    return List<WordItem>.unmodifiable(words);
   }
 }
 
@@ -472,7 +488,24 @@ class VocabularyLookupIndex {
       }
     }
 
-    result.sort((int a, int b) => getLevenshtein(q, _arNorm[a]).compareTo(getLevenshtein(q, _arNorm[b])));
+    // 精确词根加权：命中已知词根时，其家族优先展示
+    final Set<int> exactRootIds = <int>{};
+    final String qKey = normalizeRootKey(query);
+    if (qKey.isNotEmpty) {
+      for (final WordItem w in _optimizer.wordsForRoot(qKey)) {
+        if (w.id >= 0 && w.id < _words.length) {
+          exactRootIds.add(w.id);
+          if (added.add(w.id)) result.add(w.id);
+        }
+      }
+    }
+
+    result.sort((int a, int b) {
+      final bool ea = exactRootIds.contains(a);
+      final bool eb = exactRootIds.contains(b);
+      if (ea != eb) return ea ? -1 : 1;
+      return getLevenshtein(q, _arNorm[a]).compareTo(getLevenshtein(q, _arNorm[b]));
+    });
     return [for(final int i in result) _words[i]];
   }
 

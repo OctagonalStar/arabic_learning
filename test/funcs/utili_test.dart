@@ -230,4 +230,70 @@ void main() {
       );
     });
   });
+
+  group('词根精确检索', () {
+    setUpAll(() {
+      BKSearch.rebuild(<WordItem>[
+        const WordItem(
+          arabic: 'كتاب',
+          chinese: '书',
+          explanation: '',
+          className: '第一课',
+          id: 0,
+          root: 'ك ت ب',
+        ),
+        const WordItem(
+          arabic: 'كاتب',
+          chinese: '作家',
+          explanation: '',
+          className: '第一课',
+          id: 1,
+          root: 'ك ت ب',
+        ),
+        const WordItem(
+          arabic: 'مكتوب',
+          chinese: '写好的',
+          explanation: '',
+          className: '第一课',
+          id: 2,
+          root: 'ك ت ب',
+        ),
+        const WordItem(
+          arabic: 'علم',
+          chinese: '知识',
+          explanation: '',
+          className: '第二课',
+          id: 3,
+          root: 'ع ل م',
+        ),
+      ]);
+    });
+
+    test('lookup("كتب") 返回同根家族且包含非子串命中的派生词 كاتب', () {
+      final Set<int> ids =
+          BKSearch.lookup('كتب').map((WordItem w) => w.id).toSet();
+      expect(ids.containsAll(<int>{0, 1, 2}), isTrue);
+      // كاتب 与 "كتب" 无子串关系，只能靠精确词根加权召回
+      expect(ids.contains(1), isTrue);
+      expect('كاتب'.contains('كتب'), isFalse);
+    });
+
+    test('带空格词根查询与紧凑查询返回相同 id 集合', () {
+      final Set<int> spaced =
+          BKSearch.lookup('ك ت ب').map((WordItem w) => w.id).toSet();
+      final Set<int> compact =
+          BKSearch.lookup('كتب').map((WordItem w) => w.id).toSet();
+      expect(spaced, compact);
+    });
+
+    test('normalizeRootKey 归一化空格后一致', () {
+      expect(normalizeRootKey('ك ت ب'), normalizeRootKey('كتب'));
+    });
+
+    test('其他词根对照词未被加权进结果', () {
+      final Set<int> ids =
+          BKSearch.lookup('كتب').map((WordItem w) => w.id).toSet();
+      expect(ids.contains(3), isFalse);
+    });
+  });
 }
