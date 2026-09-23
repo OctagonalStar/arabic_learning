@@ -46,7 +46,8 @@ class TestPage extends StatelessWidget {
                   child: ButtonLabel(child: Text('联机', style: withoutColor(Theme.of(context).textTheme.headlineLarge!))),
                 ),
                 Button(
-                  icon: Icon(Icons.multitrack_audio, size: 36.0),
+                  // 阅读理解入口：用“翻开的书”区别于自主听写的音频图标。
+                  icon: Icon(Icons.auto_stories, size: 36.0),
                   size: Size(width * 0.45, rowHeight),
                   onPressed: () {
                     context.read<Global>().uiLogger.info("跳转: TestPage => ReadingTestLeading");
