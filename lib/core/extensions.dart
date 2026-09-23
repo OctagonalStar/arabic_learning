@@ -1,8 +1,6 @@
 // 纯 Dart 扩展方法（原 lib/funcs/utili.dart 拆分）。
 // 包含阿语文本判断、中文释义相似度、数字补零、列表去重等无副作用工具。
 
-import 'dart:math';
-
 import 'package:arabic_learning/theme/tokens.dart' show AppSemanticColors;
 import 'package:flutter/material.dart';
 
@@ -28,48 +26,51 @@ extension StringExtensions on String {
   ///
   /// 依次移除：发音符号（harakat/tashkeel）、括号内内容（半角 `()` 与全角
   /// `（）`）、斜杠及其后内容（半角 `/` 与全角 `／`，不要求斜杠前有空格）、
-  /// 空格后的 `ج` / `-` / `م` 标记及其后内容、阿拉伯语逗号 / 句点及其后内容。
+  /// **独立**的 `ج` / `-` / `م` 标记及其后内容、阿拉伯语逗号 / 句点及其后内容。
+  ///
+  /// 注意：`ج` / `م` 只有在作为独立标记（其后为空白或结尾）时才会截断，
+  /// 避免把 `كُتُبٌ مَدْرَسِيَّةٌ` 这类「第二词以 م 开头」的短语误截成首个词。
   String removeAracicExtensionPart(){
     String res = this;
     res = res.replaceAll(RegExp(r'[\u064B-\u065F\u0640\u0670\u06D6-\u06ED]'), ""); 
     res = res.replaceAll(RegExp(r'[（(][^）)]*[）)]'), ""); // for "قَلَمٌ (ج: أَقْلَامٌ)" / "（…）"
     res = res.replaceAll(RegExp(r'[/／][^]*$'), ""); // for "جَدِيدٌ/جَدِيدَةٌ"（不要求空格）
-    res = res.replaceAll(RegExp(r'\ [ج\-م][^]*$'), ""); // for "ميلادي م ميلاد"
+    res = res.replaceAll(RegExp(r'\s[جم](?=\s|$)[^]*$'), ""); // 仅独立标记: "ميلادي م ميلاد"
+    res = res.replaceAll(RegExp(r'\s-[^]*$'), ""); // 独立连字符标记
     res = res.replaceAll(RegExp(r'[،.][^]*$'), ""); // for "متواصل، متواصل"
     return res;
   }
 
-  /// 简单的中文释义交叉计算（字符 Jaccard 相似度）
+  /// 用于「去重 / 合并」的保守身份键。
+  ///
+  /// 只做**词形级**清理（发音符号、括号内容、斜杠/逗号变体、独立标记），并保留
+  /// 多词短语的完整词形；**不做**检索层的阿列夫 / `ة` 折叠（那属于更激进的检索
+  /// 归一化，在 `ArabicStemmer.normalize` 中完成）。与 [removeAracicExtensionPart]
+  /// 职责分离：检索侧的归一化调整不会改变这里的去重语义。
+  String identityKey(){
+    String res = this;
+    res = res.replaceAll(RegExp(r'[\u064B-\u065F\u0640\u0670\u06D6-\u06ED]'), "");
+    res = res.replaceAll(RegExp(r'[（(][^）)]*[）)]'), "");
+    res = res.replaceAll(RegExp(r'[/／][^]*$'), "");
+    res = res.replaceAll(RegExp(r'\s[جم](?=\s|$)[^]*$'), "");
+    res = res.replaceAll(RegExp(r'\s-[^]*$'), "");
+    res = res.replaceAll(RegExp(r'[،.][^]*$'), "");
+    return res.trim();
+  }
+
+  /// 中文释义是否可判定为「同一含义」。
+  ///
+  /// 严格判定：去除标点/空格后必须**完全相等**或**互为子串**。
+  /// 不再使用「短释义共用一个字」或「字符占比 ≥40%」的宽松规则，避免
+  /// `写, 书写` 与 `教科书`（仅共用「书」）、`质子` 与 `中子`（仅共用「子」）
+  /// 等不同含义被误合并。
   bool hasSimilarMeaning(String other) {
-    // 1. 去除中文/英文常见标点符号和空格
-    String cleanString(String s) {
-      return s.replaceAll(RegExp(r'[ \(\)\.,/，。、；（）\[\]【】]'), '');
-    }
-    
-    String c1 = cleanString(this);
-    String c2 = cleanString(other);
-
+    String clean(String s) =>
+        s.replaceAll(RegExp(r'[ \(\)\.,/，。、；（）\[\]【】]'), '');
+    final String c1 = clean(this);
+    final String c2 = clean(other);
     if (c1.isEmpty || c2.isEmpty) return false;
-    
-    // 如果一个释义完全包含了另一个，直接判定为相似（如：苹果 和 苹果，香蕉）
-    if(c1.contains(c2) || c2.contains(c1)) return true;
-
-    // 2. 将字串拆分为单字集合
-    Set<String> set1 = c1.split('').toSet();
-    Set<String> set2 = c2.split('').toSet();
-
-    // 3. 计算共有字符
-    int intersection = set1.intersection(set2).length;
-    // int union = set1.union(set2).length;
-    
-    // 如果短词里包含任何相同的核心字，或共有汉字超过短词的 40% (应对同义替换)
-    int minLength = min(set1.length, set2.length);
-    
-    // 如果它们很短，只要共享一个字就算（例如：走 / 行走）
-    if(minLength <= 2 && intersection >= 1) return true;
-    
-    double similarity = intersection / minLength;
-    return similarity >= 0.4;
+    return c1 == c2 || c1.contains(c2) || c2.contains(c1);
   }
 }
 

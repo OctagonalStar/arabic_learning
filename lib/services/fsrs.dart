@@ -14,6 +14,9 @@ class FSRS {
   FSRS._internal();
 
   late FSRSConfig config;
+
+  /// [config] 是否已加载。初始化前调用下面基于卡片的方法会安全返回 0。
+  bool _inited = false;
   
   final Logger logger = Logger("FSRS");
   // index != cardId; cardId = wordId = the index of word in global.wordData[words]
@@ -24,10 +27,12 @@ class FSRS {
     if(!appData.storage.containsKey("fsrsData")) {
       logger.info("未发现FSRS配置，加载默认配置");
       config = FSRSConfig();
+      _inited = true;
       appData.storage.setString("fsrsData", jsonEncode(config.toMap()));
       return false;
     } else {
       config = FSRSConfig.buildFromMap(jsonDecode(appData.storage.getString("fsrsData")!));
+      _inited = true;
       logger.info("FSRS配置加载完成");
       
       // 清洗潜在的重复脏数据 (Deduplication)
@@ -144,6 +149,92 @@ class FSRS {
       logger.severe("wordID: $wordId card not found or has more than one");
       return null;
     }
+  }
+
+  /// 统计这些词 id 上已有的复习卡片数量（用于删词前的影响提示）。
+  int countCardsFor(Set<int> wordIds) {
+    if (!_inited) return 0;
+    return config.cards.where((Card card) => wordIds.contains(card.cardId)).length;
+  }
+
+  /// 统计越界的复习卡片数量（`cardId` 不在 `[0, wordCount)` 内）。
+  int outOfRangeCardCount(int wordCount) {
+    if (!_inited) return 0;
+    return config.cards
+        .where((Card card) => card.cardId < 0 || card.cardId >= wordCount)
+        .length;
+  }
+
+  /// 返回与 `reviewLogs` 对齐的卡片列表（缺失日志以默认值补齐）。
+  List<({Card card, ReviewLog log})> alignedCards() {
+    if (!_inited) return const <({Card card, ReviewLog log})>[];
+    final List<({Card card, ReviewLog log})> out = [];
+    for (final Card card in config.cards) {
+      ReviewLog? log;
+      for (final ReviewLog candidate in config.reviewLogs) {
+        if (candidate.cardId == card.cardId) {
+          log = candidate;
+          break;
+        }
+      }
+      out.add((
+        card: card,
+        log: ReviewLog(
+          cardId: card.cardId,
+          rating: log?.rating ?? Rating.good,
+          reviewDateTime: log?.reviewDateTime ?? DateTime.now(),
+          reviewDuration: log?.reviewDuration,
+        ),
+      ));
+    }
+    return out;
+  }
+
+  /// 用给定的对齐卡片列表替换全部卡片并持久化。
+  void setAlignedCards(List<({Card card, ReviewLog log})> entries) {
+    if (!_inited) return;
+    config = config.copyWith(
+      cards: entries.map((e) => e.card).toList(growable: false),
+      reviewLogs: entries.map((e) => e.log).toList(growable: false),
+    );
+    save();
+  }
+
+  /// 清空全部卡片与复习日志并持久化，返回被清空的数量。
+  int clearCards() {
+    if (!_inited) return 0;
+    final int count = config.cards.length;
+    config = config.copyWith(cards: const <Card>[], reviewLogs: const <ReviewLog>[]);
+    save();
+    return count;
+  }
+
+  /// 按 `old→new` 下标映射重建卡片与复习日志：丢弃不存在于映射中的词条卡片、
+  /// 重写 `cardId`，并保持 `cards[i]` 与 `reviewLogs[i]` 一一对齐。
+  /// 返回被丢弃的卡片数。
+  int remapWordIds(Map<int, int> oldToNew) {
+    if (!_inited || config.cards.isEmpty) return 0;
+    final List<({Card card, ReviewLog log})> remapped = [];
+    int dropped = 0;
+    for (final ({Card card, ReviewLog log}) entry in alignedCards()) {
+      final int? neu = oldToNew[entry.card.cardId];
+      if (neu == null) {
+        dropped++;
+        continue;
+      }
+      remapped.add((
+        card: entry.card.copyWith(cardId: neu),
+        log: ReviewLog(
+          cardId: neu,
+          rating: entry.log.rating,
+          reviewDateTime: entry.log.reviewDateTime,
+          reviewDuration: entry.log.reviewDuration,
+        ),
+      ));
+    }
+    setAlignedCards(remapped);
+    logger.info("FSRS 重新映射词 id: 保留 ${remapped.length} 张，丢弃 $dropped 张");
+    return dropped;
   }
 }
 

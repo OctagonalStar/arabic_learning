@@ -165,6 +165,44 @@ void main() {
     test('组合：发音符号 + 括号 + 斜杠', () {
       expect(clean('مَكْتَبٌ (ج: مَكَاتِبُ) / مَكْتَبَةٌ'), 'مكتب');
     });
+
+    test('保留第二词以 م / ج 开头的多词短语（不截断）', () {
+      expect(clean('كُتُبٌ مَدْرَسِيَّةٌ'), 'كتب مدرسية');
+      expect(clean('غَيْرُ مَرَّةٍ'), 'غير مرة');
+      expect(clean('بَنْكٌ مُعَزَّزٌ'), 'بنك معزز');
+    });
+
+    test('独立标记字母 ج / م 仍会被截断', () {
+      expect(clean('ميلادي م ميلاد'), 'ميلادي');
+    });
+  });
+
+  group('identityKey（去重身份键）', () {
+    test('词形级清理：去发音符号/括号，保留多词短语', () {
+      expect('كُتُبٌ مَدْرَسِيَّةٌ'.identityKey(), 'كتب مدرسية');
+      expect('قلم (ج: أقلام)'.identityKey(), 'قلم');
+      expect('  قَلَمٌ   '.identityKey(), 'قلم');
+    });
+
+    test('斜杠/逗号变体归并，但不截断多词短语', () {
+      expect('جديد / جديدة'.identityKey(), 'جديد');
+      expect('كَتَبَ، يَكْتُبُ، كِتَابَةً'.identityKey(), 'كتب');
+      expect('كُتُبٌ مَدْرَسِيَّةٌ'.identityKey(), isNot('كَتَبَ'.identityKey()));
+    });
+  });
+
+  group('hasSimilarMeaning（严格释义判定）', () {
+    test('完全相等或互为子串判为相似', () {
+      expect('写'.hasSimilarMeaning('写作'), isTrue);
+      expect('苹果，香蕉'.hasSimilarMeaning('苹果'), isTrue);
+      expect('书'.hasSimilarMeaning('书'), isTrue);
+    });
+
+    test('仅共用个别字不再判为相似', () {
+      expect('写, 书写'.hasSimilarMeaning('教科书'), isFalse);
+      expect('质子'.hasSimilarMeaning('中子'), isFalse);
+      expect('暴雨'.hasSimilarMeaning('枪林弹雨'), isFalse);
+    });
   });
 
   group('wordRoot（词根 BK 树键归一化）', () {

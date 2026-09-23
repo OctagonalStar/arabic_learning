@@ -5,6 +5,7 @@ import 'dart:convert';
 
 import 'package:logging/logging.dart';
 import 'package:flutter/foundation.dart';
+import 'package:fsrs/fsrs.dart' show Card, ReviewLog;
 import 'package:path_provider/path_provider.dart' as path_provider;
 
 import 'package:arabic_learning/core/extensions.dart';
@@ -15,6 +16,7 @@ import 'package:arabic_learning/models/reading.dart' show ReadingData;
 import 'package:arabic_learning/models/synonym.dart' show SynonymData;
 import 'package:arabic_learning/services/fsrs.dart';
 import 'package:arabic_learning/services/memberships.dart';
+import 'package:arabic_learning/services/push_session.dart';
 import 'package:arabic_learning/services/search.dart';
 import 'package:arabic_learning/services/synonyms.dart';
 import 'package:arabic_learning/package_replacement/storage.dart';
@@ -67,6 +69,9 @@ class AppData {
   late DictData wordData;
   late ReadingData readingData;
   sherpa_onnx.OfflineTts? vitsTTS;
+
+  /// 「重置词库但保留复习进度」流程中暂存的卡片（仅内存，进程内有效）。
+  List<({int oldId, String identity, Card card, ReviewLog log})>? _pendingFsrsRestore;
   
   int get wordCount => wordData.words.length;
   bool get isFirstStart => storage.getString("settingData") == null;
@@ -175,15 +180,15 @@ class AppData {
   }) {
     logger.info("开始词汇格式化");
     
-    // Use Maps for O(1) lookup speed instead of O(N) List.indexOf
-    Map<String, int> rawWordMap = {};
-    Map<String, int> pureWordMap = {};
-    List<String> chineseList = [];
-    
+    // 精确阿语串 -> 词下标（同一串视为同词，保留原有复用行为）
+    final Map<String, int> rawWordMap = {};
+    // 保守身份键 -> 候选词下标列表；命中后仍需逐个做严格释义比对才合并
+    final Map<String, List<int>> identityMap = {};
+    final List<String> chineseList = [];
     for(int i = 0; i < existData.words.length; i++) {
       WordItem x = existData.words[i];
       rawWordMap[x.arabic] = i;
-      pureWordMap[x.arabic.removeAracicExtensionPart().trim()] = i;
+      (identityMap[x.arabic.identityKey()] ??= <int>[]).add(i);
       chineseList.add(x.chinese); // Keep list for indexing since it maps 1:1 with word id
     }
     
@@ -225,16 +230,21 @@ class AppData {
         }
         imported++;
 
-        String newPure = newRaw.removeAracicExtensionPart().trim();
+        final String newIdentity = newRaw.identityKey();
         int existingIndex = -1;
 
         if (rawWordMap.containsKey(newRaw)) {
           existingIndex = rawWordMap[newRaw]!;
-        } else if (pureWordMap.containsKey(newPure)) {
-          int potentialIndex = pureWordMap[newPure]!;
-          // Pure arabic is the same, but different vowels. Are they the same meaning?
-          if (chineseList[potentialIndex].hasSimilarMeaning(newChinese)) {
-            existingIndex = potentialIndex;
+        } else {
+          // 身份键相同（仅发音符号/括号差异）时，还需释义严格相似才视为同一词。
+          final List<int>? candidates = identityMap[newIdentity];
+          if (candidates != null) {
+            for (final int candidate in candidates) {
+              if (chineseList[candidate].hasSimilarMeaning(newChinese)) {
+                existingIndex = candidate;
+                break;
+              }
+            }
           }
         }
 
@@ -275,7 +285,7 @@ class AppData {
         exClass.wordIndexs.add(counter);
         existData.words.add(incoming);
         rawWordMap[newRaw] = counter;
-        pureWordMap[newPure] = counter;
+        (identityMap[newIdentity] ??= <int>[]).add(counter);
         chineseList.add(newChinese);
         counter ++;
       }
@@ -306,6 +316,177 @@ class AppData {
       logger.info("已纠正非名词词条的阴阳性占位数据");
     }
     return changed;
+  }
+
+  /// 删除整个词库来源（**仅解除归属，保留词条本体**）。
+  ///
+  /// 适用于「删除一个导入的词库」。不删除、不重排 `words`，因此不影响以
+  /// 位置为 id 的 FSRS 复习数据与每日推送断点。返回被删除来源的展示名；
+  /// 来源不存在时返回 null。
+  String? deleteDictSource(String sourceJsonFileName) {
+    final int index = wordData.classes.indexWhere(
+      (SourceItem source) => source.sourceJsonFileName == sourceJsonFileName,
+    );
+    if (index == -1) return null;
+    final String displayName = wordData.classes[index].name;
+    final List<SourceItem> classes = List<SourceItem>.of(wordData.classes)..removeAt(index);
+    wordData = DictData(words: wordData.words, classes: classes);
+    _persistWordData();
+    logger.info("已删除词库来源: $sourceJsonFileName（词条保留）");
+    return displayName;
+  }
+
+  /// 未被任何课程 [ClassItem.wordIndexs] 引用的词条下标集合。
+  Set<int> unreferencedWordIds() {
+    final Set<int> referenced = <int>{};
+    for (final SourceItem source in wordData.classes) {
+      for (final ClassItem course in source.subClasses) {
+        referenced.addAll(course.wordIndexs);
+      }
+    }
+    final Set<int> orphans = <int>{};
+    for (int i = 0; i < wordData.words.length; i++) {
+      if (!referenced.contains(i)) orphans.add(i);
+    }
+    return orphans;
+  }
+
+  /// 彻底删除未被任何课程引用的词条（真正删词）。
+  ///
+  /// 通过 `old→new` 下标映射同步重写 `words`、所有 `ClassItem.wordIndexs`、
+  /// FSRS 卡片与复习日志（丢弃被删词条的卡片），并清空每日推送断点、重建派生索引。
+  /// **注意**：会重排词条位置，被删词条上的 FSRS 进度将永久丢失。
+  /// 返回 `(removedWords, removedCards)`。
+  ({int removedWords, int removedCards}) compactUnreferencedWords() {
+    final Set<int> orphans = unreferencedWordIds();
+    if (orphans.isEmpty) return (removedWords: 0, removedCards: 0);
+
+    final List<WordItem> newWords = [];
+    final Map<int, int> oldToNew = {};
+    for (int i = 0; i < wordData.words.length; i++) {
+      if (orphans.contains(i)) continue;
+      oldToNew[i] = newWords.length;
+      newWords.add(wordData.words[i]);
+    }
+
+    final List<SourceItem> newClasses = [];
+    for (final SourceItem source in wordData.classes) {
+      final List<ClassItem> subClasses = [];
+      for (final ClassItem course in source.subClasses) {
+        final List<int> mapped = [];
+        for (final int old in course.wordIndexs) {
+          final int? neu = oldToNew[old];
+          if (neu != null) mapped.add(neu); // 丢弃越界的脏引用
+        }
+        subClasses.add(ClassItem(className: course.className, wordIndexs: mapped));
+      }
+      newClasses.add(SourceItem(
+        sourceJsonFileName: source.sourceJsonFileName,
+        displayName: source.displayName,
+        subClasses: subClasses,
+      ));
+    }
+
+    final int removedCards = FSRS().remapWordIds(oldToNew);
+
+    wordData = DictData(words: newWords, classes: newClasses);
+    _persistWordData();
+    PushSessionStore.clear();
+    logger.info("清理未归属词条: ${orphans.length} 个，丢弃复习卡片 $removedCards 张");
+    return (removedWords: orphans.length, removedCards: removedCards);
+  }
+
+  /// 重建全部派生索引（BKSearch / WordMembershipIndex）并回写经阴阳性纠正的数据。
+  ///
+  /// 只修复**派生**数据；无法恢复已丢失的课程归属（`ClassItem.wordIndexs`
+  /// 是归属的唯一权威来源），也无法找回已被删除的词条。返回异常统计文本。
+  String repairIndexes() {
+    normalizeWordGenders();
+    _persistWordData();
+    final int orphans = unreferencedWordIds().length;
+    final int outOfRangeCards = FSRS().outOfRangeCardCount(wordData.words.length);
+    return "已重建词库索引。\n"
+        "未归属词条: $orphans\n"
+        "越界复习卡片: $outOfRangeCards";
+  }
+
+  /// 是否存在「重置词库但保留复习进度」流程中暂存的待恢复卡片。
+  bool get hasPendingFsrsRestore => _pendingFsrsRestore != null;
+
+  /// 重置全部词库（清空词库与课程归属），但把复习进度按**词形**暂存到内存，
+  /// 供重新导入后调用 [restoreFsrsFromPending] 恢复。
+  ///
+  /// 清空同时会清空 FSRS 卡片（持久化），避免卡片继续按旧位置 id 指向已不存在的
+  /// 词条。暂存的进度**仅存在于本次会话**，中途退出将无法恢复；阅读题与同义词
+  /// 标记不受影响。返回暂存的卡片数。
+  int resetDictsPreservingFsrs() {
+    final FSRS fsrs = FSRS();
+    final List<({int oldId, String identity, Card card, ReviewLog log})> pending = [];
+    final int wordCount = wordData.words.length;
+    for (final ({Card card, ReviewLog log}) entry in fsrs.alignedCards()) {
+      final int oldId = entry.card.cardId;
+      if (oldId < 0 || oldId >= wordCount) continue; // 越界脏卡直接丢弃
+      final String identity = wordData.words[oldId].arabic.identityKey();
+      if (identity.isEmpty) continue;
+      pending.add((oldId: oldId, identity: identity, card: entry.card, log: entry.log));
+    }
+    _pendingFsrsRestore = pending;
+    fsrs.clearCards();
+    // 必须用可增长的列表：重新导入时 dataFormater 会向 classes/words 追加。
+    wordData = DictData(words: <WordItem>[], classes: <SourceItem>[]);
+    _persistWordData();
+    logger.info("已重置词库，内存暂存 ${pending.length} 张复习卡片待恢复");
+    return pending.length;
+  }
+
+  /// 重新导入完成后，按词形把暂存的复习进度映射到新词条。
+  /// 未能匹配到新词条的卡片会被丢弃。返回 `(restored, dropped)`。
+  ({int restored, int dropped}) restoreFsrsFromPending() {
+    final List<({int oldId, String identity, Card card, ReviewLog log})>? pending =
+        _pendingFsrsRestore;
+    if (pending == null) return (restored: 0, dropped: 0);
+
+    final Map<String, List<int>> byIdentity = <String, List<int>>{};
+    for (int i = 0; i < wordData.words.length; i++) {
+      (byIdentity[wordData.words[i].arabic.identityKey()] ??= <int>[]).add(i);
+    }
+
+    final List<({Card card, ReviewLog log})> restored = [];
+    int dropped = 0;
+    for (final ({int oldId, String identity, Card card, ReviewLog log}) entry in pending) {
+      final List<int>? candidates = byIdentity[entry.identity];
+      if (candidates == null || candidates.isEmpty) {
+        dropped++;
+        continue;
+      }
+      final int newId = candidates.removeAt(0);
+      restored.add((
+        card: entry.card.copyWith(cardId: newId),
+        log: ReviewLog(
+          cardId: newId,
+          rating: entry.log.rating,
+          reviewDateTime: entry.log.reviewDateTime,
+          reviewDuration: entry.log.reviewDuration,
+        ),
+      ));
+    }
+    FSRS().setAlignedCards(restored);
+    _pendingFsrsRestore = null;
+    logger.info("恢复复习进度: ${restored.length} 张，丢弃 $dropped 张");
+    return (restored: restored.length, dropped: dropped);
+  }
+
+  /// 放弃暂存的复习进度（清空待恢复快照）。
+  void discardPendingFsrsRestore() {
+    _pendingFsrsRestore = null;
+    logger.info("已放弃待恢复的复习进度");
+  }
+
+  /// 持久化当前 `wordData` 并重建检索 / 归属索引。
+  void _persistWordData() {
+    storage.setString("wordData", jsonEncode(wordData.toMap()));
+    BKSearch.rebuild(wordData.words);
+    WordMembershipIndex.instance.rebuild(wordData.classes);
   }
 
   static String _asString(dynamic value) => value == null ? "" : value.toString();

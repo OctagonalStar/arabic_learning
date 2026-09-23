@@ -1,5 +1,4 @@
 import 'package:flutter/foundation.dart' show kIsWeb;
-import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -7,7 +6,6 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:arabic_learning/widgets/kit.dart' show Button, SettingItem, SettingRedirctButton, SettingRow;
 import 'package:arabic_learning/widgets/overlays.dart' show alart, showSnackBar;
 import 'package:arabic_learning/core/extensions.dart';
-import 'package:arabic_learning/theme/tokens.dart' show AppRadius;
 import 'package:arabic_learning/models/config.dart' show RegularConfig;
 import 'package:arabic_learning/services/global_state.dart';
 import 'package:arabic_learning/services/app_data.dart';
@@ -17,8 +15,8 @@ import 'package:arabic_learning/screens/setting/debug_page.dart'
     show DebugPage;
 import 'package:arabic_learning/screens/setting/about_page.dart'
     show AboutPage;
-import 'package:arabic_learning/screens/setting/data_download_page.dart'
-    show DownloadPage;
+import 'package:arabic_learning/screens/setting/dict_manage_page.dart'
+    show DictManagePage;
 import 'package:arabic_learning/screens/setting/model_download_page.dart'
     show ModelDownload;
 import 'package:arabic_learning/screens/setting/questions_setting_page.dart'
@@ -29,9 +27,6 @@ import 'package:arabic_learning/screens/setting/synonym_page.dart'
     show SynonymPage;
 import 'package:arabic_learning/screens/learning/fsrs_screens.dart'
     show ForeFSRSSettingPage;
-import 'package:arabic_learning/package_replacement/fake_dart_io.dart'
-    if (dart.library.io) 'dart:io'
-    as io;
 
 class SettingPage extends StatefulWidget {
   const SettingPage({super.key});
@@ -199,106 +194,9 @@ class _SettingPage extends State<SettingPage> {
             SettingItem(
               title: "学习设置",
               children: [
-                Column(
-                  children: [
-                    Row(
-                      children: [
-                        SizedBox(width: mediaQuery.size.width * 0.02),
-                        Icon(Icons.download, size: 24.0),
-                        SizedBox(width: mediaQuery.size.width * 0.01),
-                        Expanded(child: Text("导入词库数据")),
-                        Text("词库中现有: ${AppData().wordCount}"),
-                        SizedBox(width: mediaQuery.size.width * 0.02),
-                      ],
-                    ),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                      children: [
-                        Button(
-                          size: Size(mediaQuery.size.width * 0.4,mediaQuery.size.height * 0.06),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.horizontal(left: Radius.circular(AppRadius.card))),
-                          onPressed: () {
-                            context.read<Global>().uiLogger.info(
-                              "跳转: SettingPage => DownloadPage",
-                            );
-                            Navigator.of(context).push(
-                              MaterialPageRoute(
-                                builder: (context) => DownloadPage(),
-                              ),
-                            );
-                          },
-                          icon: Icon(Icons.cloud_download),
-                          child: Text("线上下载"),
-                        ),
-                        Button(
-                          size: Size(mediaQuery.size.width * 0.4,mediaQuery.size.height * 0.06),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.horizontal(right: Radius.circular(AppRadius.card))),
-                          onPressed: () async {
-                            context.read<Global>().uiLogger.info("选择手动导入单词");
-                            PlatformFile? result =
-                                await FilePicker.pickFile(
-                                  type: FileType.custom,
-                                  allowedExtensions: ['json', 'jsonl'],
-                                );
-                            if (result != null) {
-                              String jsonString;
-                              PlatformFile platformFile = result;
-                              try {
-                                jsonString = await platformFile.xFile
-                                    .readAsString();
-                              } catch (e) {
-                                if (!context.mounted) return;
-                                if (platformFile.path != null && !kIsWeb) {
-                                  context.read<Global>().uiLogger.warning(
-                                    "文件导入错误: 常规方式读取失败:\n$e\n尝试路经读取",
-                                  );
-                                  jsonString = await io.File(
-                                    platformFile.path!,
-                                  ).readAsString();
-                                } else {
-                                  context.read<Global>().uiLogger.severe(
-                                    "文件导入错误: $e",
-                                  );
-                                  alart(
-                                    context,
-                                    "文件 \"${platformFile.name}\" \n无法读取：$e。",
-                                  );
-                                  return;
-                                }
-                              }
-                              if (!context.mounted) return;
-                              try {
-                                context.read<Global>().uiLogger.fine(
-                                  "文件读取完成，开始解析",
-                                );
-                                final DictImportResult result = AppData()
-                                    .importDictData(jsonString, platformFile.name);
-                                alart(
-                                  context,
-                                  "文件 \"${platformFile.name}\" \n已导入。\n${result.message}",
-                                );
-                                context.read<Global>().uiLogger.info("文件解析成功");
-                              } catch (e) {
-                                if (!context.mounted) return;
-                                context.read<Global>().uiLogger.severe(
-                                  "文件 ${platformFile.name} 无效: $e",
-                                );
-                                alart(
-                                  context,
-                                  '文件 ${platformFile.name} 无效：\n$e',
-                                );
-                              }
-                            }
-                          },
-                          icon: Icon(Icons.file_open),
-                          child: Text("文件导入"),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
                 SettingRedirctButton(title: "题型配置",icon: Icons.quiz, target: QuestionsSettingPage()),
                 SettingRedirctButton(title: "同义词管理", icon: Icons.sync_alt, target: SynonymPage()),
+                SettingRedirctButton(title: "词库管理", icon: Icons.library_books, target: DictManagePage()),
                 SettingRedirctButton(title: "数据备份及同步", icon: Icons.sync, target: DataSyncPage()),
                 SettingRedirctButton(title: "复习配置", icon: Icons.bookmark, target: ForeFSRSSettingPage(forceChoosing: true)),
               ],
