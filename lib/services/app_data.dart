@@ -14,6 +14,7 @@ import 'package:arabic_learning/models/config.dart' show Config;
 import 'package:arabic_learning/models/dict.dart' show ClassItem, DictData, SourceItem, WordItem;
 import 'package:arabic_learning/models/reading.dart' show ReadingData;
 import 'package:arabic_learning/models/synonym.dart' show SynonymData;
+import 'package:arabic_learning/services/favorites.dart';
 import 'package:arabic_learning/services/fsrs.dart';
 import 'package:arabic_learning/services/memberships.dart';
 import 'package:arabic_learning/services/push_session.dart';
@@ -95,6 +96,7 @@ class AppData {
       FSRS().init();
     }
     SynonymStore().init();
+    FavoriteStore().init(); // 收藏数据（键为词条 id）
     inited = true;
   }
 
@@ -102,6 +104,7 @@ class AppData {
       await storage.setString("wordData", jsonEncode({"Words": [], "Classes": {}}));
       await storage.setString("readingData", jsonEncode({"units": []}));
       await storage.setString("synonymData", jsonEncode(const SynonymData().toMap()));
+      await storage.setString("favoriteData", jsonEncode(FavoriteStore().toMap()));
       wordData = DictData(words: [], classes: []);
       WordMembershipIndex.instance.rebuild(wordData.classes);
       logger.info("配置表初始化完成");
@@ -331,6 +334,7 @@ class AppData {
     final String displayName = wordData.classes[index].name;
     final List<SourceItem> classes = List<SourceItem>.of(wordData.classes)..removeAt(index);
     wordData = DictData(words: wordData.words, classes: classes);
+    FavoriteStore().removeAll(unreferencedWordIds()); // 收藏按 id 同步：丢弃因删库失去归属的词条收藏
     _persistWordData();
     logger.info("已删除词库来源: $sourceJsonFileName（词条保留）");
     return displayName;
@@ -388,6 +392,7 @@ class AppData {
     }
 
     final int removedCards = FSRS().remapWordIds(oldToNew);
+    FavoriteStore().remap(oldToNew); // 收藏按 id 同步：丢弃已删词条的收藏
 
     wordData = DictData(words: newWords, classes: newClasses);
     _persistWordData();
@@ -432,6 +437,7 @@ class AppData {
     }
     _pendingFsrsRestore = pending;
     fsrs.clearCards();
+    FavoriteStore().clear(); // 收藏不按词形恢复：清空词库时一并丢弃
     // 必须用可增长的列表：重新导入时 dataFormater 会向 classes/words 追加。
     wordData = DictData(words: <WordItem>[], classes: <SourceItem>[]);
     _persistWordData();

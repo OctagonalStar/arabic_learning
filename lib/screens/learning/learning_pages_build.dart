@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:math';
 
 import 'package:arabic_learning/services/fsrs.dart' show FSRS;
+import 'package:arabic_learning/services/favorites.dart' show FavoriteStore;
 import 'package:arabic_learning/services/search.dart' show BKSearch;
 import 'package:arabic_learning/core/extensions.dart' show StringExtensions;
 import 'package:arabic_learning/services/words.dart' show collectAllCategories, wordMatchesCategories;
@@ -15,7 +16,7 @@ import 'package:provider/provider.dart';
 
 import 'package:arabic_learning/core/adaptive.dart' show AdaptiveScope;
 import 'package:arabic_learning/core/statics.dart';
-import 'package:arabic_learning/theme/tokens.dart' show AppMotion;
+import 'package:arabic_learning/theme/tokens.dart' show AppMotion, AppSpacing;
 import 'package:arabic_learning/services/global_state.dart';
 import 'package:arabic_learning/services/app_data.dart';
 import 'package:arabic_learning/widgets/flip_word_card.dart' show FlipWordCard;
@@ -835,6 +836,9 @@ class _WordLookupLayoutState extends State<WordLookupLayout> {
   /// 当前选择的分类（AND 语义，空集合=不筛选）
   Set<String> selectedCategories = <String>{};
 
+  /// 仅显示已收藏的单词。
+  bool _onlyFavorite = false;
+
   @override
   Widget build(BuildContext context) {
     // 使用索引化检索（归一化预计算 + 字符倒排 + 整词 BK-Tree），替代原全表扫描
@@ -845,6 +849,11 @@ class _WordLookupLayoutState extends State<WordLookupLayout> {
     // 分类筛选（AND）：所有检索途径的结果统一过滤
     if(selectedCategories.isNotEmpty) {
       match = match.where((WordItem word) => wordMatchesCategories(word, selectedCategories)).toList();
+    }
+
+    // 仅收藏筛选：在分类筛选之后继续收窄结果（命中判断 O(1)）。
+    if(_onlyFavorite) {
+      match = match.where((WordItem word) => FavoriteStore().contains(word.id)).toList();
     }
 
     context.read<Global>().uiLogger.finer("单词检索结果: $match");
@@ -858,8 +867,42 @@ class _WordLookupLayoutState extends State<WordLookupLayout> {
     }
 
     final List<String> availableCategories = collectAllCategories();
+    final ColorScheme scheme = Theme.of(context).colorScheme;
     return Column(
       children: [
+        // 「仅收藏」开关始终可见（无分类可筛选时也在），样式与分类 chip 一致。
+        Padding(
+          padding: const EdgeInsets.fromLTRB(AppSpacing.sm, AppSpacing.xs, AppSpacing.sm, 0),
+          child: Row(
+            children: [
+              FilterChip(
+                label: Text(
+                  "仅收藏",
+                  style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                    color: _onlyFavorite ? scheme.onSecondaryContainer : scheme.onSurfaceVariant,
+                  ),
+                ),
+                selected: _onlyFavorite,
+                showCheckmark: false,
+                visualDensity: VisualDensity.compact,
+                materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                selectedColor: scheme.secondaryContainer,
+                backgroundColor: scheme.surfaceContainerLow,
+                shape: RoundedRectangleBorder(
+                  borderRadius: StaticsVar.br,
+                  side: BorderSide(
+                    color: _onlyFavorite ? scheme.secondary : scheme.outlineVariant,
+                  ),
+                ),
+                onSelected: (bool value) {
+                  setState(() {
+                    _onlyFavorite = value;
+                  });
+                },
+              ),
+            ],
+          ),
+        ),
         if(availableCategories.isNotEmpty) CategoryFilter(
           available: availableCategories,
           selected: selectedCategories,
@@ -870,7 +913,7 @@ class _WordLookupLayoutState extends State<WordLookupLayout> {
           },
         ),
         Expanded(
-          child: (match.isEmpty && selectedCategories.isNotEmpty)
+          child: (match.isEmpty && (selectedCategories.isNotEmpty || _onlyFavorite))
             ? Center(child: Text("当前筛选条件下没有匹配的单词", style: Theme.of(context).textTheme.bodyLarge))
             : LayoutBuilder(
                 builder: (BuildContext context, BoxConstraints constraints) {
@@ -895,6 +938,8 @@ class _WordLookupLayoutState extends State<WordLookupLayout> {
                             word: match[index],
                             width: cardSide,
                             height: cardSide,
+                            // 取消收藏后重新应用「仅收藏」筛选。
+                            onFavoriteChanged: () => setState(() {}),
                           ),
                         ),
                       );

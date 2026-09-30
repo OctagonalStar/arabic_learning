@@ -9,6 +9,7 @@ import 'package:arabic_learning/models/config.dart' show Config, RegularConfig;
 import 'package:arabic_learning/models/dict.dart' show DictData;
 import 'package:arabic_learning/models/reading.dart' show ReadingData;
 import 'package:arabic_learning/services/app_data.dart' show AppData;
+import 'package:arabic_learning/services/favorites.dart' show FavoriteStore;
 import 'package:arabic_learning/services/fsrs.dart' show FSRS;
 import 'package:arabic_learning/services/memberships.dart' show WordMembershipIndex;
 import 'package:arabic_learning/services/search.dart' show BKSearch;
@@ -155,6 +156,7 @@ class Global with ChangeNotifier {
       }
 
       SynonymStore().reload();
+      FavoriteStore().reload();
       notifyListeners();
     } catch (e) {
       logger.severe("重新加载本地词库/阅读数据失败: $e");
