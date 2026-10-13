@@ -10,7 +10,6 @@
 import 'dart:async';
 import 'dart:convert';
 
-import 'package:arabic_learning/core/adaptive.dart' show AdaptiveScope;
 import 'package:arabic_learning/core/extensions.dart';
 import 'package:arabic_learning/core/statics.dart';
 import 'package:arabic_learning/theme/tokens.dart' show AppMotion, AppRadius, AppSemanticColors;
@@ -83,7 +82,7 @@ Future<ClassSelection> popSelectClasses(BuildContext context, {bool withCache = 
     context: context,
     shape: RoundedRectangleBorder(side: BorderSide(width: 1.0, color: Theme.of(context).colorScheme.outlineVariant), borderRadius: StaticsVar.br),
     isDismissible: false,
-    isScrollControlled: AdaptiveScope.of(context).isWide,
+    isScrollControlled: true,
     enableDrag: true,
     builder: (BuildContext context) {
       return ClassSelectPage(beforeSelectedClasses: beforeSelectedClasses, withReviewChoose: withReviewChoose);
