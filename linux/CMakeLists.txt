@@ -74,6 +74,21 @@ set_target_properties(${BINARY_NAME}
 # them to the application.
 include(flutter/generated_plugins.cmake)
 
+# Third-party plugin warning policy.
+#
+# Plugins build through apply_standard_settings() above (CMake command names are
+# case-insensitive, so the plugin's `apply_standard_settings` resolves here) and
+# therefore inherit -Werror. That is fine for our own code but not for vendored
+# third-party sources we do not control: newer toolchains surface new warnings
+# there and would break the whole build. Clang 23, for example, reports
+# -Wunused-but-set-global for flutter_webrtc's g_host_messenger, which is only
+# read inside `#if defined(_WIN32)` and is thus set-but-never-read on Linux.
+# Keep -Werror for the app's own targets, but never let a plugin's third-party
+# warning fail the build. `-Wno-error` is appended after -Werror, so it wins.
+foreach(plugin ${FLUTTER_PLUGIN_LIST})
+  target_compile_options(${plugin}_plugin PRIVATE -Wno-error)
+endforeach()
+
 
 # === Installation ===
 # By default, "installing" just makes a relocatable bundle in the build
