@@ -183,3 +183,11 @@ bool wordMatchesCategories(WordItem word, Set<String> selected) {
   if(selected.isEmpty) return true;
   return selected.every((String category) => word.categories.contains(category));
 }
+
+/// 判断单词是否满足分类筛选（或逻辑）
+/// 
+/// 单词含有 [selected] 中任一分类即命中；[selected] 为空表示不进行筛选。
+bool wordMatchesAnyCategory(WordItem word, Set<String> selected) {
+  if(selected.isEmpty) return true;
+  return selected.any((String category) => word.categories.contains(category));
+}

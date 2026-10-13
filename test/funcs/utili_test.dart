@@ -398,4 +398,42 @@ void main() {
       expect(ids.first, 0);
     });
   });
+
+  group('wordMatchesAnyCategory（或逻辑标签筛选）', () {
+    const WordItem word = WordItem(
+      arabic: 'كتاب',
+      chinese: '书',
+      explanation: '',
+      className: '第一课',
+      id: 0,
+      categories: <String>['四级', '常用词'],
+    );
+
+    test('空集合返回 true（不筛选）', () {
+      expect(wordMatchesAnyCategory(word, <String>{}), isTrue);
+    });
+
+    test('命中单个标签返回 true', () {
+      expect(wordMatchesAnyCategory(word, <String>{'四级'}), isTrue);
+    });
+
+    test('多标签中命中任一即返回 true', () {
+      expect(wordMatchesAnyCategory(word, <String>{'六级', '常用词'}), isTrue);
+    });
+
+    test('完全不命中返回 false', () {
+      expect(wordMatchesAnyCategory(word, <String>{'八级', '生僻词'}), isFalse);
+    });
+
+    test('单词分类为空且 selected 非空返回 false', () {
+      const WordItem noCategory = WordItem(
+        arabic: 'قلم',
+        chinese: '笔',
+        explanation: '',
+        className: '第一课',
+        id: 1,
+      );
+      expect(wordMatchesAnyCategory(noCategory, <String>{'四级'}), isFalse);
+    });
+  });
 }

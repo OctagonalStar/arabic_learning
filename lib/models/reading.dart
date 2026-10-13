@@ -37,10 +37,15 @@ class ClassSelection {
   List<ClassItem> selectedClass;
   bool countInReview;
 
+  /// 标签筛选：仅学习“含有 [selectedCategories] 中任一标签”的单词
+  /// （可多选，或逻辑）。空集合表示不按标签筛选。
+  Set<String> selectedCategories;
+
   ClassSelection({
     required this.selectedClass,
-    required this.countInReview
-  });
+    required this.countInReview,
+    Set<String>? selectedCategories
+  }) : selectedCategories = selectedCategories ?? <String>{};
 }
 
 @immutable

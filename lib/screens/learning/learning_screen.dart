@@ -199,11 +199,20 @@ class LearningPage extends StatelessWidget {
 
 Future<void> shiftToStudy(BuildContext context) async {
   context.read<Global>().uiLogger.info("准备转向学习页面");
-  final ClassSelection classSelection = await popSelectClasses(context, withCache: false, withReviewChoose: true);
+  final ClassSelection classSelection = await popSelectClasses(context, withCache: false, withReviewChoose: true, withCategoryFilter: true);
   if(classSelection.selectedClass.isEmpty || !context.mounted) return;
-  final List<WordItem> words = getSelectedWords(AppData().wordData, classSelection.selectedClass, doShuffle: false, doDouble: false);
+  final List<WordItem> selectedWords = getSelectedWords(AppData().wordData, classSelection.selectedClass, doShuffle: false, doDouble: false);
+  // 标签筛选（或逻辑）：仅保留含有任一选中标签的单词
+  final List<WordItem> words = classSelection.selectedCategories.isEmpty
+      ? selectedWords
+      : selectedWords.where((WordItem word) => wordMatchesAnyCategory(word, classSelection.selectedCategories)).toList();
   context.read<Global>().uiLogger.info("完成单词挑拣，共${words.length}个");
-  if(words.isEmpty) return;
+  if(words.isEmpty) {
+    if(classSelection.selectedCategories.isNotEmpty && context.mounted) {
+      showSnackBar(context, "当前标签筛选下没有可学习的单词");
+    }
+    return;
+  }
   context.read<Global>().uiLogger.info("跳转: LearningPage => InLearningPage");
   final bool? finished = await Navigator.push(
     context,

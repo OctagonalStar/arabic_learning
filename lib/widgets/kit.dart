@@ -12,13 +12,14 @@ import 'dart:convert';
 
 import 'package:arabic_learning/core/extensions.dart';
 import 'package:arabic_learning/core/statics.dart';
-import 'package:arabic_learning/theme/tokens.dart' show AppMotion, AppRadius, AppSemanticColors;
+import 'package:arabic_learning/theme/tokens.dart' show AppMotion, AppRadius, AppSemanticColors, AppSpacing;
 import 'package:arabic_learning/theme/typography.dart';
 import 'package:arabic_learning/models/dict.dart' show ClassItem, SourceItem;
 import 'package:arabic_learning/models/reading.dart' show ClassSelection;
 import 'package:arabic_learning/services/app_data.dart';
 import 'package:arabic_learning/services/fsrs.dart';
 import 'package:arabic_learning/services/global_state.dart';
+import 'package:arabic_learning/services/words.dart' show collectAllCategories;
 import 'package:arabic_learning/widgets/overlays.dart' show showSnackBar;
 import 'package:flutter/foundation.dart' show listEquals;
 import 'package:flutter/material.dart';
@@ -37,22 +38,11 @@ import 'package:provider/provider.dart';
 /// 1.从缓存中加载已选择的课程 
 /// 2.将此次课程选择加入持久化的缓存中方便下次直接开始。 
 /// 
-/// 返回值: [[词库键, 课程键]] 对应了[Global.wordData]中的数据结构
+/// [withCategoryFilter] :是否展示标签筛选区（多选，或逻辑），
+/// 仅当词库存在标签时显示；默认关闭以保持既有调用方行为不变。
 /// 
-/// 可以通过以下方式使用返回值，得到该课单词的ID
-/// 
-/// ``` dart
-/// List<List<String>> value = await popSelectClasses(context);
-/// List<int> wordsId = context.read<Global>().wordData["Classes"][value[0]][value[1]]
-/// ```
-/// 
-/// 但是以上方案不常用，常用的方案是通过utili中的getSelectedWords直接获取单词数据(Map)
-/// 
-/// ``` dart
-/// List<List<String>> value = await popSelectClasses(context);
-/// List<Map<String, dynamic>> words = getSelectedWords(context , forceSelectClasses: value);
-/// ```
-Future<ClassSelection> popSelectClasses(BuildContext context, {bool withCache = false, bool withReviewChoose = true, List<SourceItem>? forceSelectRange}) async {
+/// 返回值: [ClassSelection] 包含所选课程、是否计入复习系统以及所选标签集合
+Future<ClassSelection> popSelectClasses(BuildContext context, {bool withCache = false, bool withReviewChoose = true, bool withCategoryFilter = false, List<SourceItem>? forceSelectRange}) async {
   context.read<Global>().uiLogger.info("弹出课程选择（ClassSelectPage），withCache: $withCache");
   final List<ClassItem> beforeSelectedClasses = [];
   AppData appData = AppData();
@@ -85,7 +75,7 @@ Future<ClassSelection> popSelectClasses(BuildContext context, {bool withCache = 
     isScrollControlled: true,
     enableDrag: true,
     builder: (BuildContext context) {
-      return ClassSelectPage(beforeSelectedClasses: beforeSelectedClasses, withReviewChoose: withReviewChoose);
+      return ClassSelectPage(beforeSelectedClasses: beforeSelectedClasses, withReviewChoose: withReviewChoose, withCategoryFilter: withCategoryFilter);
     }
   );
 
@@ -766,13 +756,26 @@ class CategoryChips extends StatelessWidget {
 /// 
 /// [onChanged] :选择变化时的回调，传出新的完整集合（调用方负责持有状态）
 /// 
-/// 多选时使用 AND 语义筛选单词，空集合表示不筛选；
-/// 非空时会出现“清除筛选”按钮。
+/// [title] :筛选区标题，默认为「分类筛选」
+/// 
+/// [description] :筛选区说明文案，为 null 时不渲染说明行
+/// 
+/// 组件本身不决定筛选语义（AND / OR 由调用方实现）；
+/// 空集合表示不筛选；非空时会出现“清除筛选”按钮。
 class CategoryFilter extends StatelessWidget {
   final List<String> available;
   final Set<String> selected;
   final void Function(Set<String>) onChanged;
-  const CategoryFilter({super.key, required this.available, required this.selected, required this.onChanged});
+  final String title;
+  final String? description;
+  const CategoryFilter({
+    super.key,
+    required this.available,
+    required this.selected,
+    required this.onChanged,
+    this.title = "分类筛选",
+    this.description,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -791,7 +794,8 @@ class CategoryFilter extends StatelessWidget {
             children: [
               Icon(Icons.filter_alt_outlined, size: 18.0),
               SizedBox(width: 4.0),
-              Text("分类筛选", style: Theme.of(context).textTheme.labelLarge?.copyWith(fontWeight: FontWeight.bold)),
+              // 标题可定制：课程选择处使用「标签筛选」，其余调用方沿用默认「分类筛选」
+              Text(title, style: Theme.of(context).textTheme.labelLarge?.copyWith(fontWeight: FontWeight.bold)),
               Spacer(),
               if(selected.isNotEmpty) TextButton(
                 style: TextButton.styleFrom(
@@ -803,6 +807,16 @@ class CategoryFilter extends StatelessWidget {
                 child: Text("清除筛选", style: Theme.of(context).textTheme.labelMedium),
               )
             ],
+          ),
+          // 说明行可选：为 null 时完全不渲染，默认调用方的观感与旧版一致
+          if(description != null) Padding(
+            padding: EdgeInsets.only(top: AppSpacing.xxs, bottom: AppSpacing.xxs),
+            child: Text(
+              description!,
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+              ),
+            ),
           ),
           Wrap(
             spacing: 6.0,
@@ -988,15 +1002,23 @@ class _ButtonState extends State<Button> {
 /// 
 /// [beforeSelectedClasses] :已经勾选的课程，可以自定义，但一般搭配缓存使用
 /// 
+/// [withCategoryFilter] :是否展示标签筛选区（多选，或逻辑）。
+/// 仅在 [collectAllCategories] 非空时渲染，筛选结果写入
+/// [ClassSelection.selectedCategories] 随返回值一起回传。
+/// 
 /// 注意：如果你要进行课程选择，请先考虑 [popSelectClasses] 函数，这是一个已经基本成熟的实现
 class ClassSelectPage extends StatelessWidget { 
   final List<ClassItem> beforeSelectedClasses;
   final bool withReviewChoose;
+  final bool withCategoryFilter;
   final List<SourceItem>? forceSelectRange;
-  const ClassSelectPage({super.key, this.beforeSelectedClasses = const [], this.withReviewChoose = false, this.forceSelectRange});
+  const ClassSelectPage({super.key, this.beforeSelectedClasses = const [], this.withReviewChoose = false, this.withCategoryFilter = false, this.forceSelectRange});
   @override
   Widget build(BuildContext context) {
     final MediaQueryData mediaQuery = MediaQuery.of(context);
+    // 仅在需要筛选时汇总标签，避免无谓遍历；词库无标签时该区不渲染。
+    final List<String> availableCategories =
+        withCategoryFilter ? collectAllCategories() : const <String>[];
     ClassSelection classSelection = ClassSelection(
       selectedClass: beforeSelectedClasses.toList(), 
       countInReview: FSRS().config.enabled
@@ -1029,6 +1051,30 @@ class ClassSelectPage extends StatelessWidget {
               children: classesSelectionList(context, onClassChanged, isClassSelected, forceSelectRange)
             ),
           ),
+          // 标签筛选区：固定在课程列表下方、确认按钮上方，始终可见。
+          // 用 ConstrainedBox 限高（非 flex 子项，不与上方 ListView 争抢空间），
+          // 标签内容超出时才内部滚动，避免底部弹窗溢出。
+          if(withCategoryFilter && availableCategories.isNotEmpty)
+            ConstrainedBox(
+              constraints: BoxConstraints(maxHeight: mediaQuery.size.height * 0.3),
+              child: SingleChildScrollView(
+                child: StatefulBuilder(
+                  builder: (context, setLocalState) {
+                    return CategoryFilter(
+                      available: availableCategories,
+                      selected: classSelection.selectedCategories,
+                      title: "标签筛选",
+                      description: "仅学习所选标签中任一标签的单词（可多选）",
+                      onChanged: (Set<String> value) {
+                        setLocalState(() {
+                          classSelection.selectedCategories = value;
+                        });
+                      },
+                    );
+                  },
+                ),
+              ),
+            ),
           if(withReviewChoose) StatefulBuilder(
             builder: (context, setLocalState) {
               return Row(
