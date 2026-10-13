@@ -57,6 +57,16 @@ The old pre-refactor paths no longer exist: `pages/`, `sub_pages_builder/`, `var
 - Word data is stored as one JSON string under `wordData` (`{"Words":[...],"Classes":{fileName:{className:[indexes]}}}`). `WordItem.id` is positional and omitted from `toMap`; import JSON uses a different schema (`{ClassName:[{arabic,chinese,explanation}]}`) transformed by `AppData.dataFormater`. WebDAV/local export is JSON keyed by `usedKeys` whose values are themselves JSON strings (double-encoded).
 - `ReadingUnit.toMap(export: true)` intentionally omits the `corrects` answer key.
 
+### Strong word-ID contract
+
+`WordItem.id` is the positional index into `wordData.words`. It is **not** serialized (`toMap` omits it); `DictData.buildFromMap` re-derives it from array order on load. Ids are therefore stable only while the word array is not reordered or shrunk. Every side store keyed by id must be kept in sync at these points:
+
+- `AppData.compactUnreferencedWords` reorders/shrinks words → call the store's remap with the shared `oldToNew` map (FSRS: `FSRS().remapWordIds`; favorites: `FavoriteStore().remap`). Ids absent from `oldToNew` are dropped.
+- `AppData.resetDictsPreservingFsrs` clears all words → clear id-keyed side data (`FavoriteStore().clear()`). Only FSRS is preserved, and it is restored by word identity (`arabic.identityKey()`) via `restoreFsrsFromPending`; favorites are intentionally **not** restored.
+- `AppData.deleteDictSource` keeps word bodies (no reorder) but discards favorites of newly unreferenced words via `FavoriteStore().removeAll(unreferencedWordIds())`.
+
+A new id-keyed store MUST: (1) back membership with `Set<int>` for O(1) lookups; (2) register its storage key in `SharedPreferences.usedKeys`; (3) hook `AppData.init()` (load) and `Global.reloadStoredData()` (reload after backup).
+
 ## Platform / Web compatibility
 
 - Because Dart cannot conditionally import per platform at will, native-only code uses the **`fake_*.dart` shim pattern**: `import 'package:.../fake_dart_io.dart' if (dart.library.io) 'dart:io' as io;`. The empties in `lib/package_replacement/` are load-bearing for Web — do not delete them (see its README).

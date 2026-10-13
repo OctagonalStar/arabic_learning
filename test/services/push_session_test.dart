@@ -150,6 +150,17 @@ void main() {
       expect(plan.words, isEmpty);
     });
 
+    test('分类筛选为或逻辑：命中任一标签即纳入候选', () {
+      FSRS().config = FSRSConfig(cards: [], reviewLogs: [], pushAmount: 3, pushCategories: const ['四级', '六级']);
+      final DailyPushPlan plan = buildDailyPushPlan(
+        now: DateTime(2026, 9, 23),
+        fsrs: FSRS(),
+        wordData: _dict(<String>['四级', '六级', '补充']),
+      );
+      expect(plan.noCandidates, isFalse);
+      expect(plan.words.map((WordItem w) => w.id).toSet(), <int>{0, 1});
+    });
+
     test('空词库 noCandidates 为真', () {
       final DailyPushPlan plan = buildDailyPushPlan(
         now: DateTime(2026, 9, 23),

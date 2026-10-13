@@ -16,6 +16,7 @@ import 'package:arabic_learning/services/words.dart';
 import 'package:arabic_learning/services/global_state.dart';
 import 'package:arabic_learning/services/app_data.dart';
 import 'package:arabic_learning/services/push_session.dart';
+import 'package:arabic_learning/screens/learning/favorites_page.dart' show FavoritesPage;
 import 'package:arabic_learning/screens/learning/fsrs_screens.dart' show FSRSLearningPage, ForeFSRSSettingPage;
 import 'package:arabic_learning/screens/learning/learning_pages_build.dart';
 
@@ -149,21 +150,44 @@ class LearningPage extends StatelessWidget {
               ),
             ],
             SizedBox(height: gap),
-            Button(
-              backgroundColor: Theme.of(context).colorScheme.primaryContainer,
-              size: Size(width * 0.8, overviewHeight),
-              onPressed: (){
-                context.read<Global>().uiLogger.info("跳转: LearningPage => WordCardOverViewPage");
-                Navigator.push(
-                  context, 
-                  MaterialPageRoute(
-                    builder: (context) => WordCardOverViewPage()
-                  )
-                );
-              },
-              icon: Icon(Icons.abc, size: 24),
-              // 与「学习推送单词」同为次级全宽按钮，统一 titleLarge(22)。
-              child: Text("词汇总览", style: withoutColor(Theme.of(context).textTheme.titleLarge!)),
+            // 「词汇总览 / 收藏单词」并列次级按钮，与上方主按钮行同样的
+            // spaceEvenly 排布与 0.4 宽度比例。
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children: [
+                Button(
+                  backgroundColor: Theme.of(context).colorScheme.primaryContainer,
+                  size: Size(width * 0.4, overviewHeight),
+                  onPressed: (){
+                    context.read<Global>().uiLogger.info("跳转: LearningPage => WordCardOverViewPage");
+                    Navigator.push(
+                      context, 
+                      MaterialPageRoute(
+                        builder: (context) => WordCardOverViewPage()
+                      )
+                    );
+                  },
+                  icon: Icon(Icons.abc, size: 24),
+                  // 与「学习推送单词」同为次级按钮，统一 titleLarge(22)；
+                  // 半宽下用 ButtonLabel（scaleDown）兜底，避免窄屏文字溢出。
+                  child: ButtonLabel(child: Text("词汇总览", style: withoutColor(Theme.of(context).textTheme.titleLarge!))),
+                ),
+                Button(
+                  backgroundColor: Theme.of(context).colorScheme.primaryContainer,
+                  size: Size(width * 0.4, overviewHeight),
+                  onPressed: (){
+                    context.read<Global>().uiLogger.info("跳转: LearningPage => FavoritesPage");
+                    Navigator.push(
+                      context, 
+                      MaterialPageRoute(
+                        builder: (context) => FavoritesPage()
+                      )
+                    );
+                  },
+                  icon: Icon(Icons.star, size: 24),
+                  child: ButtonLabel(child: Text("收藏单词", style: withoutColor(Theme.of(context).textTheme.titleLarge!))),
+                ),
+              ],
             ),
           ]
         );
@@ -175,11 +199,20 @@ class LearningPage extends StatelessWidget {
 
 Future<void> shiftToStudy(BuildContext context) async {
   context.read<Global>().uiLogger.info("准备转向学习页面");
-  final ClassSelection classSelection = await popSelectClasses(context, withCache: false, withReviewChoose: true);
+  final ClassSelection classSelection = await popSelectClasses(context, withCache: false, withReviewChoose: true, withCategoryFilter: true);
   if(classSelection.selectedClass.isEmpty || !context.mounted) return;
-  final List<WordItem> words = getSelectedWords(AppData().wordData, classSelection.selectedClass, doShuffle: false, doDouble: false);
+  final List<WordItem> selectedWords = getSelectedWords(AppData().wordData, classSelection.selectedClass, doShuffle: false, doDouble: false);
+  // 标签筛选（或逻辑）：仅保留含有任一选中标签的单词
+  final List<WordItem> words = classSelection.selectedCategories.isEmpty
+      ? selectedWords
+      : selectedWords.where((WordItem word) => wordMatchesAnyCategory(word, classSelection.selectedCategories)).toList();
   context.read<Global>().uiLogger.info("完成单词挑拣，共${words.length}个");
-  if(words.isEmpty) return;
+  if(words.isEmpty) {
+    if(classSelection.selectedCategories.isNotEmpty && context.mounted) {
+      showSnackBar(context, "当前标签筛选下没有可学习的单词");
+    }
+    return;
+  }
   context.read<Global>().uiLogger.info("跳转: LearningPage => InLearningPage");
   final bool? finished = await Navigator.push(
     context,

@@ -68,9 +68,9 @@ class WebDAV {
         password: password
       );
       client.setHeaders({'accept-charset': 'utf-8'});
-      client.setConnectTimeout(8000);
-      client.setSendTimeout(8000);
-      client.setReceiveTimeout(8000);
+      client.setConnectTimeout(30000);
+      client.setSendTimeout(30000);
+      client.setReceiveTimeout(30000);
       await client.ping(); // test for connection
       isReachable = true;
       await client.readDir(''); // test for read

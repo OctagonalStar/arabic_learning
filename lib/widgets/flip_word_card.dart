@@ -22,6 +22,7 @@ import 'dart:math' as math;
 import 'dart:ui' show ImageFilter;
 
 import 'package:arabic_learning/models/dict.dart' show WordItem;
+import 'package:arabic_learning/services/favorites.dart' show FavoriteStore;
 import 'package:arabic_learning/services/memberships.dart' show WordMembership, WordMembershipIndex;
 import 'package:arabic_learning/services/tts.dart' show playTextToSpeech;
 import 'package:arabic_learning/theme/tokens.dart' show AppMotion, AppRadius, AppSpacing;
@@ -58,6 +59,9 @@ const String _collapseHint = '点击卡片或空白处关闭';
 ///
 /// [startOnBack] :直接以反面（全部详情）呈现，用于“详解”弹层等静态场景；
 /// 此时视为静态卡片，不再触发翻卡
+///
+/// [onFavoriteChanged] :收藏状态变化后的回调（如列表页据此刷新过滤 / 移除
+/// 卡片）；为空时只更新右上角星标自身。
 class FlipWordCard extends StatefulWidget {
   final WordItem word;
   final double? width;
@@ -65,6 +69,7 @@ class FlipWordCard extends StatefulWidget {
   final bool enableFlip;
   final bool masked;
   final bool startOnBack;
+  final VoidCallback? onFavoriteChanged;
 
   /// 该词的全部归属（词库名 › 课程名）。为空时自动查询全局反查索引，
   /// 仍为空再回退到旧的单值 [WordItem.className]。
@@ -79,6 +84,7 @@ class FlipWordCard extends StatefulWidget {
     this.masked = false,
     this.startOnBack = false,
     this.memberships,
+    this.onFavoriteChanged,
   });
 
   @override
@@ -131,6 +137,7 @@ class _FlipWordCardState extends State<FlipWordCard> {
               showBack: true,
               masked: widget.masked,
               memberships: _memberships,
+              onFavoriteChanged: widget.onFavoriteChanged,
             ),
           );
         }
@@ -151,6 +158,7 @@ class _FlipWordCardState extends State<FlipWordCard> {
             hintText: widget.enableFlip
                 ? (widget.masked ? _maskedHint : _expandHint)
                 : null,
+            onFavoriteChanged: widget.onFavoriteChanged,
           ),
         );
 
@@ -199,6 +207,7 @@ class _FlipWordCardState extends State<FlipWordCard> {
           memberships: _memberships,
           sourceRect: sourceRect,
           reduceMotion: reduceMotion,
+          onFavoriteChanged: widget.onFavoriteChanged,
           onCloseCompleted: _onOverlayClosed,
         );
       },
@@ -230,6 +239,7 @@ class _FlipCardSurface extends StatelessWidget {
   final bool masked;
   final String? hintText;
   final List<WordMembership> memberships;
+  final VoidCallback? onFavoriteChanged;
 
   const _FlipCardSurface({
     required this.word,
@@ -239,6 +249,7 @@ class _FlipCardSurface extends StatelessWidget {
     required this.memberships,
     this.masked = false,
     this.hintText,
+    this.onFavoriteChanged,
   });
 
   @override
@@ -254,40 +265,110 @@ class _FlipCardSurface extends StatelessWidget {
       borderRadius: AppRadius.cardBorder,
       child: ColoredBox(
         color: scheme.surfaceContainerHighest,
-        child: Column(
+        child: Stack(
+          clipBehavior: Clip.hardEdge,
           children: [
-            WordCardArabicButton(word: word, width: width, height: height * 0.3),
-            Expanded(
-              child: SizedBox(
-                width: width,
-                height: height * bodyShare,
-                child: Stack(
-                  fit: StackFit.expand,
-                  children: [
-                    body,
-                    _FlipCardMaskOverlay(masked: masked),
-                  ],
-                ),
-              ),
-            ),
-            if (hintText != null)
-              SizedBox(
-                width: width,
-                height: height * 0.1,
-                child: Center(
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xs),
-                    child: FittedBox(
-                      fit: BoxFit.scaleDown,
-                      child: Text(
-                        hintText!,
-                        style: textTheme.labelSmall?.copyWith(color: scheme.onSurfaceVariant),
-                      ),
+            Column(
+              children: [
+                WordCardArabicButton(word: word, width: width, height: height * 0.3),
+                Expanded(
+                  child: SizedBox(
+                    width: width,
+                    height: height * bodyShare,
+                    child: Stack(
+                      fit: StackFit.expand,
+                      children: [
+                        body,
+                        _FlipCardMaskOverlay(masked: masked),
+                      ],
                     ),
                   ),
                 ),
+                if (hintText != null)
+                  SizedBox(
+                    width: width,
+                    height: height * 0.1,
+                    child: Center(
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xs),
+                        child: FittedBox(
+                          fit: BoxFit.scaleDown,
+                          child: Text(
+                            hintText!,
+                            style: textTheme.labelSmall?.copyWith(color: scheme.onSurfaceVariant),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+            // 收藏星标：纯叠加层，不改变 Column 内既有子元素的位置与尺寸。
+            Positioned(
+              top: AppSpacing.xxs,
+              right: AppSpacing.xxs,
+              child: _FavoriteStarButton(
+                wordId: word.id,
+                width: width,
+                onChanged: onFavoriteChanged,
               ),
+            ),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+/// 卡片右上角收藏星标。
+///
+/// 直接读写全局单例 [FavoriteStore]（[FavoriteStore.contains] 为 O(1)）；点击
+/// 只切换收藏状态并回调 [onChanged]，内层按钮在手势竞争中优先于外层卡片的
+/// 翻卡 [GestureDetector]，不会触发展开。尺寸随卡片宽度收缩，120 见方的网格
+/// 单元内也不会溢出。
+class _FavoriteStarButton extends StatefulWidget {
+  final int wordId;
+  final double width;
+  final VoidCallback? onChanged;
+
+  const _FavoriteStarButton({
+    required this.wordId,
+    required this.width,
+    this.onChanged,
+  });
+
+  @override
+  State<_FavoriteStarButton> createState() => _FavoriteStarButtonState();
+}
+
+class _FavoriteStarButtonState extends State<_FavoriteStarButton> {
+  void _toggle() {
+    FavoriteStore().toggle(widget.wordId);
+    setState(() {});
+    widget.onChanged?.call();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final ColorScheme scheme = Theme.of(context).colorScheme;
+    final bool favorited = FavoriteStore().contains(widget.wordId);
+    // 图标随卡片宽度缩放（120 宽约 19px，大卡封顶 28px）；点按区域不小于
+    // 32px，保证小卡片上仍有可用的点按尺寸。
+    final double iconSize = math.min(28.0, widget.width * 0.16);
+    final double tapSize = math.max(32.0, iconSize + 12.0);
+    return SizedBox(
+      width: tapSize,
+      height: tapSize,
+      child: IconButton(
+        visualDensity: VisualDensity.compact,
+        padding: EdgeInsets.zero,
+        iconSize: iconSize,
+        tooltip: favorited ? "取消收藏" : "收藏",
+        onPressed: _toggle,
+        icon: Icon(
+          favorited ? Icons.star : Icons.star_border,
+          size: iconSize,
+          color: favorited ? scheme.primary : scheme.onSurfaceVariant,
         ),
       ),
     );
@@ -825,6 +906,7 @@ class _FlipWordCardOverlay extends StatefulWidget {
   final bool reduceMotion;
   final bool masked;
   final List<WordMembership> memberships;
+  final VoidCallback? onFavoriteChanged;
   final VoidCallback onCloseCompleted;
 
   const _FlipWordCardOverlay({
@@ -834,6 +916,7 @@ class _FlipWordCardOverlay extends StatefulWidget {
     required this.masked,
     required this.memberships,
     required this.onCloseCompleted,
+    this.onFavoriteChanged,
   });
 
   @override
@@ -935,6 +1018,7 @@ class _FlipWordCardOverlayState extends State<_FlipWordCardOverlay> with SingleT
                             showBack: true,
                             memberships: widget.memberships,
                             hintText: _collapseHint,
+                            onFavoriteChanged: widget.onFavoriteChanged,
                           ),
                         )
                       : _FlipCardSurface(
@@ -945,6 +1029,7 @@ class _FlipWordCardOverlayState extends State<_FlipWordCardOverlay> with SingleT
                           memberships: widget.memberships,
                           masked: widget.masked,
                           hintText: widget.masked ? _maskedHint : _expandHint,
+                          onFavoriteChanged: widget.onFavoriteChanged,
                         ),
                   ),
                 ),
