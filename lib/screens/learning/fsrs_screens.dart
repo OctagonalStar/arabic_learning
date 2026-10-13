@@ -195,7 +195,7 @@ class ForeFSRSSettingPage extends StatelessWidget {
                     Text("当天是否学习新单词对连胜计数没有影响 学不学可以看你心情"),
                     if(fsrs.config.pushAmount != 0 && availableCategories.isNotEmpty) ...[
                       Divider(),
-                      Text("推送词分类筛选：仅从所选分类中推送新词；不选择表示不筛选。可多选，需同时满足所选全部分类。", style: Theme.of(context).textTheme.bodyMedium),
+                      Text("推送词分类筛选：仅从所选分类中推送新词；不选择表示不筛选。可多选，满足所属分类中任意一个即可。", style: Theme.of(context).textTheme.bodyMedium),
                       CategoryFilter(
                         available: availableCategories,
                         selected: fsrs.config.pushCategories.toSet(),

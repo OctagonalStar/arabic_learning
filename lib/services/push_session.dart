@@ -64,7 +64,7 @@ DailyPushPlan buildDailyPushPlan({required DateTime now, required FSRS fsrs, req
   List<int> candidateIndexes = List<int>.generate(wordData.words.length, (int index) => index);
   if (selectedCategories.isNotEmpty) {
     candidateIndexes = candidateIndexes
-        .where((int index) => wordMatchesCategories(wordData.words[index], selectedCategories))
+        .where((int index) => wordMatchesAnyCategory(wordData.words[index], selectedCategories))
         .toList();
   }
   if (candidateIndexes.isEmpty) {
