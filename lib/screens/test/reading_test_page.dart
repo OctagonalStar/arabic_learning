@@ -10,6 +10,7 @@ import 'package:arabic_learning/core/extensions.dart';
 import 'package:arabic_learning/core/selection.dart';
 import 'package:arabic_learning/models/reading.dart';
 import 'package:arabic_learning/services/app_data.dart';
+import 'package:arabic_learning/services/http_client.dart';
 import 'package:arabic_learning/core/statics.dart';
 import 'package:arabic_learning/core/ai_prompt.dart';
 import 'package:arabic_learning/theme/tokens.dart' show AppBreakpoints, AppMotion, AppSemanticColors;
@@ -710,7 +711,7 @@ class _QuestionConfigPage extends State<QuestionConfigPage> {
     switch (qconfig.sourceType) {
       case 1 : {
         String prompt = buildPrompt(qc: qconfig, useSafe: true);
-        final Dio dio = Dio();
+        final Dio dio = createDio();
         final Options baseopt = Options(
           headers: {
             "Authorization": "Bearer ${apiKeyEditController.text}",

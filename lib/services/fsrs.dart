@@ -17,6 +17,9 @@ class FSRS {
 
   /// [config] 是否已加载。初始化前调用下面基于卡片的方法会安全返回 0。
   bool _inited = false;
+
+  /// [config] 是否已加载（未加载时读取 [config] 会抛异常，调用方需先判断）。
+  bool get inited => _inited;
   
   final Logger logger = Logger("FSRS");
   // index != cardId; cardId = wordId = the index of word in global.wordData[words]

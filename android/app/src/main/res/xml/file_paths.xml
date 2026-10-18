@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- FileProvider 可分享的路径白名单。
+     更新 APK 下载到 getApplicationSupportDirectory()，在 Android 上解析为
+     Context.getFilesDir()（即 files/），因此只需声明 files-path。
+     原先声明的 root-path（path="."，等价于 /）已移除：白名单整个根目录
+     会让任意可读文件都能通过该 provider 分享给系统安装器，权限过大。 -->
+<paths>
+    <files-path name="apk_files" path="." />
+</paths>

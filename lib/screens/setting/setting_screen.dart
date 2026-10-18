@@ -3,6 +3,10 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import 'package:arabic_learning/package_replacement/fake_dart_io.dart' if (dart.library.io) 'dart:io' as io;
+import 'package:arabic_learning/core/statics.dart' show StaticsVar;
+import 'package:arabic_learning/core/version.dart' show versionIntToString;
+
 import 'package:arabic_learning/widgets/kit.dart' show Button, SettingItem, SettingRedirctButton, SettingRow;
 import 'package:arabic_learning/widgets/overlays.dart' show alart, showSnackBar;
 import 'package:arabic_learning/core/extensions.dart';
@@ -27,6 +31,8 @@ import 'package:arabic_learning/screens/setting/synonym_page.dart'
     show SynonymPage;
 import 'package:arabic_learning/screens/learning/fsrs_screens.dart'
     show ForeFSRSSettingPage;
+import 'package:arabic_learning/services/update_service.dart' show UpdateService, UpdateStage;
+import 'package:arabic_learning/widgets/update_sheet.dart' show showUpdateSheet;
 
 class SettingPage extends StatefulWidget {
   const SettingPage({super.key});
@@ -136,6 +142,29 @@ class _SettingPage extends State<SettingPage> {
                             AppData().config = AppData().config.copyWith(
                               regular: AppData().config.regular.copyWith(
                                 dynamicColor: value,
+                              ),
+                            );
+                            context.read<Global>().updateSetting();
+                          },
+                  ),
+                ),
+                SettingRow(
+                  leading: "使用 DoH 解析域名",
+                  icon: Icons.dns,
+                  note: kIsWeb
+                      ? "网页版由浏览器决定域名解析，不支持 DoH"
+                      : "通过 HTTPS 加密解析域名（DNS over HTTPS），可绕过部分网络的域名劫持或污染；DoH 不可用时自动回退到系统 DNS，开启后网络请求可能略有延迟",
+                  end: Switch(
+                    value: appData.config.regular.useDoh,
+                    onChanged: kIsWeb
+                        ? null
+                        : (value) {
+                            context.read<Global>().uiLogger.info(
+                              "更新 DoH 设置: $value",
+                            );
+                            AppData().config = AppData().config.copyWith(
+                              regular: AppData().config.regular.copyWith(
+                                useDoh: value,
                               ),
                             );
                             context.read<Global>().updateSetting();
@@ -310,6 +339,52 @@ class _SettingPage extends State<SettingPage> {
                 if(!kIsWeb) SettingRedirctButton(title: "下载神经网络文本转语音模型", icon: Icons.model_training, target: ModelDownload())
               ],
             ),
+            if (!kIsWeb && io.Platform.isAndroid)
+              ListenableBuilder(
+                listenable: UpdateService(),
+                builder: (context, child) => SettingItem(
+                  title: "软件更新",
+                  children: [
+                    SettingRow(
+                      leading: "自动检查更新",
+                      icon: Icons.system_update,
+                      note: "启动时在后台检查是否有新版本",
+                      end: Switch(
+                        value: appData.config.regular.autoCheckUpdate,
+                        onChanged: (value) {
+                          context.read<Global>().uiLogger.info(
+                            "更新自动检查更新设置: $value",
+                          );
+                          AppData().config = AppData().config.copyWith(
+                            regular: AppData().config.regular.copyWith(
+                              autoCheckUpdate: value,
+                            ),
+                          );
+                          context.read<Global>().updateSetting();
+                        },
+                      ),
+                    ),
+                    SettingRow(
+                      leading: "当前版本",
+                      icon: Icons.info_outline,
+                      end: Text(versionIntToString(StaticsVar.appVersion)),
+                    ),
+                    const _CheckUpdateRow(),
+                    if (appData.config.regular.skippedVersion != 0)
+                      SettingRow(
+                        leading:
+                            "已跳过 ${versionIntToString(appData.config.regular.skippedVersion)}",
+                        icon: Icons.visibility_off,
+                        end: TextButton(
+                          onPressed: () {
+                            UpdateService().unskipVersion();
+                          },
+                          child: const Text("恢复提示"),
+                        ),
+                      ),
+                  ],
+                ),
+              ),
             SettingItem(
               title: "关于",
               children: [
@@ -355,6 +430,53 @@ class _SettingPage extends State<SettingPage> {
           ],
         );
       },
+    );
+  }
+}
+
+/// 「检查更新」行：手动触发检查，命中新版本时弹出更新提示。
+class _CheckUpdateRow extends StatefulWidget {
+  const _CheckUpdateRow();
+
+  @override
+  State<_CheckUpdateRow> createState() => _CheckUpdateRowState();
+}
+
+class _CheckUpdateRowState extends State<_CheckUpdateRow> {
+  bool _checking = false;
+
+  Future<void> _check() async {
+    if (_checking) return;
+    setState(() => _checking = true);
+    final UpdateService update = UpdateService();
+    await update.check(manual: true);
+    if (!mounted) return;
+    setState(() => _checking = false);
+    if (update.hasPendingUpdate) {
+      await showUpdateSheet(context);
+    } else if (update.stage == UpdateStage.error) {
+      showSnackBar(context, "检查更新失败，请检查网络后重试");
+    } else {
+      showSnackBar(context, "已是最新版本");
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: _checking ? null : _check,
+      child: SettingRow(
+        leading: "检查更新",
+        icon: Icons.refresh,
+        note: "手动检查是否有新版本",
+        end: _checking
+            ? const SizedBox(
+                width: 20,
+                height: 20,
+                child: CircularProgressIndicator(strokeWidth: 2),
+              )
+            : const Icon(Icons.chevron_right),
+      ),
     );
   }
 }

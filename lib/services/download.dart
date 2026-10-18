@@ -3,6 +3,7 @@
 
 import 'package:archive/archive.dart';
 import 'package:dio/dio.dart';
+import 'package:arabic_learning/services/http_client.dart';
 import 'package:arabic_learning/package_replacement/fake_dart_io.dart' if (dart.library.io) 'dart:io' as io;
 
 /// 下载文件到指定的目录
@@ -13,7 +14,7 @@ import 'package:arabic_learning/package_replacement/fake_dart_io.dart' if (dart.
 /// 
 /// [onDownloading] :下载进程中的回调，传入两个参数(int count, int total)，可用于进度展示
 Future<void> downloadFile(String url, String savePath, {ProgressCallback? onDownloading}) async {
-  final dio = Dio();
+  final dio = createDio();
   await dio.download(
     url,
     savePath,

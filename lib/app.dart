@@ -13,6 +13,8 @@ import 'package:arabic_learning/screens/test/test_screen.dart' show TestPage;
 import 'package:arabic_learning/package_replacement/fake_dart_io.dart' if (dart.library.io) 'dart:io' as io;
 import 'package:arabic_learning/services/app_data.dart' show AppData;
 import 'package:arabic_learning/services/global_state.dart' show Global;
+import 'package:arabic_learning/services/update_service.dart' show UpdateService;
+import 'package:arabic_learning/widgets/update_sheet.dart' show showUpdateSheet;
 import 'package:arabic_learning/theme/tokens.dart' show AppBreakpoints, AppMotion;
 import 'package:arabic_learning/widgets/feedback.dart' show LoadingIndicator;
 import 'package:arabic_learning/widgets/kit.dart';
@@ -111,6 +113,7 @@ const List<_NavItem> _navItems = [
 
 class _MyHomePageState extends State<MyHomePage> {
   final PageController _pageController = PageController(initialPage: 0);
+  bool _startupPromptsScheduled = false;
 
 
   // 构建桌面端布局（侧边导航）
@@ -215,6 +218,59 @@ class _MyHomePageState extends State<MyHomePage> {
     super.dispose();
   }
 
+  /// 启动提示调度：先自动检查更新（仅 Android 且开关开启），命中新版本时弹出
+  /// 底部更新提示；用户处理完后再顺延展示「更新日志」，避免两个底部弹窗叠加。
+  void _scheduleStartupPrompts(Global global) {
+    if (_startupPromptsScheduled) return;
+    _startupPromptsScheduled = true;
+    final bool needChangeLog = global.updateLogRequire;
+    if (needChangeLog) {
+      global.updateLogRequire = false;
+    }
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      if (!mounted) return;
+      if (!kIsWeb &&
+          io.Platform.isAndroid &&
+          AppData().config.regular.autoCheckUpdate) {
+        final UpdateService update = UpdateService();
+        await update.check();
+        if (!mounted) return;
+        if (update.shouldPromptOnStartup) {
+          context.read<Global>().uiLogger.info("启动检查发现新版本，弹出更新提示");
+          await showUpdateSheet(context);
+        }
+      }
+      if (!mounted || !needChangeLog) return;
+      final String changeLog = await rootBundle.loadString('CHANGELOG.md');
+      if (!mounted) return;
+      await showModalBottomSheet(
+        context: context,
+        shape: RoundedSuperellipseBorder(side: BorderSide(width: 1.0, color: Theme.of(context).colorScheme.onSurface), borderRadius: StaticsVar.br),
+        enableDrag: true,
+        isDismissible: false,
+        isScrollControlled: true,
+        builder: (context) {
+          context.read<Global>().uiLogger.info("构建更新日志通知");
+          return Column(
+            children: [
+              TextContainer(text: "更新内容 软件版本: ${StaticsVar.appVersion.zfill(6)}"),
+              SizedBox(
+                height: MediaQuery.of(context).size.height * 0.8,
+                child: Markdown(data: changeLog)
+              ),
+              Button(
+                onPressed: () {
+                  Navigator.pop(context);
+                },
+                child: Text("知道了")
+              )
+            ],
+          );
+        },
+      );
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     context.read<Global>().uiLogger.fine("构建 MyHomePage");
@@ -232,41 +288,8 @@ class _MyHomePageState extends State<MyHomePage> {
         ?.requestNotificationsPermission();
     }
 
-    // 更新日志通知
-    if(global.updateLogRequire) {
-      context.read<Global>().uiLogger.info("预定更新日志通知");
-      global.updateLogRequire = false;
-      Future.delayed(Duration(seconds: 1), () async {
-        late final String changeLog;
-        changeLog = await rootBundle.loadString('CHANGELOG.md');
-        if(!context.mounted) return;
-        showModalBottomSheet(
-          context: context,
-          shape: RoundedSuperellipseBorder(side: BorderSide(width: 1.0, color: Theme.of(context).colorScheme.onSurface), borderRadius: StaticsVar.br),
-          enableDrag: true,
-          isDismissible: false,
-          isScrollControlled: true,
-          builder: (context) {
-            context.read<Global>().uiLogger.info("构建更新日志通知");
-            return Column(
-              children: [
-                TextContainer(text: "更新内容 软件版本: ${StaticsVar.appVersion.zfill(6)}"),
-                SizedBox(
-                  height: MediaQuery.of(context).size.height * 0.8,
-                  child: Markdown(data: changeLog)
-                ),
-                Button(
-                  onPressed: () {
-                    Navigator.pop(context);
-                  }, 
-                  child: Text("知道了")
-                )
-              ],
-            );
-          },
-        );
-      });
-    }
+    // 启动提示：自动检查更新（Android）优先，其次顺延更新日志。
+    _scheduleStartupPrompts(global);
 
     return Scaffold(
       appBar: AppBar(
