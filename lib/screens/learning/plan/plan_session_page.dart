@@ -370,12 +370,12 @@ class _PlanSessionPageState extends State<PlanSessionPage> {
                   ),
                 ),
                 SizedBox(
-                  width: clampDouble(mediaQuery.size.width * 0.22, 72.0, 160.0),
+                  width: clampDouble(mediaQuery.size.width * 0.1, 72.0, 160.0),
                   child: FittedBox(
                     fit: BoxFit.scaleDown,
-                    alignment: Alignment.centerRight,
+                    alignment: Alignment.center,
                     child: Text(
-                      "${total - index - 1} · 第 $_groupNo/$_groupTotal 组",
+                      "${total - index - 1}·第 $_groupNo/$_groupTotal 组",
                       maxLines: 1,
                       softWrap: false,
                       style: Theme.of(context).textTheme.bodySmall,
