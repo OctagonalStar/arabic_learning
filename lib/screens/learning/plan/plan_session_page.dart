@@ -83,6 +83,13 @@ class _PlanSessionPageState extends State<PlanSessionPage> {
   bool _finished = false;
   PlanStatus? _status;
 
+  /// 进入页面时的当日组号 / 当日总组数（会话进行中保持不变）。
+  int _groupNo = 1;
+  int _groupTotal = 1;
+
+  /// 记录完成后预取的下一组单词；为空表示无法继续（含周期完成）。
+  List<WordItem> _nextWords = const <WordItem>[];
+
   /// 记录进度只会执行一次：完成页 / 返回 / 系统返回共用同一个 Future。
   Future<int>? _recording;
   bool _startingNext = false;
@@ -121,6 +128,15 @@ class _PlanSessionPageState extends State<PlanSessionPage> {
         .where((WordItem word) => fsrs.isContained(word.id))
         .map((WordItem word) => word.id)
         .toSet();
+
+    // 组号取自进入页面时的当日快照：`doneWords ~/ groupSize + 1`，
+    // 并 clamp 到当日总组数，避免最后一组不足 groupSize 时越界。
+    final PlanStatus status = evaluateNow();
+    _status = status;
+    final int size = status.groupSize < 1 ? 1 : status.groupSize;
+    _groupTotal = status.groupsToday < 1 ? 1 : status.groupsToday;
+    final int groupNo = status.doneWords ~/ size + 1;
+    _groupNo = groupNo < 1 ? 1 : (groupNo > _groupTotal ? _groupTotal : groupNo);
   }
 
   @override
@@ -209,15 +225,20 @@ class _PlanSessionPageState extends State<PlanSessionPage> {
     await PlanStore().recordProgress(delta);
     global.updateLearningStreak();
     final PlanStatus status = evaluateNow();
+    // 预取下一组：仅在周期未完成时取词，供完成页「继续第 N 组」判断可用性。
+    final List<WordItem> next = status.cycleComplete
+        ? const <WordItem>[]
+        : nextGroupWords();
     if (mounted) {
       setState(() {
         _status = status;
+        _nextWords = next;
       });
     }
     return delta;
   }
 
-  /// 「再来一组」：记录已完成后取下一组；周期结束 / 无未学词时不跳转。
+  /// 「继续第 N 组」：记录已完成后取下一组；周期结束 / 无未学词时不跳转。
   Future<void> _startNextGroup() async {
     if (_startingNext) return;
     _startingNext = true;
@@ -229,7 +250,9 @@ class _PlanSessionPageState extends State<PlanSessionPage> {
       _startingNext = false;
       return;
     }
-    final List<WordItem> next = nextGroupWords();
+    final List<WordItem> next = _nextWords.isNotEmpty
+        ? _nextWords
+        : nextGroupWords();
     if (next.isEmpty) {
       _startingNext = false;
       showSnackBar(context, "本周期已无未学单词");
@@ -347,10 +370,16 @@ class _PlanSessionPageState extends State<PlanSessionPage> {
                   ),
                 ),
                 SizedBox(
-                  width: mediaQuery.size.width * 0.05,
+                  width: clampDouble(mediaQuery.size.width * 0.22, 72.0, 160.0),
                   child: FittedBox(
                     fit: BoxFit.scaleDown,
-                    child: Text("${total - index - 1}"),
+                    alignment: Alignment.centerRight,
+                    child: Text(
+                      "${total - index - 1} · 第 $_groupNo/$_groupTotal 组",
+                      maxLines: 1,
+                      softWrap: false,
+                      style: Theme.of(context).textTheme.bodySmall,
+                    ),
                   ),
                 ),
               ],
@@ -592,7 +621,7 @@ class _PlanSessionPageState extends State<PlanSessionPage> {
     return Center(child: TextContainer(text: "真奇怪，你不应该到这里来的，有时间给开发者反馈下吧..."));
   }
 
-  /// 完成页：本组统计 + 今日最低量进度 + 再来一组 / 返回。
+  /// 完成页：本组统计 + 今日最低量进度 + 返回计划（主）/ 继续下一组（次）。
   Widget _buildConclusion(BuildContext context) {
     final ColorScheme scheme = Theme.of(context).colorScheme;
     final TextTheme textTheme = Theme.of(context).textTheme;
@@ -609,6 +638,10 @@ class _PlanSessionPageState extends State<PlanSessionPage> {
     final String timeText = seconds >= 60
         ? "${seconds ~/ 60} 分 ${seconds % 60} 秒"
         : "$seconds 秒";
+    // 下一组组号：记录后的 doneWords 已包含本组新增量。
+    final int groupSize = status?.groupSize ?? 0;
+    final int size = groupSize < 1 ? 1 : groupSize;
+    final int nextGroupNo = doneWords ~/ size + 1;
 
     return LayoutBuilder(
       builder: (BuildContext context, BoxConstraints constraints) {
@@ -744,18 +777,20 @@ class _PlanSessionPageState extends State<PlanSessionPage> {
                   const SizedBox(height: AppSpacing.md),
                   Button(
                     size: Size(buttonWidth, buttonHeight),
-                    onPressed: cycleComplete || _startingNext
-                        ? null
-                        : () => unawaited(_startNextGroup()),
-                    icon: const Icon(Icons.refresh),
-                    child: const Text("再来一组"),
+                    onPressed: () => unawaited(_exitSession()),
+                    icon: const Icon(Icons.arrow_back),
+                    child: const Text("返回计划"),
                   ),
                   const SizedBox(height: AppSpacing.sm),
                   Button(
                     size: Size(buttonWidth, buttonHeight),
-                    onPressed: () => unawaited(_exitSession()),
-                    icon: const Icon(Icons.arrow_back),
-                    child: const Text("返回"),
+                    onPressed:
+                        cycleComplete || _nextWords.isEmpty || _startingNext
+                        ? null
+                        : () => unawaited(_startNextGroup()),
+                    icon: const Icon(Icons.play_arrow),
+                    backgroundColor: scheme.secondaryContainer,
+                    child: Text("继续第 $nextGroupNo 组"),
                   ),
                 ],
               ),

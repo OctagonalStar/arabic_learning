@@ -9,13 +9,14 @@ import 'package:arabic_learning/services/app_data.dart' show AppData;
 import 'package:arabic_learning/services/fsrs.dart' show FSRS, FSRSConfig;
 import 'package:arabic_learning/services/global_state.dart' show Global;
 import 'package:arabic_learning/services/plan_scheduler.dart'
-    show dayKeyOf, evaluateNow;
+    show PlanStatus, dayKeyOf, evaluateNow;
 import 'package:arabic_learning/services/plan_store.dart' show PlanStore;
 import 'package:arabic_learning/services/search.dart' show BKSearch;
 import 'package:arabic_learning/widgets/questions.dart'
     show ChoiceQuestions, WordCardQuestion;
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:fsrs/fsrs.dart' show Rating;
 import 'package:provider/provider.dart';
 
 import '../helpers/test_env.dart';
@@ -52,10 +53,13 @@ DictData _dict([int count = 6]) {
   );
 }
 
-StudyPlan _plan({List<int> sections = const <int>[0, 2]}) {
+StudyPlan _plan({
+  List<int> sections = const <int>[0, 2],
+  DateTime? deadline,
+}) {
   return StudyPlan(
     id: 'plan',
-    deadline: DateTime.now().add(const Duration(days: 30)),
+    deadline: deadline ?? DateTime.now().add(const Duration(days: 30)),
     scope: const <PlanScopeRef>[
       PlanScopeRef(sourceFile: 's1.json', className: 'A'),
     ],
@@ -203,6 +207,7 @@ void main() {
 
       // section-major：先两张单词卡（word0、word1）
       expect(find.byType(WordCardQuestion), findsOneWidget);
+      expect(find.textContaining('第 1/1 组'), findsOneWidget);
       await tester.tap(find.text('下一题'));
       await tester.pumpAndSettle();
       expect(find.byType(WordCardQuestion), findsOneWidget);
@@ -226,7 +231,64 @@ void main() {
       expect(find.text('学习完成'), findsOneWidget);
       expect(find.text('今日最低目标已完成'), findsOneWidget);
       expect(find.text('2 / 2'), findsOneWidget);
+      expect(find.text('返回计划'), findsOneWidget);
+      expect(find.text('继续第 2 组'), findsOneWidget);
       expect(PlanStore().state.today?.doneWords, 2);
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('会话页显示当日组号', (WidgetTester tester) async {
+      // 4 个未学词、截止明天、每组 2 词 → 今日最低量 4 词 = 2 组。
+      AppData().wordData = _dict(4);
+      BKSearch.rebuild(AppData().wordData.words);
+      await PlanStore().setPlan(
+        _plan(deadline: DateTime.now().add(const Duration(days: 1))),
+      );
+      final PlanStatus status = evaluateNow();
+      expect(status.minWords, 4);
+      expect(status.groupsToday, 2);
+
+      await _pumpSession(
+        tester,
+        words: _words(4).take(2).toList(),
+        chain: const PlanChain(sections: <int>[2]),
+      );
+
+      expect(find.textContaining('第 1/2 组'), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('周期完成时「继续下一组」禁用', (WidgetTester tester) async {
+      // 4 词课程中先预学后 3 个，只剩 word0 未学：答完即周期完成。
+      AppData().wordData = _dict(4);
+      BKSearch.rebuild(AppData().wordData.words);
+      for (int id = 1; id < 4; id++) {
+        FSRS().produceCard(id, forceRate: Rating.good);
+      }
+      await PlanStore().setPlan(_plan(sections: const <int>[2]));
+      expect(evaluateNow().remainingWords, 1);
+
+      await _pumpSession(
+        tester,
+        words: <WordItem>[_words().first],
+        chain: const PlanChain(sections: <int>[2]),
+      );
+
+      await tester.tap(find.text('释义0'));
+      await _revealNext(tester);
+      await tester.tap(find.text('完成'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('学习完成'), findsOneWidget);
+      expect(find.text('本周期已完成，请回到计划页重新配置'), findsOneWidget);
+      expect(find.text('返回计划'), findsOneWidget);
+      final ElevatedButton continueButton = tester.widget<ElevatedButton>(
+        find.ancestor(
+          of: find.text('继续第 1 组'),
+          matching: find.byType(ElevatedButton),
+        ),
+      );
+      expect(continueButton.onPressed, isNull);
       expect(tester.takeException(), isNull);
     });
 
@@ -245,8 +307,8 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('学习完成'), findsOneWidget);
-      expect(find.text('再来一组'), findsOneWidget);
-      expect(find.text('返回'), findsOneWidget);
+      expect(find.text('返回计划'), findsOneWidget);
+      expect(find.text('继续第 1 组'), findsOneWidget);
       expect(tester.takeException(), isNull);
     });
   });
