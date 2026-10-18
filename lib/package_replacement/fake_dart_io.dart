@@ -7,6 +7,8 @@ class File {
   }
   bool existsSync() {return false;}
 
+  int lengthSync() {return 0;}
+
   void deleteSync() {}
 
   Future<void> create({required bool recursive}) async {}

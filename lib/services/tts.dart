@@ -3,7 +3,7 @@
 
 import 'package:arabic_learning/core/statics.dart';
 import 'package:arabic_learning/services/app_data.dart';
-import 'package:dio/dio.dart';
+import 'package:arabic_learning/services/http_client.dart';
 import 'package:flutter_tts/flutter_tts.dart';
 import 'package:just_audio/just_audio.dart';
 import 'package:path_provider/path_provider.dart' as path_provider;
@@ -27,7 +27,7 @@ Future<void> playTextToSpeech(String text, {double? speed}) async {
   // 1: TextReadTTS
   } else if (AppData().config.audio.audioSource == 1) {
     try {
-      final response = await Dio().getUri(Uri.parse("https://textreadtts.com/tts/convert?accessKey=FREE&language=arabic&speaker=speaker2&text=$text")).timeout(Duration(seconds: 8), onTimeout: () => throw Exception("请求超时"));
+      final response = await createDio().getUri(Uri.parse("https://textreadtts.com/tts/convert?accessKey=FREE&language=arabic&speaker=speaker2&text=$text")).timeout(Duration(seconds: 8), onTimeout: () => throw Exception("请求超时"));
       if (response.statusCode == 200) {
         if(response.data["code"] == 1) {
           throw Exception("API音源请求失败:\n错误信息:文本长度超过API限制");

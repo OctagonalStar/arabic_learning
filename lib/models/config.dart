@@ -203,6 +203,15 @@ class RegularConfig {
   /// 是否隐藏Web端`下载App`按钮
   final bool hideAppDownloadButton;
 
+  /// 是否自动检查更新。
+  final bool autoCheckUpdate;
+
+  /// 已跳过的版本号（int 编码，见 `core/version.dart`），为 0 表示不跳过任何版本。
+  final int skippedVersion;
+
+  /// 是否使用 DoH（DNS over HTTPS）解析域名；Web 端无自定义 DNS 能力，忽略此设置。
+  final bool useDoh;
+
   /// [themeMode] 取值：跟随系统。
   static const int themeModeSystem = 0;
 
@@ -218,7 +227,10 @@ class RegularConfig {
     this.darkMode = false,
     this.themeMode = themeModeSystem,
     this.dynamicColor = false,
-    this.hideAppDownloadButton = false
+    this.hideAppDownloadButton = false,
+    this.autoCheckUpdate = true,
+    this.skippedVersion = 0,
+    this.useDoh = false
   });
 
   Map<String, dynamic> toMap() {
@@ -229,6 +241,9 @@ class RegularConfig {
       "themeMode": themeMode,
       "dynamicColor": dynamicColor,
       "hideAppDownloadButton": hideAppDownloadButton,
+      "autoCheckUpdate": autoCheckUpdate,
+      "skippedVersion": skippedVersion,
+      "useDoh": useDoh,
     };
   }
 
@@ -252,7 +267,10 @@ class RegularConfig {
       darkMode: setting["darkMode"] ?? false,
       themeMode: themeMode,
       dynamicColor: setting["dynamicColor"] ?? false,
-      hideAppDownloadButton: setting["hideAppDownloadButton"] ?? false
+      hideAppDownloadButton: setting["hideAppDownloadButton"] ?? false,
+      autoCheckUpdate: setting["autoCheckUpdate"] ?? true,
+      skippedVersion: setting["skippedVersion"] ?? 0,
+      useDoh: setting["useDoh"] ?? false
     );
   }
 
@@ -263,6 +281,9 @@ class RegularConfig {
     int? themeMode,
     bool? dynamicColor,
     bool? hideAppDownloadButton,
+    bool? autoCheckUpdate,
+    int? skippedVersion,
+    bool? useDoh,
   }) {
     final int nextThemeMode = themeMode ?? this.themeMode;
     // 显式传入 themeMode 时同步旧 darkMode 字段，保证降级兼容；
@@ -282,6 +303,9 @@ class RegularConfig {
       themeMode: nextThemeMode,
       dynamicColor: dynamicColor ?? this.dynamicColor,
       hideAppDownloadButton: hideAppDownloadButton ?? this.hideAppDownloadButton,
+      autoCheckUpdate: autoCheckUpdate ?? this.autoCheckUpdate,
+      skippedVersion: skippedVersion ?? this.skippedVersion,
+      useDoh: useDoh ?? this.useDoh,
     );
   }
 }

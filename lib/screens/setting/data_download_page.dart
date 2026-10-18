@@ -11,6 +11,7 @@ import 'package:dio/dio.dart';
 
 import 'package:arabic_learning/services/global_state.dart';
 import 'package:arabic_learning/services/app_data.dart';
+import 'package:arabic_learning/services/http_client.dart';
 
 /// 线上词库来源：区块标题 + GitHub contents API 地址
 class _DictRepo {
@@ -61,7 +62,7 @@ class DownloadPage extends StatelessWidget {
 
 Future<List<Widget>> downloadList(BuildContext context) async {
   final List<Widget> sections = [];
-  Dio dio = Dio();
+  Dio dio = createDio();
   for (final _DictRepo repo in _dictRepos) {
     sections.add(await _buildRepoSection(context, dio, repo));
   }
