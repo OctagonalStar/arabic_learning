@@ -8,7 +8,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import 'package:arabic_learning/widgets/kit.dart' show Button, popSelectClasses;
-import 'package:arabic_learning/theme/tokens.dart' show AppRadius;
+import 'package:arabic_learning/theme/tokens.dart' show AppRadius, AppSpacing;
 import 'package:arabic_learning/theme/typography.dart';
 import 'package:arabic_learning/widgets/overlays.dart' show showSnackBar;
 import 'package:arabic_learning/widgets/shared.dart' show ButtonLabel;
@@ -19,6 +19,7 @@ import 'package:arabic_learning/services/push_session.dart';
 import 'package:arabic_learning/screens/learning/favorites_page.dart' show FavoritesPage;
 import 'package:arabic_learning/screens/learning/fsrs_screens.dart' show FSRSLearningPage, ForeFSRSSettingPage;
 import 'package:arabic_learning/screens/learning/learning_pages_build.dart';
+import 'package:arabic_learning/screens/learning/plan/plan_entry_card.dart' show PlanEntryCard;
 
 class LearningPage extends StatelessWidget {
   const LearningPage({super.key});
@@ -42,6 +43,12 @@ class LearningPage extends StatelessWidget {
         return Column(
           mainAxisSize: MainAxisSize.min,
           children: [
+            // 「计划学习」入口：紧凑单卡，高度按 Tab 可用高度收紧（60..72），
+            // 尽量少占用下方按钮的纵向预算。
+            const SizedBox(height: AppSpacing.xs),
+            PlanEntryCard(
+              height: clampDouble(height * 0.14, 60.0, 72.0),
+            ),
             SizedBox(height: gap),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
