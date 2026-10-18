@@ -1,5 +1,6 @@
 import 'package:arabic_learning/widgets/kit.dart' show Button, TextContainer;
 import 'package:arabic_learning/widgets/overlays.dart' show alart;
+import 'package:arabic_learning/widgets/question_chain_editor.dart' show QuestionChainListView, QuestionTypeAddMenu;
 import 'package:arabic_learning/widgets/shared.dart' show ButtonLabel;
 import 'package:arabic_learning/models/config.dart';
 import 'package:arabic_learning/services/global_state.dart';
@@ -17,9 +18,8 @@ class QuestionsSettingPage extends StatefulWidget {
 }
 
 class _QuestionsSettingPage extends State<QuestionsSettingPage> {
-  List<dynamic>? selectedTypes;
+  List<int>? selectedTypes;
   bool floatButtonFlod = true;
-  static const Map<int, String> castMap = {0: "单词卡片学习", 1: "中译阿 选择题", 2: "阿译中 选择题", 3: "中译阿 拼写题", 4: "听力题"};
 
   void _updateConfig() {
     AppData().config = AppData().config.copyWith(
@@ -34,46 +34,7 @@ class _QuestionsSettingPage extends State<QuestionsSettingPage> {
     context.read<Global>().uiLogger.info("构建 QuestionsSettingPage:$selectedTypes");
     late final QuizConfig section;
     section = AppData().config.quiz;
-    MediaQueryData mediaQuery = MediaQuery.of(context);
     selectedTypes ??= List.from(section.questionSections);
-    List<Widget> listTiles = [];
-    bool isEven = true;
-    for(int index = 0; index < selectedTypes!.length; index++) {
-      listTiles.add(
-        Container(
-          key: Key(index.toString()),
-          padding: EdgeInsets.all(8.0),
-          // margin: EdgeInsets.all(4.0),
-          decoration: BoxDecoration(
-            color: isEven ? Theme.of(context).colorScheme.primaryContainer : Theme.of(context).colorScheme.secondaryContainer,
-            borderRadius: BorderRadius.all(Radius.circular(16.0))
-          ),
-          height: mediaQuery.size.height * 0.08,
-          child: Row(
-            children: [
-              Expanded(child: Text(castMap[selectedTypes![index]] ?? "未知类型")),
-              IconButton(
-                onPressed: (){
-                  if(selectedTypes!.length == 1) {
-                    alart(context, "至少保留一项");
-                  } else {
-                    context.read<Global>().uiLogger.fine("移除题型项目: $index");
-                    setState(() {
-                      selectedTypes!.removeAt(index.toInt());
-                      _updateConfig();
-                    });
-                  }
-                }, 
-                icon: Icon(Icons.delete)
-              ),
-              SizedBox(width: mediaQuery.size.width * 0.1)
-            ],
-          ),
-        )
-      );
-      isEven = !isEven;
-    }
-    
 
     return PopScope(
       canPop: true,
@@ -86,8 +47,9 @@ class _QuestionsSettingPage extends State<QuestionsSettingPage> {
           children: [
             if(!AdaptiveScope.of(context).isWide) TextContainer(text: "长按可拖动排序", style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant), animated: true),
             Expanded(
-              child: ReorderableListView(
-                onReorderItem: (oldIndex, newIndex) {
+              child: QuestionChainListView(
+                sections: selectedTypes!,
+                onReorder: (oldIndex, newIndex) {
                   context.read<Global>().uiLogger.info("重排题型项目: $oldIndex => $newIndex");
                   setState(() {
                     if(oldIndex < newIndex) newIndex--; // 修正索引
@@ -96,7 +58,17 @@ class _QuestionsSettingPage extends State<QuestionsSettingPage> {
                     _updateConfig();
                   });
                 },
-                children: listTiles, 
+                onRemove: (index) {
+                  if(selectedTypes!.length == 1) {
+                    alart(context, "至少保留一项");
+                  } else {
+                    context.read<Global>().uiLogger.fine("移除题型项目: $index");
+                    setState(() {
+                      selectedTypes!.removeAt(index);
+                      _updateConfig();
+                    });
+                  }
+                },
               ),
             ),
             Row(
@@ -189,23 +161,16 @@ class _QuestionsSettingPage extends State<QuestionsSettingPage> {
                 mainAxisAlignment: MainAxisAlignment.end,
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  if(value > 0.3) ...List.generate(castMap.length, (i) {
-                    return Button(
-                      size: Size(70 + 150 * value, mediaQuery.size.height * 0.1 * value),
-                      shape: i == 0 ? RoundedRectangleBorder(borderRadius: BorderRadiusGeometry.vertical(top: Radius.circular(AppRadius.card))) : BeveledRectangleBorder(),
-                      onPressed: (){
-                        context.read<Global>().uiLogger.info("添加题型类型: $i");
-                        setState(() {
-                          selectedTypes!.add(i);
-                          _updateConfig();
-                        });
-                      }, 
-                      icon: Icon(Icons.add),
-                      // 依主题 labelLarge(14)；ButtonLabel 默认 scaleDown 只缩不放，
-                      // 各展开项字号不随文案长度变化。
-                      child: ButtonLabel(child: Text("添加 ${castMap[i]}")),
-                    );
-                  }),
+                  QuestionTypeAddMenu(
+                    expandValue: value,
+                    onAdd: (type) {
+                      context.read<Global>().uiLogger.info("添加题型类型: $type");
+                      setState(() {
+                        selectedTypes!.add(type);
+                        _updateConfig();
+                      });
+                    },
+                  ),
                   Button(
                     size: Size(70 + 150 * value, 70),
                     backgroundColor: Theme.of(context).colorScheme.primaryContainer,

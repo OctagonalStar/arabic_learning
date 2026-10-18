@@ -17,6 +17,7 @@ import 'package:arabic_learning/models/synonym.dart' show SynonymData;
 import 'package:arabic_learning/services/favorites.dart';
 import 'package:arabic_learning/services/fsrs.dart';
 import 'package:arabic_learning/services/memberships.dart';
+import 'package:arabic_learning/services/plan_store.dart';
 import 'package:arabic_learning/services/push_session.dart';
 import 'package:arabic_learning/services/search.dart';
 import 'package:arabic_learning/services/synonyms.dart';
@@ -97,6 +98,7 @@ class AppData {
     }
     SynonymStore().init();
     FavoriteStore().init(); // 收藏数据（键为词条 id）
+    await PlanStore().init(); // 计划学习（配置 + 当日快照）
     inited = true;
   }
 
@@ -105,6 +107,7 @@ class AppData {
       await storage.setString("readingData", jsonEncode({"units": []}));
       await storage.setString("synonymData", jsonEncode(const SynonymData().toMap()));
       await storage.setString("favoriteData", jsonEncode(FavoriteStore().toMap()));
+      await storage.setString("planData", jsonEncode(PlanStore.defaultData()));
       wordData = DictData(words: [], classes: []);
       WordMembershipIndex.instance.rebuild(wordData.classes);
       logger.info("配置表初始化完成");

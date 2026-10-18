@@ -12,6 +12,8 @@ import 'package:arabic_learning/services/app_data.dart' show AppData;
 import 'package:arabic_learning/services/favorites.dart' show FavoriteStore;
 import 'package:arabic_learning/services/fsrs.dart' show FSRS;
 import 'package:arabic_learning/services/memberships.dart' show WordMembershipIndex;
+import 'package:arabic_learning/services/plan_scheduler.dart' show planBlocksStreak;
+import 'package:arabic_learning/services/plan_store.dart' show PlanStore;
 import 'package:arabic_learning/services/search.dart' show BKSearch;
 import 'package:arabic_learning/services/synonyms.dart' show SynonymStore;
 import 'package:arabic_learning/theme/app_theme.dart' show buildTheme;
@@ -137,7 +139,7 @@ class Global with ChangeNotifier {
   ///
   /// 用于备份恢复/WebDAV 同步之后，避免继续使用恢复前的旧内存数据
   /// （旧实现恢复后只重建了 Config）。正常启动不调用此方法，避免重复建树。
-  void reloadStoredData() {
+  Future<void> reloadStoredData() async {
     logger.info("重新加载本地数据");
     try {
       final String? wordRaw = AppData().storage.getString("wordData");
@@ -157,6 +159,8 @@ class Global with ChangeNotifier {
 
       SynonymStore().reload();
       FavoriteStore().reload();
+      FSRS().init(); // 备份恢复后需按新 fsrsData 重建配置（补齐既有缺口）
+      await PlanStore().reload();
       notifyListeners();
     } catch (e) {
       logger.severe("重新加载本地词库/阅读数据失败: $e");
@@ -231,6 +235,8 @@ class Global with ChangeNotifier {
   }
   
   void updateLearningStreak(){
+    // 计划学习「连胜门禁」：当日最低量未达标时不记录连胜（其余逻辑保持不变）。
+    if (planBlocksStreak()) return;
     final int nowDate = daysSinceEpoch();
     if (nowDate == AppData().config.learning.lastDate) return;
     logger.info("保存学习进度中");
