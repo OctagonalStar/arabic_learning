@@ -2,6 +2,10 @@
 //
 // 状态判断全部来自 `evaluateNow()`（有写盘副作用），因此只在 initState、
 // 从子页面返回以及按钮回调里调用，绝不在 build 内调用。
+//
+// 界面统一使用 Material 原生组件（Card / FilledButton / Chip / ListTile /
+// Divider / LinearProgressIndicator），本文件不再定义通用容器或进度条类，
+// 只保留按状态组织布局的方法。
 
 import 'package:flutter/material.dart';
 
@@ -17,13 +21,15 @@ import 'package:arabic_learning/services/plan_scheduler.dart';
 import 'package:arabic_learning/services/plan_store.dart';
 import 'package:arabic_learning/theme/tokens.dart';
 import 'package:arabic_learning/theme/typography.dart' show withoutColor;
-import 'package:arabic_learning/widgets/kit.dart' show Button;
 import 'package:arabic_learning/widgets/overlays.dart' show showSnackBar;
+import 'package:arabic_learning/widgets/question_chain_editor.dart'
+    show kQuestionTypeLabels;
 
 /// 「计划学习」首页。
 ///
 /// 无计划 / 复习系统未启用 / 范围失效 / 逾期 / 周期完成 / 进行中六种状态
-/// 各自对应一块主卡片，宽屏内容居中限宽 720。
+/// 各自对应一块主卡片；进行中还会继续展开今日任务、学习内容与计划设置，
+/// 宽屏内容居中限宽 720，窄屏单列滚动。
 class PlanHomePage extends StatefulWidget {
   const PlanHomePage({super.key});
 
@@ -219,7 +225,7 @@ class _PlanHomePageState extends State<PlanHomePage> {
       case _PlanView.overdue:
         return _buildOverdue(context, plan!);
       case _PlanView.complete:
-        return _buildComplete(context);
+        return _buildComplete(context, plan!);
       case _PlanView.active:
         return _buildActive(context, plan!);
     }
@@ -232,32 +238,43 @@ class _PlanHomePageState extends State<PlanHomePage> {
   Widget _buildEmpty(BuildContext context) {
     final ThemeData theme = Theme.of(context);
     final ColorScheme scheme = theme.colorScheme;
-    return _PlanPanel(
+    return _panel(
+      context,
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: <Widget>[
-          Row(
-            children: <Widget>[
-              _RoundIcon(icon: Icons.event_note_outlined, color: scheme.primary),
-              const SizedBox(width: AppSpacing.sm),
-              Expanded(
-                child: Text(
-                  "还没有学习计划",
-                  style: theme.textTheme.titleLarge?.copyWith(
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ),
-            ],
+          _headline(
+            context,
+            icon: Icons.event_note_outlined,
+            color: scheme.primary,
+            title: "还没有学习计划",
           ),
-          const SizedBox(height: AppSpacing.sm),
-          _InfoLine(
-            icon: Icons.calendar_month_outlined,
-            text: "设定截止日期，应用会按剩余天数拆出每天的最低学习量。",
+          const SizedBox(height: AppSpacing.xs),
+          Text(
+            "设定截止日期与学习范围后，应用会把范围内的未学单词拆成每天的最低学习量。",
+            style: theme.textTheme.bodyMedium?.copyWith(
+              color: scheme.onSurfaceVariant,
+              height: 1.45,
+            ),
           ),
-          _InfoLine(
+          const SizedBox(height: AppSpacing.xs),
+          _infoTile(
+            context,
+            icon: Icons.flag_outlined,
+            title: "设定截止日期",
+            subtitle: "按剩余天数计算每天至少要学多少词。",
+          ),
+          _infoTile(
+            context,
             icon: Icons.auto_stories_outlined,
-            text: "进度以复习系统的已学记录为准，学完的单词会同时进入复习。",
+            title: "选择学习范围",
+            subtitle: "课程按选择顺序依次学习，也可以打乱课程顺序。",
+          ),
+          _infoTile(
+            context,
+            icon: Icons.history_edu_outlined,
+            title: "进度取自复习系统",
+            subtitle: "学完的单词会进入复习，计划只看这部分已学记录。",
           ),
           const SizedBox(height: AppSpacing.md),
           _cta(
@@ -278,30 +295,23 @@ class _PlanHomePageState extends State<PlanHomePage> {
     final ThemeData theme = Theme.of(context);
     final ColorScheme scheme = theme.colorScheme;
     final Color warning = context.semanticColors.warning;
-    return _PlanPanel(
+    return _panel(
+      context,
       color: Color.alphaBlend(
         warning.withValues(alpha: 0.08),
         scheme.surfaceContainerLow,
       ),
       borderColor: warning.withValues(alpha: 0.38),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: <Widget>[
-          Row(
-            children: <Widget>[
-              _RoundIcon(icon: Icons.history_edu_outlined, color: warning),
-              const SizedBox(width: AppSpacing.sm),
-              Expanded(
-                child: Text(
-                  "计划学习需要复习系统",
-                  style: theme.textTheme.titleLarge?.copyWith(
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ),
-            ],
+          _headline(
+            context,
+            icon: Icons.history_edu_outlined,
+            color: warning,
+            title: "计划学习需要复习系统",
           ),
-          const SizedBox(height: AppSpacing.sm),
+          const SizedBox(height: AppSpacing.xs),
           Text(
             "计划进度以复习系统的已学记录为准。停用复习系统后，学习记录不会进入计划，"
             "进度也无法计算。",
@@ -329,42 +339,42 @@ class _PlanHomePageState extends State<PlanHomePage> {
     final ThemeData theme = Theme.of(context);
     final ColorScheme scheme = theme.colorScheme;
     final Color error = context.semanticColors.error;
-    return _PlanPanel(
-      borderColor: error.withValues(alpha: 0.36),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: <Widget>[
-          Row(
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: <Widget>[
+        _panel(
+          context,
+          borderColor: error.withValues(alpha: 0.36),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: <Widget>[
-              _RoundIcon(icon: Icons.link_off_rounded, color: error),
-              const SizedBox(width: AppSpacing.sm),
-              Expanded(
-                child: Text(
-                  "学习范围已失效",
-                  style: theme.textTheme.titleLarge?.copyWith(
-                    fontWeight: FontWeight.bold,
-                  ),
+              _headline(
+                context,
+                icon: Icons.link_off_rounded,
+                color: error,
+                title: "学习范围已失效",
+              ),
+              const SizedBox(height: AppSpacing.xs),
+              Text(
+                "原计划中的课程已不在当前词库中，需要重新选择学习范围。"
+                "截止日期、每组数量与学习链条会保留。",
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  color: scheme.onSurfaceVariant,
+                  height: 1.45,
                 ),
+              ),
+              const SizedBox(height: AppSpacing.md),
+              _cta(
+                context,
+                label: "重新配置",
+                onPressed: () => _openConfig(initial: plan),
               ),
             ],
           ),
-          const SizedBox(height: AppSpacing.sm),
-          Text(
-            "原计划中的课程已不在当前词库中，需要重新选择学习范围。"
-            "截止日期、每组数量与学习链条会保留。",
-            style: theme.textTheme.bodyMedium?.copyWith(
-              color: scheme.onSurfaceVariant,
-              height: 1.45,
-            ),
-          ),
-          const SizedBox(height: AppSpacing.md),
-          _cta(
-            context,
-            label: "重新配置",
-            onPressed: () => _openConfig(initial: plan),
-          ),
-        ],
-      ),
+        ),
+        const SizedBox(height: AppSpacing.sm),
+        _buildSettingsCard(context, plan),
+      ],
     );
   }
 
@@ -376,71 +386,76 @@ class _PlanHomePageState extends State<PlanHomePage> {
     final ThemeData theme = Theme.of(context);
     final ColorScheme scheme = theme.colorScheme;
     final Color warning = context.semanticColors.warning;
-    return _PlanPanel(
-      color: Color.alphaBlend(
-        warning.withValues(alpha: 0.10),
-        scheme.surfaceContainerLow,
-      ),
-      borderColor: warning.withValues(alpha: 0.45),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: <Widget>[
-          Row(
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: <Widget>[
+        _panel(
+          context,
+          color: Color.alphaBlend(
+            warning.withValues(alpha: 0.10),
+            scheme.surfaceContainerLow,
+          ),
+          borderColor: warning.withValues(alpha: 0.45),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: <Widget>[
-              _RoundIcon(icon: Icons.warning_amber_rounded, color: warning),
-              const SizedBox(width: AppSpacing.sm),
+              _headline(
+                context,
+                icon: Icons.warning_amber_rounded,
+                color: warning,
+                title: "已逾期",
+                titleColor: warning,
+              ),
+              const SizedBox(height: AppSpacing.xs),
               Text(
-                "已逾期",
-                style: theme.textTheme.titleLarge?.copyWith(
-                  fontWeight: FontWeight.bold,
-                  color: warning,
+                "已逾期，仍有 ${_status.remainingWords} 词未学",
+                style: theme.textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              const SizedBox(height: AppSpacing.xxs),
+              Text(
+                "截止日期为 ${planFullDate(plan.deadline)}。可以延期，或重新配置范围与节奏。",
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  color: scheme.onSurfaceVariant,
+                  height: 1.45,
+                ),
+              ),
+              const SizedBox(height: AppSpacing.md),
+              Row(
+                children: <Widget>[
+                  Expanded(
+                    child: _cta(
+                      context,
+                      label: "延期 7 天",
+                      onPressed: _askExtend,
+                    ),
+                  ),
+                  const SizedBox(width: AppSpacing.xs),
+                  Expanded(
+                    child: _cta(
+                      context,
+                      label: "重新配置",
+                      onPressed: () => _openConfig(initial: plan),
+                      tonal: true,
+                    ),
+                  ),
+                ],
+              ),
+              Align(
+                alignment: Alignment.centerLeft,
+                child: TextButton.icon(
+                  onPressed: _starting ? null : _startGroup,
+                  icon: const Icon(Icons.play_arrow_rounded, size: 18.0),
+                  label: Text("仍要学习（剩 ${_status.remainingWords} 词）"),
                 ),
               ),
             ],
           ),
-          const SizedBox(height: AppSpacing.sm),
-          Text(
-            "已逾期，仍有 ${_status.remainingWords} 词未学",
-            style: theme.textTheme.titleMedium?.copyWith(
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-          const SizedBox(height: AppSpacing.xxs),
-          Text(
-            "截止日期为 ${planFullDate(plan.deadline)}。可以延期，或重新配置范围与节奏。",
-            style: theme.textTheme.bodyMedium?.copyWith(
-              color: scheme.onSurfaceVariant,
-              height: 1.45,
-            ),
-          ),
-          const SizedBox(height: AppSpacing.md),
-          Row(
-            children: <Widget>[
-              Expanded(
-                child: _cta(context, label: "延期 7 天", onPressed: _askExtend),
-              ),
-              const SizedBox(width: AppSpacing.xs),
-              Expanded(
-                child: _cta(
-                  context,
-                  label: "重新配置",
-                  onPressed: () => _openConfig(initial: plan),
-                  background: scheme.secondaryContainer,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: AppSpacing.xs),
-          Align(
-            alignment: Alignment.centerLeft,
-            child: TextButton.icon(
-              onPressed: _starting ? null : _startGroup,
-              icon: const Icon(Icons.play_arrow_rounded, size: 18.0),
-              label: Text("仍要学习（剩 ${_status.remainingWords} 词）"),
-            ),
-          ),
-        ],
-      ),
+        ),
+        const SizedBox(height: AppSpacing.sm),
+        _buildContentCard(context, plan),
+      ],
     );
   }
 
@@ -448,49 +463,49 @@ class _PlanHomePageState extends State<PlanHomePage> {
   // 状态 5：本周期完成
   // ---------------------------------------------------------------------------
 
-  Widget _buildComplete(BuildContext context) {
+  Widget _buildComplete(BuildContext context, StudyPlan plan) {
     final ThemeData theme = Theme.of(context);
     final ColorScheme scheme = theme.colorScheme;
     final Color success = context.semanticColors.success;
-    return _PlanPanel(
-      color: Color.alphaBlend(
-        success.withValues(alpha: 0.12),
-        scheme.surfaceContainerLow,
-      ),
-      borderColor: success.withValues(alpha: 0.40),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: <Widget>[
-          Row(
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: <Widget>[
+        _panel(
+          context,
+          color: Color.alphaBlend(
+            success.withValues(alpha: 0.12),
+            scheme.surfaceContainerLow,
+          ),
+          borderColor: success.withValues(alpha: 0.40),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: <Widget>[
-              _RoundIcon(icon: Icons.task_alt_rounded, color: success),
-              const SizedBox(width: AppSpacing.sm),
-              Expanded(
-                child: Text(
-                  "本周期已完成",
-                  style: theme.textTheme.titleLarge?.copyWith(
-                    fontWeight: FontWeight.bold,
-                  ),
+              _headline(
+                context,
+                icon: Icons.task_alt_rounded,
+                color: success,
+                title: "本周期已完成",
+              ),
+              const SizedBox(height: AppSpacing.xs),
+              Text(
+                "本周期已学 ${_status.learnedWords} 词，学习范围 ${_status.scopeWords} 词已全部完成。",
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  color: scheme.onSurfaceVariant,
+                  height: 1.45,
                 ),
+              ),
+              const SizedBox(height: AppSpacing.md),
+              _cta(
+                context,
+                label: "配置下一周期",
+                onPressed: () => _openConfig(),
               ),
             ],
           ),
-          const SizedBox(height: AppSpacing.sm),
-          Text(
-            "本周期已学 ${_status.learnedWords} 词，学习范围 ${_status.scopeWords} 词已全部完成。",
-            style: theme.textTheme.bodyMedium?.copyWith(
-              color: scheme.onSurfaceVariant,
-              height: 1.45,
-            ),
-          ),
-          const SizedBox(height: AppSpacing.md),
-          _cta(
-            context,
-            label: "配置下一周期",
-            onPressed: () => _openConfig(),
-          ),
-        ],
-      ),
+        ),
+        const SizedBox(height: AppSpacing.sm),
+        _buildContentCard(context, plan),
+      ],
     );
   }
 
@@ -505,197 +520,197 @@ class _PlanHomePageState extends State<PlanHomePage> {
         _buildCycleCard(context, plan),
         const SizedBox(height: AppSpacing.sm),
         _buildTodayCard(context, plan),
+        const SizedBox(height: AppSpacing.sm),
+        _buildContentCard(context, plan),
+        const SizedBox(height: AppSpacing.sm),
+        _buildSettingsCard(context, plan),
       ],
     );
   }
 
+  /// 周期概览：截止日期、剩余天数、已学 / 总词数与整体进度。
   Widget _buildCycleCard(BuildContext context, StudyPlan plan) {
     final ThemeData theme = Theme.of(context);
     final ColorScheme scheme = theme.colorScheme;
     final Color on = scheme.onPrimaryContainer;
     final int scope = _status.scopeWords;
-    final double progress = scope == 0 ? 0.0 : _status.learnedWords / scope;
-    final List<PlanScopeRef> refs = activeScopeRefs(plan);
-    return Container(
-      padding: const EdgeInsets.all(20.0),
-      decoration: BoxDecoration(
-        borderRadius: AppRadius.cardBorder,
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: <Color>[
-            scheme.primaryContainer,
-            Color.alphaBlend(
-              scheme.primary.withValues(alpha: 0.12),
-              scheme.primaryContainer,
-            ),
-          ],
+    final double progress =
+        scope <= 0 ? 0.0 : (_status.learnedWords / scope).clamp(0.0, 1.0);
+    return _panel(
+      context,
+      color: scheme.primaryContainer,
+      gradient: <Color>[
+        scheme.primaryContainer,
+        Color.alphaBlend(
+          scheme.primary.withValues(alpha: 0.12),
+          scheme.primaryContainer,
         ),
-      ),
+      ],
+      padding: const EdgeInsets.all(20.0),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: <Widget>[
           Row(
             children: <Widget>[
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 10.0,
-                  vertical: 4.0,
-                ),
-                decoration: BoxDecoration(
-                  color: on.withValues(alpha: 0.10),
-                  borderRadius: BorderRadius.circular(AppRadius.control),
-                ),
+              Icon(
+                Icons.flag_outlined,
+                size: 18.0,
+                color: on.withValues(alpha: 0.80),
+              ),
+              const SizedBox(width: AppSpacing.xxs),
+              Expanded(
                 child: Text(
-                  "本周期进度",
-                  style: theme.textTheme.labelMedium?.copyWith(color: on),
+                  "本周期",
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: theme.textTheme.labelLarge?.copyWith(
+                    color: on.withValues(alpha: 0.80),
+                  ),
                 ),
               ),
-              const Spacer(),
+              Chip(
+                label: Text("剩 ${_status.daysLeft} 天"),
+                labelStyle: theme.textTheme.labelLarge?.copyWith(
+                  color: on,
+                  fontWeight: FontWeight.w600,
+                ),
+                labelPadding: const EdgeInsets.symmetric(horizontal: 4.0),
+                backgroundColor: on.withValues(alpha: 0.12),
+                side: BorderSide.none,
+                visualDensity: VisualDensity.compact,
+                materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: AppSpacing.xs,
+                  vertical: AppSpacing.xxs,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: AppSpacing.xxs),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: <Widget>[
+              Expanded(
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  alignment: Alignment.bottomLeft,
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: <Widget>[
+                      Text(
+                        "${_status.learnedWords}",
+                        style: theme.textTheme.displaySmall?.copyWith(
+                          color: on,
+                          fontWeight: FontWeight.bold,
+                          height: 1.0,
+                        ),
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.only(left: 6.0, bottom: 4.0),
+                        child: Text(
+                          "/ $scope 词",
+                          style: theme.textTheme.titleMedium?.copyWith(
+                            color: on.withValues(alpha: 0.75),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(width: AppSpacing.xs),
               Text(
-                "剩 ${_status.daysLeft} 天",
-                style: theme.textTheme.titleMedium?.copyWith(
+                "${(progress * 100).round()}%",
+                style: theme.textTheme.titleLarge?.copyWith(
                   color: on,
                   fontWeight: FontWeight.w600,
                 ),
               ),
             ],
           ),
-          const SizedBox(height: AppSpacing.sm),
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: <Widget>[
-              Text(
-                "${_status.learnedWords}",
-                style: theme.textTheme.displaySmall?.copyWith(
-                  color: on,
-                  fontWeight: FontWeight.bold,
-                  height: 1.0,
-                ),
-              ),
-              Padding(
-                padding: const EdgeInsets.only(left: 6.0, bottom: 4.0),
-                child: Text(
-                  "/ $scope 词",
-                  style: theme.textTheme.titleMedium?.copyWith(
-                    color: on.withValues(alpha: 0.75),
-                  ),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12.0),
-          PlanProgressBar(
+          const SizedBox(height: 10.0),
+          LinearProgressIndicator(
             value: progress,
+            minHeight: 8.0,
             color: on,
-            trackColor: on.withValues(alpha: 0.16),
-            height: 8.0,
+            backgroundColor: on.withValues(alpha: 0.16),
+            borderRadius: BorderRadius.circular(4.0),
           ),
-          const SizedBox(height: 6.0),
+          const SizedBox(height: AppSpacing.xs),
           Row(
             children: <Widget>[
-              Text(
-                "待学 ${_status.remainingWords} 词",
-                style: theme.textTheme.bodySmall?.copyWith(
-                  color: on.withValues(alpha: 0.72),
-                ),
-              ),
-              const Spacer(),
-              Text(
-                "截止 ${planMonthDay(plan.deadline)}",
-                style: theme.textTheme.bodySmall?.copyWith(
-                  color: on.withValues(alpha: 0.72),
-                ),
-              ),
-            ],
-          ),
-          if (refs.isNotEmpty) ...<Widget>[
-            const SizedBox(height: AppSpacing.sm),
-            Row(
-              children: <Widget>[
-                Icon(
-                  Icons.menu_book_outlined,
-                  size: 14.0,
-                  color: on.withValues(alpha: 0.72),
-                ),
-                const SizedBox(width: AppSpacing.xxs),
-                Text(
-                  "学习范围",
-                  style: theme.textTheme.labelSmall?.copyWith(
+              Expanded(
+                child: Text(
+                  "待学 ${_status.remainingWords} 词",
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: theme.textTheme.bodySmall?.copyWith(
                     color: on.withValues(alpha: 0.72),
                   ),
                 ),
-              ],
-            ),
-            const SizedBox(height: 6.0),
-            _buildScopeChips(context, refs, on),
-          ],
+              ),
+              const SizedBox(width: AppSpacing.xs),
+              Flexible(
+                child: Text(
+                  "截止 ${planMonthDay(plan.deadline)}",
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  textAlign: TextAlign.end,
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: on.withValues(alpha: 0.72),
+                  ),
+                ),
+              ),
+            ],
+          ),
         ],
       ),
     );
   }
 
-  Widget _buildScopeChips(
-    BuildContext context,
-    List<PlanScopeRef> refs,
-    Color foreground,
-  ) {
-    const int limit = 3;
-    final List<String> names = refs
-        .map((PlanScopeRef ref) =>
-            ref.className.isEmpty ? "未命名课程" : ref.className)
-        .toList(growable: false);
-    final int hidden = names.length - limit;
-    return Wrap(
-      spacing: 6.0,
-      runSpacing: 6.0,
-      children: <Widget>[
-        for (final String name in names.take(limit))
-          _MiniChip(label: name, foreground: foreground),
-        if (hidden > 0)
-          Tooltip(
-            message: names.skip(limit).join("、"),
-            child: _MiniChip(label: "+$hidden", foreground: foreground),
-          ),
-      ],
-    );
-  }
-
+  /// 今日任务：今日完成量、第几组、主操作与节奏说明。
   Widget _buildTodayCard(BuildContext context, StudyPlan plan) {
     final ThemeData theme = Theme.of(context);
     final ColorScheme scheme = theme.colorScheme;
     final Color success = context.semanticColors.success;
-    final bool met = _status.minWords > 0 && _status.doneWords >= _status.minWords;
+    final bool met =
+        _status.minWords > 0 && _status.doneWords >= _status.minWords;
     final Color accent = met ? success : scheme.primary;
-    return _PlanPanel(
+    final int groups = _status.groupsToday;
+    final int finishedGroups = _status.groupSize <= 0
+        ? 0
+        : _status.doneWords ~/ _status.groupSize;
+    final String groupText = groups <= 0
+        ? "今日无最低要求"
+        : met
+            ? "已完成 $groups 组"
+            : "第 ${(finishedGroups + 1).clamp(1, groups)}/$groups 组";
+
+    return _panel(
+      context,
       padding: const EdgeInsets.all(20.0),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: <Widget>[
           Row(
             children: <Widget>[
-              Text(
-                "今日",
-                style: theme.textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.bold,
+              Icon(Icons.today_outlined, size: 18.0, color: scheme.primary),
+              const SizedBox(width: AppSpacing.xxs),
+              Expanded(
+                child: Text(
+                  "今日任务",
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: theme.textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
               ),
               const SizedBox(width: AppSpacing.xs),
-              if (met)
-                Expanded(
-                  child: Align(
-                    alignment: Alignment.centerLeft,
-                    child: _Pill(
-                      label: "今日最低目标已完成",
-                      foreground: success,
-                      background: success.withValues(alpha: 0.12),
-                    ),
-                  ),
-                )
-              else
-                const Spacer(),
               Text(
-                "共 ${_status.groupsToday} 组",
+                groupText,
+                maxLines: 1,
                 style: theme.textTheme.bodySmall?.copyWith(
                   color: scheme.onSurfaceVariant,
                 ),
@@ -706,56 +721,75 @@ class _PlanHomePageState extends State<PlanHomePage> {
           Row(
             crossAxisAlignment: CrossAxisAlignment.end,
             children: <Widget>[
-              FittedBox(
-                fit: BoxFit.scaleDown,
-                alignment: Alignment.bottomLeft,
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  children: <Widget>[
-                    Text(
-                      "${_status.doneWords}",
-                      style: theme.textTheme.headlineLarge?.copyWith(
-                        color: accent,
-                        fontWeight: FontWeight.bold,
-                        height: 1.0,
-                      ),
-                    ),
-                    Padding(
-                      padding: const EdgeInsets.only(left: 4.0, bottom: 4.0),
-                      child: Text(
-                        "/ ${_status.minWords} 词",
-                        style: theme.textTheme.titleMedium?.copyWith(
-                          color: scheme.onSurfaceVariant,
+              Expanded(
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  alignment: Alignment.bottomLeft,
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: <Widget>[
+                      Text(
+                        "${_status.doneWords}",
+                        style: theme.textTheme.headlineLarge?.copyWith(
+                          color: accent,
+                          fontWeight: FontWeight.bold,
+                          height: 1.0,
                         ),
                       ),
-                    ),
-                  ],
+                      Padding(
+                        padding: const EdgeInsets.only(left: 4.0, bottom: 4.0),
+                        child: Text(
+                          "/ ${_status.minWords} 词",
+                          style: theme.textTheme.titleMedium?.copyWith(
+                            color: scheme.onSurfaceVariant,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ),
               const SizedBox(width: AppSpacing.xs),
-              Expanded(
-                child: Padding(
-                  padding: const EdgeInsets.only(bottom: 4.0),
-                  child: Text(
-                    met ? "已达标" : "还差 ${_status.todayRemaining} 词",
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    textAlign: TextAlign.end,
-                    style: theme.textTheme.labelLarge?.copyWith(
-                      color: met ? success : scheme.onSurfaceVariant,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ),
+              Padding(
+                padding: const EdgeInsets.only(bottom: 4.0),
+                child: met
+                    ? Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: <Widget>[
+                          Icon(
+                            Icons.check_circle_rounded,
+                            size: 16.0,
+                            color: success,
+                          ),
+                          const SizedBox(width: AppSpacing.xxs),
+                          Text(
+                            "已达标",
+                            style: theme.textTheme.labelLarge?.copyWith(
+                              color: success,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ],
+                      )
+                    : Text(
+                        "还差 ${_status.todayRemaining} 词",
+                        maxLines: 1,
+                        style: theme.textTheme.labelLarge?.copyWith(
+                          color: scheme.onSurfaceVariant,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
               ),
             ],
           ),
           const SizedBox(height: 10.0),
-          PlanProgressBar(
-            value: _status.todayProgress,
+          LinearProgressIndicator(
+            value: _status.todayProgress.clamp(0.0, 1.0),
+            minHeight: 8.0,
             color: accent,
-            height: 8.0,
+            backgroundColor: scheme.onSurface.withValues(alpha: 0.08),
+            borderRadius: BorderRadius.circular(4.0),
           ),
           const SizedBox(height: AppSpacing.sm + 2),
           if (met)
@@ -763,7 +797,7 @@ class _PlanHomePageState extends State<PlanHomePage> {
               context,
               label: _starting ? "正在准备…" : "再学一组",
               onPressed: _starting ? null : _startGroup,
-              background: scheme.secondaryContainer,
+              tonal: true,
             )
           else
             _cta(
@@ -776,13 +810,179 @@ class _PlanHomePageState extends State<PlanHomePage> {
               onPressed: _starting ? null : _startGroup,
             ),
           const SizedBox(height: AppSpacing.xxs),
+          Text(
+            "每组 ${_status.groupSize} 词 · 每日至少 ${_status.groupsToday} 组",
+            textAlign: TextAlign.center,
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: scheme.onSurfaceVariant,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// 学习内容：范围课程与学习链条。
+  Widget _buildContentCard(BuildContext context, StudyPlan plan) {
+    final ThemeData theme = Theme.of(context);
+    final ColorScheme scheme = theme.colorScheme;
+    final List<PlanScopeRef> refs = activeScopeRefs(plan);
+    const int limit = 6;
+    final int hidden = refs.length - limit;
+    final List<int> sections = plan.chain.sections;
+
+    return _panel(
+      context,
+      padding: const EdgeInsets.all(20.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: <Widget>[
           Row(
             children: <Widget>[
+              Icon(
+                Icons.folder_open_outlined,
+                size: 18.0,
+                color: scheme.primary,
+              ),
+              const SizedBox(width: AppSpacing.xxs),
               Expanded(
                 child: Text(
-                  "每组 ${_status.groupSize} 词 · 每日至少 ${_status.groupsToday} 组",
-                  style: theme.textTheme.bodySmall?.copyWith(
-                    color: scheme.onSurfaceVariant,
+                  "学习范围",
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: theme.textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+              const SizedBox(width: AppSpacing.xs),
+              Text(
+                "共 ${_status.scopeWords} 词",
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: scheme.onSurfaceVariant,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: AppSpacing.xs),
+          if (refs.isEmpty)
+            Text(
+              "计划中的课程都不在当前词库里。",
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: scheme.onSurfaceVariant,
+              ),
+            )
+          else
+            Wrap(
+              spacing: AppSpacing.xs,
+              runSpacing: AppSpacing.xs,
+              children: <Widget>[
+                for (final PlanScopeRef ref in refs.take(limit))
+                  _courseChip(
+                    context,
+                    ref.className.isEmpty ? "未命名课程" : ref.className,
+                  ),
+                if (hidden > 0)
+                  _courseChip(context, "+$hidden 门课程"),
+              ],
+            ),
+          const SizedBox(height: AppSpacing.sm),
+          const Divider(height: 1.0, thickness: 1.0),
+          const SizedBox(height: AppSpacing.sm),
+          Row(
+            children: <Widget>[
+              Icon(
+                Icons.linear_scale_rounded,
+                size: 18.0,
+                color: scheme.primary,
+              ),
+              const SizedBox(width: AppSpacing.xxs),
+              Expanded(
+                child: Text(
+                  "学习链条",
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: theme.textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+              const SizedBox(width: AppSpacing.xs),
+              Text(
+                plan.chain.shuffleWithinSection ? "组内乱序" : "组内顺序",
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: scheme.onSurfaceVariant,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: AppSpacing.xs),
+          Wrap(
+            spacing: AppSpacing.xs,
+            runSpacing: AppSpacing.xs,
+            children: <Widget>[
+              for (int index = 0; index < sections.length; index++)
+                _chainChip(context, index + 1, sections[index]),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// 计划设置：每组数量、乱序开关与连胜门禁的当前状态。
+  Widget _buildSettingsCard(BuildContext context, StudyPlan plan) {
+    final ThemeData theme = Theme.of(context);
+    final ColorScheme scheme = theme.colorScheme;
+
+    TextStyle? stateStyle(bool active) => theme.textTheme.labelLarge?.copyWith(
+          color: active ? scheme.primary : scheme.onSurfaceVariant,
+          fontWeight: FontWeight.w600,
+        );
+
+    Widget tile({
+      required IconData icon,
+      required String title,
+      String? subtitle,
+      required Widget trailing,
+    }) {
+      return ListTile(
+        contentPadding: EdgeInsets.zero,
+        // 与分区标题的左缘对齐：图标 18 + 间隙 4 = 标题文字缩进 22。
+        minLeadingWidth: 0.0,
+        horizontalTitleGap: AppSpacing.xxs,
+        leading: Icon(icon, size: 18.0, color: scheme.primary),
+        title: Text(title, style: theme.textTheme.bodyLarge),
+        subtitle: subtitle == null
+            ? null
+            : Text(
+                subtitle,
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: scheme.onSurfaceVariant,
+                  height: 1.35,
+                ),
+              ),
+        trailing: trailing,
+      );
+    }
+
+    return _panel(
+      context,
+      padding: const EdgeInsets.all(20.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: <Widget>[
+          Row(
+            children: <Widget>[
+              Icon(Icons.tune_rounded, size: 18.0, color: scheme.primary),
+              const SizedBox(width: AppSpacing.xxs),
+              Expanded(
+                child: Text(
+                  "计划设置",
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: theme.textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.bold,
                   ),
                 ),
               ),
@@ -792,197 +992,238 @@ class _PlanHomePageState extends State<PlanHomePage> {
               ),
             ],
           ),
+          const Divider(height: 1.0, thickness: 1.0),
+          tile(
+            icon: Icons.layers_outlined,
+            title: "每组词数",
+            trailing: Text("${plan.groupSize} 词", style: stateStyle(true)),
+          ),
+          const Divider(height: 1.0, thickness: 1.0),
+          tile(
+            icon: Icons.shuffle_rounded,
+            title: "组内单词乱序",
+            trailing: Text(
+              plan.chain.shuffleWithinSection ? "已开启" : "已关闭",
+              style: stateStyle(plan.chain.shuffleWithinSection),
+            ),
+          ),
+          const Divider(height: 1.0, thickness: 1.0),
+          tile(
+            icon: Icons.swap_horiz_rounded,
+            title: "打乱课程顺序",
+            trailing: Text(
+              plan.shuffleClasses ? "已开启" : "已关闭",
+              style: stateStyle(plan.shuffleClasses),
+            ),
+          ),
+          const Divider(height: 1.0, thickness: 1.0),
+          tile(
+            icon: Icons.local_fire_department_outlined,
+            title: "介入连胜",
+            subtitle: plan.streakGate
+                ? "当日未完成最低目标前，学习不会计入连胜。"
+                : "未介入：任何一天学习后都会计入连胜。",
+            trailing: Text(
+              plan.streakGate ? "已开启" : "已关闭",
+              style: stateStyle(plan.streakGate),
+            ),
+          ),
         ],
       ),
     );
   }
 
   // ---------------------------------------------------------------------------
-  // 共用小部件
+  // 共用布局
   // ---------------------------------------------------------------------------
 
+  /// 统一卡片容器：25 圆角、扁平底色，可选描边与渐变。
+  Widget _panel(
+    BuildContext context, {
+    required Widget child,
+    Color? color,
+    Color? borderColor,
+    List<Color>? gradient,
+    EdgeInsetsGeometry padding = const EdgeInsets.all(20.0),
+  }) {
+    final ColorScheme scheme = Theme.of(context).colorScheme;
+    Widget body = Padding(padding: padding, child: child);
+    if (gradient != null) {
+      body = DecoratedBox(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: gradient,
+          ),
+        ),
+        child: body,
+      );
+    }
+    return Card(
+      margin: EdgeInsets.zero,
+      elevation: 0.0,
+      color: color ?? scheme.surfaceContainerLow,
+      clipBehavior: Clip.antiAlias,
+      shape: RoundedRectangleBorder(
+        borderRadius: AppRadius.cardBorder,
+        side: borderColor == null
+            ? BorderSide.none
+            : BorderSide(color: borderColor, width: 1.0),
+      ),
+      child: body,
+    );
+  }
+
+  /// 状态卡标题：圆形图标底 + 标题。
+  Widget _headline(
+    BuildContext context, {
+    required IconData icon,
+    required Color color,
+    required String title,
+    Color? titleColor,
+  }) {
+    final ThemeData theme = Theme.of(context);
+    return Row(
+      children: <Widget>[
+        CircleAvatar(
+          radius: 22.0,
+          backgroundColor: color.withValues(alpha: 0.12),
+          child: Icon(icon, size: 22.0, color: color),
+        ),
+        const SizedBox(width: AppSpacing.sm),
+        Expanded(
+          child: Text(
+            title,
+            style: theme.textTheme.titleLarge?.copyWith(
+              fontWeight: FontWeight.bold,
+              color: titleColor,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  /// 空状态里的说明行（Material `ListTile`）。
+  Widget _infoTile(
+    BuildContext context, {
+    required IconData icon,
+    required String title,
+    required String subtitle,
+  }) {
+    final ThemeData theme = Theme.of(context);
+    final ColorScheme scheme = theme.colorScheme;
+    return ListTile(
+      contentPadding: EdgeInsets.zero,
+      minLeadingWidth: 24.0,
+      leading: Icon(icon, size: 20.0, color: scheme.primary),
+      title: Text(title, style: theme.textTheme.bodyLarge),
+      subtitle: Text(
+        subtitle,
+        style: theme.textTheme.bodySmall?.copyWith(
+          color: scheme.onSurfaceVariant,
+          height: 1.4,
+        ),
+      ),
+    );
+  }
+
+  /// 课程名标签。
+  Widget _courseChip(BuildContext context, String label) {
+    final ThemeData theme = Theme.of(context);
+    final ColorScheme scheme = theme.colorScheme;
+    return ConstrainedBox(
+      constraints: const BoxConstraints(maxWidth: 220.0),
+      child: Chip(
+        label: Text(
+          label,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: theme.textTheme.labelMedium?.copyWith(
+            color: scheme.onSecondaryContainer,
+          ),
+        ),
+        labelPadding: const EdgeInsets.symmetric(horizontal: 4.0),
+        backgroundColor: scheme.secondaryContainer,
+        side: BorderSide.none,
+        visualDensity: VisualDensity.compact,
+        materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+        padding: const EdgeInsets.symmetric(
+          horizontal: AppSpacing.xxs,
+          vertical: 2.0,
+        ),
+      ),
+    );
+  }
+
+  /// 学习链条里的题型标签（序号 + 题型名）。
+  Widget _chainChip(BuildContext context, int order, int type) {
+    final ThemeData theme = Theme.of(context);
+    final ColorScheme scheme = theme.colorScheme;
+    return ConstrainedBox(
+      constraints: const BoxConstraints(maxWidth: 220.0),
+      child: Chip(
+        label: Text(
+          "$order. ${kQuestionTypeLabels[type] ?? "未知题型"}",
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: theme.textTheme.labelMedium?.copyWith(
+            color: scheme.onSurface,
+          ),
+        ),
+        labelPadding: const EdgeInsets.symmetric(horizontal: 4.0),
+        backgroundColor: scheme.surfaceContainerHighest,
+        side: BorderSide.none,
+        visualDensity: VisualDensity.compact,
+        materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+        padding: const EdgeInsets.symmetric(
+          horizontal: AppSpacing.xxs,
+          vertical: 2.0,
+        ),
+      ),
+    );
+  }
+
+  /// 主操作按钮（Material `FilledButton`）；[tonal] 为次级色调。
   Widget _cta(
     BuildContext context, {
     required String label,
     required VoidCallback? onPressed,
-    Color? background,
+    bool tonal = false,
   }) {
-    final ColorScheme scheme = Theme.of(context).colorScheme;
-    return SizedBox(
-      width: double.infinity,
-      height: 52.0,
-      child: Button(
-        onPressed: onPressed,
-        backgroundColor: background ?? scheme.primaryContainer,
-        padding: const EdgeInsets.symmetric(
-          horizontal: AppSpacing.sm,
-          vertical: AppSpacing.xs,
-        ),
-        // 只缩不放：窄屏上「继续学习（还差 N 词）」这类长标签自动整体缩小，
-        // 不会被折行或裁切。
-        child: FittedBox(
-          fit: BoxFit.scaleDown,
-          child: Text(
-            label,
-            maxLines: 1,
-            style: withoutColor(
-              Theme.of(context).textTheme.titleMedium!,
-            ).copyWith(fontWeight: FontWeight.w600),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-/// 统一卡片容器：25 圆角、扁平底色，可选描边。
-class _PlanPanel extends StatelessWidget {
-  final Widget child;
-  final Color? color;
-  final Color? borderColor;
-  final EdgeInsetsGeometry padding;
-
-  const _PlanPanel({
-    required this.child,
-    this.color,
-    this.borderColor,
-    this.padding = const EdgeInsets.all(20.0),
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final ColorScheme scheme = Theme.of(context).colorScheme;
-    return Container(
-      padding: padding,
-      decoration: BoxDecoration(
-        color: color ?? scheme.surfaceContainerLow,
-        borderRadius: AppRadius.cardBorder,
-        border: borderColor == null
-            ? null
-            : Border.all(color: borderColor!, width: 1.0),
-      ),
-      child: child,
-    );
-  }
-}
-
-/// 圆形图标底：同色 12% 透明背景。
-class _RoundIcon extends StatelessWidget {
-  final IconData icon;
-  final Color color;
-
-  const _RoundIcon({required this.icon, required this.color});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: 44.0,
-      height: 44.0,
-      alignment: Alignment.center,
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.12),
-        shape: BoxShape.circle,
-      ),
-      child: Icon(icon, size: 23.0, color: color),
-    );
-  }
-}
-
-/// 空状态里的说明行。
-class _InfoLine extends StatelessWidget {
-  final IconData icon;
-  final String text;
-
-  const _InfoLine({required this.icon, required this.text});
-
-  @override
-  Widget build(BuildContext context) {
     final ThemeData theme = Theme.of(context);
-    final Color color = theme.colorScheme.onSurfaceVariant;
-    return Padding(
-      padding: const EdgeInsets.only(top: AppSpacing.xs),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: <Widget>[
-          Padding(
-            padding: const EdgeInsets.only(top: 2.0),
-            child: Icon(icon, size: 17.0, color: color),
-          ),
-          const SizedBox(width: AppSpacing.xs),
-          Expanded(
-            child: Text(
-              text,
-              style: theme.textTheme.bodyMedium?.copyWith(
-                color: color,
-                height: 1.45,
-              ),
-            ),
-          ),
-        ],
-      ),
+    const EdgeInsets padding = EdgeInsets.symmetric(
+      horizontal: AppSpacing.sm,
+      vertical: AppSpacing.xs,
     );
-  }
-}
-
-/// 小胶囊：达标徽章、周期标签等。
-class _Pill extends StatelessWidget {
-  final String label;
-  final Color foreground;
-  final Color background;
-
-  const _Pill({
-    required this.label,
-    required this.foreground,
-    required this.background,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 3.0),
-      decoration: BoxDecoration(
-        color: background,
-        borderRadius: BorderRadius.circular(AppRadius.control),
-      ),
+    // 只缩不放：窄屏上「继续学习（还差 N 词）」这类长标签自动整体缩小，
+    // 不会被折行或裁切。颜色留给 FilledButton 的默认前景色，去掉主题里的
+    // 文字颜色，避免深色文字压在深色按钮上。
+    final Widget child = FittedBox(
+      fit: BoxFit.scaleDown,
       child: Text(
         label,
         maxLines: 1,
-        overflow: TextOverflow.ellipsis,
-        style: Theme.of(context).textTheme.labelSmall?.copyWith(
-              color: foreground,
-              fontWeight: FontWeight.w600,
-            ),
+        style: withoutColor(
+          theme.textTheme.titleMedium!,
+        ).copyWith(fontWeight: FontWeight.w600),
       ),
     );
-  }
-}
-
-/// 课程名小标签。
-class _MiniChip extends StatelessWidget {
-  final String label;
-  final Color foreground;
-
-  const _MiniChip({required this.label, required this.foreground});
-
-  @override
-  Widget build(BuildContext context) {
-    return ConstrainedBox(
-      constraints: const BoxConstraints(maxWidth: 180.0),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 10.0, vertical: 4.0),
-        decoration: BoxDecoration(
-          color: foreground.withValues(alpha: 0.12),
-          borderRadius: BorderRadius.circular(AppRadius.control),
-        ),
-        child: Text(
-          label,
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-          style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                color: foreground,
-              ),
-        ),
-      ),
+    return SizedBox(
+      width: double.infinity,
+      height: 52.0,
+      child: tonal
+          ? FilledButton.tonal(
+              onPressed: onPressed,
+              style: FilledButton.styleFrom(padding: padding),
+              child: child,
+            )
+          : FilledButton(
+              onPressed: onPressed,
+              style: FilledButton.styleFrom(padding: padding),
+              child: child,
+            ),
     );
   }
 }

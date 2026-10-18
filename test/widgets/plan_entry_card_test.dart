@@ -3,8 +3,6 @@ import 'package:arabic_learning/models/dict.dart'
 import 'package:arabic_learning/models/plan.dart' show PlanScopeRef, StudyPlan;
 import 'package:arabic_learning/screens/learning/plan/plan_entry_card.dart';
 import 'package:arabic_learning/screens/learning/plan/plan_home_page.dart';
-import 'package:arabic_learning/screens/learning/plan/plan_shared.dart'
-    show PlanProgressBar;
 import 'package:arabic_learning/services/app_data.dart' show AppData;
 import 'package:arabic_learning/services/fsrs.dart' show FSRS, FSRSConfig;
 import 'package:arabic_learning/services/plan_scheduler.dart' show evaluateNow;
@@ -105,10 +103,11 @@ Color? _tileBackground(WidgetTester tester) {
   return button.style?.backgroundColor?.resolve(const <WidgetState>{});
 }
 
-PlanProgressBar? _progressBar(WidgetTester tester) {
-  final Finder finder = find.byType(PlanProgressBar);
+/// 入口卡底边的进度条（Material `LinearProgressIndicator`）。
+LinearProgressIndicator? _progressBar(WidgetTester tester) {
+  final Finder finder = find.byType(LinearProgressIndicator);
   if (finder.evaluate().isEmpty) return null;
-  return tester.widget<PlanProgressBar>(finder);
+  return tester.widget<LinearProgressIndicator>(finder);
 }
 
 void main() {
@@ -138,7 +137,7 @@ void main() {
     expect(find.byType(Button), findsOneWidget);
     // 与学习页其余按钮同族：没有 chevron；无计划时也没有底部进度线。
     expect(find.byIcon(Icons.chevron_right_rounded), findsNothing);
-    expect(find.byType(PlanProgressBar), findsNothing);
+    expect(find.byType(LinearProgressIndicator), findsNothing);
     expect(_tileBackground(tester), _scheme(tester).primaryContainer);
     expect(find.byType(PlanHomePage), findsNothing);
     // 与页面其余 0.8 宽磁贴同宽并居中。
@@ -161,7 +160,7 @@ void main() {
     expect(find.text('需先启用复习系统'), findsOneWidget);
     expect(find.byIcon(Icons.history_edu_outlined), findsOneWidget);
     expect(_tileBackground(tester), _scheme(tester).secondaryContainer);
-    expect(find.byType(PlanProgressBar), findsNothing);
+    expect(find.byType(LinearProgressIndicator), findsNothing);
     expect(tester.takeException(), isNull);
   });
 
@@ -179,7 +178,7 @@ void main() {
     expect(find.text('学习范围已失效，需重新配置'), findsOneWidget);
     expect(find.byIcon(Icons.link_off_rounded), findsOneWidget);
     expect(_tileBackground(tester), _scheme(tester).errorContainer);
-    expect(find.byType(PlanProgressBar), findsNothing);
+    expect(find.byType(LinearProgressIndicator), findsNothing);
     expect(tester.takeException(), isNull);
   });
 
@@ -194,15 +193,20 @@ void main() {
     expect(find.byIcon(Icons.event_available_outlined), findsOneWidget);
     expect(_tileBackground(tester), _scheme(tester).primaryContainer);
 
-    final PlanProgressBar? bar = _progressBar(tester);
+    final LinearProgressIndicator? bar = _progressBar(tester);
     expect(bar, isNotNull);
     expect(bar!.value, closeTo(0.4, 1e-9));
-    // 进度线贴住磁贴底边、铺满宽度，而不是浮在内容区的独立条。
+    expect(bar.minHeight, 16.0);
+    // 进度线贴住磁贴底边、铺满宽度、高 16，而不是浮在内容区的独立条。
     final Rect tile = tester.getRect(find.byType(Button));
-    final Rect line = tester.getRect(find.byType(PlanProgressBar));
+    final Rect line = tester.getRect(find.byType(LinearProgressIndicator));
     expect(line.bottom, closeTo(tile.bottom, 0.5));
     expect(line.left, closeTo(tile.left, 0.5));
     expect(line.right, closeTo(tile.right, 0.5));
+    expect(line.height, closeTo(16.0, 0.5));
+    // 正文让出底边进度带，状态文案不会压在进度带上。
+    final Rect statusRect = tester.getRect(find.text('今日 2/5 · 剩 7 天'));
+    expect(statusRect.bottom, lessThanOrEqualTo(line.top));
 
     await tester.tap(find.byType(PlanEntryCard));
     await tester.pumpAndSettle();
@@ -253,7 +257,19 @@ void main() {
     expect(find.text('已逾期 · 剩 10 词'), findsOneWidget);
     expect(find.byIcon(Icons.warning_amber_rounded), findsOneWidget);
     expect(_tileBackground(tester), _scheme(tester).errorContainer);
-    expect(find.byType(PlanProgressBar), findsNothing);
+    expect(find.byType(LinearProgressIndicator), findsNothing);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('紧凑高度（横屏小窗口）：标题完整、不溢出', (WidgetTester tester) async {
+    await PlanStore().setPlan(_plan());
+    evaluateNow();
+    await PlanStore().recordProgress(2);
+
+    await _pumpCard(tester, size: const Size(480, 420), height: 40.0);
+
+    expect(find.text('计划学习'), findsOneWidget);
+    expect(_progressBar(tester), isNotNull);
     expect(tester.takeException(), isNull);
   });
 

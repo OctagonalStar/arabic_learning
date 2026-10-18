@@ -4,9 +4,12 @@ import 'package:arabic_learning/models/plan.dart'
     show PlanScopeRef, StudyPlan;
 import 'package:arabic_learning/screens/learning/plan/plan_config_page.dart';
 import 'package:arabic_learning/screens/learning/plan/plan_home_page.dart';
+import 'package:arabic_learning/screens/learning/plan/plan_session_page.dart'
+    show PlanSessionPage;
 import 'package:arabic_learning/services/app_data.dart' show AppData;
 import 'package:arabic_learning/services/fsrs.dart' show FSRS, FSRSConfig;
 import 'package:arabic_learning/services/global_state.dart' show Global;
+import 'package:arabic_learning/services/plan_scheduler.dart' show evaluateNow;
 import 'package:arabic_learning/services/plan_store.dart' show PlanStore;
 import 'package:arabic_learning/theme/app_theme.dart' show buildTheme;
 import 'package:flutter/material.dart';
@@ -80,14 +83,30 @@ FSRSConfig _allLearned(int count) {
 ThemeData _theme() => buildTheme(ColorScheme.fromSeed(seedColor: Colors.teal));
 
 /// 以 800×600 渲染计划首页（宽屏阈值 600 以上，内容居中限宽 720）。
-Future<void> _pumpHome(WidgetTester tester) async {
-  tester.view.physicalSize = const Size(800, 600);
+Future<void> _pumpHome(
+  WidgetTester tester, {
+  Size size = const Size(800, 600),
+  double textScale = 1.0,
+  Key? key,
+  bool withGlobal = false,
+}) async {
+  tester.view.physicalSize = size;
   tester.view.devicePixelRatio = 1.0;
+  tester.platformDispatcher.textScaleFactorTestValue = textScale;
   addTearDown(tester.view.resetPhysicalSize);
   addTearDown(tester.view.resetDevicePixelRatio);
+  addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
 
+  final Widget home = PlanHomePage(key: key);
+  final Widget app = MaterialApp(theme: _theme(), home: home);
   await tester.pumpWidget(
-    MaterialApp(theme: _theme(), home: const PlanHomePage()),
+    // 会话页是 push 出来的新路由，Provider 必须放在 MaterialApp 之上。
+    withGlobal
+        ? ChangeNotifierProvider<Global>(
+            create: (BuildContext context) => Global(),
+            child: app,
+          )
+        : app,
   );
   await tester.pumpAndSettle();
 }
@@ -163,21 +182,99 @@ void main() {
       expect(tester.takeException(), isNull);
     });
 
-    testWidgets('进行中：显示今日 X/Y、剩余天数与开始按钮', (WidgetTester tester) async {
+    testWidgets('进行中：显示周期概览、今日 X/Y、剩余天数与开始按钮', (WidgetTester tester) async {
       await PlanStore().setPlan(_plan(deadline: _todayPlus(7), groupSize: 5));
 
       await _pumpHome(tester);
 
       // 10 词 / 7 天 / 每组 5 → 今日最低 5 词（1 组）
-      expect(find.text('本周期进度'), findsOneWidget);
+      expect(find.text('本周期'), findsOneWidget);
       expect(find.text('剩 7 天'), findsOneWidget);
-      expect(find.text('/ 5 词'), findsOneWidget); // 今日卡（周期卡为 "/ 10 词"）
+      expect(find.text('/ 10 词'), findsOneWidget); // 周期卡
+      expect(find.text('/ 5 词'), findsOneWidget); // 今日卡
       expect(find.text('待学 10 词'), findsOneWidget);
-      expect(find.text('今日'), findsOneWidget);
+      expect(find.text('今日任务'), findsOneWidget);
+      expect(find.text('第 1/1 组'), findsOneWidget);
       expect(find.text('开始今日学习'), findsOneWidget);
       expect(find.text('每组 5 词 · 每日至少 1 组'), findsOneWidget);
       expect(find.text('调整计划'), findsOneWidget);
+      // 进度条统一改用 Material 原生组件：周期概览 + 今日任务。
+      expect(
+        find.byType(LinearProgressIndicator),
+        findsNWidgets(2),
+      );
       expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('进行中：学习范围、学习链条与计划设置区块都有内容', (WidgetTester tester) async {
+      await PlanStore().setPlan(_plan(deadline: _todayPlus(7), groupSize: 5));
+
+      await _pumpHome(tester);
+
+      expect(find.text('学习范围'), findsOneWidget);
+      expect(find.text('共 10 词'), findsOneWidget);
+      expect(find.widgetWithText(Chip, 'A'), findsOneWidget);
+      expect(find.text('学习链条'), findsOneWidget);
+      expect(find.text('1. 单词卡片学习'), findsOneWidget);
+      expect(find.text('2. 阿译中 选择题'), findsOneWidget);
+      expect(find.text('组内顺序'), findsOneWidget);
+      expect(find.text('计划设置'), findsOneWidget);
+      expect(find.text('每组词数'), findsOneWidget);
+      expect(find.text('组内单词乱序'), findsOneWidget);
+      expect(find.text('打乱课程顺序'), findsOneWidget);
+      expect(find.text('介入连胜'), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('多尺寸 + 系统大字号：进行中页面不溢出', (WidgetTester tester) async {
+      for (final Size size in const <Size>[
+        Size(360, 640),
+        Size(480, 420),
+        Size(800, 600),
+        Size(1280, 800),
+      ]) {
+        await PlanStore().setPlan(_plan(deadline: _todayPlus(7), groupSize: 5));
+        evaluateNow();
+        await PlanStore().recordProgress(2);
+
+        await _pumpHome(
+          tester,
+          size: size,
+          textScale: 2.0,
+          key: ValueKey<Size>(size),
+        );
+
+        expect(
+          tester.takeException(),
+          isNull,
+          reason: '$size / 2 倍字号下计划首页溢出',
+        );
+        expect(find.text('今日任务'), findsOneWidget);
+      }
+    });
+
+    testWidgets('多尺寸 + 系统大字号：空状态不溢出', (WidgetTester tester) async {
+      for (final Size size in const <Size>[
+        Size(360, 640),
+        Size(480, 420),
+        Size(800, 600),
+        Size(1280, 800),
+      ]) {
+        await PlanStore().clear();
+        await _pumpHome(
+          tester,
+          size: size,
+          textScale: 2.0,
+          key: ValueKey<Size>(size),
+        );
+
+        expect(
+          tester.takeException(),
+          isNull,
+          reason: '$size / 2 倍字号下空状态溢出',
+        );
+        expect(find.text('还没有学习计划'), findsOneWidget);
+      }
     });
 
     testWidgets('逾期：显示延期入口，点击弹出延期对话框', (WidgetTester tester) async {
@@ -209,6 +306,25 @@ void main() {
       expect(find.text('本周期已完成'), findsOneWidget);
       expect(find.text('配置下一周期'), findsOneWidget);
       expect(find.text('开始今日学习'), findsNothing);
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('开始学习只传入一组单词', (WidgetTester tester) async {
+      // 15 词 / 剩 2 天 / 每组 5 → 今日最低 10 词（2 组）；首次只应取 1 组。
+      AppData().wordData = _dict(15);
+      await PlanStore().setPlan(_plan(deadline: _todayPlus(2), groupSize: 5));
+
+      await _pumpHome(tester, withGlobal: true);
+      expect(find.text('第 1/2 组'), findsOneWidget);
+
+      await tester.tap(find.text('开始今日学习'));
+      await tester.pumpAndSettle();
+
+      final PlanSessionPage session = tester.widget<PlanSessionPage>(
+        find.byType(PlanSessionPage),
+      );
+      expect(session.words.length, 5);
+      expect(find.textContaining('第 1/2 组'), findsOneWidget);
       expect(tester.takeException(), isNull);
     });
 

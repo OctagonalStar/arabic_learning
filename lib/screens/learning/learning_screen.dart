@@ -47,7 +47,7 @@ class LearningPage extends StatelessWidget {
             // 尽量少占用下方按钮的纵向预算。
             const SizedBox(height: AppSpacing.xs),
             PlanEntryCard(
-              height: clampDouble(height * 0.14, 60.0, 72.0),
+              height: height * 0.1,
             ),
             SizedBox(height: gap),
             Row(

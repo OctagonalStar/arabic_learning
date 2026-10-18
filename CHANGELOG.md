@@ -13,6 +13,8 @@
 
 ### Improvement
 
+- 「计划学习」会话页显示当日组号，完成页以「返回计划」为主操作，可继续下一组
+- 计划学习页面改用 Material 原生组件（Card / FilledButton / Chip / LinearProgressIndicator），并补齐周期概览、今日任务、范围与设置信息
 - 优化了学习中课程选择弹出组件在窄屏设备下的显示
 - 优化了WebDAV同步的超时时间
 - 优化了FSRS推送的单词筛选逻辑
