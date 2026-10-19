@@ -886,6 +886,24 @@ class _PlanHomePageState extends State<PlanHomePage> {
                   _courseChip(context, "+$hidden 门课程"),
               ],
             ),
+          if (plan.categories.isNotEmpty) ...<Widget>[
+            const SizedBox(height: AppSpacing.xs),
+            Wrap(
+              spacing: AppSpacing.xs,
+              runSpacing: AppSpacing.xs,
+              crossAxisAlignment: WrapCrossAlignment.center,
+              children: <Widget>[
+                Text(
+                  "标签",
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: scheme.onSurfaceVariant,
+                  ),
+                ),
+                for (final String category in plan.categories)
+                  _courseChip(context, category),
+              ],
+            ),
+          ],
           const SizedBox(height: AppSpacing.sm),
           const Divider(height: 1.0, thickness: 1.0),
           const SizedBox(height: AppSpacing.sm),

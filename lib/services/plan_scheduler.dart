@@ -17,6 +17,7 @@ import 'package:arabic_learning/models/plan.dart';
 import 'package:arabic_learning/services/app_data.dart';
 import 'package:arabic_learning/services/fsrs.dart';
 import 'package:arabic_learning/services/plan_store.dart';
+import 'package:arabic_learning/services/words.dart' show wordMatchesAnyCategory;
 
 final Logger _logger = Logger("Plan");
 
@@ -72,12 +73,16 @@ PlanScopeRef? scopeRefForClass(DictData wordData, ClassItem course) {
 List<WordItem> resolveScopeWords(StudyPlan plan, DictData wordData) {
   final List<WordItem> result = <WordItem>[];
   final Set<String> seen = <String>{};
+  final Set<String> categories = plan.categories.toSet();
   for (final PlanScopeRef ref in _activeRefs(plan, wordData)) {
     final ClassItem? course = _findCourse(wordData, ref);
     if (course == null) continue;
     for (final int index in course.wordIndexs) {
       if (index < 0 || index >= wordData.words.length) continue;
       final WordItem word = wordData.words[index];
+      if (categories.isNotEmpty && !wordMatchesAnyCategory(word, categories)) {
+        continue;
+      }
       if (seen.add(word.arabic.identityKey())) result.add(word);
     }
   }

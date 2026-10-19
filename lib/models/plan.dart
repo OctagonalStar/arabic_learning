@@ -111,6 +111,10 @@ class StudyPlan {
   /// 学习范围（课程引用，顺序即默认学习顺序）
   final List<PlanScopeRef> scope;
 
+  /// 标签筛选（空 = 不筛选）。口径与常规学习的标签筛选一致：
+  /// 只有命中任一标签的单词进入计划。
+  final List<String> categories;
+
   /// 每组单词数（1..50）
   final int groupSize;
 
@@ -130,6 +134,7 @@ class StudyPlan {
     required this.id,
     required DateTime deadline,
     required List<PlanScopeRef> scope,
+    List<String> categories = const <String>[],
     int groupSize = 10,
     this.chain = const PlanChain(),
     this.shuffleClasses = false,
@@ -137,6 +142,7 @@ class StudyPlan {
     int configuredDayKey = 0,
   })  : deadline = DateTime(deadline.year, deadline.month, deadline.day),
         scope = _normalizeScope(scope),
+        categories = _normalizeCategories(categories),
         groupSize = _normalizeGroupSize(groupSize),
         configuredDayKey = configuredDayKey < 0 ? 0 : configuredDayKey;
 
@@ -144,6 +150,7 @@ class StudyPlan {
     String? id,
     DateTime? deadline,
     List<PlanScopeRef>? scope,
+    List<String>? categories,
     int? groupSize,
     PlanChain? chain,
     bool? shuffleClasses,
@@ -154,6 +161,7 @@ class StudyPlan {
       id: id ?? this.id,
       deadline: deadline ?? this.deadline,
       scope: scope ?? this.scope,
+      categories: categories ?? this.categories,
       groupSize: groupSize ?? this.groupSize,
       chain: chain ?? this.chain,
       shuffleClasses: shuffleClasses ?? this.shuffleClasses,
@@ -182,10 +190,16 @@ class StudyPlan {
     final dynamic rawChain = map["chain"];
     final dynamic rawGroupSize = map["groupSize"];
     final dynamic rawConfiguredDay = map["configuredDayKey"];
+    final List<String> categories = <String>[];
+    final dynamic rawCategories = map["categories"];
+    if (rawCategories is List) {
+      categories.addAll(rawCategories.whereType<String>());
+    }
     return StudyPlan(
       id: rawId,
       deadline: parsedDeadline,
       scope: scope,
+      categories: categories,
       groupSize: rawGroupSize is int ? rawGroupSize : 10,
       chain: rawChain is Map
           ? PlanChain.fromMap(Map<String, dynamic>.from(rawChain))
@@ -204,6 +218,7 @@ class StudyPlan {
           (int index) => scope[index].toMap(),
           growable: false,
         ),
+        "categories": List<String>.of(categories),
         "groupSize": groupSize,
         "chain": chain.toMap(),
         "shuffleClasses": shuffleClasses,
@@ -220,6 +235,18 @@ class StudyPlan {
       if (seen.add(ref.key)) result.add(ref);
     }
     return List<PlanScopeRef>.unmodifiable(result);
+  }
+
+  /// 标签去重、去空白并保持首次出现顺序。
+  static List<String> _normalizeCategories(List<String> raw) {
+    final List<String> result = <String>[];
+    final Set<String> seen = <String>{};
+    for (final String tag in raw) {
+      final String trimmed = tag.trim();
+      if (trimmed.isEmpty) continue;
+      if (seen.add(trimmed)) result.add(trimmed);
+    }
+    return List<String>.unmodifiable(result);
   }
 
   /// 组大小限制在 1..50。
