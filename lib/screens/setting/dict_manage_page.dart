@@ -275,10 +275,18 @@ class _DictManagePage extends State<DictManagePage> {
           ),
           onPressed: () async {
             context.read<Global>().uiLogger.info("选择手动导入单词");
-            PlatformFile? result = await FilePicker.pickFile(
-              type: FileType.custom,
-              allowedExtensions: ['json', 'jsonl'],
-            );
+            PlatformFile? result;
+            try {
+              result = await FilePicker.pickFile(
+                type: FileType.custom,
+                allowedExtensions: ['json', 'jsonl'],
+              );
+            } catch (e) {
+              if (!context.mounted) return;
+              context.read<Global>().uiLogger.severe("文件选择失败: $e");
+              alart(context, "无法打开文件选择器：\n$e");
+              return;
+            }
             if (result != null) {
               String jsonString;
               PlatformFile platformFile = result;
@@ -290,9 +298,19 @@ class _DictManagePage extends State<DictManagePage> {
                   context.read<Global>().uiLogger.warning(
                     "文件导入错误: 常规方式读取失败:\n$e\n尝试路经读取",
                   );
-                  jsonString = await io.File(
-                    platformFile.path!,
-                  ).readAsString();
+                  try {
+                    jsonString = await io.File(
+                      platformFile.path!,
+                    ).readAsString();
+                  } catch (e2) {
+                    if (!context.mounted) return;
+                    context.read<Global>().uiLogger.severe("文件导入错误: $e2");
+                    alart(
+                      context,
+                      "文件 \"${platformFile.name}\" \n无法读取：$e2。",
+                    );
+                    return;
+                  }
                 } else {
                   context.read<Global>().uiLogger.severe("文件导入错误: $e");
                   alart(
