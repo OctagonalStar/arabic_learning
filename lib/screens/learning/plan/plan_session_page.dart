@@ -54,6 +54,21 @@ class PlanSessionPage extends StatefulWidget {
 }
 
 class _PlanSessionPageState extends State<PlanSessionPage> {
+  /// 答题区 → 结算页的切换时长（约 260ms）。
+  static const Duration _switchDuration = Duration(milliseconds: 260);
+
+  /// 入场时的上移位移（相对自身高度的比例，约 16px / 视口高度）。
+  static const Offset _switchSlideOffset = Offset(0.0, 0.035);
+
+  /// 两个稳定 key：只有 `_finished` 翻转时 AnimatedSwitcher 才切换子树，
+  /// 题目内部的 setState 不会误触发结算页动画。
+  static const ValueKey<String> _questionsKey = ValueKey<String>(
+    'plan_session_questions',
+  );
+  static const ValueKey<String> _conclusionKey = ValueKey<String>(
+    'plan_session_conclusion',
+  );
+
   final Random _rnd = Random();
   final PageController _controller = PageController();
 
@@ -294,6 +309,8 @@ class _PlanSessionPageState extends State<PlanSessionPage> {
   @override
   Widget build(BuildContext context) {
     if (_blockedMessage != null) return _buildBlockedPage(context);
+    final bool reduceMotion =
+        MediaQuery.maybeDisableAnimationsOf(context) ?? false;
     return PopScope(
       canPop: false,
       onPopInvokedWithResult: (bool didPop, Object? result) async {
@@ -304,21 +321,50 @@ class _PlanSessionPageState extends State<PlanSessionPage> {
         appBar: _buildAppBar(context),
         body: SafeArea(
           top: false,
-          child: _finished
-              ? _buildConclusion(context)
-              : Center(
-                  child: PageView.builder(
-                    scrollDirection: AdaptiveScope.of(context).isWide
-                        ? Axis.vertical
-                        : Axis.horizontal,
-                    physics: const NeverScrollableScrollPhysics(),
-                    controller: _controller,
-                    itemCount: _testList.length,
-                    itemBuilder: (BuildContext context, int index) {
-                      return _buildQuestion(context, _testList[index], index);
-                    },
-                  ),
+          // 最后一题 → 结算页：淡入 + 轻微上移；答题区反向淡出。
+          // 两个子树各自持有稳定 key，仅 `_finished` 翻转时才会触发切换。
+          child: AnimatedSwitcher(
+            duration: reduceMotion ? Duration.zero : _switchDuration,
+            switchInCurve: AppMotion.standardCurve,
+            switchOutCurve: AppMotion.standardCurve,
+            transitionBuilder: (Widget child, Animation<double> animation) {
+              return FadeTransition(
+                opacity: animation,
+                child: SlideTransition(
+                  position: Tween<Offset>(
+                    begin: _switchSlideOffset,
+                    end: Offset.zero,
+                  ).animate(animation),
+                  child: child,
                 ),
+              );
+            },
+            child: _finished
+                ? KeyedSubtree(
+                    key: _conclusionKey,
+                    child: _buildConclusion(context),
+                  )
+                : KeyedSubtree(
+                    key: _questionsKey,
+                    child: Center(
+                      child: PageView.builder(
+                        scrollDirection: AdaptiveScope.of(context).isWide
+                            ? Axis.vertical
+                            : Axis.horizontal,
+                        physics: const NeverScrollableScrollPhysics(),
+                        controller: _controller,
+                        itemCount: _testList.length,
+                        itemBuilder: (BuildContext context, int index) {
+                          return _buildQuestion(
+                            context,
+                            _testList[index],
+                            index,
+                          );
+                        },
+                      ),
+                    ),
+                  ),
+          ),
         ),
       ),
     );
