@@ -1,7 +1,12 @@
-// 「计划学习」配置页：截止日期、学习范围、每组数量、学习链条与三个开关。
+// 「计划学习」配置页：截止日期、学习范围（课程 + 标签）、每组数量、
+// 学习链条与三个开关。
 //
 // 保存前做完整校验（范围非空且有可学词、链条合法、截止日期晚于今天、
 // 复习系统已启用），保存成功后 `pop(true)` 交由首页刷新。
+//
+// 版式与设置页一致：分组标题 + `SettingItem` / `SettingRow`，行内需要点击
+// 时用 `InkWell` 包住；课程与标签使用 Material `InputChip`，题型使用常驻
+// `ActionChip`，单组数量使用 Material `Slider`。
 
 import 'dart:math' as math;
 
@@ -21,13 +26,32 @@ import 'package:arabic_learning/services/plan_scheduler.dart';
 import 'package:arabic_learning/services/plan_store.dart';
 import 'package:arabic_learning/theme/tokens.dart';
 import 'package:arabic_learning/theme/typography.dart' show withoutColor;
-import 'package:arabic_learning/widgets/kit.dart' show Button, popSelectClasses;
+import 'package:arabic_learning/widgets/kit.dart'
+    show Button, SettingItem, SettingRow, popSelectClasses;
 import 'package:arabic_learning/widgets/overlays.dart' show showSnackBar;
-import 'package:arabic_learning/widgets/question_chain_editor.dart';
+import 'package:arabic_learning/widgets/question_chain_editor.dart'
+    show QuestionChainListView, kQuestionTypeLabels;
 
-/// 题型链条的列表与添加菜单都按 `MediaQuery.size.height` 计算行高；
+/// 题型链条的列表与添加按钮都按 `MediaQuery.size.height` 计算行高；
 /// 高度不足时统一按 800 计算，避免矮窗口里 48px 的删除按钮被压进 33px 的行。
 const double _kChainEditorReferenceHeight = 800.0;
+
+/// 单组数量允许范围（与 Slider 的 min / max / divisions 保持一致）。
+const int _kGroupSizeMin = 5;
+const int _kGroupSizeMax = 30;
+const int _kGroupSizeDivisions = _kGroupSizeMax - _kGroupSizeMin;
+
+/// 可选题型（与 `kQuestionTypeLabels` 的键一致）。
+const List<int> _kQuestionTypes = <int>[0, 1, 2, 3, 4];
+
+/// 题型编号 → 添加 chip 的图标。
+const Map<int, IconData> _kQuestionTypeIcons = <int, IconData>{
+  0: Icons.style_outlined,
+  1: Icons.translate,
+  2: Icons.abc,
+  3: Icons.keyboard_outlined,
+  4: Icons.headphones_outlined,
+};
 
 /// 「配置学习计划」页面。
 ///
@@ -45,6 +69,7 @@ class PlanConfigPage extends StatefulWidget {
 class _PlanConfigPageState extends State<PlanConfigPage> {
   late DateTime _deadline;
   late List<PlanScopeRef> _scope;
+  late List<String> _categories;
   late int _groupSize;
   late List<int> _sections;
   late bool _shuffleWithinSection;
@@ -53,7 +78,6 @@ class _PlanConfigPageState extends State<PlanConfigPage> {
 
   bool _fsrsEnabled = false;
   bool _saving = false;
-  bool _addMenuOpen = false;
 
   bool _deadlineError = false;
   bool _scopeError = false;
@@ -73,7 +97,15 @@ class _PlanConfigPageState extends State<PlanConfigPage> {
     _scope = List<PlanScopeRef>.of(
       initial?.scope ?? const <PlanScopeRef>[],
     );
-    _groupSize = initial?.groupSize ?? 10;
+    _categories = List<String>.of(
+      initial?.categories ?? const <String>[],
+    );
+    // 旧计划的 groupSize 可能不在 5..30 内：统一夹到 Slider 区间，
+    // 显示与保存都用夹紧后的值，避免滑块与文案对不上。
+    _groupSize = math.min(
+      _kGroupSizeMax,
+      math.max(_kGroupSizeMin, initial?.groupSize ?? 10),
+    );
     _sections = List<int>.of(initial?.chain.sections ?? const <int>[0, 2]);
     _shuffleWithinSection = initial?.chain.shuffleWithinSection ?? false;
     _shuffleClasses = initial?.shuffleClasses ?? false;
@@ -92,6 +124,7 @@ class _PlanConfigPageState extends State<PlanConfigPage> {
       id: widget.initial?.id ?? "draft",
       deadline: _deadline,
       scope: _scope,
+      categories: _categories,
       groupSize: _groupSize,
       chain: PlanChain(
         sections: List<int>.unmodifiable(_sections),
@@ -103,7 +136,7 @@ class _PlanConfigPageState extends State<PlanConfigPage> {
     );
   }
 
-  /// 按当前范围重算「共 N 词 / 可学 K 词」。
+  /// 按当前范围与标签重算「共 N 词 / 可学 K 词」。
   void _recountScope() {
     final StudyPlan draft = _draftPlan();
     _scopeWords = resolveScopeWords(draft, AppData().wordData).length;
@@ -155,20 +188,26 @@ class _PlanConfigPageState extends State<PlanConfigPage> {
       context,
       withCache: false,
       withReviewChoose: false,
-      withCategoryFilter: false,
+      // 与常规学习一致的标签筛选（多选，或逻辑）。
+      withCategoryFilter: true,
     );
-    if (!mounted || selection.selectedClass.isEmpty) return;
-    final List<PlanScopeRef> added = <PlanScopeRef>[
-      for (final ClassItem course in selection.selectedClass) _refFor(course),
-    ];
+    if (!mounted) return;
+    final List<ClassItem> pickedClasses = selection.selectedClass;
+    final Set<String> pickedCategories = selection.selectedCategories;
     setState(() {
-      for (final PlanScopeRef ref in added) {
+      for (final ClassItem course in pickedClasses) {
+        final PlanScopeRef ref = _refFor(course);
         if (ref.sourceFile.isEmpty && ref.className.isEmpty) continue;
         if (!_scope.any((PlanScopeRef existing) => existing.key == ref.key)) {
           _scope.add(ref);
         }
       }
-      _scopeError = false;
+      // 重选课程时筛选区默认为空：只有在用户明确勾选标签时才替换，
+      // 避免「只想换课程」却把已有标签清空。
+      if (pickedCategories.isNotEmpty) {
+        _categories = List<String>.of(pickedCategories);
+      }
+      if (pickedClasses.isNotEmpty) _scopeError = false;
       _recountScope();
     });
   }
@@ -200,6 +239,20 @@ class _PlanConfigPageState extends State<PlanConfigPage> {
     });
   }
 
+  void _removeCategory(String category) {
+    setState(() {
+      _categories = List<String>.of(_categories)..remove(category);
+      _recountScope();
+    });
+  }
+
+  void _clearCategories() {
+    setState(() {
+      _categories = <String>[];
+      _recountScope();
+    });
+  }
+
   void _addType(int type) {
     setState(() {
       _sections.add(type);
@@ -223,6 +276,11 @@ class _PlanConfigPageState extends State<PlanConfigPage> {
       showSnackBar(context, "请先启用复习系统");
       return;
     }
+    // 标签筛选把范围过滤到 0 词时给出更准确的提示。
+    if (_scope.isNotEmpty && _unlearnedWords == 0 && _categories.isNotEmpty) {
+      showSnackBar(context, "所选标签下没有可学单词");
+      return;
+    }
     if (!deadlineOk || !scopeOk || !chainOk) {
       showSnackBar(context, "请先补全标红的配置项");
       return;
@@ -235,6 +293,7 @@ class _PlanConfigPageState extends State<PlanConfigPage> {
       id: DateTime.now().millisecondsSinceEpoch.toString(),
       deadline: _deadline,
       scope: _scope,
+      categories: _categories,
       groupSize: _groupSize,
       chain: PlanChain(
         sections: List<int>.unmodifiable(_sections),
@@ -266,39 +325,50 @@ class _PlanConfigPageState extends State<PlanConfigPage> {
   Widget build(BuildContext context) {
     final ThemeData theme = Theme.of(context);
     final ColorScheme scheme = theme.colorScheme;
+    final MediaQueryData media = MediaQuery.of(context);
+    // `SettingItem` 的卡片宽度固定为屏幕宽度的 90%。宽屏下把内容区的
+    // MediaQuery 宽度夹到 800，既能让卡片落在 720 的阅读宽度内，
+    // 又不用修改设置页共用的组件。
+    final double cappedWidth = math.min(media.size.width, 800.0);
     return Scaffold(
       appBar: AppBar(title: const Text("配置学习计划")),
       body: SafeArea(
         top: false,
         child: LayoutBuilder(
           builder: (BuildContext context, BoxConstraints constraints) {
-            final bool wide = constraints.maxWidth > AppBreakpoints.mobile;
+            final bool wide =
+                constraints.maxWidth > AppBreakpoints.mobile;
             final double horizontal = wide ? AppSpacing.md : AppSpacing.sm;
-            return SingleChildScrollView(
-              padding: EdgeInsets.fromLTRB(
-                horizontal,
-                AppSpacing.sm,
-                horizontal,
-                AppSpacing.md,
+            return MediaQuery(
+              data: media.copyWith(
+                size: Size(cappedWidth, media.size.height),
               ),
-              child: Center(
-                child: ConstrainedBox(
-                  constraints: const BoxConstraints(maxWidth: 720.0),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: <Widget>[
-                      if (!_fsrsEnabled) ...<Widget>[
-                        _buildFsrsBlocker(context),
-                        const SizedBox(height: AppSpacing.sm),
+              child: SingleChildScrollView(
+                padding: EdgeInsets.fromLTRB(
+                  horizontal,
+                  AppSpacing.sm,
+                  horizontal,
+                  AppSpacing.md,
+                ),
+                child: Center(
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: 800.0),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: <Widget>[
+                        if (!_fsrsEnabled) ...<Widget>[
+                          _buildFsrsBlocker(context),
+                          const SizedBox(height: AppSpacing.sm),
+                        ],
+                        _buildPeriodSection(context),
+                        const SizedBox(height: AppSpacing.xs),
+                        _buildScopeSection(context),
+                        const SizedBox(height: AppSpacing.xs),
+                        _buildRegularSection(context),
+                        const SizedBox(height: AppSpacing.xs),
+                        _buildPreview(context),
                       ],
-                      _buildPeriodSection(context),
-                      const SizedBox(height: AppSpacing.sm),
-                      _buildScopeSection(context),
-                      const SizedBox(height: AppSpacing.sm),
-                      _buildRegularSection(context),
-                      const SizedBox(height: AppSpacing.xs),
-                      _buildPreview(context),
-                    ],
+                    ),
                   ),
                 ),
               ),
@@ -365,73 +435,48 @@ class _PlanConfigPageState extends State<PlanConfigPage> {
   }
 
   Widget _buildPeriodSection(BuildContext context) {
-    return _ConfigSection(
-      title: "周期",
-      children: <Widget>[
-        _buildDeadlineRow(context),
-      ],
-    );
-  }
-
-  Widget _buildDeadlineRow(BuildContext context) {
     final ThemeData theme = Theme.of(context);
     final ColorScheme scheme = theme.colorScheme;
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
+    return SettingItem(
+      title: "周期",
+      padding: const EdgeInsets.symmetric(horizontal: 4.0, vertical: 2.0),
       children: <Widget>[
-        Material(
-          color: scheme.surfaceContainerHighest,
-          borderRadius: AppRadius.controlBorder,
-          child: InkWell(
-            borderRadius: AppRadius.controlBorder,
-            onTap: _pickDeadline,
-            child: Padding(
-              padding: const EdgeInsets.symmetric(
-                horizontal: AppSpacing.sm,
-                vertical: 10.0,
-              ),
-              child: Row(
-                children: <Widget>[
-                  Icon(
-                    Icons.event_outlined,
-                    size: 20.0,
-                    color: scheme.primary,
-                  ),
-                  const SizedBox(width: AppSpacing.xs),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: <Widget>[
-                        Text("截止日期", style: theme.textTheme.bodyLarge),
-                        Text(
-                          "截止日期不含当日，最后学习日为截止日前一天",
-                          style: theme.textTheme.bodySmall?.copyWith(
-                            color: scheme.onSurfaceVariant,
-                          ),
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: <Widget>[
+            Material(
+              type: MaterialType.transparency,
+              child: InkWell(
+                borderRadius: AppRadius.controlBorder,
+                onTap: _pickDeadline,
+                child: SettingRow(
+                  leading: "截止日期",
+                  icon: Icons.event_outlined,
+                  note: "截止日期不含当日，最后学习日为截止日前一天",
+                  end: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: <Widget>[
+                      Text(
+                        planMonthDay(_deadline),
+                        style: theme.textTheme.titleMedium?.copyWith(
+                          color: scheme.primary,
+                          fontWeight: FontWeight.w600,
                         ),
-                      ],
-                    ),
+                      ),
+                      Icon(
+                        Icons.chevron_right_rounded,
+                        size: 20.0,
+                        color: scheme.onSurfaceVariant,
+                      ),
+                    ],
                   ),
-                  const SizedBox(width: AppSpacing.xs),
-                  Text(
-                    planMonthDay(_deadline),
-                    style: theme.textTheme.titleMedium?.copyWith(
-                      color: scheme.primary,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                  Icon(
-                    Icons.chevron_right_rounded,
-                    size: 20.0,
-                    color: scheme.onSurfaceVariant,
-                  ),
-                ],
+                ),
               ),
             ),
-          ),
+            if (_deadlineError)
+              _errorText(context, "截止日期需晚于今天"),
+          ],
         ),
-        if (_deadlineError)
-          _errorText(context, "截止日期需晚于今天"),
       ],
     );
   }
@@ -442,159 +487,250 @@ class _PlanConfigPageState extends State<PlanConfigPage> {
     final String summary = !_fsrsEnabled
         ? "共 $_scopeWords 词 · 复习系统未启用"
         : "共 $_scopeWords 词 · 已学 ${math.max(0, _scopeWords - _unlearnedWords)} · 可学 $_unlearnedWords";
-    return _ConfigSection(
+    return SettingItem(
       title: "学习范围",
+      padding: const EdgeInsets.symmetric(horizontal: 4.0, vertical: 4.0),
       children: <Widget>[
-        if (_scope.isEmpty)
-          Text(
-            "尚未选择课程。计划会按所选课程的顺序依次学习。",
-            style: theme.textTheme.bodyMedium?.copyWith(
-              color: scheme.onSurfaceVariant,
-            ),
-          )
-        else
-          Wrap(
-            spacing: 8.0,
-            runSpacing: AppSpacing.xs,
-            children: <Widget>[
-              for (int index = 0; index < _scope.length; index++)
-                _ScopeChip(
-                  label: _scope[index].className.isEmpty
-                      ? "未命名课程"
-                      : _scope[index].className,
-                  sourceFile: _scope[index].sourceFile,
-                  valid: _findCourse(_scope[index]) != null,
-                  onRemove: () => _removeScopeAt(index),
-                ),
-            ],
+        SettingRow(
+          leading: "课程",
+          icon: Icons.menu_book_outlined,
+          note: summary,
+          end: TextButton.icon(
+            onPressed: _pickCourses,
+            icon: const Icon(Icons.add_rounded, size: 18.0),
+            label: const Text("选择课程"),
           ),
-        const SizedBox(height: AppSpacing.xs),
-        Row(
+        ),
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: <Widget>[
-            Expanded(
-              child: Text(
-                summary,
+            if (_scope.isEmpty)
+              Text(
+                "尚未选择课程。计划会按所选课程的顺序依次学习。",
                 style: theme.textTheme.bodyMedium?.copyWith(
                   color: scheme.onSurfaceVariant,
                 ),
+              )
+            else
+              Wrap(
+                spacing: 8.0,
+                runSpacing: AppSpacing.xs,
+                children: <Widget>[
+                  for (int index = 0; index < _scope.length; index++)
+                    _buildScopeChip(context, index),
+                ],
               ),
-            ),
-            TextButton.icon(
-              onPressed: _pickCourses,
-              icon: const Icon(Icons.add_rounded, size: 18.0),
-              label: const Text("选择课程"),
-            ),
+            if (_scopeError)
+              _errorText(
+                context,
+                // 课程本身有词、只是被标签过滤到 0 时，提示标签而不是课程。
+                _categories.isNotEmpty &&
+                        _scope.isNotEmpty &&
+                        _unlearnedWords == 0
+                    ? "所选标签下没有可学单词"
+                    : "请选择至少一门还有未学单词的课程",
+              ),
           ],
         ),
-        if (_scopeError)
-          _errorText(context, "请选择至少一门还有未学单词的课程"),
+        SettingRow(
+          leading: "标签筛选",
+          icon: Icons.label_outline,
+          note: _categories.isEmpty
+              ? "未筛选 · 选课时可勾选标签"
+              : "只学习命中任一标签的单词（多选，或逻辑）",
+          end: _categories.isEmpty
+              ? Text(
+                  "未筛选",
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    color: scheme.onSurfaceVariant,
+                  ),
+                )
+              : TextButton.icon(
+                  onPressed: _clearCategories,
+                  icon: const Icon(Icons.close_rounded, size: 18.0),
+                  label: const Text("清除标签"),
+                ),
+        ),
+        if (_categories.isNotEmpty)
+          Wrap(
+            spacing: 6.0,
+            runSpacing: AppSpacing.xxs,
+            children: <Widget>[
+              for (final String category in _categories)
+                InputChip(
+                  key: ValueKey<String>("planCategory-$category"),
+                  label: Text(category),
+                  labelStyle: theme.textTheme.labelMedium?.copyWith(
+                    color: scheme.onSecondaryContainer,
+                  ),
+                  backgroundColor: scheme.secondaryContainer,
+                  side: BorderSide.none,
+                  deleteIcon: Icon(
+                    Icons.close_rounded,
+                    size: 16.0,
+                    color: scheme.onSecondaryContainer,
+                  ),
+                  onDeleted: () => _removeCategory(category),
+                  visualDensity: VisualDensity.compact,
+                  materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                ),
+            ],
+          ),
       ],
+    );
+  }
+
+  /// 已选课程标签：失效课程用错误色标记，仍可手动移除。
+  Widget _buildScopeChip(BuildContext context, int index) {
+    final ThemeData theme = Theme.of(context);
+    final ColorScheme scheme = theme.colorScheme;
+    final PlanScopeRef ref = _scope[index];
+    final String label = ref.className.isEmpty ? "未命名课程" : ref.className;
+    final bool valid = _findCourse(ref) != null;
+    final Color foreground = valid ? scheme.onSecondaryContainer : scheme.error;
+    return Tooltip(
+      message: ref.sourceFile.isEmpty ? label : "${ref.sourceFile} · $label",
+      child: InputChip(
+        key: ValueKey<String>("planScope-${ref.key}"),
+        label: Text(
+          label,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+        ),
+        avatar: valid
+            ? null
+            : Icon(
+                Icons.error_outline_rounded,
+                size: 16.0,
+                color: scheme.error,
+              ),
+        labelStyle: theme.textTheme.labelMedium?.copyWith(color: foreground),
+        backgroundColor: valid
+            ? scheme.secondaryContainer
+            : scheme.error.withValues(alpha: 0.10),
+        side:
+            valid ? BorderSide.none : BorderSide(color: scheme.error.withValues(alpha: 0.35)),
+        deleteIcon: Icon(Icons.close_rounded, size: 16.0, color: foreground),
+        onDeleted: () => _removeScopeAt(index),
+        visualDensity: VisualDensity.compact,
+        materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+      ),
     );
   }
 
   Widget _buildRegularSection(BuildContext context) {
     final ThemeData theme = Theme.of(context);
     final ColorScheme scheme = theme.colorScheme;
-    return _ConfigSection(
+    return SettingItem(
       title: "常规",
+      padding: const EdgeInsets.symmetric(horizontal: 4.0, vertical: 4.0),
       children: <Widget>[
-        Row(
-          children: <Widget>[
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: <Widget>[
-                  Text("单组数量", style: theme.textTheme.bodyLarge),
-                  Text(
-                    "每组 $_groupSize 词",
-                    style: theme.textTheme.bodySmall?.copyWith(
-                      color: scheme.onSurfaceVariant,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            _CountStepper(
-              value: _groupSize,
-              min: 1,
-              max: 50,
-              onChanged: (int value) {
+        SettingRow(
+          leading: "单组数量",
+          icon: Icons.view_agenda_outlined,
+          note: "每组 $_groupSize 词 · 可设置 $_kGroupSizeMin–$_kGroupSizeMax 词",
+          end: SizedBox(
+            width: 180.0,
+            child: Slider(
+              key: const ValueKey<String>("planGroupSizeSlider"),
+              value: _groupSize.toDouble(),
+              min: _kGroupSizeMin.toDouble(),
+              max: _kGroupSizeMax.toDouble(),
+              divisions: _kGroupSizeDivisions,
+              label: "$_groupSize 词",
+              onChanged: (double value) {
                 setState(() {
-                  _groupSize = value;
+                  _groupSize = value.round();
                 });
               },
             ),
+          ),
+        ),
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: <Widget>[
+            SettingRow(
+              leading: "学习链条",
+              icon: Icons.reorder,
+              note: "按顺序完成下列题型；长按拖动排序；"
+                  "至少包含 1 个非单词卡片题型；计划学习不使用自我评级题目。",
+              end: Text(
+                "${_sections.length} 个",
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: scheme.onSurfaceVariant,
+                ),
+              ),
+            ),
+            const SizedBox(height: AppSpacing.xs),
+            _buildChainEditor(context),
+            if (_chainError)
+              _errorText(context, "学习链条至少需要包含 1 个非单词卡片题型"),
+            const SizedBox(height: AppSpacing.xs),
+            Text(
+              "添加题型",
+              style: theme.textTheme.labelLarge?.copyWith(
+                color: scheme.onSurfaceVariant,
+              ),
+            ),
+            const SizedBox(height: AppSpacing.xxs),
+            Wrap(
+              spacing: 8.0,
+              runSpacing: AppSpacing.xxs,
+              children: <Widget>[
+                for (final int type in _kQuestionTypes)
+                  ActionChip(
+                    key: ValueKey<String>("planAddType-$type"),
+                    avatar: Icon(
+                      _kQuestionTypeIcons[type] ?? Icons.add_rounded,
+                      size: 18.0,
+                    ),
+                    label: Text(kQuestionTypeLabels[type] ?? "题型"),
+                    onPressed: () => _addType(type),
+                    visualDensity: VisualDensity.compact,
+                    materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                  ),
+              ],
+            ),
           ],
         ),
-        const Divider(height: AppSpacing.md),
-        Text(
-          "学习链条",
-          style: theme.textTheme.bodyLarge?.copyWith(
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-        const SizedBox(height: 2.0),
-        Text(
-          "按顺序完成下列题型；至少包含 1 个非单词卡片题型；计划学习不使用自我评级题目。",
-          style: theme.textTheme.bodySmall?.copyWith(
-            color: scheme.onSurfaceVariant,
-            height: 1.4,
-          ),
-        ),
-        const SizedBox(height: AppSpacing.xs),
-        _buildChainEditor(context),
-        if (_chainError)
-          _errorText(context, "学习链条至少需要包含 1 个非单词卡片题型"),
-        Align(
-          alignment: Alignment.centerLeft,
-          child: TextButton.icon(
-            onPressed: () {
+        SettingRow(
+          leading: "组内单词乱序",
+          icon: Icons.shuffle,
+          note: "开启后同一组单词按随机顺序出现",
+          end: Switch(
+            value: _shuffleWithinSection,
+            onChanged: (bool value) {
               setState(() {
-                _addMenuOpen = !_addMenuOpen;
+                _shuffleWithinSection = value;
               });
             },
-            icon: Icon(
-              _addMenuOpen
-                  ? Icons.keyboard_arrow_up_rounded
-                  : Icons.add_rounded,
-              size: 18.0,
-            ),
-            label: Text(_addMenuOpen ? "收起题型" : "添加题型"),
           ),
         ),
-        _buildAddMenu(context),
-        const Divider(height: AppSpacing.md),
-        _SwitchRow(
-          title: "组内单词乱序",
-          description: "开启后同一组单词按随机顺序出现",
-          value: _shuffleWithinSection,
-          onChanged: (bool value) {
-            setState(() {
-              _shuffleWithinSection = value;
-            });
-          },
+        SettingRow(
+          leading: "打乱课程顺序",
+          icon: Icons.swap_vert,
+          note: "只打乱课程顺序，不影响组内单词顺序",
+          end: Switch(
+            value: _shuffleClasses,
+            onChanged: (bool value) {
+              setState(() {
+                _shuffleClasses = value;
+              });
+            },
+          ),
         ),
-        const Divider(height: AppSpacing.md),
-        _SwitchRow(
-          title: "打乱课程顺序",
-          description: "只打乱课程顺序，不影响组内单词顺序",
-          value: _shuffleClasses,
-          onChanged: (bool value) {
-            setState(() {
-              _shuffleClasses = value;
-            });
-          },
-        ),
-        const Divider(height: AppSpacing.md),
-        _SwitchRow(
-          title: "介入连胜",
-          description: "开启后，当日未完成最低目标前，任何学习都不会打卡",
-          value: _streakGate,
-          onChanged: (bool value) {
-            setState(() {
-              _streakGate = value;
-            });
-          },
+        SettingRow(
+          leading: "介入连胜",
+          icon: Icons.local_fire_department_outlined,
+          note: "开启后，当日未完成最低目标前，任何学习都不会打卡",
+          end: Switch(
+            value: _streakGate,
+            onChanged: (bool value) {
+              setState(() {
+                _streakGate = value;
+              });
+            },
+          ),
         ),
       ],
     );
@@ -605,8 +741,11 @@ class _PlanConfigPageState extends State<PlanConfigPage> {
     final double referenceHeight =
         math.max(media.size.height, _kChainEditorReferenceHeight);
     final double tileHeight = referenceHeight * 0.08;
+    // 空链条占位文案会随系统字号放大，固定 52 在 2 倍字号下会溢出。
+    final double emptyViewport =
+        math.max(52.0, media.textScaler.scale(16.0) * 2.4);
     final double viewport = _sections.isEmpty
-        ? 52.0
+        ? emptyViewport
         : _sections.length * tileHeight + 2.0;
     return SizedBox(
       height: viewport,
@@ -616,7 +755,7 @@ class _PlanConfigPageState extends State<PlanConfigPage> {
         ),
         child: QuestionChainListView(
           sections: _sections,
-          emptyHint: "还没有题型，点下面的「添加题型」开始配置",
+          emptyHint: "还没有题型，点下方的题型按钮开始配置",
           onReorder: (int oldIndex, int newIndex) {
             setState(() {
               final int type = _sections.removeAt(oldIndex);
@@ -630,42 +769,6 @@ class _PlanConfigPageState extends State<PlanConfigPage> {
               _chainError = false;
             });
           },
-        ),
-      ),
-    );
-  }
-
-  Widget _buildAddMenu(BuildContext context) {
-    final MediaQueryData media = MediaQuery.of(context);
-    final double referenceHeight =
-        math.max(media.size.height, _kChainEditorReferenceHeight);
-    // 展开值固定为 1：QuestionTypeAddMenu 的按钮高度按 expandValue 线性缩放，
-    // 中间值会让图标与文字挤进十几像素高的按钮里。这里改用高度裁剪 + 淡入
-    // 完成同样的“展开”观感，控件尺寸始终稳定。
-    return TweenAnimationBuilder<double>(
-      tween: Tween<double>(begin: 0.0, end: _addMenuOpen ? 1.0 : 0.0),
-      duration: AppMotion.mediumShort,
-      curve: AppMotion.standardCurve,
-      builder: (BuildContext context, double value, Widget? child) {
-        if (value <= 0.001) return const SizedBox.shrink();
-        return ClipRect(
-          child: Align(
-            alignment: Alignment.topLeft,
-            heightFactor: value,
-            child: Opacity(opacity: value.clamp(0.0, 1.0), child: child),
-          ),
-        );
-      },
-      child: Align(
-        alignment: Alignment.centerLeft,
-        child: MediaQuery(
-          data: media.copyWith(
-            size: Size(media.size.width, referenceHeight),
-          ),
-          child: QuestionTypeAddMenu(
-            expandValue: 1.0,
-            onAdd: _addType,
-          ),
         ),
       ),
     );
@@ -835,234 +938,6 @@ class _PlanConfigPageState extends State<PlanConfigPage> {
           ),
         ],
       ),
-    );
-  }
-}
-
-/// 分组卡片：标题 + 内容，统一 25 圆角与低层容器色。
-class _ConfigSection extends StatelessWidget {
-  final String title;
-  final List<Widget> children;
-
-  const _ConfigSection({required this.title, required this.children});
-
-  @override
-  Widget build(BuildContext context) {
-    final ThemeData theme = Theme.of(context);
-    final ColorScheme scheme = theme.colorScheme;
-    return Container(
-      padding: const EdgeInsets.all(AppSpacing.sm),
-      decoration: BoxDecoration(
-        color: scheme.surfaceContainerLow,
-        borderRadius: AppRadius.cardBorder,
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: <Widget>[
-          Padding(
-            padding: const EdgeInsets.only(left: 2.0, bottom: AppSpacing.xs),
-            child: Text(
-              title,
-              style: theme.textTheme.titleMedium?.copyWith(
-                color: scheme.primary,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-          ),
-          ...children,
-        ],
-      ),
-    );
-  }
-}
-
-/// 已选课程标签：失效课程用错误色标记，仍可手动移除。
-class _ScopeChip extends StatelessWidget {
-  final String label;
-  final String sourceFile;
-  final bool valid;
-  final VoidCallback onRemove;
-
-  const _ScopeChip({
-    required this.label,
-    required this.sourceFile,
-    required this.valid,
-    required this.onRemove,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final ThemeData theme = Theme.of(context);
-    final ColorScheme scheme = theme.colorScheme;
-    final Color foreground =
-        valid ? scheme.onSecondaryContainer : scheme.error;
-    final Color background = valid
-        ? scheme.secondaryContainer
-        : scheme.error.withValues(alpha: 0.10);
-    return Tooltip(
-      message: sourceFile.isEmpty ? label : "$sourceFile · $label",
-      child: Container(
-        padding: const EdgeInsets.only(left: 12.0, right: 2.0),
-        decoration: BoxDecoration(
-          color: background,
-          borderRadius: BorderRadius.circular(AppRadius.control),
-          border: valid
-              ? null
-              : Border.all(color: scheme.error.withValues(alpha: 0.35)),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: <Widget>[
-            if (!valid)
-              Padding(
-                padding: const EdgeInsets.only(right: 4.0),
-                child: Icon(
-                  Icons.error_outline_rounded,
-                  size: 14.0,
-                  color: scheme.error,
-                ),
-              ),
-            Flexible(
-              child: Text(
-                label,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: theme.textTheme.labelMedium?.copyWith(
-                  color: foreground,
-                ),
-              ),
-            ),
-            IconButton(
-              onPressed: onRemove,
-              icon: const Icon(Icons.close_rounded, size: 16.0),
-              color: foreground,
-              tooltip: "移除 $label",
-              visualDensity: VisualDensity.compact,
-              padding: EdgeInsets.zero,
-              constraints: const BoxConstraints(
-                minWidth: 32.0,
-                minHeight: 32.0,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-/// 单组数量步进器（1..50）。
-class _CountStepper extends StatelessWidget {
-  final int value;
-  final int min;
-  final int max;
-  final ValueChanged<int> onChanged;
-
-  const _CountStepper({
-    required this.value,
-    required this.min,
-    required this.max,
-    required this.onChanged,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final ThemeData theme = Theme.of(context);
-    final ColorScheme scheme = theme.colorScheme;
-    return Container(
-      decoration: BoxDecoration(
-        color: scheme.surfaceContainerHighest,
-        borderRadius: AppRadius.controlBorder,
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: <Widget>[
-          _stepButton(
-            context,
-            icon: Icons.remove_rounded,
-            enabled: value > min,
-            onTap: () => onChanged(value - 1),
-          ),
-          SizedBox(
-            width: 40.0,
-            child: Text(
-              "$value",
-              textAlign: TextAlign.center,
-              style: theme.textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-          ),
-          _stepButton(
-            context,
-            icon: Icons.add_rounded,
-            enabled: value < max,
-            onTap: () => onChanged(value + 1),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _stepButton(
-    BuildContext context, {
-    required IconData icon,
-    required bool enabled,
-    required VoidCallback onTap,
-  }) {
-    final ColorScheme scheme = Theme.of(context).colorScheme;
-    return IconButton(
-      onPressed: enabled ? onTap : null,
-      icon: Icon(icon, size: 19.0),
-      color: scheme.primary,
-      disabledColor: scheme.onSurface.withValues(alpha: 0.30),
-      tooltip: icon == Icons.add_rounded ? "增加" : "减少",
-      visualDensity: VisualDensity.compact,
-      constraints: const BoxConstraints(minWidth: 40.0, minHeight: 40.0),
-      padding: EdgeInsets.zero,
-    );
-  }
-}
-
-/// 开关行：标题 + 说明 + Switch。
-class _SwitchRow extends StatelessWidget {
-  final String title;
-  final String description;
-  final bool value;
-  final ValueChanged<bool> onChanged;
-
-  const _SwitchRow({
-    required this.title,
-    required this.description,
-    required this.value,
-    required this.onChanged,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final ThemeData theme = Theme.of(context);
-    final ColorScheme scheme = theme.colorScheme;
-    return Row(
-      children: <Widget>[
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: <Widget>[
-              Text(title, style: theme.textTheme.bodyLarge),
-              const SizedBox(height: 2.0),
-              Text(
-                description,
-                style: theme.textTheme.bodySmall?.copyWith(
-                  color: scheme.onSurfaceVariant,
-                  height: 1.35,
-                ),
-              ),
-            ],
-          ),
-        ),
-        const SizedBox(width: AppSpacing.xs),
-        Switch(value: value, onChanged: onChanged),
-      ],
     );
   }
 }

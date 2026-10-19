@@ -237,15 +237,18 @@ class _DataSyncPage extends State<DataSyncPage> {
                   Button(
                     onPressed: () async {
                       context.read<Global>().uiLogger.info("导入软件数据");
-                      PlatformFile? result = await FilePicker.pickFile(
-                        type: FileType.custom,
-                        allowedExtensions: ['json'],
-                      );
-                      if (result != null) {
-                        String jsonString;
-                        PlatformFile platformFile = result;
-                        if ((await platformFile.readAsBytes()).isNotEmpty){
-                          jsonString = utf8.decode(await platformFile.readAsBytes());
+                      final String jsonString;
+                      final PlatformFile platformFile;
+                      try {
+                        final PlatformFile? result = await FilePicker.pickFile(
+                          type: FileType.custom,
+                          allowedExtensions: ['json'],
+                        );
+                        if (result == null) return;
+                        platformFile = result;
+                        final List<int> bytes = await platformFile.readAsBytes();
+                        if (bytes.isNotEmpty) {
+                          jsonString = utf8.decode(bytes);
                         } else if (platformFile.path != null && !kIsWeb) {
                           jsonString = await io.File(platformFile.path!).readAsString();
                         } else {
@@ -254,7 +257,13 @@ class _DataSyncPage extends State<DataSyncPage> {
                           alart(context, "文件 \"${platformFile.name}\" \n无法读取：bytes和path均为null。");
                           return;
                         }
+                      } catch (e) {
                         if (!context.mounted) return;
+                        context.read<Global>().uiLogger.severe("备份数据读取失败: $e");
+                        alart(context, "文件读取失败：\n$e");
+                        return;
+                      }
+                      if (context.mounted) {
                         try{
                           context.read<Global>().uiLogger.fine("备份数据读取完成，开始解析");
                           AppData().storage.recovery(jsonDecode(jsonString));

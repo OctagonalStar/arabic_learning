@@ -292,6 +292,53 @@ void main() {
       expect(tester.takeException(), isNull);
     });
 
+    testWidgets('进入结算页使用淡入 + 上移过渡', (WidgetTester tester) async {
+      await PlanStore().setPlan(_plan(sections: const <int>[0]));
+      evaluateNow();
+
+      await _pumpSession(
+        tester,
+        words: <WordItem>[_words().first],
+        chain: const PlanChain(sections: <int>[0]),
+      );
+
+      await tester.tap(find.text('下一题'));
+      await tester.pump(); // 提交 _finished，AnimatedSwitcher 开始过渡
+      await tester.pump(const Duration(milliseconds: 120)); // 过渡中间帧
+
+      // 结算页正处于淡入 / 上移过程中，而不是瞬时出现。
+      final Finder conclusionFade = find.ancestor(
+        of: find.text('返回计划'),
+        matching: find.byType(FadeTransition),
+      );
+      expect(conclusionFade, findsWidgets);
+      final double opacity = tester
+          .widget<FadeTransition>(conclusionFade.first)
+          .opacity
+          .value;
+      expect(opacity, greaterThan(0.0));
+      expect(opacity, lessThan(1.0));
+
+      final Finder conclusionSlide = find.ancestor(
+        of: find.text('返回计划'),
+        matching: find.byType(SlideTransition),
+      );
+      expect(conclusionSlide, findsWidgets);
+      final Offset offset = tester
+          .widget<SlideTransition>(conclusionSlide.first)
+          .position
+          .value;
+      expect(offset.dy, greaterThan(0.0), reason: '结算页应自下而上移入');
+
+      // 过渡结束后答题区已移除，结算页按钮与文案正常可用。
+      await tester.pumpAndSettle();
+      expect(find.byType(PageView), findsNothing);
+      expect(find.text('学习完成'), findsOneWidget);
+      expect(find.text('返回计划'), findsOneWidget);
+      expect(find.text('继续第 1 组'), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    });
+
     testWidgets('完成页在 480×420 不 overflow', (WidgetTester tester) async {
       await PlanStore().setPlan(_plan(sections: const <int>[0]));
       evaluateNow();

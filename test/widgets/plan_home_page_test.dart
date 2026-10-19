@@ -47,6 +47,26 @@ DictData _dict([int count = 10]) {
   );
 }
 
+/// 单课程词库：前 [tagged] 个词带「高频」标签，其余无标签。
+DictData _dictWithTags({int count = 10, int tagged = 3}) {
+  final DictData base = _dict(count);
+  return DictData(
+    words: <WordItem>[
+      for (final WordItem word in base.words)
+        WordItem(
+          arabic: word.arabic,
+          chinese: word.chinese,
+          explanation: word.explanation,
+          className: word.className,
+          id: word.id,
+          categories:
+              word.id < tagged ? const <String>['高频'] : const <String>[],
+        ),
+    ],
+    classes: base.classes,
+  );
+}
+
 /// 相对当前日期的截止日期（页面内部用 `DateTime.now()`，故不能写死日期）。
 DateTime _todayPlus(int days) {
   final DateTime now = DateTime.now();
@@ -57,6 +77,7 @@ StudyPlan _plan({
   List<PlanScopeRef>? scope,
   DateTime? deadline,
   int groupSize = 5,
+  List<String> categories = const <String>[],
 }) {
   return StudyPlan(
     id: 'plan',
@@ -66,6 +87,7 @@ StudyPlan _plan({
           PlanScopeRef(sourceFile: 's1.json', className: 'A'),
         ],
     groupSize: groupSize,
+    categories: categories,
   );
 }
 
@@ -325,6 +347,24 @@ void main() {
       );
       expect(session.words.length, 5);
       expect(find.textContaining('第 1/2 组'), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('标签筛选：统计与今日最低量按过滤后的词计算', (WidgetTester tester) async {
+      AppData().wordData = _dictWithTags();
+      await PlanStore().setPlan(
+        _plan(
+          deadline: _todayPlus(7),
+          groupSize: 5,
+          categories: const <String>['高频'],
+        ),
+      );
+
+      await _pumpHome(tester);
+
+      expect(find.text('共 3 词'), findsOneWidget);
+      expect(find.widgetWithText(Chip, '高频'), findsOneWidget);
+      expect(find.text('/ 3 词'), findsWidgets); // 周期卡与今日卡都按过滤后词数
       expect(tester.takeException(), isNull);
     });
 
