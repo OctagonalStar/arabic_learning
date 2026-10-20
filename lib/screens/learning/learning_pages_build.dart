@@ -236,6 +236,7 @@ class _InLearningPageState extends State<InLearningPage> {
                   mainWord: testItem.testType == 1 ? testItem.testWord.chinese :  testItem.testWord.arabic, 
                   choices: testItem.options!, 
                   allowAudio: testItem.testType == 2, 
+                  optionWords: testItem.optionWords,
                   onSelected: (value) {
                     chosenIndexByItem[testItem] = value;
                     bool ans = value == testItem.correctIndex;

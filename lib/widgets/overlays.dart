@@ -1,6 +1,9 @@
 // 弹窗与提示（原 lib/funcs/ui.dart 拆分）。
-// 承载对话框 alart、底部提示 showSnackBar 与详解弹窗 viewAnswer。
+// 承载对话框 alart、底部提示 showSnackBar、详解弹窗 viewAnswer
+// 与选择题长按用的单词卡片浮层 showWordCardOverlay。
 // 说明：与 widgets/kit.dart 之间存在循环 import，在 Dart 中合法。
+
+import 'dart:math' show min;
 
 import 'package:arabic_learning/core/extensions.dart';
 import 'package:arabic_learning/core/statics.dart';
@@ -89,6 +92,56 @@ void viewAnswer(BuildContext context, WordItem wordData, {WordItem? chosenWrong}
     enableDrag: true,
     builder: (context) {
       return _AnswerSheet(wordData: wordData, chosenWrong: chosenWrong, mediaQuery: mediaQuery);
+    },
+  );
+}
+
+/// 长按选项弹出的单词卡片浮层：居中展示该词条的反面详解卡（[FlipWordCard]
+/// `startOnBack`），点击遮罩关闭。
+///
+/// [word] :该选项对应的词条，卡片直接以反面（全部详情）呈现
+Future<void> showWordCardOverlay(BuildContext context, WordItem word) async {
+  context.read<Global>().uiLogger.info("弹出单词卡片浮层: ${word.arabic} / ${word.chinese}");
+  final MediaQueryData mediaQuery = MediaQuery.of(context);
+  // 卡片尺寸：宽度封顶 460、高度封顶 560，且不超过屏幕可用区域的九成/七成，
+  // 保证小屏上也不溢出。
+  final double cardWidth = min(mediaQuery.size.width * 0.9, 460.0);
+  final double cardHeight = min(mediaQuery.size.height * 0.72, 560.0);
+  final bool reduceMotion = MediaQuery.maybeDisableAnimationsOf(context) ?? false;
+
+  await showGeneralDialog(
+    context: context,
+    barrierDismissible: true,
+    barrierLabel: MaterialLocalizations.of(context).modalBarrierDismissLabel,
+    barrierColor: Colors.black.withValues(alpha: 0.45),
+    transitionDuration: reduceMotion ? Duration.zero : AppMotion.medium,
+    transitionBuilder: (BuildContext context, Animation<double> animation, Animation<double> secondaryAnimation, Widget child) {
+      // 减弱动态效果时 transitionDuration 为零，直接呈现终态；正常路径
+      // 淡入 + 轻微放大（0.92 → 1.0）。
+      final CurvedAnimation curved = CurvedAnimation(parent: animation, curve: AppMotion.standardCurve);
+      return FadeTransition(
+        opacity: curved,
+        child: ScaleTransition(
+          scale: Tween<double>(begin: 0.92, end: 1.0).animate(curved),
+          child: child,
+        ),
+      );
+    },
+    pageBuilder: (BuildContext context, Animation<double> progress, Animation<double> secondary) {
+      return Center(
+        child: SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.all(AppSpacing.md),
+            child: FlipWordCard(
+              word: word,
+              enableFlip: false,
+              startOnBack: true,
+              width: cardWidth,
+              height: cardHeight,
+            ),
+          ),
+        ),
+      );
     },
   );
 }

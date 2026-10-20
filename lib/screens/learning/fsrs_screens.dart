@@ -930,6 +930,7 @@ class _FSRSLearningPageState extends State<FSRSLearningPage> {
                   allowAudio: testItem.testType == 2,
                   allowAnitmation: true,
                   allowMutipleSelect: true,
+                  optionWords: testItem.optionWords,
                   hint: testItem.testType == 1 ? "通过中文选择阿拉伯语" : "通过阿拉伯语选择中文",
                   onSelected: (value) {
                     if(value == correct) {
