@@ -15,6 +15,7 @@ import 'package:arabic_learning/widgets/shared.dart' show ButtonLabel;
 import 'package:arabic_learning/services/words.dart';
 import 'package:arabic_learning/services/global_state.dart';
 import 'package:arabic_learning/services/app_data.dart';
+import 'package:arabic_learning/services/learning_session.dart' show LearningSessionCheckpoint, LearningSessionStore;
 import 'package:arabic_learning/services/push_session.dart';
 import 'package:arabic_learning/screens/learning/favorites_page.dart' show FavoritesPage;
 import 'package:arabic_learning/screens/learning/fsrs_screens.dart' show FSRSLearningPage, ForeFSRSSettingPage;
@@ -206,6 +207,42 @@ class LearningPage extends StatelessWidget {
 
 Future<void> shiftToStudy(BuildContext context) async {
   context.read<Global>().uiLogger.info("准备转向学习页面");
+
+  // 有暂存断点时先询问是继续还是重新开始；继续时直接用断点里的词表与配置，
+  // 不再走选词流程。
+  final LearningSessionCheckpoint? checkpoint = LearningSessionStore.load();
+  if(checkpoint != null) {
+    final _ResumeChoice? choice = await _askResumeChoice(context, checkpoint);
+    if(!context.mounted || choice == null) return;
+    if(choice == _ResumeChoice.restart) {
+      await LearningSessionStore.clear();
+      if(!context.mounted) return;
+    } else {
+      final List<WordItem>? words = checkpoint.resolveWords(AppData().wordData);
+      if(words == null) {
+        // 词库被删除/重置后断点失效：清掉断点并按新学习继续。
+        await LearningSessionStore.clear();
+        if(!context.mounted) return;
+        showSnackBar(context, "上次的学习进度已失效，将重新开始");
+      } else {
+        context.read<Global>().uiLogger.info("恢复暂存学习进度，剩余${checkpoint.remaining}题");
+        final bool? finished = await Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => InLearningPage(
+              words: words,
+              countInReview: checkpoint.countInReview,
+              resume: checkpoint,
+            ),
+          ),
+        );
+        if(!context.mounted) return;
+        if(finished??false) context.read<Global>().updateLearningStreak();
+        return;
+      }
+    }
+  }
+
   final ClassSelection classSelection = await popSelectClasses(context, withCache: false, withReviewChoose: true, withCategoryFilter: true);
   if(classSelection.selectedClass.isEmpty || !context.mounted) return;
   final List<WordItem> selectedWords = getSelectedWords(AppData().wordData, classSelection.selectedClass, doShuffle: false, doDouble: false);
@@ -234,3 +271,25 @@ Future<void> shiftToStudy(BuildContext context) async {
   }
 }
 
+
+/// 询问用户如何处理上次暂存的常规学习。
+Future<_ResumeChoice?> _askResumeChoice(BuildContext context, LearningSessionCheckpoint checkpoint) {
+  final String content = checkpoint.remaining <= 0
+      ? "上次学习已作答完毕，可继续查看结果。"
+      : "检测到未完成的常规学习，还剩 ${checkpoint.remaining} 题。";
+  return showDialog<_ResumeChoice>(
+    context: context,
+    builder: (BuildContext dialogContext) => AlertDialog(
+      title: const Text("继续上次学习？"),
+      content: Text(content),
+      actions: [
+        TextButton(onPressed: ()=>Navigator.pop(dialogContext), child: const Text("取消")),
+        TextButton(onPressed: ()=>Navigator.pop(dialogContext, _ResumeChoice.restart), child: const Text("重新开始")),
+        FilledButton(onPressed: ()=>Navigator.pop(dialogContext, _ResumeChoice.resume), child: const Text("继续学习")),
+      ],
+    ),
+  );
+}
+
+/// 暂存断点入口的选择：继续上次学习 / 丢弃并重新开始。
+enum _ResumeChoice { resume, restart }

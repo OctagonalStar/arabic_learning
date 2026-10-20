@@ -132,24 +132,25 @@ List<Widget> classesSelectionList(BuildContext context, Function (ClassItem) onC
     bool isEven = true;
     for(ClassItem classItem in source.subClasses){
       widgetList.add(
-        Container(
-          margin: EdgeInsets.all(2),
-          decoration: BoxDecoration(
+        Padding(
+          padding: EdgeInsets.all(2),
+          child: Material(
             color: isEven ? Theme.of(context).colorScheme.primaryContainer : Theme.of(context).colorScheme.secondaryContainer,
             borderRadius: BorderRadius.circular(8),
-          ),
-          child: StatefulBuilder(
-            builder: (context, setLocalState) {
-              return CheckboxListTile(
-                title: Text(classItem.className),
-                value: isClassSelected(classItem),
-                onChanged: (value) {
-                  setLocalState(() {
-                    onChanged(classItem);
-                  });
-                },
-              );
-            }
+            clipBehavior: Clip.antiAlias,
+            child: StatefulBuilder(
+              builder: (context, setLocalState) {
+                return CheckboxListTile(
+                  title: Text(classItem.className),
+                  value: isClassSelected(classItem),
+                  onChanged: (value) {
+                    setLocalState(() {
+                      onChanged(classItem);
+                    });
+                  },
+                );
+              }
+            ),
           ),
         ),
       );
