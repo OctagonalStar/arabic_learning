@@ -14,13 +14,14 @@ import 'package:arabic_learning/core/extensions.dart';
 import 'package:arabic_learning/core/statics.dart';
 import 'package:arabic_learning/theme/tokens.dart' show AppMotion, AppRadius, AppSemanticColors, AppSpacing;
 import 'package:arabic_learning/theme/typography.dart';
-import 'package:arabic_learning/models/dict.dart' show ClassItem, SourceItem;
+import 'package:arabic_learning/models/dict.dart' show ClassItem, SourceItem, WordItem;
 import 'package:arabic_learning/models/reading.dart' show ClassSelection;
 import 'package:arabic_learning/services/app_data.dart';
 import 'package:arabic_learning/services/fsrs.dart';
 import 'package:arabic_learning/services/global_state.dart';
 import 'package:arabic_learning/services/words.dart' show collectAllCategories;
 import 'package:arabic_learning/widgets/overlays.dart' show showSnackBar;
+import 'package:arabic_learning/widgets/motion.dart' show FadeSlideIn;
 import 'package:flutter/foundation.dart' show listEquals;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart' show HapticFeedback;
@@ -131,24 +132,25 @@ List<Widget> classesSelectionList(BuildContext context, Function (ClassItem) onC
     bool isEven = true;
     for(ClassItem classItem in source.subClasses){
       widgetList.add(
-        Container(
-          margin: EdgeInsets.all(2),
-          decoration: BoxDecoration(
+        Padding(
+          padding: EdgeInsets.all(2),
+          child: Material(
             color: isEven ? Theme.of(context).colorScheme.primaryContainer : Theme.of(context).colorScheme.secondaryContainer,
             borderRadius: BorderRadius.circular(8),
-          ),
-          child: StatefulBuilder(
-            builder: (context, setLocalState) {
-              return CheckboxListTile(
-                title: Text(classItem.className),
-                value: isClassSelected(classItem),
-                onChanged: (value) {
-                  setLocalState(() {
-                    onChanged(classItem);
-                  });
-                },
-              );
-            }
+            clipBehavior: Clip.antiAlias,
+            child: StatefulBuilder(
+              builder: (context, setLocalState) {
+                return CheckboxListTile(
+                  title: Text(classItem.className),
+                  value: isClassSelected(classItem),
+                  onChanged: (value) {
+                    setLocalState(() {
+                      onChanged(classItem);
+                    });
+                  },
+                );
+              }
+            ),
           ),
         ),
       );
@@ -273,6 +275,16 @@ class ChooseButtons extends StatefulWidget {
   /// 锁定时再次点击任意选项的回调，传入被点击的选项索引。
   final void Function(int index)? onLockedTap;
 
+  /// 与 [options] 一一对应的选项词条；非空时启用两项能力：
+  /// 1. 答案锁定（单选首次作答）或选对（多选）后，每个选项按钮内平滑揭示
+  ///    对应词条的释义行（阿拉伯语选项显示中文释义，中文选项显示阿语原文）；
+  /// 2. [onOptionLongPress] 非空时长按选项回调对应词条。
+  /// 为 null（如本地 PK）时两项功能均禁用，保持旧行为。
+  final List<WordItem>? optionWords;
+
+  /// 长按选项时回调，传入该选项对应的词条；仅 [optionWords] 非空时生效。
+  final void Function(WordItem word)? onOptionLongPress;
+
   const ChooseButtons({super.key, 
                       required this.options, 
                       required this.onSelected, 
@@ -281,7 +293,9 @@ class ChooseButtons extends StatefulWidget {
                       this.isSingleSelect = false,
                       this.lockAfterSelect = false,
                       this.locked = false,
-                      this.onLockedTap});
+                      this.onLockedTap,
+                      this.optionWords,
+                      this.onOptionLongPress});
   @override
   State<ChooseButtons> createState() => _ChooseButtonsState();
 }
@@ -293,7 +307,20 @@ class _ChooseButtonsState extends State<ChooseButtons> {
   /// 内部锁定：`lockAfterSelect` 为真且已产生首次选择后置位。
   bool _locked = false;
 
+  /// 是否已揭示各选项释义行：单选首次作答（锁定）或任一选项选对后置位；
+  /// 仅在 [ChooseButtons.optionWords] 非空时生效。
+  bool _revealed = false;
+
   bool get _isLocked => widget.locked || _locked;
+
+  /// 选项 `i` 的释义行文本：阿拉伯语选项显示中文释义，中文选项显示阿语原文；
+  /// 未到揭示时机或缺少词条数据时返回 null（不渲染该行）。
+  String? _subtitleFor(int index) {
+    final List<WordItem>? words = widget.optionWords;
+    if(words == null || !_revealed || index >= words.length) return null;
+    final WordItem word = words[index];
+    return widget.options[index].isArabic() ? word.chinese : word.arabic;
+  }
 
   /// 子按钮产生判定结果（`chose` 返回非 null）时记录，用于选中聚焦。
   void _onJudged(int index) {
@@ -310,9 +337,11 @@ class _ChooseButtonsState extends State<ChooseButtons> {
     if(oldWidget.isShowAnimation != widget.isShowAnimation ||
         oldWidget.isSingleSelect != widget.isSingleSelect ||
         oldWidget.lockAfterSelect != widget.lockAfterSelect ||
-        !listEquals(oldWidget.options, widget.options)) {
+        !listEquals(oldWidget.options, widget.options) ||
+        !listEquals(oldWidget.optionWords, widget.optionWords)) {
       _judgedIndex = null;
       _locked = false;
+      _revealed = false;
     }
   }
 
@@ -323,6 +352,7 @@ class _ChooseButtonsState extends State<ChooseButtons> {
     final bool focusJudged = widget.isShowAnimation && widget.isSingleSelect && _judgedIndex != null;
     List<Widget> buttonWidgets = [];
     for(int i = 0; i < widget.options.length; i++) {
+      final String? subtitle = _subtitleFor(i);
       buttonWidgets.add(
         ChooseButtonBox(
           index: i,
@@ -332,13 +362,27 @@ class _ChooseButtonsState extends State<ChooseButtons> {
               return null;
             }
             if(widget.lockAfterSelect) _locked = true;
-            return widget.onSelected(index);
+            final bool? result = widget.onSelected(index);
+            // 答案锁定（单选首次作答）或选对（多选）后揭示全部释义行；
+            // 答错且未锁定的多选保持隐藏，允许继续作答。
+            if((widget.lockAfterSelect || result == true) && !_revealed) {
+              setState(() {
+                _revealed = true;
+              });
+            }
+            return result;
           },
           width: widget.settingShowingMode == 0 ? mediaQuery.size.width * 0.2 : widget.settingShowingMode == 1 ? mediaQuery.size.width * 0.45 : mediaQuery.size.width * 0.85,
           height: widget.settingShowingMode == 0 ? mediaQuery.size.height * 0.15 : widget.settingShowingMode == 1 ? mediaQuery.size.height * 0.12 : mediaQuery.size.height * 0.09,
           isAnimated: widget.isShowAnimation,
-          isDimmed: focusJudged && i != _judgedIndex,
+          // 揭示释义期间不淡化聚焦，保证释义行始终可读；
+          // 未提供词条数据时保持旧的聚焦淡化行为（0.4）。
+          isDimmed: focusJudged && i != _judgedIndex && widget.optionWords == null,
           onJudged: _onJudged,
+          onLongPress: (widget.optionWords != null && widget.onOptionLongPress != null && i < widget.optionWords!.length)
+              ? () => widget.onOptionLongPress!(widget.optionWords![i])
+              : null,
+          definition: subtitle,
           child: FittedBox(
             // 选项文字显式只缩不放（FittedBox 默认 contain）：按钮当前以松约束
             // 布局文字，二者观感一致；显式 scaleDown 防止后续布局变化引入放大。
@@ -409,6 +453,12 @@ class _ChooseButtonsState extends State<ChooseButtons> {
 /// [isDimmed] :是否淡化（单选聚焦时由父组件传入）；true 时降低不透明度并轻微缩小
 ///
 /// [onJudged] :产生判定结果（[chose] 返回非 null）时通知父组件，用于选中聚焦协调
+///
+/// [onLongPress] :长按整个选项区域时触发（如弹出单词卡片浮层）；为 null 时不响应
+/// 长按，也不影响正常点击
+///
+/// [definition] :释义行文本；非空时在按钮下方平滑展开一行次要释义
+/// （高度动画，减弱动态效果时直接呈现），null 时不渲染该行
 class ChooseButtonBox extends StatefulWidget {
   final int index;
   final bool? Function(int) chose;
@@ -419,6 +469,8 @@ class ChooseButtonBox extends StatefulWidget {
   final bool isAnimated;
   final bool isDimmed;
   final ValueChanged<int>? onJudged;
+  final VoidCallback? onLongPress;
+  final String? definition;
   const ChooseButtonBox({super.key,
                     required this.index, 
                     required this.chose, 
@@ -429,6 +481,8 @@ class ChooseButtonBox extends StatefulWidget {
                     this.isAnimated = true,
                     this.isDimmed = false,
                     this.onJudged,
+                    this.onLongPress,
+                    this.definition,
                   });
   
   @override
@@ -563,17 +617,11 @@ class _ChooseButtonBoxState extends State<ChooseButtonBox> with SingleTickerProv
     // 逐帧动画（颜色揭示 / 预判描边 / 发光 / 脉冲 / 抖动）统一由控制器驱动：
     // build 本身不会逐帧执行，必须经 AnimatedBuilder 监听控制器。
     // 选中聚焦（E）：仅由父组件在单选判定后置位；减弱动态效果时不做过渡。
-    return AnimatedOpacity(
-      duration: reduceMotion ? Duration.zero : AppMotion.medium,
-      curve: AppMotion.standardCurve,
-      opacity: widget.isDimmed ? 0.4 : 1.0,
-      child: AnimatedScale(
-        duration: reduceMotion ? Duration.zero : AppMotion.medium,
-        curve: AppMotion.standardCurve,
-        scale: widget.isDimmed ? 0.975 : 1.0,
-        child: AnimatedBuilder(
-          animation: _controller,
-          builder: (BuildContext context, Widget? _) {
+    // 长按（onLongPress）包在外层且用 translucent 命中：正常点击仍交给
+    // 内部 Button，未提供回调时整层不参与长按手势。
+    final Widget surface = AnimatedBuilder(
+      animation: _controller,
+      builder: (BuildContext context, Widget? _) {
             // 揭示进度：非动画路径直接 1.0（立即落色）。
             final double reveal = animated ? _reveal.value : (judged ? 1.0 : 0.0);
             final Color background = judged ? Color.lerp(idleColor, judgedColor, reveal)! : idleColor;
@@ -617,6 +665,52 @@ class _ChooseButtonBoxState extends State<ChooseButtonBox> with SingleTickerProv
             final double pulseScale = (animated && correct) ? _pulse.value : 1.0;
             final double shakeDx = (animated && !correct) ? _shake.value : 0.0;
 
+            // 释义行：AnimatedSize 常驻（作答前高度为 0），揭示时仅替换其
+            // 子节点，高度才会从 0 平滑增长；内容再经 FadeSlideIn 淡入上滑。
+            // 若在揭示瞬间才插入 AnimatedSize，它首帧即按终态尺寸布局，
+            // 表现为“突然撑开”，因此这里必须保持同一实例。
+            // 减弱动态效果时不包 AnimatedSize（零时长会在布局期间同步触发
+            // 监听，引发“布局中变更”断言），直接呈现终态。
+            final Widget? definitionInner = widget.definition == null
+                ? null
+                : Padding(
+                    padding: const EdgeInsets.only(top: 2.0, bottom: 8.0),
+                    child: FadeSlideIn(
+                      duration: reduceMotion ? Duration.zero : AppMotion.medium,
+                      // 逐项轻微错峰，四个选项的释义依次浮现。
+                      delay: reduceMotion ? Duration.zero : Duration(milliseconds: 100 * widget.index),
+                      slideOffset: const Offset(0.0, 6.0),
+                      child: Text(
+                        widget.definition!,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        textAlign: TextAlign.center,
+                        // 阿语副行按文本方向渲染并套用配置的阿语字体，
+                        // 汉字释义保持原有排版。
+                        textDirection: widget.definition!.textDirection,
+                        style: arabicTextStyle(
+                          context,
+                          widget.definition!,
+                          base: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                            color: scheme.onSurfaceVariant,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ),
+                    ),
+                  );
+            final Widget definitionContent = definitionInner == null
+                ? SizedBox(width: widget.width ?? 200, height: 0.0)
+                : SizedBox(width: widget.width ?? 200, child: definitionInner);
+            final Widget definitionLine = reduceMotion
+                ? definitionContent
+                : AnimatedSize(
+                    duration: AppMotion.long2,
+                    curve: AppMotion.standardCurve,
+                    alignment: Alignment.topCenter,
+                    child: definitionContent,
+                  );
+
             return Transform.translate(
               offset: Offset(shakeDx, 0.0),
               child: Transform.scale(
@@ -634,39 +728,64 @@ class _ChooseButtonBoxState extends State<ChooseButtonBox> with SingleTickerProv
                   foregroundDecoration: border == null
                       ? null
                       : BoxDecoration(border: border, borderRadius: StaticsVar.br),
-                  child: Stack(
-                    clipBehavior: Clip.none,
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
                     children: [
-                      Button(
-                        onPressed: _handleTap,
-                        size: Size(widget.width ?? 200, widget.height ?? 50),
-                        backgroundColor: Colors.transparent,
-                        foregroundColor: foreground,
-                        shadowColor: Colors.transparent,
-                        child: widget.child,
-                      ),
-                      if(animated) Positioned(
-                        top: 4.0,
-                        right: 4.0,
-                        // 徽章仅作视觉评章，不拦截点击。
-                        child: IgnorePointer(
-                          child: FadeTransition(
-                            opacity: _badgeOpacity,
-                            child: ScaleTransition(
-                              scale: _badgeScale,
-                              child: _buildBadge(scheme, semantic),
+                      Stack(
+                        clipBehavior: Clip.none,
+                        children: [
+                          Button(
+                            onPressed: _handleTap,
+                            size: Size(widget.width ?? 200, widget.height ?? 50),
+                            backgroundColor: Colors.transparent,
+                            foregroundColor: foreground,
+                            shadowColor: Colors.transparent,
+                            child: widget.child,
+                          ),
+                          if(animated) Positioned(
+                            top: 4.0,
+                            right: 4.0,
+                            // 徽章仅作视觉评章，不拦截点击。
+                            child: IgnorePointer(
+                              child: FadeTransition(
+                                opacity: _badgeOpacity,
+                                child: ScaleTransition(
+                                  scale: _badgeScale,
+                                  child: _buildBadge(scheme, semantic),
+                                ),
+                              ),
                             ),
                           ),
-                        ),
+                        ],
                       ),
+                      definitionLine,
                     ],
                   ),
                 ),
               ),
             );
           },
-        ),
+        );
+
+    final Widget dimmed = AnimatedOpacity(
+      duration: reduceMotion ? Duration.zero : AppMotion.medium,
+      curve: AppMotion.standardCurve,
+      opacity: widget.isDimmed ? 0.4 : 1.0,
+      child: AnimatedScale(
+        duration: reduceMotion ? Duration.zero : AppMotion.medium,
+        curve: AppMotion.standardCurve,
+        scale: widget.isDimmed ? 0.975 : 1.0,
+        child: surface,
       ),
+    );
+
+    if(widget.onLongPress == null) return dimmed;
+    // 长按位于聚焦/判定层之外，命中范围覆盖整个选项区域（含释义行），
+    // 且不与 Button 的点击手势冲突。
+    return GestureDetector(
+      behavior: HitTestBehavior.translucent,
+      onLongPress: widget.onLongPress,
+      child: dimmed,
     );
   }
 

@@ -14,7 +14,7 @@ import 'package:arabic_learning/theme/tokens.dart' show AppMotion;
 import 'package:arabic_learning/theme/typography.dart';
 import 'package:arabic_learning/widgets/flip_word_card.dart' show FlipWordCard;
 import 'package:arabic_learning/widgets/kit.dart' show Button, ChooseButtons, TextContainer;
-import 'package:arabic_learning/widgets/overlays.dart' show alart, showSnackBar;
+import 'package:arabic_learning/widgets/overlays.dart' show alart, showSnackBar, showWordCardOverlay;
 import 'package:arabic_learning/widgets/shared.dart' show ButtonLabel, appInputDecoration;
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -43,6 +43,10 @@ import 'package:provider/provider.dart';
 /// 
 /// [allowAnitmation] :是否显示动画，即预判微光 -> 徽章 -> 正误差异化
 /// 关闭时立即落色
+///
+/// [optionWords] :与 [choices] 一一对应的选项词条；非空时启用两项能力：
+/// 长按任意选项弹出该词条的单词卡片（反面详解），以及答案锁定 / 选对后
+/// 在各选项内平滑揭示对应释义行。为 null（如本地 PK）时两项功能均禁用。
 class ChoiceQuestions extends StatefulWidget {
   final String mainWord;
   final List<String> choices;
@@ -55,6 +59,7 @@ class ChoiceQuestions extends StatefulWidget {
   final bool allowAudio;
   final int bottonLayout;
   final bool allowAnitmation;
+  final List<WordItem>? optionWords;
   const ChoiceQuestions({super.key, 
                         required this.mainWord, 
                         required this.choices, 
@@ -66,7 +71,8 @@ class ChoiceQuestions extends StatefulWidget {
                         this.onDisAllowMutipleSelect,
                         this.bottonLayout = -1,
                         this.allowMutipleSelect = true,
-                        this.allowAnitmation = true});
+                        this.allowAnitmation = true,
+                        this.optionWords});
 
   @override
   State<StatefulWidget> createState() => _ChoiceQuestions();
@@ -131,6 +137,11 @@ class _ChoiceQuestions extends State<ChoiceQuestions> {
               isSingleSelect: !widget.allowMutipleSelect,
               // 单选作答后锁定全部选项（统一由 ChooseButtons 处理）。
               lockAfterSelect: !widget.allowMutipleSelect,
+              // 选项词条非空时启用长按卡片与释义揭示；PK 等场景传 null 保持旧行为。
+              optionWords: widget.optionWords,
+              onOptionLongPress: (WordItem word) {
+                showWordCardOverlay(context, word);
+              },
               onLockedTap: (int value) {
                 if(widget.onDisAllowMutipleSelect != null) {
                   widget.onDisAllowMutipleSelect!(value);

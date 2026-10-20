@@ -122,7 +122,7 @@ List<WordItem> getRandomWords(int count, DictData dict, {WordItem? include, bool
     if(!allowRepet) wordList.removeDuplicates();
   } while (wordList.length < count);
   
-  if(shuffle) wordList.shuffle();
+  if(shuffle) wordList.shuffle(rnd);
 
   return wordList;
 }

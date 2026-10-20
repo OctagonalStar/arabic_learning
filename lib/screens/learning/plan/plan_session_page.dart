@@ -523,6 +523,7 @@ class _PlanSessionPageState extends State<PlanSessionPage> {
             : testItem.testWord.arabic,
         choices: testItem.options!,
         allowAudio: testItem.testType == 2,
+        optionWords: testItem.optionWords,
         onSelected: (int value) {
           _chosenIndexByItem[testItem] = value;
           final bool ans = value == testItem.correctIndex;
