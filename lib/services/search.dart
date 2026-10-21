@@ -69,6 +69,10 @@ class _SimpleBKTree {
   }
 }
 
+/// 词形归一化用的预编译正则（`ArabicStemmer.normalize` / `wordRoot` 等热路径）。
+final RegExp _alefVariantsRegExp = RegExp(r'[أإآ]');
+final RegExp _whitespaceRunRegExp = RegExp(r'\s+');
+
 /// 简单的词性枚举，用于区分词汇类别
 enum ArabicPOS {
   verb,   // 动词
@@ -178,7 +182,7 @@ class ArabicStemmer {
     // 移除额外部分
     String res = text.removeAracicExtensionPart();
     // 统一不同形式的 Alef
-    res = res.replaceAll(RegExp(r'[أإآ]'), 'ا');
+    res = res.replaceAll(_alefVariantsRegExp, 'ا');
     // 将 Alef Maqsura 统一为 Alef
     res = res.replaceAll('ى', 'ا');
     
@@ -273,14 +277,14 @@ final _arabicStemmer = ArabicStemmer();
 /// BK 树键会污染相似度计算，故此处统一走 [StringExtensions.removeAracicExtensionPart]。
 String wordRoot(WordItem word) {
   final String provided =
-      _arabicStemmer.normalize(word.root).replaceAll(RegExp(r'\s+'), '');
+      _arabicStemmer.normalize(word.root).replaceAll(_whitespaceRunRegExp, '');
   if (provided.isNotEmpty) return provided;
   return _arabicStemmer.extractRoot(word.arabic);
 }
 
 /// 将用户输入归一化为词根键，用于精确词根匹配（去除发音符号/空白，统一阿列夫等）。
 String normalizeRootKey(String input) => wordRoot(WordItem(
-  arabic: input.replaceAll(RegExp(r'\s+'), ''),
+  arabic: input.replaceAll(_whitespaceRunRegExp, ''),
   chinese: input,
   explanation: "",
   id: -1,
@@ -387,7 +391,11 @@ class VocabularyOptimizer {
 /// 1. 归一化结果只预计算一次；
 /// 2. 子串匹配走字符倒排索引（候选集为超集，再精确校验）；
 /// 3. 模糊匹配走整词 BK-Tree；
-/// 4. 词根近似沿用 [VocabularyOptimizer] 以保留原有易混词召回。
+/// 4. 词根近似沿用 [VocabularyOptimizer] 以保留原有易混词召回；
+/// 5. 中文释义另建 1-gram / 2-gram 与长度倒排，先用必要条件收窄候选，
+///    避免全表 `contains`；
+/// 6. 排序一律先算分数（Schwartzian transform）再比较，避免比较器内重复
+///    计算编辑距离。
 /// 最终只对少量候选做编辑距离校验与排序。
 class VocabularyLookupIndex {
   final List<WordItem> _words;
@@ -397,20 +405,49 @@ class VocabularyLookupIndex {
 
   /// 中文释义分段倒排：token -> 词 id（按 [，；,;、] 切分）
   final Map<String, List<int>> _zhTokenExact;
+
+  /// 中文释义单字倒排：字 -> 词 id（升序），用于「共字」必要条件过滤
+  final Map<String, List<int>> _zhUnigram;
+
+  /// 中文释义相邻二字倒排：二字 -> 词 id（升序）。
+  ///
+  /// 若某条释义**包含**查询串，则它必然包含查询串的全部相邻二字，因此该
+  /// 倒排的交集是「子串命中」的精确超集，可替代原来的全表 `contains` 扫描。
+  final Map<String, List<int>> _zhBigram;
+
+  /// 中文释义长度倒排：UTF-16 长度 -> 词 id（升序）。
+  ///
+  /// 编辑距离 `< 4` 必然蕴含长度差 `<= 3`，故可用长度窗口替代全表扫描，
+  /// 该过滤是必要条件，不改变召回集合。
+  final Map<int, List<int>> _zhByLength;
+
   final Map<String, List<int>> _arExact;
   final Map<String, List<int>> _arChars;
   final _SimpleBKTree? _arTree;
 
-  VocabularyLookupIndex._(
-    this._words,
-    this._optimizer,
-    this._arNorm,
-    this._zh,
-    this._zhTokenExact,
-    this._arExact,
-    this._arChars,
-    this._arTree,
-  );
+  VocabularyLookupIndex._({
+    required List<WordItem> words,
+    required VocabularyOptimizer optimizer,
+    required List<String> arNorm,
+    required List<String> zh,
+    required Map<String, List<int>> zhTokenExact,
+    required Map<String, List<int>> zhUnigram,
+    required Map<String, List<int>> zhBigram,
+    required Map<int, List<int>> zhByLength,
+    required Map<String, List<int>> arExact,
+    required Map<String, List<int>> arChars,
+    required _SimpleBKTree? arTree,
+  })  : _words = words,
+        _optimizer = optimizer,
+        _arNorm = arNorm,
+        _zh = zh,
+        _zhTokenExact = zhTokenExact,
+        _zhUnigram = zhUnigram,
+        _zhBigram = zhBigram,
+        _zhByLength = zhByLength,
+        _arExact = arExact,
+        _arChars = arChars,
+        _arTree = arTree;
 
   factory VocabularyLookupIndex.build(List<WordItem> words, VocabularyOptimizer optimizer) {
     final List<String> arNorm = List<String>.generate(
@@ -420,6 +457,9 @@ class VocabularyLookupIndex {
     final Map<String, List<int>> arExact = {};
     final Map<String, List<int>> arChars = {};
     final Map<String, List<int>> zhTokenExact = {};
+    final Map<String, List<int>> zhUnigram = {};
+    final Map<String, List<int>> zhBigram = {};
+    final Map<int, List<int>> zhByLength = {};
 
     for(int i = 0; i < words.length; i++) {
       final String a = arNorm[i];
@@ -430,22 +470,45 @@ class VocabularyLookupIndex {
         }
       }
       // 中文释义按分隔符切分建倒排，供分段精确命中排序使用
-      for(final String rawToken in zh[i].split(RegExp(r'[，；,;、]'))) {
+      for(final String rawToken in zh[i].split(_zhTokenSplitter)) {
         final String token = rawToken.trim();
         if(token.isEmpty) continue;
         (zhTokenExact[token] ??= <int>[]).add(i);
       }
+      // 中文释义的 1-gram / 2-gram 与长度倒排（posting 随 i 递增天然升序）
+      final String zhText = zh[i];
+      (zhByLength[zhText.length] ??= <int>[]).add(i);
+      if(zhText.isEmpty) continue;
+      // 按 UTF-16 码元切分，与 String.contains 的匹配口径完全一致。
+      // 同一词条内重复出现的字 / 二字只登记一次，保持 posting 升序且无重复。
+      final List<String> units = zhText.split('');
+      final Set<String> seenUnigram = <String>{};
+      final Set<String> seenBigram = <String>{};
+      for(int k = 0; k < units.length; k++) {
+        if(seenUnigram.add(units[k])) {
+          (zhUnigram[units[k]] ??= <int>[]).add(i);
+        }
+        if(k + 1 < units.length) {
+          final String bigram = units[k] + units[k + 1];
+          if(seenBigram.add(bigram)) {
+            (zhBigram[bigram] ??= <int>[]).add(i);
+          }
+        }
+      }
     }
 
     return VocabularyLookupIndex._(
-      words,
-      optimizer,
-      arNorm,
-      zh,
-      zhTokenExact,
-      arExact,
-      arChars,
-      arExact.isEmpty
+      words: words,
+      optimizer: optimizer,
+      arNorm: arNorm,
+      zh: zh,
+      zhTokenExact: zhTokenExact,
+      zhUnigram: zhUnigram,
+      zhBigram: zhBigram,
+      zhByLength: zhByLength,
+      arExact: arExact,
+      arChars: arChars,
+      arTree: arExact.isEmpty
           ? null
           : _SimpleBKTree(
               arExact.keys.where((String s) => s.length <= _maxFuzzyKeyLength),
@@ -453,6 +516,9 @@ class VocabularyLookupIndex {
             ),
     );
   }
+
+  /// 中文释义分段分隔符（预编译，避免每条词条都新建 RegExp）
+  static final RegExp _zhTokenSplitter = RegExp(r'[，；,;、]');
 
   /// 参与模糊检索的最长归一化词长：更长的多为短语，改用子串匹配，
   /// 避免长字符串的编辑距离拖慢 BK-Tree 构建。
@@ -512,50 +578,99 @@ class VocabularyLookupIndex {
       }
     }
 
+    // Schwartzian transform：编辑距离对每个候选只算一次，再按「精确词根优先，
+    // 其次编辑距离」排序。比较器的判定结果与逐个现算完全一致。
+    final Map<int, int> distance = <int, int>{
+      for (final int id in result) id: getLevenshtein(q, _arNorm[id]),
+    };
     result.sort((int a, int b) {
       final bool ea = exactRootIds.contains(a);
       final bool eb = exactRootIds.contains(b);
       if (ea != eb) return ea ? -1 : 1;
-      return getLevenshtein(q, _arNorm[a]).compareTo(getLevenshtein(q, _arNorm[b]));
+      return distance[a]!.compareTo(distance[b]!);
     });
     return [for(final int i in result) _words[i]];
   }
 
-  /// 中文检索：沿用原「子串 + 有界编辑距离」扫描。
-  /// 中文串可能很长，构建整词 BK-Tree 的代价远大于收益，故不建树。
+  /// 中文检索：先由 1-gram / 2-gram 倒排与长度倒排取候选，再对候选打分排序。
+  ///
+  /// 原实现每按一次键都要对全表做 `contains` 并对**每个**词条算一次编辑距离，
+  /// 3000+ 词时单次 20~60ms。改造后先取「必要条件的超集」作候选，再用与原
+  /// 实现完全相同的判定收敛，故命中集合与排序语义均不变：
+  /// - 子串命中 ⇒ 包含查询串的全部相邻二字（单字查询退化为单字倒排）；
+  /// - 模糊命中要求 `|长度差| <= 3` 且与查询至少共用一个字。
   List<WordItem> _lookupChinese(String query) {
+    final int qLen = query.length;
+    final List<String> qChars = query.split('');
+
+    final Set<int> candidates = <int>{};
+    candidates.addAll(_zhSubstringCandidates(qChars));
+    if(qLen >= 3) {
+      candidates.addAll(_zhFuzzyCandidates(qChars, qLen));
+    }
+
+    // 按 id 升序校验，保证与改造前「全表顺序扫描」的输入序列一致
+    final List<int> candidateIds = candidates.toList(growable: false);
+    candidateIds.sort();
     final List<int> result = <int>[];
-    final Set<int> added = <int>{};
-    for(int i = 0; i < _zh.length; i++) {
+    for(final int i in candidateIds) {
       final String c = _zh[i];
       if(c.contains(query)) {
-        if(added.add(i)) result.add(i);
+        result.add(i);
         continue;
       }
-      if(query.length >= 3 && getLevenshtein(query, c) < 4) {
-        if(query.split('').any((String ch) => c.contains(ch)) && added.add(i)) result.add(i);
+      if(qLen >= 3 && getLevenshtein(query, c) < 4) {
+        if(qChars.any((String ch) => c.contains(ch))) result.add(i);
       }
     }
+
+    // 分段精确命中（排序键之一）
     final Set<int> exactTokenIds = <int>{};
     final List<int>? tokenHits = _zhTokenExact[query];
     if(tokenHits != null) exactTokenIds.addAll(tokenHits);
-    result.sort((int a, int b) {
-      // ① 整串完全相等
-      final bool eqA = _zh[a] == query;
-      final bool eqB = _zh[b] == query;
-      if(eqA != eqB) return eqA ? -1 : 1;
-      // ② 释义分段（token）精确命中
-      final bool tokA = exactTokenIds.contains(a);
-      final bool tokB = exactTokenIds.contains(b);
-      if(tokA != tokB) return tokA ? -1 : 1;
-      // ③ 整串包含
-      final bool containA = _zh[a].contains(query);
-      final bool containB = _zh[b].contains(query);
-      if(containA != containB) return containA ? -1 : 1;
-      // ④ 整串编辑距离
-      return getLevenshtein(query, _zh[a]).compareTo(getLevenshtein(query, _zh[b]));
-    });
+
+    // Schwartzian transform：每个候选的 4 个排序键只算一次
+    final Map<int, _ZhScore> scores = <int, _ZhScore>{
+      for (final int i in result) i: _ZhScore.of(query, _zh[i], exactTokenIds.contains(i)),
+    };
+    result.sort((int a, int b) => scores[a]!.compareTo(scores[b]!));
     return [for(final int i in result) _words[i]];
+  }
+
+  /// 子串命中的候选（超集）：包含查询串全部相邻二字的词条。
+  /// 单字查询直接取单字倒排（此时是精确集合）。
+  List<int> _zhSubstringCandidates(List<String> qChars) {
+    if(qChars.isEmpty) return const <int>[];
+    if(qChars.length == 1) {
+      return _zhUnigram[qChars.first] ?? const <int>[];
+    }
+    final List<List<int>> postings = <List<int>>[];
+    for(int k = 0; k + 1 < qChars.length; k++) {
+      final List<int>? posting = _zhBigram[qChars[k] + qChars[k + 1]];
+      if(posting == null || posting.isEmpty) return const <int>[];
+      postings.add(posting);
+    }
+    return _intersectSorted(postings);
+  }
+
+  /// 模糊命中的候选（必要条件超集）：长度差 <= 3，且与查询至少共用一个字。
+  List<int> _zhFuzzyCandidates(List<String> qChars, int qLen) {
+    final Set<int> shared = <int>{};
+    for(final String ch in qChars.toSet()) {
+      final List<int>? posting = _zhUnigram[ch];
+      if(posting != null) shared.addAll(posting);
+    }
+    if(shared.isEmpty) return const <int>[];
+    final List<int> out = <int>[];
+    for(int len = qLen - 3; len <= qLen + 3; len++) {
+      if(len < 0) continue;
+      final List<int>? posting = _zhByLength[len];
+      if(posting == null) continue;
+      for(final int id in posting) {
+        if(shared.contains(id)) out.add(id);
+      }
+    }
+    return out;
   }
 
   Set<int> _fuzzyCandidates(String q, _SimpleBKTree? tree, Map<String, List<int>> exact, int tolerance) {
@@ -602,7 +717,7 @@ class VocabularyLookupIndex {
   }
 
   /// 在升序列表中二分查找（倒排表按索引升序构建）
-  bool _sortedContains(List<int> sorted, int value) {
+  static bool _sortedContains(List<int> sorted, int value) {
     int lo = 0;
     int hi = sorted.length - 1;
     while(lo <= hi) {
@@ -616,6 +731,64 @@ class VocabularyLookupIndex {
       }
     }
     return false;
+  }
+
+  /// 多个升序倒排表求交集（从最短表出发，其余表二分查找）
+  static List<int> _intersectSorted(List<List<int>> postings) {
+    if(postings.isEmpty) return const <int>[];
+    if(postings.length == 1) return postings.first;
+    List<int> smallest = postings.first;
+    for(final List<int> posting in postings) {
+      if(posting.length < smallest.length) smallest = posting;
+    }
+    final List<List<int>> others = <List<int>>[
+      for(final List<int> posting in postings)
+        if(!identical(posting, smallest)) posting,
+    ];
+    final List<int> out = <int>[];
+    for(final int candidate in smallest) {
+      bool ok = true;
+      for(final List<int> other in others) {
+        if(!_sortedContains(other, candidate)) {
+          ok = false;
+          break;
+        }
+      }
+      if(ok) out.add(candidate);
+    }
+    return out;
+  }
+}
+
+/// 中文检索的预计算排序键（Schwartzian transform）。
+///
+/// 排序优先级与原实现逐条一致：① 整串完全相等 → ② 释义分段精确命中 →
+/// ③ 整串包含 → ④ 整串编辑距离。所有键在排序前算好，比较器内只做字段比较。
+class _ZhScore implements Comparable<_ZhScore> {
+  final bool exact;
+  final bool token;
+  final bool contains;
+  final int distance;
+
+  const _ZhScore(this.exact, this.token, this.contains, this.distance);
+
+  factory _ZhScore.of(String query, String text, bool tokenHit) {
+    final bool contains = text.contains(query);
+    return _ZhScore(
+      text == query,
+      tokenHit,
+      contains,
+      // 与改造前一致：无论是否子串命中都要算编辑距离作为最终排序键
+      getLevenshtein(query, text),
+    );
+  }
+
+  @override
+  int compareTo(_ZhScore other) {
+    if(exact != other.exact) return exact ? -1 : 1;
+    if(token != other.token) return token ? -1 : 1;
+    if(contains != other.contains) return contains ? -1 : 1;
+    return distance.compareTo(other.distance);
   }
 }
 

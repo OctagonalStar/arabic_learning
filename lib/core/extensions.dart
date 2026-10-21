@@ -14,11 +14,32 @@ extension SemanticColorsContext on BuildContext {
       AppSemanticColors.of(Theme.of(this).colorScheme);
 }
 
+// 预编译正则：下列方法处于检索索引构建、去重与收藏匹配的热路径上，
+// 单次调用可达数万次；若每次调用都新建 RegExp，仅编译开销就会成为瓶颈，
+// 故统一提为文件级常量复用（语义与内联 `RegExp(...)` 完全一致）。
+final RegExp _arabicCharRegExp =
+    RegExp(r'[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\uFB50-\uFDFF\uFE70-\uFEFF]');
+final RegExp _arabicDiacriticsRegExp =
+    RegExp(r'[\u064B-\u065F\u0640\u0670\u06D6-\u06ED]');
+final RegExp _parentheticalRegExp = RegExp(r'[（(][^）)]*[）)]');
+final RegExp _slashTailRegExp = RegExp(r'[/／][^]*$');
+final RegExp _standaloneMarkerTailRegExp = RegExp(r'\s[جم](?=\s|$)[^]*$');
+final RegExp _hyphenTailRegExp = RegExp(r'\s-[^]*$');
+final RegExp _arabicCommaTailRegExp = RegExp(r'[،.][^]*$');
+final RegExp _meaningPunctuationRegExp = RegExp(r'[ \(\)\.,/，。、；（）\[\]【】]');
+
+/// [StringExtensions.identityKey] 的容量上限。
+const int _identityKeyCacheLimit = 4096;
+
+/// [StringExtensions.identityKey] 的最近结果缓存。
+///
+/// 身份键在 FSRS 去重、收藏反查、计划去重里会对**同一批**词条反复求值，
+/// 缓存可跳过重复的 7 次正则替换。超过上限时整体清空（简单实现即可保证
+/// 内存不会无限增长），命中与否都不改变返回值语义。
+final Map<String, String> _identityKeyCache = <String, String>{};
+
 extension StringExtensions on String {
-  bool isArabic() {
-    final arabicRegExp = RegExp(r'[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\uFB50-\uFDFF\uFE70-\uFEFF]');
-    return arabicRegExp.hasMatch(this);
-  }
+  bool isArabic() => _arabicCharRegExp.hasMatch(this);
 
   /// 文本方向：包含阿拉伯语字符时为 RTL，否则为 LTR
   TextDirection get textDirection => isArabic() ? TextDirection.rtl : TextDirection.ltr;
@@ -32,12 +53,12 @@ extension StringExtensions on String {
   /// 避免把 `كُتُبٌ مَدْرَسِيَّةٌ` 这类「第二词以 م 开头」的短语误截成首个词。
   String removeAracicExtensionPart(){
     String res = this;
-    res = res.replaceAll(RegExp(r'[\u064B-\u065F\u0640\u0670\u06D6-\u06ED]'), ""); 
-    res = res.replaceAll(RegExp(r'[（(][^）)]*[）)]'), ""); // for "قَلَمٌ (ج: أَقْلَامٌ)" / "（…）"
-    res = res.replaceAll(RegExp(r'[/／][^]*$'), ""); // for "جَدِيدٌ/جَدِيدَةٌ"（不要求空格）
-    res = res.replaceAll(RegExp(r'\s[جم](?=\s|$)[^]*$'), ""); // 仅独立标记: "ميلادي م ميلاد"
-    res = res.replaceAll(RegExp(r'\s-[^]*$'), ""); // 独立连字符标记
-    res = res.replaceAll(RegExp(r'[،.][^]*$'), ""); // for "متواصل، متواصل"
+    res = res.replaceAll(_arabicDiacriticsRegExp, ""); 
+    res = res.replaceAll(_parentheticalRegExp, ""); // for "قَلَمٌ (ج: أَقْلَامٌ)" / "（…）"
+    res = res.replaceAll(_slashTailRegExp, ""); // for "جَدِيدٌ/جَدِيدَةٌ"（不要求空格）
+    res = res.replaceAll(_standaloneMarkerTailRegExp, ""); // 仅独立标记: "ميلادي م ميلاد"
+    res = res.replaceAll(_hyphenTailRegExp, ""); // 独立连字符标记
+    res = res.replaceAll(_arabicCommaTailRegExp, ""); // for "متواصل، متواصل"
     return res;
   }
 
@@ -47,15 +68,29 @@ extension StringExtensions on String {
   /// 多词短语的完整词形；**不做**检索层的阿列夫 / `ة` 折叠（那属于更激进的检索
   /// 归一化，在 `ArabicStemmer.normalize` 中完成）。与 [removeAracicExtensionPart]
   /// 职责分离：检索侧的归一化调整不会改变这里的去重语义。
+  ///
+  /// 实现细节：正则已预编译；结果按原始字符串缓存在 [_identityKeyCache] 中，
+  /// 因为该键在搜索、FSRS 去重与收藏反查循环里会对同一批词条反复求值。
+  /// 返回值与逐个正则内联替换逐字一致（跨存储的稳定键，不可改变语义）。
   String identityKey(){
+    final String? cached = _identityKeyCache[this];
+    if(cached != null) return cached;
     String res = this;
-    res = res.replaceAll(RegExp(r'[\u064B-\u065F\u0640\u0670\u06D6-\u06ED]'), "");
-    res = res.replaceAll(RegExp(r'[（(][^）)]*[）)]'), "");
-    res = res.replaceAll(RegExp(r'[/／][^]*$'), "");
-    res = res.replaceAll(RegExp(r'\s[جم](?=\s|$)[^]*$'), "");
-    res = res.replaceAll(RegExp(r'\s-[^]*$'), "");
-    res = res.replaceAll(RegExp(r'[،.][^]*$'), "");
-    return res.trim();
+    res = res.replaceAll(_arabicDiacriticsRegExp, "");
+    res = res.replaceAll(_parentheticalRegExp, "");
+    res = res.replaceAll(_slashTailRegExp, "");
+    res = res.replaceAll(_standaloneMarkerTailRegExp, "");
+    res = res.replaceAll(_hyphenTailRegExp, "");
+    res = res.replaceAll(_arabicCommaTailRegExp, "");
+    res = res.trim();
+    // 只缓存短词形（真实词条），避免异常长的输入把内存顶满
+    if(length <= 128) {
+      if(_identityKeyCache.length >= _identityKeyCacheLimit) {
+        _identityKeyCache.clear();
+      }
+      _identityKeyCache[this] = res;
+    }
+    return res;
   }
 
   /// 中文释义是否可判定为「同一含义」。
@@ -65,8 +100,7 @@ extension StringExtensions on String {
   /// `写, 书写` 与 `教科书`（仅共用「书」）、`质子` 与 `中子`（仅共用「子」）
   /// 等不同含义被误合并。
   bool hasSimilarMeaning(String other) {
-    String clean(String s) =>
-        s.replaceAll(RegExp(r'[ \(\)\.,/，。、；（）\[\]【】]'), '');
+    String clean(String s) => s.replaceAll(_meaningPunctuationRegExp, '');
     final String c1 = clean(this);
     final String c2 = clean(other);
     if (c1.isEmpty || c2.isEmpty) return false;
