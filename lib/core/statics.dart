@@ -11,9 +11,9 @@ import 'package:arabic_learning/theme/tokens.dart' show AppMotion, AppRadius;
 
 @immutable
 class StaticsVar {
-  static const String appName = 'Ar 学';
+  static const String appName = 'Ar学';
   static const int appVersion = 101000;
-  static const int termVersion = 4;
+  static const int termVersion = 5;
   static const String modelPath = 'arabicLearning/tts/model/vits-piper-ar_JO-kareem-medium';
   static const Map<String, dynamic> tempConfig = {"SelectedClasses": []};
   static const Curve curve = AppMotion.standardCurve;
