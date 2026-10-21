@@ -93,8 +93,14 @@ class SharedPreferences {
     }
   }
 
+  /// 导出前需要强制落盘的延迟写入钩子（目前用于 FSRS 的防抖写）。
+  /// 由对应服务在自己的初始化里注册，存储层不直接依赖服务层，避免循环依赖。
+  static void Function()? flushPendingWrites;
+
   Map<String, dynamic> export() {
     logger.info("导出存储数据");
+    // 先落盘防抖中的写入，避免备份快照落后于最后一次操作（例如刚答完的复习卡片）。
+    flushPendingWrites?.call();
     if(type) {
       Map<String, dynamic> overall = {};
       for(String keyName in usedKeys){

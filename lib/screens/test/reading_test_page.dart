@@ -256,12 +256,10 @@ class ReadingTestPage extends StatefulWidget {
   const ReadingTestPage({super.key});
 
   @override
-  State<StatefulWidget> createState() => _ReadingTestPage();
+  State<ReadingTestPage> createState() => _ReadingTestPage();
 }
 
 class _ReadingTestPage extends State<ReadingTestPage> {
-  _ReadingTestPage();
-
   @override
   Widget build(BuildContext context) {
     AppData appData = AppData();
@@ -293,7 +291,7 @@ class ReadingTestAddLeading extends StatefulWidget {
   const ReadingTestAddLeading({super.key});
 
   @override
-  State<StatefulWidget> createState() => _ReadingTestAddLeading();
+  State<ReadingTestAddLeading> createState() => _ReadingTestAddLeading();
 }
 
 class _ReadingTestAddLeading extends State<ReadingTestAddLeading> {
@@ -429,11 +427,9 @@ class ReadingQuestionPage extends StatefulWidget {
   const ReadingQuestionPage({super.key, required this.unit, this.listIndex});
 
   @override
-  State<StatefulWidget> createState() => _ReadingQuestionPage();
+  State<ReadingQuestionPage> createState() => _ReadingQuestionPage();
 }
 class _ReadingQuestionPage extends State<ReadingQuestionPage> {
-  _ReadingQuestionPage();
-
   PageController pageController = PageController();
   late List<SingleSelectionNotifier> choose;
   List<List<String>> options = [];
@@ -453,6 +449,12 @@ class _ReadingQuestionPage extends State<ReadingQuestionPage> {
 
   @override
   void dispose() {
+    // choose 中的 notifier 由本 State 创建（Provider 使用 .value，不会代为释放），
+    // 与 pageController 一样需要在此显式释放。
+    for (final SingleSelectionNotifier notifier in choose) {
+      notifier.dispose();
+    }
+    pageController.dispose();
     super.dispose();
   }
 
@@ -549,7 +551,7 @@ class _ReadingQuestionPage extends State<ReadingQuestionPage> {
                     if(index == widget.unit.questions.length) ...List.generate(
                       widget.unit.questions.length,
                       (int i) => TextContainer(
-                        text: "题目\n${widget.unit.questions[i].riddle}\n你的答案\n${choose[i].value==null ? "未选择" : options[i][choose[i].value]}"
+                        text: "题目\n${widget.unit.questions[i].riddle}\n你的答案\n${choose[i].value==null ? "未选择" : options[i][choose[i].value!]}"
                       )
                     ),
                     if(index == widget.unit.questions.length) Padding(
@@ -558,7 +560,7 @@ class _ReadingQuestionPage extends State<ReadingQuestionPage> {
                         onPressed: () {
                           int correctCount = 0;
                           for(int i = 0;i < choose.length; i++){
-                            if(choose[i].value == null ? false : options[i][choose[i].value] == widget.unit.questions[i].answers[0]) {
+                            if(choose[i].value == null ? false : options[i][choose[i].value!] == widget.unit.questions[i].answers[0]) {
                               correctCount++;
                             }
                           }
@@ -639,7 +641,7 @@ class _ReadingQuestionPage extends State<ReadingQuestionPage> {
   }
 }
 
-// 这个要是要在别的地方用，请改名放到ui.dart里
+// 这个要是要在别的地方用，请改名放到 lib/widgets/ 下
 class TypeChoose extends StatelessWidget {
   final Widget mainTitle;
   final Widget? subTitle;
@@ -691,7 +693,7 @@ class QuestionConfigPage extends StatefulWidget {
   const QuestionConfigPage({super.key, required this.qconfig});
 
   @override
-  State<StatefulWidget> createState() => _QuestionConfigPage();
+  State<QuestionConfigPage> createState() => _QuestionConfigPage();
 }
 
 class _QuestionConfigPage extends State<QuestionConfigPage> {
@@ -831,6 +833,8 @@ class _QuestionConfigPage extends State<QuestionConfigPage> {
         );
       }
     }
+    // 等待期间页面可能已被销毁（如导航返回），此时不再更新状态。
+    if (!mounted) return;
     setState(() {
       adding = false;
     });

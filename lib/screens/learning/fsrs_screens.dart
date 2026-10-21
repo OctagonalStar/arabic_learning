@@ -290,7 +290,7 @@ class ForeFSRSSettingPage extends StatelessWidget {
                                 reviewQuestionSections: (next.toList()..sort()),
                               );
                             });
-                            fsrs.save();
+                            fsrs.save(immediate: true); // 设置项需立刻落盘
                           },
                         );
                       }),
@@ -351,7 +351,7 @@ class ForeFSRSSettingPage extends StatelessWidget {
                           TextButton(
                             onPressed: () {
                               fsrs.config = FSRSConfig(enabled: false);
-                              fsrs.save();
+                              fsrs.save(immediate: true);
                               Navigator.popUntil(context, (route) => route.isFirst);
                             }, 
                             child: Text("确认清空", style: Theme.of(context).textTheme.labelLarge?.copyWith(color: Theme.of(context).colorScheme.error))

@@ -124,7 +124,7 @@ class _SynonymPage extends State<SynonymPage> {
                 size: Size.fromHeight(mediaQuery.size.height * 0.08),
                 backgroundColor: Theme.of(context).colorScheme.errorContainer,
                 onPressed: () {
-                  alart(context, "确定清空全部同义/不同标记吗？此操作不可撤销。", onConfirmed: () {
+                  alart(context, "确定清空全部同义/不同标记吗？此操作不可撤销。", destructive: true, onConfirmed: () {
                     context.read<Global>().uiLogger.info("清空全部同义对标记");
                     setState(() {
                       store.clearAll();

@@ -87,9 +87,16 @@ class AppData {
     }
 
     if(!isFirstStart) {
-      wordData = DictData.buildFromMap(jsonDecode(storage.getString("wordData")!));
-      if (normalizeWordGenders()) {
-        storage.setString("wordData", jsonEncode(wordData.toMap()));
+      final String? wordRaw = storage.getString("wordData");
+      if(wordRaw == null || wordRaw.isEmpty) {
+        // 存储缺失时不抛出：降级为空词库继续初始化，避免启动直接失败。
+        logger.severe("未找到词库数据，按空词库继续初始化");
+        wordData = DictData(words: [], classes: []);
+      } else {
+        wordData = DictData.buildFromMap(jsonDecode(wordRaw));
+        if (normalizeWordGenders()) {
+          storage.setString("wordData", jsonEncode(wordData.toMap()));
+        }
       }
       readingData = ReadingData.buildFromMap(jsonDecode(storage.getString("readingData") ?? "{\"units\": []}"));
       if(!BKSearch.isReady) BKSearch.init(wordData.words);

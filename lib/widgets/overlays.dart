@@ -3,6 +3,7 @@
 // 与选择题长按用的单词卡片浮层 showWordCardOverlay。
 // 说明：与 widgets/kit.dart 之间存在循环 import，在 Dart 中合法。
 
+import 'dart:async' show Timer;
 import 'dart:math' show min;
 
 import 'package:arabic_learning/core/extensions.dart';
@@ -11,7 +12,6 @@ import 'package:arabic_learning/models/dict.dart' show WordItem;
 import 'package:arabic_learning/services/global_state.dart';
 import 'package:arabic_learning/services/synonyms.dart' show SynonymStore;
 import 'package:arabic_learning/theme/tokens.dart' show AppMotion, AppSpacing;
-import 'package:arabic_learning/widgets/feedback.dart' show LoadingIndicator;
 import 'package:arabic_learning/widgets/flip_word_card.dart' show FlipWordCard;
 import 'package:arabic_learning/widgets/kit.dart' show Button;
 import 'package:flutter/material.dart';
@@ -27,6 +27,9 @@ import 'package:provider/provider.dart';
 /// 
 /// [delayConfirm] :要求等待多久后可以关闭弹窗
 /// 
+/// [destructive] :是否为不可撤销操作，为真时额外给出「取消」按钮，确定按钮
+/// 以错误色突出显示
+/// 
 /// 示例(可能在某个按钮中)：
 /// 
 /// ``` dart
@@ -34,8 +37,8 @@ import 'package:provider/provider.dart';
 ///   alart(context, "你点击了按钮"，onConfirmed: (){i++}, delayConfirm: Duration(seconds: 1));
 /// }
 /// ```
-void alart(BuildContext context, String msg, {Function? onConfirmed, Duration delayConfirm = const Duration()}) {
-  context.read<Global>().uiLogger.info("构建弹出窗口: 携带信息: $msg ;确认参数: ${onConfirmed != null}; 延迟: ${delayConfirm.inMilliseconds}");
+void alart(BuildContext context, String msg, {Function? onConfirmed, Duration delayConfirm = const Duration(), bool destructive = false}) {
+  context.read<Global>().uiLogger.info("构建弹出窗口: 携带信息: $msg ;确认参数: ${onConfirmed != null}; 延迟: ${delayConfirm.inMilliseconds}; 危险操作: $destructive");
   showDialog(
     context: context, 
     requestFocus: true,
@@ -44,26 +47,102 @@ void alart(BuildContext context, String msg, {Function? onConfirmed, Duration de
         title: Text("提示"),
         content: Text(msg),
         actions: [
-          FutureBuilder(
-            future: Future.delayed(delayConfirm, (){return 0;}),
-            builder: (context, asyncSnapshot) {
-              if(asyncSnapshot.hasData){
-                return TextButton(
-                  child: Text("确定"),
-                  onPressed: () {
-                    Navigator.of(context).pop();
-                    if(onConfirmed != null) onConfirmed();
-                  },
-                );
-              } else {
-                return LoadingIndicator();
-              }
-            }
-          )
+          _AlartActions(
+            destructive: destructive,
+            delayConfirm: delayConfirm,
+            onConfirmed: onConfirmed,
+          ),
         ],
       );
     }
   );
+}
+
+/// 弹窗底部的动作区。
+///
+/// [delayConfirm] 非零时确定按钮置灰，并以「确定 (n)」倒计时，归零后启用；
+/// 为零时与原先完全一致（单个可点确定按钮）。[destructive] 为真时在确定
+/// 按钮左侧额外给出「取消」。
+class _AlartActions extends StatefulWidget {
+  const _AlartActions({required this.destructive, required this.delayConfirm, this.onConfirmed});
+
+  final bool destructive;
+  final Duration delayConfirm;
+  final Function? onConfirmed;
+
+  @override
+  State<_AlartActions> createState() => _AlartActionsState();
+}
+
+class _AlartActionsState extends State<_AlartActions> {
+  Timer? _timer;
+
+  /// 剩余等待时间，归零后确定按钮启用。
+  Duration _remaining = Duration.zero;
+
+  @override
+  void initState() {
+    super.initState();
+    _remaining = widget.delayConfirm;
+    if (_remaining > Duration.zero) _startCountdown();
+  }
+
+  /// 以 100ms 为步长刷新剩余时间，保证亚秒级延迟也能按 [widget.delayConfirm] 准时启用。
+  void _startCountdown() {
+    final Stopwatch watch = Stopwatch()..start();
+    _timer = Timer.periodic(const Duration(milliseconds: 100), (Timer timer) {
+      final Duration remaining = widget.delayConfirm - watch.elapsed;
+      if (remaining <= Duration.zero) {
+        timer.cancel();
+        if (mounted) setState(() => _remaining = Duration.zero);
+      } else if (mounted) {
+        setState(() => _remaining = remaining);
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    // 弹窗关闭（含点击遮罩取消）时释放计时器
+    _timer?.cancel();
+    super.dispose();
+  }
+
+  void _confirm() {
+    Navigator.of(context).pop();
+    if (widget.onConfirmed != null) widget.onConfirmed!();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final bool ready = _remaining <= Duration.zero;
+    final String label = ready ? "确定" : "确定 (${(_remaining.inMilliseconds / 1000).ceil()})";
+    // 破坏性操作使用错误色实心按钮，其余保持原来的文字按钮外观
+    final Widget confirmButton = widget.destructive
+        ? FilledButton(
+            style: FilledButton.styleFrom(
+              backgroundColor: Theme.of(context).colorScheme.error,
+              foregroundColor: Theme.of(context).colorScheme.onError,
+            ),
+            onPressed: ready ? _confirm : null,
+            child: Text(label),
+          )
+        : TextButton(
+            onPressed: ready ? _confirm : null,
+            child: Text(label),
+          );
+    if (!widget.destructive) return confirmButton;
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: Text("取消"),
+        ),
+        confirmButton,
+      ],
+    );
+  }
 }
 
 void showSnackBar(BuildContext context, String msg, {Duration duration = const Duration(seconds: 3)}){

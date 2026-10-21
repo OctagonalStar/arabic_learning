@@ -1,7 +1,9 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:arabic_learning/services/app_data.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/widgets.dart' show AppLifecycleListener;
 import 'package:fsrs/fsrs.dart';
 import 'package:logging/logging.dart';
 
@@ -24,8 +26,17 @@ class FSRS {
   final Logger logger = Logger("FSRS");
   // index != cardId; cardId = wordId = the index of word in global.wordData[words]
 
+  /// 写入防抖计时器：答题时只重置计时，避免每次都序列化整张卡片表。
+  Timer? _saveTimer;
+
+  /// 生命周期落盘守卫（退后台/隐藏/销毁前立即写盘），只注册一次。
+  AppLifecycleListener? _lifecycleListener;
+
   bool init() {
     logger.fine("构建FSRS模块");
+    _ensureLifecycleListener();
+    // 备份/导出快照前强制落盘，避免 400ms 防抖窗口内的答题记录丢失。
+    SharedPreferences.flushPendingWrites = flush;
     AppData appData = AppData();
     if(!appData.storage.containsKey("fsrsData")) {
       logger.info("未发现FSRS配置，加载默认配置");
@@ -57,7 +68,7 @@ class FSRS {
       if(uniqueCards.length < config.cards.length) {
         logger.warning("发现并清理了 ${config.cards.length - uniqueCards.length} 条重复复习记录");
         config = config.copyWith(cards: uniqueCards, reviewLogs: uniqueLogs);
-        save();
+        flush();
       }
     }
     
@@ -66,9 +77,43 @@ class FSRS {
     return false;
   }
 
-  void save() async {
+  /// 保存 FSRS 配置。
+  ///
+  /// 默认按 400ms 防抖合并写入（答题时每答一题都会调用，逐题整表序列化开销过大）；
+  /// [immediate] 为 true 时取消待执行的防抖任务并立即写盘。
+  void save({bool immediate = false}) {
+    if(immediate) {
+      _flush();
+      return;
+    }
+    _saveTimer?.cancel();
+    _saveTimer = Timer(const Duration(milliseconds: 400), _flush);
+  }
+
+  /// 立即把当前配置写入存储（跳过防抖），供页面/测试/生命周期节点调用。
+  void flush() => _flush();
+
+  void _flush() {
+    _saveTimer?.cancel();
+    _saveTimer = null;
     logger.info("正在保存FSRS配置");
     AppData().storage.setString("fsrsData", jsonEncode(config.toMap()));
+  }
+
+  /// 注册生命周期落盘守卫：应用暂停/隐藏/分离前立即写盘，避免防抖窗口内丢数据。
+  /// 纯 Dart 测试环境没有初始化 WidgetsBinding，此时直接跳过（不抛异常）。
+  void _ensureLifecycleListener() {
+    if(_lifecycleListener != null) return;
+    try {
+      // 未初始化绑定时 AppLifecycleListener 的构造会抛错，纯 Dart 环境据此跳过。
+      _lifecycleListener = AppLifecycleListener(
+        onPause: flush,
+        onHide: flush,
+        onDetach: flush,
+      );
+    } catch (e) {
+      logger.fine("非 Flutter 环境，跳过生命周期落盘守卫: $e");
+    }
   }
 
   void createScheduler({required SharedPreferences prefs}) {

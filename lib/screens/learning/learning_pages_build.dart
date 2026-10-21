@@ -249,7 +249,7 @@ class _InLearningPageState extends State<InLearningPage> {
 
   @override
   Widget build(BuildContext context) {
-    context.read<Global>().uiLogger.info("构建 InLearningPage");
+    context.read<Global>().uiLogger.fine("构建 InLearningPage");
     final mediaQuery = MediaQuery.of(context);
     return PopScope(
       canPop: false,
@@ -366,7 +366,7 @@ class _InLearningPageState extends State<InLearningPage> {
                       Future.delayed(Duration(seconds: 1), (){if(context.mounted) viewAnswer(context, testItem.testWord, chosenWrong: testItem.optionWords![value]);});
                     }
                     onSolve(targetWord: testItem.testWord, isCorrect: ans, takentime: DateTime.now().difference(quizStart).inMilliseconds);
-                    Future.delayed(Duration(milliseconds: 700) ,(){setState(() {
+                    Future.delayed(Duration(milliseconds: 700) ,(){if(!mounted) return; setState(() {
                       clicked = true;
                     });});
                     return ans;
@@ -443,7 +443,7 @@ class _InLearningPageState extends State<InLearningPage> {
                       Future.delayed(Duration(seconds: 1), (){if(context.mounted) viewAnswer(context, testItem.testWord, chosenWrong: testItem.optionWords![value]);});
                     } 
                     onSolve(targetWord: testItem.testWord, isCorrect: ans, takentime: DateTime.now().difference(quizStart).inMilliseconds);
-                    Future.delayed(Duration(milliseconds: 700) ,(){setState(() {
+                    Future.delayed(Duration(milliseconds: 700) ,(){if(!mounted) return; setState(() {
                       clicked = true;
                     });});
                     return ans;
@@ -519,31 +519,45 @@ class _ConcludePageState extends State<ConcludePage> {
   bool visible2 = false;
   bool visible3 = false;
 
+  /// 三段式卡片入场计时器：页面提前销毁时统一取消，避免对已卸载的 State setState。
+  Timer? _revealTimer1;
+  Timer? _revealTimer2;
+  Timer? _revealTimer3;
+
   @override
   void initState() {
     super.initState();
-    Future.delayed(Duration(milliseconds: 200), () {
-      if (mounted) {
+    _revealTimer1 = Timer(Duration(milliseconds: 200), () {
+      if (!mounted) return;
+      setState(() {
+        visible1 = true;
+      });
+      _revealTimer2 = Timer(Duration(milliseconds: 200), () {
+        if (!mounted) return;
         setState(() {
-          visible1 = true;
+          visible2 = true;
         });
-        Future.delayed(Duration(milliseconds: 200), () {
+        _revealTimer3 = Timer(Duration(milliseconds: 200), () {
+          if (!mounted) return;
           setState(() {
-            visible2 = true;
-          });
-          Future.delayed(Duration(milliseconds: 200), () {
-            setState(() {
-              visible3 = true;
-            });
+            visible3 = true;
           });
         });
-      }
+      });
     });
   }
 
   @override
+  void dispose() {
+    _revealTimer1?.cancel();
+    _revealTimer2?.cancel();
+    _revealTimer3?.cancel();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    context.read<Global>().uiLogger.info("构建 ConcludePage");
+    context.read<Global>().uiLogger.fine("构建 ConcludePage");
     // 结果卡尺寸按页面实际可用约束推导并夹在合理区间；高度不足时整页可滚动，
     // 避免矮横屏下三张卡片 + 间距 + 按钮超出视口。
     return LayoutBuilder(
@@ -685,7 +699,7 @@ class _WordCardOverViewPage extends State<WordCardOverViewPage> {
 
   @override
   Widget build(BuildContext context) {
-    context.read<Global>().uiLogger.info("构建 WordCardOverViewPage: inSearch{$inSearch}");
+    context.read<Global>().uiLogger.fine("构建 WordCardOverViewPage: inSearch{$inSearch}");
     MediaQueryData mediaQuery = MediaQuery.of(context);
     return Scaffold(
       // 搜索框位于 AppBar，键盘弹出时不应压缩 body：否则网格 LayoutBuilder
@@ -984,7 +998,7 @@ class _WordLookupLayoutState extends State<WordLookupLayout> {
       match = match.where((WordItem word) => FavoriteStore().contains(word.id)).toList();
     }
 
-    context.read<Global>().uiLogger.finer("单词检索结果: $match");
+    context.read<Global>().uiLogger.finer("单词检索结果: ${match.length} 条");
     if(!AppData().config.learning.wordLookupRealtime){
       // 固定展示延迟属业务时序（等待列表渲染完成），不参与动效 token 化。
       Future.delayed(Durations.medium1, () {

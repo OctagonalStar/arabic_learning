@@ -27,19 +27,93 @@ import 'package:flutter_markdown_plus/flutter_markdown_plus.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 
-class MyApp extends StatelessWidget {
+class MyApp extends StatefulWidget {
   const MyApp({super.key});
 
   @override
+  State<MyApp> createState() => _MyAppState();
+}
+
+class _MyAppState extends State<MyApp> {
+  /// 记忆化的初始化 Future：只在 initState 中创建一次。
+  /// Global.init() 内部会 notifyListeners()，若在 build 中创建，
+  /// 每次重建都会生成新 Future 并重复初始化（重复解析/写入配置）。
+  late Future<bool> _initFuture;
+
+  @override
+  void initState() {
+    super.initState();
+    _initFuture = context.read<Global>().init();
+  }
+
+  /// 重试初始化：Global 失败时已自清缓存，这里拿到的是全新一轮初始化。
+  void _retryInit() {
+    final Future<bool> next = context.read<Global>().init();
+    setState(() {
+      _initFuture = next;
+    });
+  }
+
+  /// 初始化失败页：surface 语义色与加载页一致，避免永久停在加载动画。
+  Widget _buildInitError(Global global, Object error) {
+    final bool platformDark = WidgetsBinding
+            .instance.platformDispatcher.platformBrightness ==
+        Brightness.dark;
+    final Color surface = (platformDark ? global.darkThemeData : global.lightThemeData)
+        .colorScheme
+        .surface;
+    return Directionality(
+      key: const ValueKey<String>('app-init-error'),
+      textDirection: TextDirection.ltr,
+      child: Material(
+        color: surface,
+        child: Center(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Text(
+                  "初始化失败",
+                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.w600),
+                ),
+                const SizedBox(height: 12),
+                SelectableText(
+                  error.toString(),
+                  maxLines: 6,
+                  style: const TextStyle(fontSize: 12),
+                ),
+                const SizedBox(height: 16),
+                ElevatedButton(
+                  onPressed: _retryInit,
+                  child: const Text("重试"),
+                ),
+                const SizedBox(height: 12),
+                const Text(
+                  "若反复失败，请检查存储空间或导出备份后重装",
+                  textAlign: TextAlign.center,
+                  style: TextStyle(fontSize: 12),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  @override
   Widget build(BuildContext context) {
-    context.read<Global>().uiLogger.warning("收到应用层构建请求");
+    context.read<Global>().uiLogger.fine("收到应用层构建请求");
     return FutureBuilder(
-        future: context.read<Global>().init(),
+        future: _initFuture,
         initialData: false,
         builder: (context, asyncSnapshot) {
           final Global global = context.read<Global>();
           final Widget child;
-          if(!(asyncSnapshot.data??false)) {
+          if (asyncSnapshot.hasError) {
+            child = _buildInitError(global, asyncSnapshot.error!);
+          } else if(!(asyncSnapshot.data??false)) {
             // 加载页：使用主题 surface 语义色，不再硬编码纯黑。
             final bool platformDark = WidgetsBinding
                     .instance.platformDispatcher.platformBrightness ==
@@ -114,6 +188,7 @@ const List<_NavItem> _navItems = [
 class _MyHomePageState extends State<MyHomePage> {
   final PageController _pageController = PageController(initialPage: 0);
   bool _startupPromptsScheduled = false;
+  bool _notificationPermissionAsked = false;
 
 
   // 构建桌面端布局（侧边导航）
@@ -229,6 +304,14 @@ class _MyHomePageState extends State<MyHomePage> {
     }
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       if (!mounted) return;
+      // 通知权限：仅在启动提示阶段请求一次，不在 build 中创建插件实例。
+      // 当前配置无「推送总开关」，保持原有 Android 平台无条件请求的行为。
+      if (!_notificationPermissionAsked && !kIsWeb && io.Platform.isAndroid) {
+        _notificationPermissionAsked = true;
+        FlutterLocalNotificationsPlugin()
+            .resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>()
+            ?.requestNotificationsPermission();
+      }
       if (!kIsWeb &&
           io.Platform.isAndroid &&
           AppData().config.regular.autoCheckUpdate) {
@@ -280,12 +363,6 @@ class _MyHomePageState extends State<MyHomePage> {
       return PolicyPage(isUpdate: false);
     } else if (AppData().config.lastTermVersion != StaticsVar.termVersion) {
       return PolicyPage(isUpdate: true);
-    }
-
-    if(io.Platform.isAndroid) {
-      FlutterLocalNotificationsPlugin()
-        .resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>()
-        ?.requestNotificationsPermission();
     }
 
     // 启动提示：自动检查更新（Android）优先，其次顺延更新日志。

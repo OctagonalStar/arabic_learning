@@ -45,6 +45,11 @@ Future<void> playTextToSpeech(String text, {double? speed}) async {
   
   // 2: sherpa-onnx
   } else if (AppData().config.audio.audioSource == 2) {
+    // 惰性加载：模型加载是同步的（ONNX 初始化），放在启动流程里会阻塞首帧，
+    // 因此推迟到第一次真正需要合成语音时再做，之后的调用直接命中已加载实例。
+    if(AppData().vitsTTS == null) {
+      await AppData().loadTTS(AppData().config.audio.playRate);
+    }
     if(AppData().vitsTTS == null) throw Exception("神经网络音频模型尚未就绪");
     try {
       final basePath = await path_provider.getApplicationCacheDirectory();

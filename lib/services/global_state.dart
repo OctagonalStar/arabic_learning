@@ -38,11 +38,21 @@ class Global with ChangeNotifier {
   ColorScheme? _dynamicDarkScheme;
   String? _dynamicSchemeKey;
 
+  // 主题缓存：ThemeData 构建开销较大，配置未变时复用同一实例。
+  ThemeData? _lightTheme;
+  ThemeData? _darkTheme;
+
   /// 亮色主题。
-  ThemeData get lightThemeData => _buildTheme(Brightness.light);
+  ThemeData get lightThemeData => _lightTheme ??= _buildTheme(Brightness.light);
 
   /// 暗色主题。
-  ThemeData get darkThemeData => _buildTheme(Brightness.dark);
+  ThemeData get darkThemeData => _darkTheme ??= _buildTheme(Brightness.dark);
+
+  /// 配置或动态取色变化后清除主题缓存，行为与逐次重建等价。
+  void _invalidateThemeCache() {
+    _lightTheme = null;
+    _darkTheme = null;
+  }
 
   /// 由配置解析出的主题模式（跟随系统 / 浅色 / 深色）。
   ThemeMode get themeMode =>
@@ -82,6 +92,7 @@ class Global with ChangeNotifier {
       _dynamicLightScheme = null;
       _dynamicDarkScheme = null;
       _dynamicSchemeKey = null;
+      _invalidateThemeCache(); // 关闭动态取色：回退种子色需重建主题
       return;
     }
     final String key = regular.theme.toString();
@@ -94,10 +105,29 @@ class Global with ChangeNotifier {
     _dynamicLightScheme = schemes.light;
     _dynamicDarkScheme = schemes.dark;
     _dynamicSchemeKey = key;
+    _invalidateThemeCache(); // 动态取色方案已解析：颜色变化需重建主题
   }
 
 
-  Future<bool> init() async {
+  // 初始化 Future 记忆化：init() 内部会 notifyListeners() 触发重建，
+  // 若重建时再次被调用会重复解析/写入配置，故只执行一次。
+  Future<bool>? _initFuture;
+
+  /// 全局初始化（记忆化，只执行一次）。
+  Future<bool> init() => _initFuture ??= _initGuarded();
+
+  /// 失败时清空记忆化结果，使 UI 的「重试」能真正重新执行初始化。
+  Future<bool> _initGuarded() async {
+    try {
+      return await _initOnce();
+    } catch (e, stack) {
+      logger.severe("全局控制类初始化失败: $e", e, stack);
+      _initFuture = null;
+      rethrow;
+    }
+  }
+
+  Future<bool> _initOnce() async {
     logger.info("开始全局控制类初始化");
 
     AppData appData = AppData();
@@ -173,6 +203,7 @@ class Global with ChangeNotifier {
     AppData appData = AppData();
     if(settingData != null) appData.config = Config.buildFromMap(settingData);
     appData.storage.setString("settingData", jsonEncode(appData.config.toMap()));
+    _invalidateThemeCache(); // 配置已变更：主题缓存失效
     if(refresh) await refreshApp();
   }
 
@@ -210,8 +241,8 @@ class Global with ChangeNotifier {
 
   Future<void> refreshApp() async {
     logger.info("应用设置中");
-    AppData appData = AppData();
-    if(appData.config.audio.audioSource == 2) await appData.loadTTS(appData.config.audio.playRate);
+    // 本地 TTS 模型（sherpa_onnx）加载是同步的，放在这里会阻塞首帧；
+    // 改为在 services/tts.dart 首次合成语音时惰性加载。
     changeLoggerBehavior();
     updateTheme();
     await _refreshDynamicScheme();
@@ -221,6 +252,7 @@ class Global with ChangeNotifier {
 
   void updateTheme() {
     logger.info("更新主题中");
+    _invalidateThemeCache(); // 字体配置随之变化：清空主题缓存
     if(AppData().config.regular.font == 2) {
       arFont = StaticsVar.arBackupFont;
       zhFont = StaticsVar.zhBackupFont;

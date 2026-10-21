@@ -399,6 +399,8 @@ class _MainListeningPageState extends State<MainListeningPage> {
         counter = (i/10).toString();
       });
       await Future.delayed(Duration(milliseconds: 100));
+      // 页面可能在倒计时期间被销毁，之后的 setState 需要跳过。
+      if (!mounted) return;
     }
     for (WordItem x in widget.words) {
       for(int t = 0; t < widget.playTimes; t++){ 
@@ -409,6 +411,7 @@ class _MainListeningPageState extends State<MainListeningPage> {
         });
         if(!context.mounted) return;
         await playTextToSpeech(x.arabic, speed: widget.playRate);
+        if (!mounted) return;
         setState((){
           state = "播放间隔中...";
         });
@@ -417,6 +420,7 @@ class _MainListeningPageState extends State<MainListeningPage> {
             counter = (i / 10).toString();
           });
           await Future.delayed(Duration(milliseconds: 100));
+          if (!mounted) return;
         }
       }
       setState((){
@@ -427,6 +431,7 @@ class _MainListeningPageState extends State<MainListeningPage> {
           counter = (i / 10).toString();
         });
         await Future.delayed(Duration(milliseconds: 100));
+        if (!mounted) return;
       }
     }
     setState((){
