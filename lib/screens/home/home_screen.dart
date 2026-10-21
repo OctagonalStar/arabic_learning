@@ -56,7 +56,8 @@ class HomePage extends StatelessWidget {
                   value: getStrokeDays(AppData().config.learning).toString(),
                   statusIcon: AppData().config.learning.lastDate == daysSinceEpoch()
                     ? Icon(Icons.done, size: 15.0, color: context.semanticColors.success)
-                    : Icon(Icons.error_outline, size: 15.0, color: context.semanticColors.warning),
+                    // 今天还没开始用中性待完成图标；warning 色的感叹号会被误读成出错。
+                    : Icon(Icons.radio_button_unchecked, size: 15.0, color: context.semanticColors.disabled),
                 ),
                 StatCard(
                   width: width * 0.50,
