@@ -1,11 +1,13 @@
 {
-    "name": "arabic_learning",
-    "short_name": "arabic_learning",
+    "name": "Ar 学",
+    "short_name": "Ar 学",
     "start_url": ".",
     "display": "standalone",
-    "background_color": "#FFFFFF",
-    "theme_color": "#FFFFFF",
-    "description": "A new Flutter project.",
+    "background_color": "#F5FAFC",
+    "theme_color": "#F5FAFC",
+    "description": "阿拉伯语单词学习工具，支持间隔重复记忆与多种练习模式。",
+    "lang": "zh-CN",
+    "dir": "ltr",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": [
