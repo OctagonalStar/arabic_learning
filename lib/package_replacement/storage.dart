@@ -97,34 +97,49 @@ class SharedPreferences {
   /// 由对应服务在自己的初始化里注册，存储层不直接依赖服务层，避免循环依赖。
   static void Function()? flushPendingWrites;
 
+  /// 导出时覆盖若干键的钩子（FSRS 在 SQLite 后端下用它把内存中的权威副本
+  /// 写成旧版格式的 `fsrsData`，保证备份与降级兼容）。
+  static Map<String, String>? Function()? exportOverrides;
+
+  /// 备份恢复完成后的钩子（FSRS 用它把恢复出来的 `fsrsData` 灌回 SQLite）。
+  static Future<void> Function()? afterRecovery;
+
   Map<String, dynamic> export() {
     logger.info("导出存储数据");
     // 先落盘防抖中的写入，避免备份快照落后于最后一次操作（例如刚答完的复习卡片）。
     flushPendingWrites?.call();
+    final Map<String, String>? overrides = exportOverrides?.call();
     if(type) {
       Map<String, dynamic> overall = {};
       for(String keyName in usedKeys){
         overall[keyName] = prefs.getString(keyName);
       }
+      if(overrides != null) overall.addAll(overrides);
       return overall;
     } else {
-      return dbCache;
+      if(overrides == null) return dbCache;
+      return <String, dynamic>{...dbCache, ...overrides};
     }
   }
 
-  void recovery(Map<String, dynamic> backup) {
+  /// 恢复备份。返回的 Future 完成时，所有键（含异步后端）都已可见。
+  ///
+  /// 引入 SQLite 卡片后端后，`fsrsData` 需要异步灌回数据库；调用方必须
+  /// `await` 本方法，再调用 `Global.reloadStoredData()`，否则 FSRS 会读到旧数据。
+  Future<void> recovery(Map<String, dynamic> backup) async {
     logger.info("恢复存储数据");
     try{
       if(!type) dbCache = {}; // create a new instance
       for(String keyName in usedKeys) {
         final dynamic v = backup[keyName];
         if(v is String && v.isNotEmpty) {
-          setString(keyName, v);
+          await setString(keyName, v);
           logger.fine("完成键恢复: $keyName");
         } else {
           logger.fine("跳过缺失的键: $keyName");
         }
       }
+      await afterRecovery?.call();
     } catch (e) {
       logger.severe("恢复数据出错: $e");
     }

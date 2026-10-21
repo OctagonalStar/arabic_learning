@@ -99,7 +99,8 @@ class WebDAV {
       if(isReadable || force) {
         Map<String, dynamic> file = jsonDecode(utf8.decode(await client.read("arabic_learning.bak")));
         logger.fine("文件下载成功，开始恢复");
-        pref.recovery(file);
+        // 必须 await：SQLite 卡片后端需要把 fsrsData 异步灌回数据库。
+        await pref.recovery(file);
         return;
       }
       throw Exception("服务不可读，取消恢复");

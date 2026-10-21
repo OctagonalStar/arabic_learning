@@ -29,11 +29,15 @@ class PushCheckpoint {
 }
 
 /// 每日推送断点的持久化（存储键 pushSessionData；已加入 usedKeys 以便备份）。
+///
+/// SQLite 后端下改走 `hot_kv` 表（同步读内存缓存 + 异步落盘），
+/// 避免这个每翻一页就写的键触发 shared_preferences 整文件重写；
+/// Web / 兜底路径仍是原来的 `shared_preferences` 字符串。
 class PushSessionStore {
   static const String key = "pushSessionData";
 
   static PushCheckpoint? load() {
-    final String? raw = AppData().storage.getString(key);
+    final String? raw = _readRaw();
     if (raw == null || raw.isEmpty) return null;
     try {
       final dynamic decoded = jsonDecode(raw);
@@ -45,9 +49,26 @@ class PushSessionStore {
   }
 
   static Future<void> save(PushCheckpoint checkpoint) =>
-      AppData().storage.setString(key, jsonEncode(checkpoint.toMap()));
+      _writeRaw(jsonEncode(checkpoint.toMap()));
 
-  static Future<void> clear() => AppData().storage.setString(key, "");
+  static Future<void> clear() => _writeRaw("");
+
+  static String? _readRaw() {
+    final FSRS fsrs = FSRS();
+    if (fsrs.usingSqlite) return fsrs.store.hotKv(key);
+    return AppData().storage.getString(key);
+  }
+
+  static Future<void> _writeRaw(String value) async {
+    final FSRS fsrs = FSRS();
+    if (fsrs.usingSqlite) {
+      // 不镜像到 shared_preferences：备份导出由 `exportOverrides` 补齐该键，
+      // 否则每翻一页又会重写整份偏好文件（正是本次改造要去掉的成本）。
+      await fsrs.store.setHotKv(key, value.isEmpty ? null : value);
+      return;
+    }
+    await AppData().storage.setString(key, value);
+  }
 }
 
 /// 每日推送计划：本次实际要学习的单词，以及候选池是否为空。

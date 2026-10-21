@@ -101,7 +101,8 @@ class AppData {
       readingData = ReadingData.buildFromMap(jsonDecode(storage.getString("readingData") ?? "{\"units\": []}"));
       if(!BKSearch.isReady) BKSearch.init(wordData.words);
       WordMembershipIndex.instance.rebuild(wordData.classes);
-      FSRS().init();
+      // 异步初始化：原生平台优先打开 SQLite 卡片存储，失败自动回退 JSON。
+      await FSRS().initAsync();
     }
     SynonymStore().init();
     FavoriteStore().init(); // 收藏数据（键为词条 id）

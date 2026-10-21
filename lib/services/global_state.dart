@@ -132,7 +132,9 @@ class Global with ChangeNotifier {
 
     AppData appData = AppData();
     await appData.init();
-    FSRS().init();
+    // 首次启动时 AppData.init 内部不会初始化 FSRS，这里统一兜底。
+    // initAsync 记忆化：原生平台优先 SQLite，Web/测试/失败回退 JSON。
+    await FSRS().initAsync();
 
     if(appData.isFirstStart) {
       logger.info("首次启动检测为真");
@@ -189,7 +191,9 @@ class Global with ChangeNotifier {
 
       SynonymStore().reload();
       FavoriteStore().reload();
-      FSRS().init(); // 备份恢复后需按新 fsrsData 重建配置（补齐既有缺口）
+      // 备份恢复后需按新数据重建配置（补齐既有缺口）。
+      // SQLite 后端在 recovery 阶段已把 fsrsData 灌回库，这里 reload 只是再对齐一次内存副本。
+      await FSRS().initAsync(reload: true);
       await PlanStore().reload();
       notifyListeners();
     } catch (e) {
