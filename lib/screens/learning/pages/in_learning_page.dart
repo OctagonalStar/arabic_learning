@@ -73,8 +73,14 @@ class _InLearningPageState extends State<InLearningPage> {
   /// 断点里的 itemIndices 是这份列表的下标，恢复时据此取回剩余题目。
   List<TestItem> _allItems = [];
 
-  /// 已提交答案的 testList 下标（用于判断当前页是否已作答）。
-  final Set<int> _answeredIndexes = <int>{};
+  /// [_allItems] 的对象 → 下标映射。TestItem 未重写 ==，按对象身份定位；
+  /// 暂存时逐题 indexOf 是 O(n²)，题目多时会让「暂存并退出」明显卡顿。
+  late final Map<TestItem, int> _allItemIndex = <TestItem, int>{
+    for (int i = 0; i < _allItems.length; i++) _allItems[i]: i,
+  };
+
+  /// 已提交答案的题目（按对象记录：testList 会被「跳过听力题」就地删改，下标会前移）。
+  final Set<TestItem> _answeredItems = <TestItem>{};
 
   /// 退出确认弹窗是否已打开，避免重复弹出。
   bool _exitDialogOpen = false;
@@ -173,7 +179,7 @@ class _InLearningPageState extends State<InLearningPage> {
   int get _checkpointPage {
     final int page = _currentPage;
     if(page >= testList.length) return testList.length;
-    return _answeredIndexes.contains(page) ? min(page + 1, testList.length) : page;
+    return _answeredItems.contains(testList[page]) ? min(page + 1, testList.length) : page;
   }
 
   /// 生成当前进度断点；题目位置按「完整题目列表」的下标记录。
@@ -184,7 +190,7 @@ class _InLearningPageState extends State<InLearningPage> {
       wordKeys: widget.words.map(LearningSessionCheckpoint.wordKey).toList(growable: false),
       quiz: _quiz,
       countInReview: widget.countInReview,
-      itemIndices: testList.map((TestItem item) => _allItems.indexOf(item)).toList(growable: false),
+      itemIndices: testList.map((TestItem item) => _allItemIndex[item]!).toList(growable: false),
       pageIndex: _checkpointPage,
       correctCount: correctCount,
       elapsedSeconds: now.difference(startTime).inSeconds,
@@ -330,7 +336,7 @@ class _InLearningPageState extends State<InLearningPage> {
                   bottomWidget: Button(
                     size: Size(mediaQuery.size.width * 0.8, clampDouble(mediaQuery.size.height * 0.1, 48.0, 96.0)),
                     onPressed: (){
-                      _answeredIndexes.add(index);
+                      _answeredItems.add(testItem);
                       controller.nextPage(duration: AppMotion.medium, curve: AppMotion.standardCurve);
                       correctCount++;
                       setState(() {});
@@ -357,7 +363,7 @@ class _InLearningPageState extends State<InLearningPage> {
                     bool ans = value == testItem.correctIndex;
                     // 多选/听力题答错后仍可重试，只有答对（会锁定）才算完成本题；
                     // 否则暂存后应回到本题，而不是跳过。
-                    if(ans) _answeredIndexes.add(index);
+                    if(ans) _answeredItems.add(testItem);
                     if(!ans) {
                       Future.delayed(Duration(seconds: 1), (){if(context.mounted) viewAnswer(context, testItem.testWord, chosenWrong: testItem.optionWords![value]);});
                     }
@@ -389,7 +395,7 @@ class _InLearningPageState extends State<InLearningPage> {
                   word: testItem.testWord,
                   hint: "拼写以下单词",
                   onCheck: (text) {
-                    _answeredIndexes.add(index);
+                    _answeredItems.add(testItem);
                     setState(() {
                       clicked = true;
                     });
@@ -425,16 +431,25 @@ class _InLearningPageState extends State<InLearningPage> {
                   onSelected: (value) {
                     if(value == -1) {
                       // 跳过本题：后续听力题会被移除，本题视为已处理。
-                      _answeredIndexes.add(index);
+                      _answeredItems.add(testItem);
                       setState(() {
-                        testList.removeWhere((TestItem wtestItem) => (wtestItem.testType == 4 && index < testList.indexOf(wtestItem)));
+                        // 跳过后移除其后的听力题，避免同一段音频被反复播放。
+                        // 用线性遍历替代 removeWhere + indexOf（原写法是 O(n²)）。
+                        final List<TestItem> kept = testList.sublist(0, index + 1);
+                        for (int i = index + 1; i < testList.length; i++) {
+                          if (testList[i].testType != 4) kept.add(testList[i]);
+                        }
+                        testList = kept;
+                        if (_pageIndex > testList.length) {
+                          _pageIndex = testList.length;
+                        }
                         clicked = true;
                       });
                       return false;
                     }
                     chosenIndexByItem[testItem] = value;
                     bool ans = value == testItem.correctIndex;
-                    if(ans) _answeredIndexes.add(index);
+                    if(ans) _answeredItems.add(testItem);
                     if(!ans) {
                       Future.delayed(Duration(seconds: 1), (){if(context.mounted) viewAnswer(context, testItem.testWord, chosenWrong: testItem.optionWords![value]);});
                     } 
