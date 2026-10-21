@@ -607,6 +607,7 @@ class _PlanSessionPageState extends State<PlanSessionPage> {
       return ListeningQuestion(
         mainWord: testItem.testWord.arabic,
         choices: testItem.options!,
+        optionWords: testItem.optionWords,
         onSelected: (int value) {
           if (value == -1) {
             setState(() {

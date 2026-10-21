@@ -425,6 +425,7 @@ class _InLearningPageState extends State<InLearningPage> {
                 return ListeningQuestion(
                   mainWord: testItem.testWord.arabic, 
                   choices: testItem.options!, 
+                  optionWords: testItem.optionWords,
                   onSelected: (value) {
                     if(value == -1) {
                       // 跳过本题：后续听力题会被移除，本题视为已处理。

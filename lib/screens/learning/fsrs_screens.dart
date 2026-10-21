@@ -710,6 +710,7 @@ class _FSRSReviewCardPage extends State<FSRSReviewCardPage> {
         allowAudio: testType == 2,
         allowAnitmation: true,
         allowMutipleSelect: false,
+        optionWords: item.optionWords,
         hint: _hint(),
         onSelected: _onChoiceSelected,
         bottomWidget: _bottomBar(mediaQuery, wordData, correct),
@@ -737,6 +738,7 @@ class _FSRSReviewCardPage extends State<FSRSReviewCardPage> {
         mainWord: item.testWord.arabic,
         choices: item.options!,
         allowMutipleSelect: false,
+        optionWords: item.optionWords,
         hint: "听下面的音频，选择最合适的选项",
         onSelected: _onChoiceSelected,
         bottom: _bottomBar(mediaQuery, wordData, correct),
@@ -969,6 +971,7 @@ class _FSRSLearningPageState extends State<FSRSLearningPage> {
                   mainWord: testItem.testWord.arabic,
                   choices: testItem.options!,
                   allowMutipleSelect: true,
+                  optionWords: testItem.optionWords,
                   hint: "听下面的音频，选择最合适的选项",
                   onSelected: (value) {
                     if(value == -1) {
