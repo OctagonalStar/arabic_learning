@@ -9,6 +9,7 @@ import 'package:arabic_learning/core/version.dart' show versionIntToString;
 
 import 'package:arabic_learning/widgets/kit.dart' show Button, SettingItem, SettingRedirctButton, SettingRow;
 import 'package:arabic_learning/widgets/overlays.dart' show alart, showSnackBar;
+import 'package:arabic_learning/widgets/feedback.dart' show LoadingIndicator;
 import 'package:arabic_learning/core/extensions.dart';
 import 'package:arabic_learning/models/config.dart' show RegularConfig;
 import 'package:arabic_learning/services/global_state.dart';
@@ -470,11 +471,7 @@ class _CheckUpdateRowState extends State<_CheckUpdateRow> {
         icon: Icons.refresh,
         note: "手动检查是否有新版本",
         end: _checking
-            ? const SizedBox(
-                width: 20,
-                height: 20,
-                child: CircularProgressIndicator(strokeWidth: 2),
-              )
+            ? const LoadingIndicator(size: 20, strokeWidth: 2)
             : const Icon(Icons.chevron_right),
       ),
     );

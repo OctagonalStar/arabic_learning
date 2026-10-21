@@ -144,9 +144,15 @@ class _MyAppState extends State<MyApp> {
                 // 在 MaterialApp 之下、Navigator 之上下发响应式数据：
                 // home 与所有 push 出的路由共享同一份 AdaptiveData，
                 // 取代原先在 build 期写 AppData().isWideScreen 的副作用。
+                // 文字缩放上限夹在 1.5：系统更大字号下固定高度卡片不再被撑爆，
+                // 主体可读性优先，长文案交给各页面的滚动与 FittedBox 兜底。
+                // AdaptiveScope 在最外层读取原始尺寸，顺序不受影响。
                 builder: (context, child) => AdaptiveScope(
                   data: AdaptiveData.fromMediaQuery(context),
-                  child: child ?? const SizedBox.shrink(),
+                  child: MediaQuery.withClampedTextScaling(
+                    maxScaleFactor: 1.5,
+                    child: child ?? const SizedBox.shrink(),
+                  ),
                 ),
                 home: const MyHomePage()
               )
@@ -198,7 +204,8 @@ class _MyHomePageState extends State<MyHomePage> {
       children: [
         // 侧边导航栏
         NavigationRail(
-          minWidth: MediaQuery.of(context).size.width * 0.05,
+          // 宽度夹在 72–96：小窗口下不缩破 48dp 触控目标，大屏不再随宽度无限加宽。
+          minWidth: clampDouble(MediaQuery.sizeOf(context).width * 0.05, 72.0, 96.0),
           selectedIndex: _pageController.hasClients ? _pageController.page!.round() : 0,
           onDestinationSelected: (int index) {
             _onNavigationTapped(index);
@@ -262,7 +269,9 @@ class _MyHomePageState extends State<MyHomePage> {
           onDestinationSelected: (int index) {
             _onNavigationTapped(index);
           },
-          height: MediaQuery.of(context).size.height * 0.1,
+          // 高度夹在 48–80：矮横屏下保持 48dp 触控目标（主页磁贴在 420 高度
+          // 下要求导航栏不高于 52，故不再取更高下限），大屏不随屏高拉高。
+          height: clampDouble(MediaQuery.sizeOf(context).height * 0.1, 48.0, 80.0),
           animationDuration: AppMotion.medium,
           labelBehavior: NavigationDestinationLabelBehavior.onlyShowSelected,
           destinations: [
@@ -326,11 +335,12 @@ class _MyHomePageState extends State<MyHomePage> {
       if (!mounted || !needChangeLog) return;
       final String changeLog = await rootBundle.loadString('CHANGELOG.md');
       if (!mounted) return;
-      await showModalBottomSheet(
+      await showModalBottomSheet<void>(
         context: context,
         shape: RoundedSuperellipseBorder(side: BorderSide(width: 1.0, color: Theme.of(context).colorScheme.onSurface), borderRadius: StaticsVar.br),
         enableDrag: true,
-        isDismissible: false,
+        // 允许点外部 / 返回键关闭；弹窗内仍保留「知道了」按钮作为明确出口。
+        isDismissible: true,
         isScrollControlled: true,
         builder: (context) {
           context.read<Global>().uiLogger.info("构建更新日志通知");

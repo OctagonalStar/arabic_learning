@@ -5,6 +5,7 @@ import 'package:arabic_learning/widgets/overlays.dart' show showSnackBar;
 import 'package:arabic_learning/services/global_state.dart' show Global;
 import 'package:arabic_learning/services/app_data.dart' show AppData;
 import 'package:arabic_learning/core/statics.dart';
+import 'package:arabic_learning/theme/tokens.dart' show AppSpacing;
 import 'package:arabic_learning/theme/typography.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart' show rootBundle, SystemChannels, SystemNavigator;
@@ -84,15 +85,25 @@ class _PolicyPage extends State<PolicyPage> {
                         : const LoadingIndicator(key: ValueKey<String>('pp-loading')),
                     ),
                   ),
-                  SizedBox(height: MediaQuery.of(context).size.height),
-                  if(!widget.isUpdate) TextField(
-                    controller: controller,
-                    decoration: InputDecoration(
-                      labelText: "请输入你的用户名",
-                      prefixIcon: Icon(Icons.edit),
-                    ),
-                  )
                 ],
+            ),
+          ),
+          // 用户名输入框固定在条款区下方、按钮之上：条款本身可滚动，
+          // 小屏与系统大字号下输入框都不会被整屏 spacer 推出屏幕外。
+          if(!widget.isUpdate) Padding(
+            padding: const EdgeInsets.fromLTRB(
+              AppSpacing.sm,
+              AppSpacing.xs,
+              AppSpacing.sm,
+              0.0,
+            ),
+            child: TextField(
+              key: const ValueKey<String>('policy-username-field'),
+              controller: controller,
+              decoration: InputDecoration(
+                labelText: "请输入你的用户名",
+                prefixIcon: Icon(Icons.edit),
+              ),
             ),
           ),
           Row(
