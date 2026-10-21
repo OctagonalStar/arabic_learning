@@ -54,6 +54,13 @@ class Global with ChangeNotifier {
     _darkTheme = null;
   }
 
+  /// `settingData` 的实际写盘次数（诊断 / 测试用）。
+  ///
+  /// `Global` 不是单例（由 provider 创建），故用静态计数；用于断言
+  /// 「配置没有变化时启动路径不重写偏好文件」。
+  @visibleForTesting
+  static int debugSettingWriteCount = 0;
+
   /// 由配置解析出的主题模式（跟随系统 / 浅色 / 深色）。
   ThemeMode get themeMode =>
       ThemeResolver.themeModeFromConfig(AppData().config.regular);
@@ -131,14 +138,16 @@ class Global with ChangeNotifier {
     logger.info("开始全局控制类初始化");
 
     AppData appData = AppData();
+    // AppData.init 内部已并发启动 FSRS 的「SQLite 打开 + 旧数据迁移」并与词库
+    // 解析重叠执行，返回时 FSRS 一定已就绪；这里的第二次调用命中 initAsync 的
+    // 记忆化（`_opening`），是空操作，保留作为首次启动等路径的兜底。
     await appData.init();
-    // 首次启动时 AppData.init 内部不会初始化 FSRS，这里统一兜底。
-    // initAsync 记忆化：原生平台优先 SQLite，Web/测试/失败回退 JSON。
     await FSRS().initAsync();
 
     if(appData.isFirstStart) {
       logger.info("首次启动检测为真");
-      appData.initStorageValue();
+      // 必须 await：后续 refreshApp/首帧读取依赖这些默认键已经写入。
+      await appData.initStorageValue();
       await refreshApp();
     } else {
       conveySetting();
@@ -178,7 +187,9 @@ class Global with ChangeNotifier {
       if (wordRaw != null && wordRaw.isNotEmpty) {
         AppData().wordData = DictData.buildFromMap(jsonDecode(wordRaw));
         if (AppData().normalizeWordGenders()) {
-          AppData().storage.setString("wordData", jsonEncode(AppData().wordData.toMap()));
+          // 与启动路径共用延迟回写：编码在后台 isolate，且不阻塞首帧。
+          // （这里也必须用同一个代际号，避免与启动回写互相覆盖。）
+          AppData().persistWordDataDeferred();
         }
         BKSearch.rebuild(AppData().wordData.words);
         WordMembershipIndex.instance.rebuild(AppData().wordData.classes);
@@ -206,7 +217,17 @@ class Global with ChangeNotifier {
     logger.info("保存配置文件中");
     AppData appData = AppData();
     if(settingData != null) appData.config = Config.buildFromMap(settingData);
-    appData.storage.setString("settingData", jsonEncode(appData.config.toMap()));
+    final String encoded = jsonEncode(appData.config.toMap());
+    // 内容没变就不写：`shared_preferences` 每次 setString 都会重写整个偏好文件
+    // （其中还有 2~6MB 的 wordData）。启动路径上 updateSetting() 只是把刚读出来
+    // 的配置再写一遍，属于纯浪费；只有真正发生版本升级（lastVersion 变化）时
+    // 内容才会不同。
+    if(appData.storage.getString("settingData") != encoded) {
+      appData.storage.setString("settingData", encoded);
+      Global.debugSettingWriteCount++;
+    } else {
+      logger.fine("配置未变化，跳过写盘");
+    }
     _invalidateThemeCache(); // 配置已变更：主题缓存失效
     if(refresh) await refreshApp();
   }
