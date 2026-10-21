@@ -2,9 +2,11 @@
 import 'dart:async';
 
 import 'package:arabic_learning/core/extensions.dart' show StringExtensions;
+import 'package:arabic_learning/screens/setting/dict_manage_page.dart' show DictManagePage;
 import 'package:arabic_learning/services/app_data.dart' show AppData;
 import 'package:arabic_learning/services/global_state.dart' show Global;
 import 'package:arabic_learning/theme/tokens.dart' show AppMotion;
+import 'package:arabic_learning/widgets/empty_dict_dialog.dart' show showEmptyDictDialog;
 import 'package:arabic_learning/widgets/kit.dart' show Button;
 import 'package:arabic_learning/widgets/shared.dart' show appInputDecoration;
 import 'package:flutter/material.dart';
@@ -58,6 +60,26 @@ class _WordCardOverViewPage extends State<WordCardOverViewPage> {
   void _searchNow(String text) {
     _searchDebounce?.cancel();
     setState(() => _query = text);
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    // 词库为空时给出明确的引导弹窗（含「去导入词库」出口），
+    // 替代原先没有任何反馈的空白页面。
+    if (AppData().wordCount == 0) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        showEmptyDictDialog(
+          context,
+          // 跳转由 widget 层的调用方注入，避免 widgets/ 依赖 screens/。
+          onImport: () => Navigator.push(
+            context,
+            MaterialPageRoute(builder: (BuildContext context) => const DictManagePage()),
+          ),
+        );
+      });
+    }
   }
 
   @override

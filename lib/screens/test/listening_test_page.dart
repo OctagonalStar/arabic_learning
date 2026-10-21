@@ -1,5 +1,6 @@
 import 'package:arabic_learning/models/dict.dart';
 import 'package:arabic_learning/models/reading.dart';
+import 'package:arabic_learning/screens/setting/dict_manage_page.dart' show DictManagePage;
 import 'package:flutter/foundation.dart' show clampDouble;
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -70,7 +71,17 @@ class _ForeListeningSettingPage extends State<ForeListeningSettingPage> {
               padding: EdgeInsets.all(16.0),
               size: Size.fromHeight(clampDouble(mediaQuery.size.height * 0.1, 56.0, 96.0)),
               onPressed: () async {
-                selectedClasses = await popSelectClasses(context, withCache: false, withReviewChoose: false);
+                // 提前取出 NavigatorState：onImportDict 在弹窗关闭后才执行，
+                // 此时不能依赖本方法作用域里的 context。
+                final NavigatorState navigator = Navigator.of(context);
+                selectedClasses = await popSelectClasses(
+                  context,
+                  withCache: false,
+                  withReviewChoose: false,
+                  onImportDict: () => navigator.push(
+                    MaterialPageRoute(builder: (BuildContext context) => const DictManagePage()),
+                  ),
+                );
                 setState(() {});
               }, 
               icon: Icon(Icons.arrow_forward_ios),

@@ -5,7 +5,6 @@
 
 import 'dart:convert';
 
-import 'package:arabic_learning/core/extensions.dart';
 import 'package:arabic_learning/core/statics.dart';
 import 'package:arabic_learning/models/dict.dart' show ClassItem, SourceItem;
 import 'package:arabic_learning/models/reading.dart' show ClassSelection;
@@ -15,6 +14,7 @@ import 'package:arabic_learning/services/global_state.dart';
 import 'package:arabic_learning/services/words.dart' show collectAllCategories;
 import 'package:arabic_learning/widgets/app_button.dart' show Button;
 import 'package:arabic_learning/widgets/category_chips.dart' show CategoryFilter;
+import 'package:arabic_learning/widgets/empty_dict_dialog.dart' show showEmptyDictDialog;
 import 'package:arabic_learning/widgets/overlays.dart' show showSnackBar;
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -30,8 +30,12 @@ import 'package:provider/provider.dart';
 /// [withCategoryFilter] :是否展示标签筛选区（多选，或逻辑），
 /// 仅当词库存在标签时显示；默认关闭以保持既有调用方行为不变。
 /// 
+/// [onImportDict] :词库为空时「去导入词库」按钮的跳转回调，由调用方提供
+/// （widget 层不依赖页面层，因此不在此处直接跳转词库管理页）；
+/// 为空时不显示该按钮，仅保留空态文案。
+/// 
 /// 返回值: [ClassSelection] 包含所选课程、是否计入复习系统以及所选标签集合
-Future<ClassSelection> popSelectClasses(BuildContext context, {bool withCache = false, bool withReviewChoose = true, bool withCategoryFilter = false, List<SourceItem>? forceSelectRange}) async {
+Future<ClassSelection> popSelectClasses(BuildContext context, {bool withCache = false, bool withReviewChoose = true, bool withCategoryFilter = false, List<SourceItem>? forceSelectRange, VoidCallback? onImportDict}) async {
   context.read<Global>().uiLogger.info("弹出课程选择（ClassSelectPage），withCache: $withCache");
   final List<ClassItem> beforeSelectedClasses = [];
   AppData appData = AppData();
@@ -64,7 +68,7 @@ Future<ClassSelection> popSelectClasses(BuildContext context, {bool withCache = 
     isScrollControlled: true,
     enableDrag: true,
     builder: (BuildContext context) {
-      return ClassSelectPage(beforeSelectedClasses: beforeSelectedClasses, withReviewChoose: withReviewChoose, withCategoryFilter: withCategoryFilter);
+      return ClassSelectPage(beforeSelectedClasses: beforeSelectedClasses, withReviewChoose: withReviewChoose, withCategoryFilter: withCategoryFilter, onImportDict: onImportDict);
     }
   );
 
@@ -90,8 +94,11 @@ Future<ClassSelection> popSelectClasses(BuildContext context, {bool withCache = 
 /// 
 /// [isClassSelected] :需要一个函数判断该课程是否被选中
 /// 
+/// [onImportDict] :词库为空时「去导入词库」按钮的跳转回调；为空时
+/// 不渲染该按钮，只保留空态图标与文案。
+/// 
 /// 一般情况下该函数只会在 [ClassSelectPage] 中被使用，若非必要你不应该使用此函数
-List<Widget> classesSelectionList(BuildContext context, Function (ClassItem) onChanged, bool Function (ClassItem) isClassSelected, List<SourceItem>? forceSelectRange) {
+List<Widget> classesSelectionList(BuildContext context, Function (ClassItem) onChanged, bool Function (ClassItem) isClassSelected, List<SourceItem>? forceSelectRange, {VoidCallback? onImportDict}) {
   context.read<Global>().uiLogger.fine("构建课程选择列表");
   late List<SourceItem> sourcesList;
   if(forceSelectRange != null) {
@@ -147,8 +154,38 @@ List<Widget> classesSelectionList(BuildContext context, Function (ClassItem) onC
   }
   if(widgetList.isEmpty) {
     context.read<Global>().uiLogger.warning("用户未导入可用词库");
+    final ColorScheme scheme = Theme.of(context).colorScheme;
     widgetList.add(
-      Center(child: Text('啥啥词库都没导入，你学个啥呢？\n自己去 设置 -> 数据设置 -> 导入词库', style: Theme.of(context).textTheme.headlineSmall?.copyWith(color: context.semanticColors.error),))
+      Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 32.0),
+        child: Column(
+          children: [
+            Icon(Icons.library_books_outlined, size: 40.0, color: scheme.onSurfaceVariant),
+            const SizedBox(height: 12.0),
+            Text(
+              '还没有可选择的课程，请先导入词库',
+              textAlign: TextAlign.center,
+              style: Theme.of(context).textTheme.bodyLarge,
+            ),
+            // 无跳转回调时只保留空态说明，不渲染无实际作用的按钮。
+            if (onImportDict != null) ...[
+              const SizedBox(height: 16.0),
+              FilledButton.icon(
+                onPressed: () {
+                  // 先收起课程选择弹窗，再用仍存活的 Navigator context
+                  // 打开空词库引导，避免用到已退出的弹窗 context；
+                  // 真正的跳转由调用方注入的 onImportDict 完成。
+                  final NavigatorState navigator = Navigator.of(context);
+                  navigator.pop();
+                  showEmptyDictDialog(navigator.context, onImport: onImportDict);
+                },
+                icon: const Icon(Icons.download),
+                label: const Text('去导入词库'),
+              ),
+            ],
+          ],
+        ),
+      ),
     );
   }
   context.read<Global>().uiLogger.info("课程选择列表构建完成");
@@ -167,13 +204,17 @@ List<Widget> classesSelectionList(BuildContext context, Function (ClassItem) onC
 /// 仅在 [collectAllCategories] 非空时渲染，筛选结果写入
 /// [ClassSelection.selectedCategories] 随返回值一起回传。
 /// 
+/// [onImportDict] :词库为空时「去导入词库」按钮的跳转回调；为空时
+/// 该按钮不渲染。
+/// 
 /// 注意：如果你要进行课程选择，请先考虑 [popSelectClasses] 函数，这是一个已经基本成熟的实现
 class ClassSelectPage extends StatelessWidget { 
   final List<ClassItem> beforeSelectedClasses;
   final bool withReviewChoose;
   final bool withCategoryFilter;
   final List<SourceItem>? forceSelectRange;
-  const ClassSelectPage({super.key, this.beforeSelectedClasses = const [], this.withReviewChoose = false, this.withCategoryFilter = false, this.forceSelectRange});
+  final VoidCallback? onImportDict;
+  const ClassSelectPage({super.key, this.beforeSelectedClasses = const [], this.withReviewChoose = false, this.withCategoryFilter = false, this.forceSelectRange, this.onImportDict});
   @override
   Widget build(BuildContext context) {
     final MediaQueryData mediaQuery = MediaQuery.of(context);
@@ -209,7 +250,7 @@ class ClassSelectPage extends StatelessWidget {
         children: [
           Expanded(
             child: ListView(
-              children: classesSelectionList(context, onClassChanged, isClassSelected, forceSelectRange)
+              children: classesSelectionList(context, onClassChanged, isClassSelected, forceSelectRange, onImportDict: onImportDict)
             ),
           ),
           // 标签筛选区：固定在课程列表下方、确认按钮上方，始终可见。

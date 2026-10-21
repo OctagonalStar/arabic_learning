@@ -21,6 +21,7 @@ import 'package:arabic_learning/screens/learning/favorites_page.dart' show Favor
 import 'package:arabic_learning/screens/learning/fsrs_screens.dart' show FSRSLearningPage, ForeFSRSSettingPage;
 import 'package:arabic_learning/screens/learning/learning_pages_build.dart';
 import 'package:arabic_learning/screens/learning/plan/plan_entry_card.dart' show PlanEntryCard;
+import 'package:arabic_learning/screens/setting/dict_manage_page.dart' show DictManagePage;
 
 class LearningPage extends StatelessWidget {
   const LearningPage({super.key});
@@ -243,7 +244,16 @@ Future<void> shiftToStudy(BuildContext context) async {
     }
   }
 
-  final ClassSelection classSelection = await popSelectClasses(context, withCache: false, withReviewChoose: true, withCategoryFilter: true);
+  final NavigatorState navigator = Navigator.of(context);
+  final ClassSelection classSelection = await popSelectClasses(
+    context,
+    withCache: false,
+    withReviewChoose: true,
+    withCategoryFilter: true,
+    onImportDict: () => navigator.push(
+      MaterialPageRoute(builder: (BuildContext context) => const DictManagePage()),
+    ),
+  );
   if(classSelection.selectedClass.isEmpty || !context.mounted) return;
   final List<WordItem> selectedWords = getSelectedWords(AppData().wordData, classSelection.selectedClass, doShuffle: false, doDouble: false);
   // 标签筛选（或逻辑）：仅保留含有任一选中标签的单词

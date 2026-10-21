@@ -108,8 +108,31 @@ class _WordLookupLayoutState extends State<WordLookupLayout> {
           },
         ),
         Expanded(
-          child: (match.isEmpty && (selectedCategories.isNotEmpty || _onlyFavorite))
-            ? Center(child: Text("当前筛选条件下没有匹配的单词", style: Theme.of(context).textTheme.bodyLarge))
+          child: match.isEmpty
+            ? Center(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.search_off, size: 40.0, color: scheme.onSurfaceVariant),
+                    const SizedBox(height: AppSpacing.sm),
+                    Text(
+                      (selectedCategories.isNotEmpty || _onlyFavorite)
+                        ? "当前筛选条件下没有匹配的单词"
+                        : "没有找到与「$lookfor」匹配的单词",
+                      style: Theme.of(context).textTheme.bodyLarge,
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: AppSpacing.xxs),
+                    Text(
+                      "可以换一个关键词，或调整筛选条件后重试",
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: scheme.onSurfaceVariant,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                  ],
+                ),
+              )
             : LayoutBuilder(
                 builder: (BuildContext context, BoxConstraints constraints) {
                   // 列数与 cell 尺寸由网格区域可用宽高共同决定：

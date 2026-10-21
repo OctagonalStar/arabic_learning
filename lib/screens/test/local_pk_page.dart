@@ -10,6 +10,7 @@ import 'package:arabic_learning/models/dict.dart';
 import 'package:arabic_learning/models/reading.dart';
 import 'package:arabic_learning/services/global_state.dart';
 import 'package:arabic_learning/services/app_data.dart';
+import 'package:arabic_learning/screens/setting/dict_manage_page.dart' show DictManagePage;
 import 'package:arabic_learning/core/extensions.dart';
 import 'package:arabic_learning/core/statics.dart';
 import 'package:arabic_learning/theme/tokens.dart' show AppMotion;
@@ -371,7 +372,17 @@ class PKClassSelectionPage extends StatelessWidget {
             SizedBox(height: mediaQuery.size.height * 0.1),
             Button(
               onPressed: () async {
-                ClassSelection selection = await popSelectClasses(context, forceSelectRange: context.read<PKServer>().selectableSource, withCache: false, withReviewChoose: false);
+                // 提前取出 NavigatorState：onImportDict 在弹窗关闭后才执行。
+                final NavigatorState navigator = Navigator.of(context);
+                ClassSelection selection = await popSelectClasses(
+                  context,
+                  forceSelectRange: context.read<PKServer>().selectableSource,
+                  withCache: false,
+                  withReviewChoose: false,
+                  onImportDict: () => navigator.push(
+                    MaterialPageRoute(builder: (BuildContext context) => const DictManagePage()),
+                  ),
+                );
                 if(!context.mounted || selection.selectedClass.isEmpty) return;
                 context.read<PKServer>().setSelectedClass(selection);
                 context.read<PKServer>().pageController!.nextPage(duration: AppMotion.medium, curve: AppMotion.standardCurve);
