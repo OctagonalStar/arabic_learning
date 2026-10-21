@@ -34,6 +34,16 @@ class _QuestionConfigPage extends State<QuestionConfigPage> {
   final TextEditingController promptEditController = TextEditingController();
   bool adding = false;
 
+  @override
+  void initState() {
+    super.initState();
+    // 完形填空的题目数量下限与其它题型不同：
+    // 在首帧之前一次性修正，避免在 build 里改状态导致滑块标签与真实值不同步。
+    if(widget.qconfig.testType == 2 && widget.qconfig.questionAmount < 10){
+      widget.qconfig.questionAmount = 15;
+    }
+  }
+
   Future<void> processSummon(QuestionConfig qconfig) async {
     if(adding == true) return;
     setState(() {
@@ -171,10 +181,6 @@ class _QuestionConfigPage extends State<QuestionConfigPage> {
 
   @override
   Widget build(BuildContext context) {
-    if(widget.qconfig.testType == 2 && widget.qconfig.questionAmount < 10){
-      widget.qconfig.questionAmount = 15;
-    }
-
     return ListView(
       children: [
         widget.qconfig.sourceType != 3 
