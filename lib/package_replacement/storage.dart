@@ -93,9 +93,21 @@ class SharedPreferences {
     }
   }
 
-  /// 导出前需要强制落盘的延迟写入钩子（目前用于 FSRS 的防抖写）。
+  /// 导出前需要强制落盘的延迟写入钩子（FSRS 的卡片防抖、PlanStore 的进度防抖）。
   /// 由对应服务在自己的初始化里注册，存储层不直接依赖服务层，避免循环依赖。
-  static void Function()? flushPendingWrites;
+  ///
+  /// 支持多个订阅者：早期只有一个函数槽，后注册者会把先注册者顶掉。
+  static final List<void Function()> flushPendingWrites = <void Function()>[];
+
+  /// 注册一个落盘钩子（按函数身份去重，重复注册是幂等的）。
+  static void addFlushHook(void Function() hook) {
+    if (!flushPendingWrites.contains(hook)) flushPendingWrites.add(hook);
+  }
+
+  /// 注销一个落盘钩子（测试清理用）。
+  static void removeFlushHook(void Function() hook) {
+    flushPendingWrites.remove(hook);
+  }
 
   /// 导出时覆盖若干键的钩子（FSRS 在 SQLite 后端下用它把内存中的权威副本
   /// 写成旧版格式的 `fsrsData`，保证备份与降级兼容）。
@@ -107,7 +119,9 @@ class SharedPreferences {
   Map<String, dynamic> export() {
     logger.info("导出存储数据");
     // 先落盘防抖中的写入，避免备份快照落后于最后一次操作（例如刚答完的复习卡片）。
-    flushPendingWrites?.call();
+    for (final void Function() hook in flushPendingWrites) {
+      hook();
+    }
     final Map<String, String>? overrides = exportOverrides?.call();
     if(type) {
       Map<String, dynamic> overall = {};

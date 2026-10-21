@@ -23,7 +23,49 @@ class FSRS {
   factory FSRS() => _instance;
   FSRS._internal();
 
-  late FSRSConfig config;
+  late FSRSConfig _config;
+
+  /// 当前配置。**赋值请走 setter**：它负责同步重建下面的查表索引。
+  ///
+  /// 与改造前一致：从未赋值时读取会抛 `LateInitializationError`，
+  /// 调用方需先判断 [inited]。
+  ///
+  /// 约束：`config.cards` / `config.reviewLogs` 只能在 [produceCard] 里原地
+  /// 增改（那里会同步增量维护索引）；其他任何改动都必须整体赋值新 config，
+  /// 否则索引会过期。
+  FSRSConfig get config => _config;
+  set config(FSRSConfig value) {
+    final bool sameLists = identical(value.cards, _indexedCards) &&
+        identical(value.reviewLogs, _indexedLogs) &&
+        value.cards.length == _indexedCardCount &&
+        value.reviewLogs.length == _indexedLogCount;
+    _config = value;
+    // `copyWith` 未改卡片/日志时沿用同一批 List 实例（设置页的滑块每帧都会
+    // 重新赋值 config），此时索引仍然有效，不必整表重建。
+    // 长度校验是廉价的兜底：万一有人在别处原地增删列表，也不会静默用旧索引。
+    if (sameLists) return;
+    _rebuildIndex();
+  }
+
+  /// `cardId → config.cards 下标`。万级卡片下把逐题全表扫描换成 O(1) 查表。
+  ///
+  /// 重复 cardId 的脏数据以**先出现者**为准，与改造前 `indexWhere` 的语义一致。
+  final Map<int, int> _cardIndexById = <int, int>{};
+
+  /// `cardId → config.reviewLogs 下标`（同样以先出现者为准）。
+  final Map<int, int> _logIndexByCardId = <int, int>{};
+
+  /// `config.cards` 里是否存在重复 cardId（只有脏数据才会为真）。
+  ///
+  /// 计数类 API（[countCardsFor]）需要按「行」而非按「id」计数，
+  /// 出现重复时退回线性统计，保持改造前的数字。
+  bool _hasDuplicateCardIds = false;
+
+  /// 上次建索引时使用的两个 List 实例（用于跳过无变化的重复赋值）。
+  List<Card>? _indexedCards;
+  List<ReviewLog>? _indexedLogs;
+  int _indexedCardCount = 0;
+  int _indexedLogCount = 0;
 
   /// [config] 是否已加载。初始化前调用下面基于卡片的方法会安全返回 0。
   bool _inited = false;
@@ -33,6 +75,28 @@ class FSRS {
   
   final Logger logger = Logger("FSRS");
   // index != cardId; cardId = wordId = the index of word in global.wordData[words]
+
+  /// 按当前 [config] 重建两张查表索引（O(n)）。
+  ///
+  /// 所有「整份替换 config」的路径（赋值 setter、加载、备份恢复、重映射、
+  /// 清空）都会自动经过这里；只有 [produceCard] 的原地增改走增量维护。
+  void _rebuildIndex() {
+    _cardIndexById.clear();
+    _logIndexByCardId.clear();
+    final List<Card> cards = _config.cards;
+    for (int i = 0; i < cards.length; i++) {
+      _cardIndexById.putIfAbsent(cards[i].cardId, () => i);
+    }
+    _hasDuplicateCardIds = _cardIndexById.length != cards.length;
+    final List<ReviewLog> logs = _config.reviewLogs;
+    for (int i = 0; i < logs.length; i++) {
+      _logIndexByCardId.putIfAbsent(logs[i].cardId, () => i);
+    }
+    _indexedCards = cards;
+    _indexedLogs = logs;
+    _indexedCardCount = cards.length;
+    _indexedLogCount = logs.length;
+  }
 
   /// 卡片数据后端。默认 JSON（旧 `fsrsData`），原生平台由 [initAsync] 换成 SQLite。
   FsrsStore _store = JsonFsrsStore();
@@ -258,7 +322,7 @@ class FSRS {
     // 备份/导出快照前强制落盘，避免 400ms 防抖窗口内的答题记录丢失。
     // SQLite 后端不需要写旧版 blob（导出钩子会直接给出内存副本），
     // 否则每次导出又会整份重写偏好文件。
-    SharedPreferences.flushPendingWrites = _flushForExport;
+    SharedPreferences.addFlushHook(_flushForExport);
     SharedPreferences.exportOverrides = _exportOverrides;
     SharedPreferences.afterRecovery = _onStorageRecovered;
   }
@@ -344,7 +408,7 @@ class FSRS {
 
   void produceCard(int wordId, {int? duration, bool? isCorrect, Rating? forceRate}) {
     logger.fine("记录复习卡片: Id: $wordId; duration: $duration; isCorrect: $isCorrect; forceRate: $forceRate");
-    final int index = config.cards.indexWhere((Card card) => card.cardId == wordId);
+    final int index = _cardIndexById[wordId] ?? -1;
     if(index == -1) {
       // 卡片不存在 进行添加
       logger.fine("添加复习卡片: Id: $wordId");
@@ -356,6 +420,12 @@ class FSRS {
       }
       config.cards.add(Card(cardId: wordId, state: State.learning));
       config.reviewLogs.add(ReviewLog(cardId: wordId, rating: Rating.good, reviewDateTime: DateTime.now()));
+      // 增量维护查表：新卡片落在两个列表末尾（日志与卡片按下标对齐）。
+      _cardIndexById[wordId] = config.cards.length - 1;
+      _logIndexByCardId.putIfAbsent(wordId, () => config.reviewLogs.length - 1);
+      // 与 setter 的「长度兜底」保持一致，避免下次赋值时误判成列表被换掉。
+      _indexedCardCount = config.cards.length;
+      _indexedLogCount = config.reviewLogs.length;
     } else {
       // 卡片存在 进行复习
       if((duration == null || isCorrect == null) && forceRate == null) {
@@ -382,7 +452,10 @@ class FSRS {
   }
 
   bool isContained(int wordId) {
-    return config.cards.any((Card card) => card.cardId == wordId);
+    // 读一次 config：未赋值时仍抛 `LateInitializationError`（与改造前一致）。
+    // 索引随 config 赋值同步重建，因此这里只需查表。
+    if (config.cards.isEmpty) return false;
+    return _cardIndexById.containsKey(wordId);
   }
 
   Rating calculate(int duration, bool isCorrect) {
@@ -404,18 +477,29 @@ class FSRS {
   }
 
   DateTime? getCardBirthday(int wordId) {
-    try {
-      return config.reviewLogs.firstWhere((ReviewLog rvl) => rvl.cardId == wordId).reviewDateTime;
-    } catch (e) {
+    // 先读一次 config：未赋值时仍抛 `LateInitializationError`（与改造前一致）。
+    final FSRSConfig cfg = config;
+    // 查表取「第一条」匹配日志，与改造前 `firstWhere` 在重复 cardId 下的取值一致。
+    final int? index = _logIndexByCardId[wordId];
+    if (index == null || index >= cfg.reviewLogs.length) {
       logger.severe("wordID: $wordId card not found or has more than one");
       return null;
     }
+    return cfg.reviewLogs[index].reviewDateTime;
   }
 
   /// 统计这些词 id 上已有的复习卡片数量（用于删词前的影响提示）。
   int countCardsFor(Set<int> wordIds) {
     if (!_inited) return 0;
-    return config.cards.where((Card card) => wordIds.contains(card.cardId)).length;
+    if (_hasDuplicateCardIds) {
+      // 脏数据（重复 cardId）：按「行」计数，与改造前 `where(...).length` 一致。
+      return config.cards.where((Card card) => wordIds.contains(card.cardId)).length;
+    }
+    int count = 0;
+    for (final int id in wordIds) {
+      if (_cardIndexById.containsKey(id)) count++;
+    }
+    return count;
   }
 
   /// 统计越界的复习卡片数量（`cardId` 不在 `[0, wordCount)` 内）。
@@ -427,17 +511,21 @@ class FSRS {
   }
 
   /// 返回与 `reviewLogs` 对齐的卡片列表（缺失日志以默认值补齐）。
+  ///
+  /// 改造前是「每张卡再扫一遍日志」的 O(n²)；现在先建一次日志下标表再查表，
+  /// 输出顺序与取值（重复 cardId 取第一条日志）均保持不变。
   List<({Card card, ReviewLog log})> alignedCards() {
     if (!_inited) return const <({Card card, ReviewLog log})>[];
+    final List<ReviewLog> logs = config.reviewLogs;
+    // 日志下标表：先出现者优先，等价于原来的 `firstWhere`。
+    final Map<int, int> logIndex = <int, int>{};
+    for (int i = 0; i < logs.length; i++) {
+      logIndex.putIfAbsent(logs[i].cardId, () => i);
+    }
     final List<({Card card, ReviewLog log})> out = [];
     for (final Card card in config.cards) {
-      ReviewLog? log;
-      for (final ReviewLog candidate in config.reviewLogs) {
-        if (candidate.cardId == card.cardId) {
-          log = candidate;
-          break;
-        }
-      }
+      final int? logAt = logIndex[card.cardId];
+      final ReviewLog? log = logAt == null ? null : logs[logAt];
       out.add((
         card: card,
         log: ReviewLog(

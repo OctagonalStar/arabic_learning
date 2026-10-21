@@ -220,6 +220,8 @@ void main() {
     await PlanStore().setPlan(_plan());
     evaluateNow();
     await PlanStore().recordProgress(5);
+    // recordProgress 走 400ms 防抖：测试里显式落盘，避免遗留计时器。
+    await PlanStore().flush();
 
     await _pumpCard(tester);
 
@@ -265,6 +267,7 @@ void main() {
     await PlanStore().setPlan(_plan());
     evaluateNow();
     await PlanStore().recordProgress(2);
+    await PlanStore().flush();
 
     await _pumpCard(tester, size: const Size(480, 420), height: 40.0);
 
