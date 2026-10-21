@@ -1,4 +1,4 @@
-// 应用更新服务：检查 GitHub Release、下载 APK 并触发安装。
+// 应用更新服务（对外门面）：检查 GitHub Release、下载 APK 并触发安装。
 //
 // 采用项目内常见的 `FSRS()` 风格手写单例，并继承 [ChangeNotifier] 以便 UI 直接监听。
 // 网络请求统一走 [createDio]，从而应用用户在设置中配置的 DoH。
@@ -10,24 +10,40 @@
 //
 // 为了便于测试，Dio、下载目录 provider、APK 校验器均可在
 // [UpdateService.forTesting] 中注入，避免测试触网或依赖真实插件。
+//
+// 本文件只保留「状态机 + 编排 + UI 通知」，纯逻辑与平台桥接按职责拆到
+// `services/update/` 下：
+//   - `github_release.dart`   纯逻辑：接口地址、JSON 解析、版本比较、ABI 匹配、校验规则
+//   - `update_downloader.dart` 下载、目录解析、文件名清洗、大小校验
+//   - `update_installer.dart`  原生桥接：ABI 查询、安装权限、调起安装器、APK 元数据读取
+// 公开 API 与拆分前完全一致（含静态常量与 [buildDeterministicAssetUrl]）。
 
 import 'dart:async';
 import 'dart:convert';
 
 import 'package:arabic_learning/core/statics.dart';
-import 'package:arabic_learning/core/version.dart';
 import 'package:arabic_learning/services/app_data.dart';
 import 'package:arabic_learning/services/http_client.dart';
 import 'package:arabic_learning/services/notifications.dart' as notifications;
+import 'package:arabic_learning/services/update/github_release.dart' as release;
+import 'package:arabic_learning/services/update/update_downloader.dart';
+import 'package:arabic_learning/services/update/update_installer.dart';
 import 'package:arabic_learning/package_replacement/fake_dart_io.dart'
     if (dart.library.io) 'dart:io'
     as io;
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
-import 'package:flutter/services.dart'
-    show MissingPluginException, MethodChannel;
 import 'package:logging/logging.dart';
-import 'package:path_provider/path_provider.dart' as path_provider;
+
+export 'package:arabic_learning/services/update/github_release.dart'
+    show
+        GithubRelease,
+        ReleaseAsset,
+        abiToken,
+        buildDeterministicAssetUrl,
+        parseApkAssets,
+        pickApkAsset,
+        verifyApkMetadata;
 
 /// 更新流程所处的阶段。
 enum UpdateStage {
@@ -73,36 +89,33 @@ class UpdateService extends ChangeNotifier {
        _injectedApkVerifier = apkVerifier;
 
   // ---------------------------------------------------------------------------
-  // 常量
+  // 常量（保留为静态成员以维持对外 API；值来自 github_release.dart）
   // ---------------------------------------------------------------------------
 
   /// GitHub 仓库所有者。
-  static const String owner = 'OctagonalStar';
+  static const String owner = release.githubOwner;
 
   /// GitHub 仓库名。
-  static const String repo = 'arabic_learning';
+  static const String repo = release.githubRepo;
 
   /// 最新 Release 接口（`/latest` 已自动排除 draft 与 prerelease）。
-  static const String apiLatestUrl =
-      'https://api.github.com/repos/$owner/$repo/releases/latest';
+  static const String apiLatestUrl = release.githubApiLatestUrl;
 
   /// 仓库发布页的 `/releases/latest`：会 302 跳转到最新 tag。
   ///
   /// 这是网页请求，**不消耗** GitHub API 的 60 次/小时匿名配额（该配额按 IP
   /// 共享，NAT/CGNAT 下极易被同网用户耗尽并返回 403），因此作为首选探测手段。
   static const String latestReleaseRedirectUrl =
-      'https://github.com/$owner/$repo/releases/latest';
+      release.githubLatestReleaseRedirectUrl;
 
   /// 项目自身的 Android 包名，用于校验下载的 APK。
-  static const String expectedPackageName = 'com.ayuban.arlearning';
+  static const String expectedPackageName = release.expectedApkPackageName;
 
   /// 下载通知使用的固定通知 id（单一来源见 [notifications.updateNotificationId]）。
   static const int updateNotificationId = notifications.updateNotificationId;
 
   /// 原生桥接通道名（见 android/app/src/main/kotlin/com/ayuban/arlearning/MainActivity.kt）。
-  static const String methodChannelName = 'app_update';
-
-  static const MethodChannel _channel = MethodChannel(methodChannelName);
+  static const String methodChannelName = release.updateMethodChannelName;
 
   final Logger logger = Logger('UpdateService');
 
@@ -180,6 +193,13 @@ class UpdateService extends ChangeNotifier {
   int _speedWindowStartMs = 0;
   int _speedWindowBytes = 0;
 
+  /// 平台桥接（ABI / 安装权限 / 安装器 / APK 校验）。懒创建，仅用到时才碰通道。
+  UpdateInstaller? _installer;
+  UpdateInstaller get _bridge => _installer ??= UpdateInstaller(logger: logger);
+
+  /// 下载实现（无状态，可直接复用）。
+  static const UpdateDownloader _downloader = UpdateDownloader();
+
   // ---------------------------------------------------------------------------
   // 派生状态
   // ---------------------------------------------------------------------------
@@ -191,7 +211,7 @@ class UpdateService extends ChangeNotifier {
   bool get hasPendingUpdate =>
       (_stage == UpdateStage.available &&
           _latestVersionInt != null &&
-          isNewerVersion(_latestVersionInt!, currentVersionInt)) ||
+          release.isNewerVersion(_latestVersionInt!, currentVersionInt)) ||
       _stage == UpdateStage.ready;
 
   /// 已下载的安装包是否仍存在于磁盘上。
@@ -262,10 +282,10 @@ class UpdateService extends ChangeNotifier {
           : null;
       final int? redirectVersion = redirectTag == null
           ? null
-          : parseGithubTag(redirectTag);
+          : release.parseGithubTag(redirectTag);
 
       if (redirectTag != null && redirectVersion != null) {
-        if (!isNewerVersion(redirectVersion, currentVersionInt)) {
+        if (!release.isNewerVersion(redirectVersion, currentVersionInt)) {
           // 正常路径：已是最新，零 API 调用，也不触碰 MethodChannel（ABI）。
           _latestVersionLabel = redirectTag;
           _latestVersionInt = redirectVersion;
@@ -303,7 +323,7 @@ class UpdateService extends ChangeNotifier {
           followRedirects: false,
           validateStatus: (int? s) => s != null && s < 400,
           headers: const <String, dynamic>{
-            'User-Agent': 'arabic_learning-updater',
+            'User-Agent': release.updateUserAgent,
           },
         ),
       );
@@ -318,7 +338,7 @@ class UpdateService extends ChangeNotifier {
       final String resolved = Uri.parse(
         latestReleaseRedirectUrl,
       ).resolve(location).toString();
-      final String? tag = parseReleaseRedirectTag(resolved);
+      final String? tag = release.parseReleaseRedirectTag(resolved);
       if (tag != null) {
         return _ReleaseProbe(_ReleaseProbeKind.tag, tag);
       }
@@ -338,38 +358,40 @@ class UpdateService extends ChangeNotifier {
   ///
   /// 供重定向探测未知 / tag 非法时使用；也用于为新版本补全信息的一部分。
   Future<void> _checkViaApi(Dio dio) async {
-    final Map<dynamic, dynamic> release = await _fetchLatestRelease(dio);
+    final release.GithubRelease latest = await _fetchLatestRelease(dio);
 
     // 防御性排除 draft / prerelease（/latest 接口通常已排除）。
-    if (release['draft'] == true || release['prerelease'] == true) {
+    if (latest.isDraftOrPrerelease) {
       logger.info('最新 Release 为草稿或预发布，忽略');
       _lastCheckWasUpToDate = true;
       _setStage(UpdateStage.idle);
       return;
     }
 
-    final String? tag = release['tag_name']?.toString();
-    final int? latest = tag == null ? null : parseGithubTag(tag);
-    if (latest == null) {
+    final String? tag = latest.tag;
+    final int? version = latest.version;
+    if (version == null) {
       throw Exception('无法解析版本号: $tag');
     }
 
     _latestVersionLabel = tag;
-    _latestVersionInt = latest;
-    _releaseNotes = release['body']?.toString();
+    _latestVersionInt = version;
+    _releaseNotes = latest.notes;
     _assetName = null;
     _downloadUrl = null;
     _assetSize = 0;
 
     // 按设备实际 ABI 选择拆分包，避免装错 ABI（D1）。
-    final _ApkAsset? asset = await _pickAssetForDevice(release['assets']);
+    final release.ReleaseAsset? asset = await _pickAssetForDevice(
+      latest.apkAssets,
+    );
     if (asset != null) {
       _assetName = asset.name;
       _downloadUrl = asset.url;
       _assetSize = asset.size;
     }
 
-    if (isNewerVersion(latest, currentVersionInt)) {
+    if (release.isNewerVersion(version, currentVersionInt)) {
       _setStage(UpdateStage.available);
     } else {
       _lastCheckWasUpToDate = true;
@@ -388,11 +410,13 @@ class UpdateService extends ChangeNotifier {
     int version,
   ) async {
     try {
-      final Map<dynamic, dynamic> release = await _fetchLatestRelease(dio);
-      final _ApkAsset? asset = await _pickAssetForDevice(release['assets']);
+      final release.GithubRelease latest = await _fetchLatestRelease(dio);
+      final release.ReleaseAsset? asset = await _pickAssetForDevice(
+        latest.apkAssets,
+      );
       _latestVersionLabel = tag;
       _latestVersionInt = version;
-      _releaseNotes = release['body']?.toString();
+      _releaseNotes = latest.notes;
       _assetName = asset?.name;
       _downloadUrl = asset?.url;
       _assetSize = asset?.size ?? 0;
@@ -400,7 +424,7 @@ class UpdateService extends ChangeNotifier {
     } catch (e) {
       logger.warning('获取 Release 详情失败，降级为确定性下载地址: $e');
       final List<String> abis = await _supportedAbis();
-      final String? url = buildDeterministicAssetUrl(tag, abis);
+      final String? url = release.buildDeterministicAssetUrl(tag, abis);
       _latestVersionLabel = tag;
       _latestVersionInt = version;
       _releaseNotes = null;
@@ -415,144 +439,39 @@ class UpdateService extends ChangeNotifier {
   /// 请求并解析 `GET /releases/latest` 的 JSON 对象。
   ///
   /// 失败（网络 / 非 Map 响应 / 非 2xx）时抛出异常，由调用方决定如何处理。
-  Future<Map<dynamic, dynamic>> _fetchLatestRelease(Dio dio) async {
+  Future<release.GithubRelease> _fetchLatestRelease(Dio dio) async {
     final Response<dynamic> response = await dio.get<dynamic>(
       apiLatestUrl,
       options: Options(
         headers: const <String, dynamic>{
           'Accept': 'application/vnd.github+json',
-          'User-Agent': 'arabic_learning-updater',
+          'User-Agent': release.updateUserAgent,
         },
       ),
     );
 
-    final dynamic data = response.data;
-    if (data is! Map) {
-      throw Exception('无法解析 GitHub 返回的更新信息');
-    }
-    return data;
+    return release.GithubRelease.parse(response.data);
   }
 
   /// 按设备实际 ABI 从 assets 中挑选 APK（会触发 MethodChannel 查询 ABI）。
   ///
   /// 仅应在确实需要下载资产的路径上调用；「已是最新」的快速路径不应触发，
   /// 以免无谓地占用桥接与产生副作用。
-  Future<_ApkAsset?> _pickAssetForDevice(dynamic assets) async {
+  Future<release.ReleaseAsset?> _pickAssetForDevice(
+    List<release.ReleaseAsset> assets,
+  ) async {
     final List<String> abis = await _supportedAbis();
-    return _pickApkAsset(assets, abis);
-  }
-
-  /// 从 assets 中挑选与设备 ABI 匹配的 APK。
-  ///
-  /// 工作流只发布按 ABI 拆分的 APK（armeabi-v7a / arm64-v8a / x86_64），
-  /// 因此必须按设备实际 ABI 匹配，否则会装到不兼容的包（D1）。匹配顺序：
-  /// (1) 文件名含 `universal` 的通用包；
-  /// (2) 按 [abis] 优先级（`Build.SUPPORTED_ABIS` 从优到劣）匹配文件名 ABI 标识；
-  /// (3) [abis] 为空（非 Android / 测试）时优先 `arm64-v8a`，否则首个 `.apk`。
-  /// 均无法匹配时返回 null，由调用方报「未找到可下载的安装包」。
-  _ApkAsset? _pickApkAsset(dynamic assets, List<String> abis) {
-    if (assets is! List) return null;
-
-    final List<_ApkAsset> apks = <_ApkAsset>[];
-    for (final dynamic raw in assets) {
-      final _ApkAsset? asset = _apkAssetFrom(raw);
-      if (asset != null) apks.add(asset);
-    }
-    if (apks.isEmpty) return null;
-
-    // (1) 通用包（包含全部 ABI）。
-    for (final _ApkAsset asset in apks) {
-      if (asset.name.toLowerCase().contains('universal')) return asset;
-    }
-
-    // (2) 按设备 ABI 优先级匹配文件名中的 ABI 标识。
-    for (final String abi in abis) {
-      final String? token = _abiToken(abi);
-      if (token == null) continue;
-      for (final _ApkAsset asset in apks) {
-        if (asset.name.toLowerCase().contains(token)) return asset;
-      }
-    }
-
-    // (3) 无 ABI 信息（非 Android / 测试）：优先 arm64-v8a，否则任意 APK。
-    if (abis.isEmpty) {
-      for (final _ApkAsset asset in apks) {
-        if (asset.name.toLowerCase().contains('arm64-v8a')) return asset;
-      }
-      return apks.first;
-    }
-    return null;
-  }
-
-  /// 解析单个 asset；非 `.apk` 或缺少下载地址时返回 null。
-  _ApkAsset? _apkAssetFrom(dynamic raw) {
-    if (raw is! Map) return null;
-    final String name = raw['name']?.toString() ?? '';
-    if (!name.toLowerCase().endsWith('.apk')) return null;
-    final String url = raw['browser_download_url']?.toString() ?? '';
-    if (url.isEmpty) return null;
-    final dynamic size = raw['size'];
-    return _ApkAsset(
-      name: name,
-      url: url,
-      size: size is num ? size.toInt() : 0,
-    );
-  }
-
-  /// 将设备 ABI 名映射为资产文件名中的标识；未知 ABI 返回 null。
-  static String? _abiToken(String abi) {
-    switch (abi) {
-      case 'arm64-v8a':
-        return 'arm64-v8a';
-      case 'armeabi-v7a':
-      case 'armeabi':
-        return 'armeabi-v7a';
-      case 'x86_64':
-        return 'x86_64';
-      case 'x86':
-        return 'x86';
-      default:
-        return null;
-    }
+    return release.pickApkAsset(assets, abis);
   }
 
   /// 按 tag 与设备 ABI 列表拼出确定性的 APK 下载地址（API 不可用时的兜底）。
   ///
-  /// 形如
-  /// `https://github.com/$owner/$repo/releases/download/<tag>/app-<abiToken>-release.apk`。
-  /// 资产名与 ABI 标识以 `.github/workflows/FlutterBuild.yml` 中 `--split-per-abi`
-  /// 产出的 `app-armeabi-v7a-release.apk` / `app-arm64-v8a-release.apk` /
-  /// `app-x86_64-release.apk` 为准（重命名该工作流时请同步此处）。
-  ///
-  /// [abis] 按设备优先级排列（`Build.SUPPORTED_ABIS` 从优到劣）；返回首个能映射
-  /// 出标识的地址。非 Android / 空列表 / 全部 ABI 无法映射时返回 null。
-  static String? buildDeterministicAssetUrl(String tag, List<String> abis) {
-    for (final String abi in abis) {
-      final String? token = _abiToken(abi);
-      if (token == null) continue;
-      return 'https://github.com/$owner/$repo/releases/download/$tag/'
-          'app-$token-release.apk';
-    }
-    return null;
-  }
+  /// 实现见 `github_release.dart`；此处保留为静态入口以维持对外 API。
+  static String? buildDeterministicAssetUrl(String tag, List<String> abis) =>
+      release.buildDeterministicAssetUrl(tag, abis);
 
   /// 查询设备支持的 ABI 列表（最优在前）。
-  ///
-  /// 通过原生桥接获取 `Build.SUPPORTED_ABIS`；非 Android / 插件缺失 / 出错时
-  /// 返回空列表，由 [_pickApkAsset] 走无 ABI 信息的回退分支。
-  Future<List<String>> _supportedAbis() async {
-    try {
-      final List<dynamic>? raw = await _channel
-          .invokeMethod<List<dynamic>>('getSupportedAbis');
-      if (raw == null) return const <String>[];
-      return raw.map((dynamic e) => e.toString()).toList();
-    } on MissingPluginException {
-      return const <String>[];
-    } catch (e) {
-      logger.warning('查询设备 ABI 失败: $e');
-      return const <String>[];
-    }
-  }
+  Future<List<String>> _supportedAbis() => _bridge.supportedAbis();
 
   // ---------------------------------------------------------------------------
   // 下载
@@ -588,43 +507,17 @@ class UpdateService extends ChangeNotifier {
     _setStage(UpdateStage.downloading);
 
     try {
-      // 资产名由 GitHub 提供，取安全 basename 后再拼接，避免路径穿越（D8）；
-      // 校验在任何文件系统写入之前完成。
-      final String safeName = _safeAssetName();
-      if (safeName.isEmpty) {
-        throw Exception('未找到可下载的安装包');
-      }
-      final io.Directory dir = await _resolveUpdateDirectory();
-      if (gen != _downloadGeneration) return;
-      await dir.create(recursive: true);
-      if (gen != _downloadGeneration) return;
-      final String savePath = '${dir.path}/$safeName';
-      _savedPath = savePath;
-
-      final Dio dio = _resolveDio();
-      await dio.download(
-        _downloadUrl!,
-        savePath,
-        cancelToken: _cancelToken,
-        deleteOnError: true,
-        options: Options(
-          headers: const <String, dynamic>{
-            'Accept': 'application/octet-stream',
-            'User-Agent': 'arabic_learning-updater',
-          },
-        ),
+      final String savePath = await _downloader.download(
+        dioProvider: _resolveDio,
+        url: _downloadUrl!,
+        assetName: _assetName ?? '',
+        expectedSize: _assetSize,
+        cancelToken: _cancelToken!,
+        isActive: () => gen == _downloadGeneration,
+        onPathResolved: (String path) => _savedPath = path,
         onReceiveProgress: _onReceiveProgress,
+        directoryProvider: _documentsDirectoryProvider,
       );
-      if (gen != _downloadGeneration) return;
-
-      // 大小校验：被截断的下载直接失败，不进入安装（D7）。
-      // 只同步读取长度，避免把整个 APK 读入内存。
-      if (_assetSize > 0) {
-        final int actualSize = io.File(savePath).lengthSync();
-        if (actualSize != _assetSize) {
-          throw Exception('安装包大小不符，可能下载不完整');
-        }
-      }
 
       // 校验下载的安装包，避免安装到错误 / 降级的包。
       final bool valid = await _verifyApk(savePath);
@@ -636,6 +529,9 @@ class UpdateService extends ChangeNotifier {
       _speedBytesPerSec = 0;
       _setStage(UpdateStage.ready);
       unawaited(_notifyDownloadComplete());
+    } on DownloadAborted {
+      // 代次已失效（取消或新一轮下载）：静默丢弃，清理由 cancelDownload 负责。
+      return;
     } on DioException catch (e) {
       if (gen != _downloadGeneration) return;
       if (CancelToken.isCancel(e)) {
@@ -656,15 +552,6 @@ class UpdateService extends ChangeNotifier {
       _setStage(UpdateStage.error);
       unawaited(_notifyDownloadInterrupted());
     }
-  }
-
-  /// 取资产名的安全 basename：去掉任意目录分隔符，去掉首尾空白。
-  String _safeAssetName() {
-    final String raw = _assetName ?? '';
-    final int slash = raw.lastIndexOf('/');
-    final int backslash = raw.lastIndexOf('\\');
-    final int cut = slash > backslash ? slash : backslash;
-    return (cut >= 0 ? raw.substring(cut + 1) : raw).trim();
   }
 
   void _onReceiveProgress(int count, int total) {
@@ -728,10 +615,10 @@ class UpdateService extends ChangeNotifier {
     _needsInstallPermission = false;
     notifyListeners();
 
-    if (!(await _canRequestPackageInstalls())) {
+    if (!(await _bridge.canRequestPackageInstalls())) {
       _needsInstallPermission = true;
       notifyListeners();
-      await _requestInstallPermission();
+      await _bridge.requestInstallPermission();
       return false;
     }
     return _launchInstall();
@@ -743,34 +630,12 @@ class UpdateService extends ChangeNotifier {
   /// 返回是否成功调起安装器，权限仍缺失时返回 false（D2）。
   Future<bool> retryInstallIfPermitted() async {
     if (_stage != UpdateStage.ready || _savedPath == null) return false;
-    if (await _canRequestPackageInstalls()) {
+    if (await _bridge.canRequestPackageInstalls()) {
       _needsInstallPermission = false;
       notifyListeners();
       return _launchInstall();
     }
     return false;
-  }
-
-  Future<bool> _canRequestPackageInstalls() async {
-    try {
-      return (await _channel.invokeMethod<bool>('canRequestPackageInstalls')) ??
-          false;
-    } on MissingPluginException {
-      return false;
-    } catch (e) {
-      logger.warning('查询安装权限失败: $e');
-      return false;
-    }
-  }
-
-  Future<void> _requestInstallPermission() async {
-    try {
-      await _channel.invokeMethod<void>('requestInstallPermission');
-    } on MissingPluginException {
-      logger.warning('当前平台不支持申请安装权限');
-    } catch (e) {
-      logger.warning('申请安装权限失败: $e');
-    }
   }
 
   /// 调起系统安装器。
@@ -779,11 +644,7 @@ class UpdateService extends ChangeNotifier {
   /// 避免一次失败就永久卡死、逼迫用户重新下载（D2）。
   Future<bool> _launchInstall() async {
     try {
-      final bool ok =
-          (await _channel.invokeMethod<bool>('installApk', <String, dynamic>{
-            'path': _savedPath,
-          })) ??
-          false;
+      final bool ok = await _bridge.launchInstall(_savedPath!);
       if (!ok) {
         _error = '安装器启动失败';
         notifyListeners();
@@ -792,7 +653,7 @@ class UpdateService extends ChangeNotifier {
       // 安装器已启动：下载完成通知的使命结束，撤掉常驻通知（D4）。
       unawaited(notifications.cancelUpdateNotification());
       return true;
-    } on MissingPluginException {
+    } on InstallUnsupportedException {
       _error = '当前平台不支持应用内安装';
       notifyListeners();
       return false;
@@ -864,21 +725,6 @@ class UpdateService extends ChangeNotifier {
   bool get _canUseFilesystem =>
       !kIsWeb && (_documentsDirectoryProvider != null || io.Platform.isAndroid);
 
-  /// 解析 APK 的存放目录。
-  ///
-  /// 默认使用应用支持目录（Android 上等价于 `getFilesDir()`），落在 FileProvider
-  /// 的 `<files-path>` 白名单内；[documentsDirectoryProvider] 仅为测试注入保留
-  /// （历史命名，注入值代表「支持目录」）（D9）。
-  Future<io.Directory> _resolveUpdateDirectory() async {
-    final Future<io.Directory> Function()? provider =
-        _documentsDirectoryProvider;
-    final io.Directory base = provider != null
-        ? await provider()
-        : (await path_provider.getApplicationSupportDirectory())
-              as io.Directory;
-    return io.Directory('${base.path}/arabicLearning/update');
-  }
-
   /// 校验下载的 APK：确认包名一致且版本号不低于当前安装版本。
   ///
   /// 仅「非 Android / 无插件（如测试）」时因无法校验而放行；其余情况一律
@@ -887,40 +733,9 @@ class UpdateService extends ChangeNotifier {
     final Future<bool> Function(String path)? injected = _injectedApkVerifier;
     if (injected != null) return injected(path);
     if (kIsWeb || !io.Platform.isAndroid) return true;
-    try {
-      final dynamic raw = await _channel.invokeMethod<dynamic>(
-        'verifyApk',
-        <String, dynamic>{'path': path},
-      );
-      if (raw is! Map) {
-        logger.warning('APK 校验失败：无法解析原生返回信息');
-        return false;
-      }
-      final String pkg = raw['packageName']?.toString() ?? '';
-      if (pkg.isEmpty || pkg != expectedPackageName) {
-        logger.warning('安装包包名不匹配: $pkg');
-        return false;
-      }
-      final int? apkCode = _asInt(raw['versionCode']);
-      final int? currentCode = _asInt(raw['currentVersionCode']);
-      if (apkCode == null || currentCode == null || apkCode < currentCode) {
-        logger.warning('安装包版本号($apkCode)不合法或低于当前版本($currentCode)');
-        return false;
-      }
-      return true;
-    } on MissingPluginException {
-      return true;
-    } catch (e) {
-      logger.warning('APK 校验失败: $e');
-      return false;
-    }
-  }
-
-  static int? _asInt(dynamic value) {
-    if (value is int) return value;
-    if (value is num) return value.toInt();
-    if (value is String) return int.tryParse(value);
-    return null;
+    final bool? result = await _bridge.verifyApk(path);
+    // null = 插件缺失：拆分前的语义是放行。
+    return result ?? true;
   }
 
   void _cleanupFile() {
@@ -1008,15 +823,6 @@ class UpdateService extends ChangeNotifier {
     _assetName = name;
     _assetSize = size;
   }
-}
-
-/// 内部使用的 APK 资源描述。
-class _ApkAsset {
-  final String name;
-  final String url;
-  final int size;
-
-  const _ApkAsset({required this.name, required this.url, required this.size});
 }
 
 /// 重定向探测的三种结果。
