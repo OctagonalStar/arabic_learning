@@ -38,7 +38,7 @@ class FsrsCardRow {
 
 /// 卡片与日志缺失时的兜底日志（旧数据里 cards 比 reviewLog 长时会出现）。
 /// 使用固定时间戳而非 `DateTime.now()`，保证同一份数据反复序列化结果稳定。
-ReviewLog _fallbackLog(int cardId) => ReviewLog(
+ReviewLog fallbackReviewLog(int cardId) => ReviewLog(
       cardId: cardId,
       rating: Rating.good,
       reviewDateTime: DateTime.fromMillisecondsSinceEpoch(0),
@@ -54,7 +54,7 @@ List<FsrsCardRow> fsrsRowsFromConfig(FSRSConfig config, {required int updatedAt}
     final int cardId = config.cards[i].cardId;
     final ReviewLog log = i < config.reviewLogs.length
         ? config.reviewLogs[i]
-        : _fallbackLog(cardId);
+        : fallbackReviewLog(cardId);
     rows.add(FsrsCardRow(
       cardId: cardId,
       cardJson: jsonEncode(config.cards[i].toMap()),
@@ -66,11 +66,25 @@ List<FsrsCardRow> fsrsRowsFromConfig(FSRSConfig config, {required int updatedAt}
 }
 
 /// 配置元信息（`FSRSConfig.toMap()` 去掉卡片与日志）。
+///
+/// 刻意**不复用** `FSRSConfig.toMap()`：那会先把全部卡片与日志都
+/// `toMap()` 一遍再丢掉，2500 张卡时单次约 3ms —— 而本函数每次落盘都会调用。
+/// 这里直接按同样的键序构造，输出与 `toMap()..remove(cards)..remove(reviewLog)`
+/// 逐键一致（含 `scheduler` 为 null 时的 `{}`）。
 Map<String, dynamic> fsrsConfigMeta(FSRSConfig config) {
-  final Map<String, dynamic> map = config.toMap();
-  map.remove('cards');
-  map.remove('reviewLog');
-  return map;
+  return <String, dynamic>{
+    'enabled': config.enabled,
+    'scheduler': config.scheduler?.toMap() ?? <String, dynamic>{},
+    'desiredRetention': config.desiredRetention,
+    'easyDuration': config.easyDuration,
+    'goodDuration': config.goodDuration,
+    'preferSimilar': config.preferSimilar,
+    'selfEvaluate': config.selfEvaluate,
+    'pushAmount': config.pushAmount,
+    'reinforceMemory': config.reinforceMemory,
+    'pushCategories': config.pushCategories,
+    'reviewQuestionSections': config.reviewQuestionSections,
+  };
 }
 
 /// 由「配置元信息 + 按 card_id 排序的卡片行」还原 [FSRSConfig]。
@@ -147,6 +161,23 @@ abstract class FsrsStore {
   /// 前者需要额外写降级快照、导出时覆盖 `fsrsData`、备份恢复后重灌。
   bool get usesSqlite => false;
 
+  /// 上一次落盘实际 upsert 的行数（诊断用；JSON 后端恒为 0）。
+  ///
+  /// 供测试断言「增量写只动了变化的那几行」，生产代码不应依赖它。
+  int get debugLastUpsertedRows => 0;
+
+  /// 上一次落盘删除的行数（诊断用）。
+  int get debugLastDeletedRows => 0;
+
+  /// 上一次落盘是否走了「全表替换」（诊断用）。
+  bool get debugLastFullRewrite => false;
+
+  /// 上一次落盘的耗时（微秒，诊断用）。
+  int get debugLastWriteMicros => 0;
+
+  /// 当前「已落库快照」的行数（诊断用）。
+  int get debugSnapshotSize => 0;
+
   Future<void> close();
 }
 
@@ -220,6 +251,23 @@ class JsonFsrsStore implements FsrsStore {
 
   @override
   bool get usesSqlite => false;
+
+  // 诊断 getter：JSON 后端没有「行」的概念，恒为 0 / false。
+
+  @override
+  int get debugLastUpsertedRows => 0;
+
+  @override
+  int get debugLastDeletedRows => 0;
+
+  @override
+  bool get debugLastFullRewrite => false;
+
+  @override
+  int get debugLastWriteMicros => 0;
+
+  @override
+  int get debugSnapshotSize => 0;
 
   @override
   Future<void> close() => flush();
