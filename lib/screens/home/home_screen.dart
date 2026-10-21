@@ -25,7 +25,6 @@ class HomePage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    context.read<Global>().uiLogger.fine("构建 HomePage");
     FSRS fsrs = FSRS();
 
     // 尺寸全部由 Tab 实际可用高度/宽度推导并夹在合理区间：
@@ -56,7 +55,8 @@ class HomePage extends StatelessWidget {
                   value: getStrokeDays(AppData().config.learning).toString(),
                   statusIcon: AppData().config.learning.lastDate == daysSinceEpoch()
                     ? Icon(Icons.done, size: 15.0, color: context.semanticColors.success)
-                    : Icon(Icons.error_outline, size: 15.0, color: context.semanticColors.warning),
+                    // 今天还没开始用中性待完成图标；warning 色的感叹号会被误读成出错。
+                    : Icon(Icons.radio_button_unchecked, size: 15.0, color: context.semanticColors.disabled),
                 ),
                 StatCard(
                   width: width * 0.50,
@@ -112,7 +112,6 @@ class _DailyWord extends State<DailyWord> {
 
   @override
   Widget build(BuildContext context) {
-    context.read<Global>().uiLogger.fine("构建 DailyWord组件");
     // 内部间距按卡片高度等比换算，维持原有 0.02/0.005/0.03 : 0.3 的比例。
     final double titleGap = widget.height * 0.067;
     final double wordGap = widget.height * 0.017;

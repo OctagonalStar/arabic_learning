@@ -82,14 +82,13 @@ class _ChoiceQuestions extends State<ChoiceQuestions> {
 
   @override
   Widget build(BuildContext context) {
-    context.read<Global>().uiLogger.info("构建选择题页面: 主单词: ${widget.mainWord};选项: ${widget.choices}");
     MediaQueryData mediaQuery = MediaQuery.of(context);
     int showingMode = widget.bottonLayout;
     // showingMode 0: 1 Row, 1: 2 Rows, 2: 4 Rows
     if(showingMode == -1){
-      context.read<Global>().uiLogger.fine("未指定布局，开始计算");
+      context.read<Global>().uiLogger.finest("未指定布局，开始计算");
       showingMode = calculateButtonBoxLayout(widget.choices, AdaptiveScope.of(context));
-      context.read<Global>().uiLogger.info("最终采用布局方案: $showingMode");
+      context.read<Global>().uiLogger.finest(() => "最终采用布局方案: $showingMode");
     }
     return Material(
       child: Center(
@@ -173,7 +172,6 @@ class WordCardQuestion extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    context.read<Global>().uiLogger.info("构建单词卡片页面，主单词: ${word.arabic}");
     MediaQueryData mediaQuery = MediaQuery.of(context);
     return Material(
       child: Column(
@@ -239,7 +237,6 @@ class SelfRatingQuestion extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    context.read<Global>().uiLogger.info("构建自我评级题目，主单词: ${word.arabic}");
     final MediaQueryData mediaQuery = MediaQuery.of(context);
     final int showingMode = calculateButtonBoxLayout(choices, AdaptiveScope.of(context));
     return Material(
@@ -309,7 +306,6 @@ class _SpellQuestion extends State<SpellQuestion> {
 
   @override
   Widget build(BuildContext context) {
-    context.read<Global>().uiLogger.info("构建拼写题页面，主单词: ${widget.word.arabic}");
     MediaQueryData mediaQuery = MediaQuery.of(context);
     return Material(
       child: Column(
@@ -389,6 +385,11 @@ class ListeningQuestion extends StatefulWidget {
   final bool allowMutipleSelect;
   final int bottonLayout;
   final bool allowAnitmation;
+
+  /// 与 [choices] 一一对应的选项词条；非空时启用与 [ChoiceQuestions]
+  /// 相同的长按单词卡片与作答后释义揭示。
+  final List<WordItem>? optionWords;
+
   const ListeningQuestion({super.key, 
                         required this.mainWord, 
                         required this.choices, 
@@ -398,7 +399,8 @@ class ListeningQuestion extends StatefulWidget {
                         this.onDisAllowMutipleSelect,
                         this.bottonLayout = -1,
                         this.allowMutipleSelect = true,
-                        this.allowAnitmation = true});
+                        this.allowAnitmation = true,
+                        this.optionWords});
 
   @override
   State<StatefulWidget> createState() => _ListeningQuestion();
@@ -410,13 +412,12 @@ class _ListeningQuestion extends State<ListeningQuestion> {
 
   @override
   Widget build(BuildContext context) {
-    context.read<Global>().uiLogger.info("构建听力题页面: 主单词: ${widget.mainWord};选项: ${widget.choices}");
     MediaQueryData mediaQuery = MediaQuery.of(context);
     int showingMode = widget.bottonLayout;
     if(showingMode == -1){
-      context.read<Global>().uiLogger.fine("未指定布局，开始计算");
+      context.read<Global>().uiLogger.finest("未指定布局，开始计算");
       showingMode = calculateButtonBoxLayout(widget.choices, AdaptiveScope.of(context));
-      context.read<Global>().uiLogger.info("最终采用布局方案: $showingMode");
+      context.read<Global>().uiLogger.finest(() => "最终采用布局方案: $showingMode");
     }
     return Material(
       child: Center(
@@ -462,6 +463,11 @@ class _ListeningQuestion extends State<ListeningQuestion> {
               // 单选作答后锁定全部选项；「跳过」后由 locked 统一锁定。
               lockAfterSelect: !widget.allowMutipleSelect,
               locked: choosed,
+              // 听力选项同样对应词条：非空时启用长按卡片与释义揭示。
+              optionWords: widget.optionWords,
+              onOptionLongPress: (WordItem word) {
+                showWordCardOverlay(context, word);
+              },
               onLockedTap: (int value) {
                 if(widget.onDisAllowMutipleSelect != null) {
                   widget.onDisAllowMutipleSelect!(value);

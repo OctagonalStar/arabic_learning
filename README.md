@@ -1,5 +1,5 @@
 <!-- markdownlint-disable MD033 -->
-# arabic_learning | Ar 学
+# arabic_learning | Ar学
 
 <p align="center">
     <img src="https://github.com/OctagonalStar/arabic_learning/actions/workflows/FlutterBuild.yml/badge.svg" alt="Flutter Build">
@@ -102,7 +102,7 @@
 - **联机**：flutter_webrtc
 - **同步**：webdav_client
 - **搜索**：自研 BK 树 + 字符倒排索引 + 阿拉伯语词干提取（词根匹配）
-- **存储**：shared_preferences / idb_shim（Web IndexedDB）
+- **存储**：shared_preferences（设置 / 词库）+ SQLite（复习卡片等高频写入数据，仅原生端，通过 drift）+ idb_shim（Web IndexedDB）
 - **动态取色**：dynamic_color
 
 ## 构建

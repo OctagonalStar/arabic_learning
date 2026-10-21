@@ -14,7 +14,6 @@ class TestPage extends StatelessWidget {
   const TestPage({super.key});
   @override
   Widget build(BuildContext context) {
-    context.read<Global>().uiLogger.info("构建 TestPage");
     // 按钮高度按 Tab 可用高度推导（原 0.15/0.1 比例），矮横屏下自动压缩。
     return AdaptiveTabBody(
       builder: (BuildContext context, BoxConstraints constraints) {

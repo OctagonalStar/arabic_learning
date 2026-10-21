@@ -351,7 +351,6 @@ class _DictManagePage extends State<DictManagePage> {
 
   @override
   Widget build(BuildContext context) {
-    context.read<Global>().uiLogger.fine("构建 DictManagePage");
     final MediaQueryData mediaQuery = MediaQuery.of(context);
     final List<SourceItem> sources = AppData().wordData.classes;
 

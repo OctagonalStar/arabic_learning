@@ -3,8 +3,9 @@ import 'package:arabic_learning/widgets/kit.dart' show Button, TextContainer;
 import 'package:arabic_learning/widgets/motion.dart' show CrossFadeSwitcher;
 import 'package:arabic_learning/widgets/overlays.dart' show showSnackBar;
 import 'package:arabic_learning/services/global_state.dart' show Global;
-import 'package:arabic_learning/services/app_data.dart' show AppData;
+import 'package:arabic_learning/models/config.dart' show Config;
 import 'package:arabic_learning/core/statics.dart';
+import 'package:arabic_learning/theme/tokens.dart' show AppSpacing;
 import 'package:arabic_learning/theme/typography.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart' show rootBundle, SystemChannels, SystemNavigator;
@@ -48,7 +49,6 @@ class _PolicyPage extends State<PolicyPage> {
 
   @override
   Widget build(BuildContext context) {
-    context.read<Global>().uiLogger.info("构建PP&TOU签署页面");
 
     return Scaffold(
       body: SafeArea(child: Column(
@@ -84,15 +84,25 @@ class _PolicyPage extends State<PolicyPage> {
                         : const LoadingIndicator(key: ValueKey<String>('pp-loading')),
                     ),
                   ),
-                  SizedBox(height: MediaQuery.of(context).size.height),
-                  if(!widget.isUpdate) TextField(
-                    controller: controller,
-                    decoration: InputDecoration(
-                      labelText: "请输入你的用户名",
-                      prefixIcon: Icon(Icons.edit),
-                    ),
-                  )
                 ],
+            ),
+          ),
+          // 用户名输入框固定在条款区下方、按钮之上：条款本身可滚动，
+          // 小屏与系统大字号下输入框都不会被整屏 spacer 推出屏幕外。
+          if(!widget.isUpdate) Padding(
+            padding: const EdgeInsets.fromLTRB(
+              AppSpacing.sm,
+              AppSpacing.xs,
+              AppSpacing.sm,
+              0.0,
+            ),
+            child: TextField(
+              key: const ValueKey<String>('policy-username-field'),
+              controller: controller,
+              decoration: InputDecoration(
+                labelText: "请输入你的用户名",
+                prefixIcon: Icon(Icons.edit),
+              ),
             ),
           ),
           Row(
@@ -108,18 +118,22 @@ class _PolicyPage extends State<PolicyPage> {
               ),
               Button(
                 onPressed: () {
+                  final Global global = context.read<Global>();
                   if(widget.isUpdate) {
-                    context.read<Global>().uiLogger.info("用户已同意条款更新");
-                    AppData().config = AppData().config.copyWith(lastTermVersion: StaticsVar.termVersion);
+                    global.uiLogger.info("用户已同意条款更新");
+                    global.patchConfig(
+                      (Config config) => config.copyWith(lastTermVersion: StaticsVar.termVersion),
+                    );
                   } else if(controller.text.isNotEmpty){
-                    context.read<Global>().uiLogger.info("用户同意协议，签署名：${controller.text}");
-                    AppData().config = AppData().config.copyWith(user: controller.text, lastTermVersion: StaticsVar.termVersion);
+                    global.uiLogger.info("用户同意协议，签署名：${controller.text}");
+                    global.patchConfig(
+                      (Config config) => config.copyWith(user: controller.text, lastTermVersion: StaticsVar.termVersion),
+                    );
                   } else {
-                    context.read<Global>().uiLogger.info("用户未填写名称");
+                    global.uiLogger.info("用户未填写名称");
                     showSnackBar(context, "使用该软件前你应当仔细阅读并理解条款");
                     return;
                   }
-                  context.read<Global>().updateSetting(refresh: true);
                 },
                 child: Text('同意', style: withoutColor(Theme.of(context).textTheme.headlineSmall!).copyWith(fontWeight: FontWeight.bold)),
               )

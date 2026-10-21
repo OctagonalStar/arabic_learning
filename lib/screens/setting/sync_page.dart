@@ -30,9 +30,7 @@ class _DataSyncPage extends State<DataSyncPage> {
 
   @override
   Widget build(BuildContext context) {
-    context.read<Global>().uiLogger.info("构建 DataSyncPage");
     enabled ??= AppData().config.webSync.enabled;
-    context.read<Global>().uiLogger.fine("获取WebDAV实例");
     final WebDAV webdav = WebDAV(
       uri: AppData().config.webSync.account.uri, 
       user: AppData().config.webSync.account.userName,
@@ -162,7 +160,7 @@ class _DataSyncPage extends State<DataSyncPage> {
                         if(!webdav.isReachable) await webdav.connect();
                         if(context.mounted) await webdav.download(AppData().storage);
                         if(context.mounted) context.read<Global>().conveySetting();
-                        if(context.mounted) context.read<Global>().reloadStoredData();
+                        if(context.mounted) await context.read<Global>().reloadStoredData();
                       } catch (e) {
                         if(!context.mounted) return;
                         alart(context, e.toString());
@@ -266,9 +264,13 @@ class _DataSyncPage extends State<DataSyncPage> {
                       if (context.mounted) {
                         try{
                           context.read<Global>().uiLogger.fine("备份数据读取完成，开始解析");
-                          AppData().storage.recovery(jsonDecode(jsonString));
-                          if(context.mounted) context.read<Global>().conveySetting();
-                          if(context.mounted) context.read<Global>().reloadStoredData();
+                          // 必须 await：SQLite 后端要把 fsrsData 异步灌回数据库，
+                          // 否则随后的 reloadStoredData 会读到旧数据。
+                          await AppData().storage.recovery(jsonDecode(jsonString));
+                          if(!context.mounted) return;
+                          context.read<Global>().conveySetting();
+                          await context.read<Global>().reloadStoredData();
+                          if(!context.mounted) return;
                           alart(context, "备份数据 \"${platformFile.name}\" \n已恢复\n部分设置可能需要软件重启后才能生效");
                           context.read<Global>().uiLogger.info("备份数据 \"${platformFile.name}\" \n已导入。");
                         } catch (e) {
@@ -368,16 +370,17 @@ Future<void> popAccountSetting(BuildContext context) async {
                 alart(context, e.toString());
                 return;
               }
-              AppData().config = AppData().config.copyWith(
-                webSync: AppData().config.webSync.copyWith(
-                  account: SyncAccountConfig(
-                    uri: uriController.text,
-                    userName: accountController.text,
-                    passWord: passwdController.text
+              context.read<Global>().patchConfig(
+                (Config config) => config.copyWith(
+                  webSync: config.webSync.copyWith(
+                    account: SyncAccountConfig(
+                      uri: uriController.text,
+                      userName: accountController.text,
+                      passWord: passwdController.text
+                    )
                   )
                 )
               );
-              context.read<Global>().updateSetting();
               uriController.dispose();
               accountController.dispose();
               passwdController.dispose();

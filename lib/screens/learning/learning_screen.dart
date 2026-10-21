@@ -21,13 +21,13 @@ import 'package:arabic_learning/screens/learning/favorites_page.dart' show Favor
 import 'package:arabic_learning/screens/learning/fsrs_screens.dart' show FSRSLearningPage, ForeFSRSSettingPage;
 import 'package:arabic_learning/screens/learning/learning_pages_build.dart';
 import 'package:arabic_learning/screens/learning/plan/plan_entry_card.dart' show PlanEntryCard;
+import 'package:arabic_learning/screens/setting/dict_manage_page.dart' show DictManagePage;
 
 class LearningPage extends StatelessWidget {
   const LearningPage({super.key});
 
   @override
   Widget build(BuildContext context) {
-    context.read<Global>().uiLogger.fine("构建 LearningPage");
 
     // 按钮高度按 Tab 可用高度推导（保留原 0.15/0.1/0.25 的比例关系），
     // 矮横屏下整体压缩，手机竖屏/桌面下与原观感接近。
@@ -243,7 +243,16 @@ Future<void> shiftToStudy(BuildContext context) async {
     }
   }
 
-  final ClassSelection classSelection = await popSelectClasses(context, withCache: false, withReviewChoose: true, withCategoryFilter: true);
+  final NavigatorState navigator = Navigator.of(context);
+  final ClassSelection classSelection = await popSelectClasses(
+    context,
+    withCache: false,
+    withReviewChoose: true,
+    withCategoryFilter: true,
+    onImportDict: () => navigator.push(
+      MaterialPageRoute(builder: (BuildContext context) => const DictManagePage()),
+    ),
+  );
   if(classSelection.selectedClass.isEmpty || !context.mounted) return;
   final List<WordItem> selectedWords = getSelectedWords(AppData().wordData, classSelection.selectedClass, doShuffle: false, doDouble: false);
   // 标签筛选（或逻辑）：仅保留含有任一选中标签的单词

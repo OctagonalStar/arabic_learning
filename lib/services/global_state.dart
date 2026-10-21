@@ -5,7 +5,7 @@ import 'dart:convert';
 
 import 'package:arabic_learning/core/date_utils.dart';
 import 'package:arabic_learning/core/statics.dart';
-import 'package:arabic_learning/models/config.dart' show Config, RegularConfig;
+import 'package:arabic_learning/models/config.dart' show Config, LearningConfig, RegularConfig;
 import 'package:arabic_learning/models/dict.dart' show DictData;
 import 'package:arabic_learning/models/reading.dart' show ReadingData;
 import 'package:arabic_learning/services/app_data.dart' show AppData;
@@ -38,11 +38,28 @@ class Global with ChangeNotifier {
   ColorScheme? _dynamicDarkScheme;
   String? _dynamicSchemeKey;
 
+  // 主题缓存：ThemeData 构建开销较大，配置未变时复用同一实例。
+  ThemeData? _lightTheme;
+  ThemeData? _darkTheme;
+
   /// 亮色主题。
-  ThemeData get lightThemeData => _buildTheme(Brightness.light);
+  ThemeData get lightThemeData => _lightTheme ??= _buildTheme(Brightness.light);
 
   /// 暗色主题。
-  ThemeData get darkThemeData => _buildTheme(Brightness.dark);
+  ThemeData get darkThemeData => _darkTheme ??= _buildTheme(Brightness.dark);
+
+  /// 配置或动态取色变化后清除主题缓存，行为与逐次重建等价。
+  void _invalidateThemeCache() {
+    _lightTheme = null;
+    _darkTheme = null;
+  }
+
+  /// `settingData` 的实际写盘次数（诊断 / 测试用）。
+  ///
+  /// `Global` 不是单例（由 provider 创建），故用静态计数；用于断言
+  /// 「配置没有变化时启动路径不重写偏好文件」。
+  @visibleForTesting
+  static int debugSettingWriteCount = 0;
 
   /// 由配置解析出的主题模式（跟随系统 / 浅色 / 深色）。
   ThemeMode get themeMode =>
@@ -82,6 +99,7 @@ class Global with ChangeNotifier {
       _dynamicLightScheme = null;
       _dynamicDarkScheme = null;
       _dynamicSchemeKey = null;
+      _invalidateThemeCache(); // 关闭动态取色：回退种子色需重建主题
       return;
     }
     final String key = regular.theme.toString();
@@ -94,19 +112,42 @@ class Global with ChangeNotifier {
     _dynamicLightScheme = schemes.light;
     _dynamicDarkScheme = schemes.dark;
     _dynamicSchemeKey = key;
+    _invalidateThemeCache(); // 动态取色方案已解析：颜色变化需重建主题
   }
 
 
-  Future<bool> init() async {
+  // 初始化 Future 记忆化：init() 内部会 notifyListeners() 触发重建，
+  // 若重建时再次被调用会重复解析/写入配置，故只执行一次。
+  Future<bool>? _initFuture;
+
+  /// 全局初始化（记忆化，只执行一次）。
+  Future<bool> init() => _initFuture ??= _initGuarded();
+
+  /// 失败时清空记忆化结果，使 UI 的「重试」能真正重新执行初始化。
+  Future<bool> _initGuarded() async {
+    try {
+      return await _initOnce();
+    } catch (e, stack) {
+      logger.severe("全局控制类初始化失败: $e", e, stack);
+      _initFuture = null;
+      rethrow;
+    }
+  }
+
+  Future<bool> _initOnce() async {
     logger.info("开始全局控制类初始化");
 
     AppData appData = AppData();
+    // AppData.init 内部已并发启动 FSRS 的「SQLite 打开 + 旧数据迁移」并与词库
+    // 解析重叠执行，返回时 FSRS 一定已就绪；这里的第二次调用命中 initAsync 的
+    // 记忆化（`_opening`），是空操作，保留作为首次启动等路径的兜底。
     await appData.init();
-    FSRS().init();
+    await FSRS().initAsync();
 
     if(appData.isFirstStart) {
       logger.info("首次启动检测为真");
-      appData.initStorageValue();
+      // 必须 await：后续 refreshApp/首帧读取依赖这些默认键已经写入。
+      await appData.initStorageValue();
       await refreshApp();
     } else {
       conveySetting();
@@ -146,7 +187,9 @@ class Global with ChangeNotifier {
       if (wordRaw != null && wordRaw.isNotEmpty) {
         AppData().wordData = DictData.buildFromMap(jsonDecode(wordRaw));
         if (AppData().normalizeWordGenders()) {
-          AppData().storage.setString("wordData", jsonEncode(AppData().wordData.toMap()));
+          // 与启动路径共用延迟回写：编码在后台 isolate，且不阻塞首帧。
+          // （这里也必须用同一个代际号，避免与启动回写互相覆盖。）
+          AppData().persistWordDataDeferred();
         }
         BKSearch.rebuild(AppData().wordData.words);
         WordMembershipIndex.instance.rebuild(AppData().wordData.classes);
@@ -159,7 +202,9 @@ class Global with ChangeNotifier {
 
       SynonymStore().reload();
       FavoriteStore().reload();
-      FSRS().init(); // 备份恢复后需按新 fsrsData 重建配置（补齐既有缺口）
+      // 备份恢复后需按新数据重建配置（补齐既有缺口）。
+      // SQLite 后端在 recovery 阶段已把 fsrsData 灌回库，这里 reload 只是再对齐一次内存副本。
+      await FSRS().initAsync(reload: true);
       await PlanStore().reload();
       notifyListeners();
     } catch (e) {
@@ -167,12 +212,43 @@ class Global with ChangeNotifier {
     }
   }
 
+  /// 以不可变方式打补丁到 [Config] 并持久化；内容未变时 [updateSetting] 会跳过写盘。
+  ///
+  /// 这是「改设置」的唯一入口，取代散落各处的
+  /// `AppData().config = AppData().config.copyWith(...); updateSetting();` 样板：
+  /// 调用方只需描述「从当前配置到新配置」的变换，读-改-写与落盘时机由这里保证。
+  ///
+  /// [patch] 收到的是当前配置，必须返回**新**实例（内部一律 `copyWith`）。
+  /// [refresh] 与 [updateSetting] 的同名参数一致：默认 `true` 会走
+  /// `refreshApp()`（重建主题 + 通知监听者）；服务层等无 UI 的场景传 `false`。
+  ///
+  /// 返回的 Future 只在需要「确认已落盘」时 await（例如服务层）；UI 回调里
+  /// 直接作为语句调用即可，与改造前 `updateSetting()` 不 await 的时序一致。
+  Future<void> patchConfig(
+    Config Function(Config current) patch, {
+    bool refresh = true,
+  }) async {
+    AppData().config = patch(AppData().config);
+    await updateSetting(refresh: refresh);
+  }
+
   // 更新配置到存储中
   Future<void> updateSetting({Map<String, dynamic>? settingData, bool refresh = true}) async {
     logger.info("保存配置文件中");
     AppData appData = AppData();
     if(settingData != null) appData.config = Config.buildFromMap(settingData);
-    appData.storage.setString("settingData", jsonEncode(appData.config.toMap()));
+    final String encoded = jsonEncode(appData.config.toMap());
+    // 内容没变就不写：`shared_preferences` 每次 setString 都会重写整个偏好文件
+    // （其中还有 2~6MB 的 wordData）。启动路径上 updateSetting() 只是把刚读出来
+    // 的配置再写一遍，属于纯浪费；只有真正发生版本升级（lastVersion 变化）时
+    // 内容才会不同。
+    if(appData.storage.getString("settingData") != encoded) {
+      appData.storage.setString("settingData", encoded);
+      Global.debugSettingWriteCount++;
+    } else {
+      logger.fine("配置未变化，跳过写盘");
+    }
+    _invalidateThemeCache(); // 配置已变更：主题缓存失效
     if(refresh) await refreshApp();
   }
 
@@ -210,8 +286,8 @@ class Global with ChangeNotifier {
 
   Future<void> refreshApp() async {
     logger.info("应用设置中");
-    AppData appData = AppData();
-    if(appData.config.audio.audioSource == 2) await appData.loadTTS(appData.config.audio.playRate);
+    // 本地 TTS 模型（sherpa_onnx）加载是同步的，放在这里会阻塞首帧；
+    // 改为在 services/tts.dart 首次合成语音时惰性加载。
     changeLoggerBehavior();
     updateTheme();
     await _refreshDynamicScheme();
@@ -221,6 +297,7 @@ class Global with ChangeNotifier {
 
   void updateTheme() {
     logger.info("更新主题中");
+    _invalidateThemeCache(); // 字体配置随之变化：清空主题缓存
     if(AppData().config.regular.font == 2) {
       arFont = StaticsVar.arBackupFont;
       zhFont = StaticsVar.zhBackupFont;
@@ -241,11 +318,17 @@ class Global with ChangeNotifier {
     if (nowDate == AppData().config.learning.lastDate) return;
     logger.info("保存学习进度中");
     // 以 2025/11/1 为基准计算天数（因为这个bug是这天修的:} ）
-    if (nowDate - AppData().config.learning.lastDate > 1) {
-      AppData().config = AppData().config.copyWith(learning: AppData().config.learning.copyWith(startDate: nowDate));
-    }
-    AppData().config = AppData().config.copyWith(learning: AppData().config.learning.copyWith(lastDate: nowDate));
-    updateSetting(refresh: false);
+    // startDate 与 lastDate 在同一次 patch 里写入：原先的两次赋值之间没有任何
+    // 读取点，合并后只落盘一次。
+    patchConfig((Config config) {
+      final LearningConfig learning = config.learning;
+      return config.copyWith(
+        learning: learning.copyWith(
+          startDate: nowDate - learning.lastDate > 1 ? nowDate : learning.startDate,
+          lastDate: nowDate,
+        ),
+      );
+    }, refresh: false);
     logger.info("学习进度保存完成");
   }
 }

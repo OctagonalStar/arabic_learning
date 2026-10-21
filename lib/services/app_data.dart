@@ -9,6 +9,7 @@ import 'package:fsrs/fsrs.dart' show Card, ReviewLog;
 import 'package:path_provider/path_provider.dart' as path_provider;
 
 import 'package:arabic_learning/core/extensions.dart';
+import 'package:arabic_learning/core/json_offload.dart';
 import 'package:arabic_learning/core/statics.dart';
 import 'package:arabic_learning/models/config.dart' show Config;
 import 'package:arabic_learning/models/dict.dart' show ClassItem, DictData, SourceItem, WordItem;
@@ -66,11 +67,46 @@ class AppData {
   List<String> internalLogCapture = [];
   Config config = Config();
 
-  late final SharedPreferences storage;
+  /// 存储实例。非 final：每次 [init] 都重新获取（测试可借 [debugResetForInit]
+  /// 在同一个进程里换一份 mock 存储重复初始化）。
+  late SharedPreferences storage;
   late final io.Directory basePath;
+
+  /// [basePath] 是否已赋值（`late final` 只能赋值一次，重复 [init] 需跳过）。
+  bool _basePathReady = false;
   late DictData wordData;
   late ReadingData readingData;
   sherpa_onnx.OfflineTts? vitsTTS;
+
+  /// 启动阶段那次「后台 isolate 编码后回写词库」的进行中任务。
+  Future<void>? _wordWriteInFlight;
+
+  /// 词库写盘代际号：每次「写盘意图」递增。
+  ///
+  /// 启动阶段的回写是异步的（后台 isolate 编码 2~6MB JSON）。编码期间若用户
+  /// 已经导入 / 删除 / 重置词库，代际号会变，这次快照必须丢弃，否则会用旧数据
+  /// 覆盖新数据。
+  int _wordWriteGeneration = 0;
+
+  /// 实际完成的 `wordData` 写盘次数（诊断 / 测试用）。
+  ///
+  /// 用于断言「启动路径上没有变化就不写盘」与「回写只发生一次」。
+  @visibleForTesting
+  int debugWordWriteCount = 0;
+
+  /// 等待最近一次异步词库回写落盘（测试 / 诊断用）。
+  Future<void> get pendingWordWrite => _wordWriteInFlight ?? Future<void>.value();
+
+  /// 仅测试用：清掉初始化标记，使下一次 [init] 重新读取当前存储内容。
+  ///
+  /// `AppData` 是单例且 [storage] 只会获取一次，测试需要在同一个进程里
+  /// 用不同的 mock 存储验证多次 [init]，故提供这个重置入口（生产代码不调用）。
+  @visibleForTesting
+  void debugResetForInit() {
+    inited = false;
+    _wordWriteInFlight = null;
+    wordData = const DictData(words: <WordItem>[], classes: <SourceItem>[]);
+  }
 
   /// 「重置词库但保留复习进度」流程中暂存的卡片（仅内存，进程内有效）。
   List<({int oldId, String identity, Card card, ReviewLog log})>? _pendingFsrsRestore;
@@ -82,27 +118,106 @@ class AppData {
   Future<void> init() async {
     if(inited) return;
     storage = await SharedPreferences.getInstance();
-    if(!kIsWeb) {
+    // `basePath` 是 `late final`，只能赋值一次（测试会重复 init 同一个单例）；
+    // Web 上从不读取它（path_provider 在浏览器无实现）。
+    if(!kIsWeb && !_basePathReady) {
       basePath = (await path_provider.getApplicationDocumentsDirectory()) as io.Directory;
+      _basePathReady = true;
     }
 
-    if(!isFirstStart) {
-      wordData = DictData.buildFromMap(jsonDecode(storage.getString("wordData")!));
-      if (normalizeWordGenders()) {
-        storage.setString("wordData", jsonEncode(wordData.toMap()));
-      }
-      readingData = ReadingData.buildFromMap(jsonDecode(storage.getString("readingData") ?? "{\"units\": []}"));
-      if(!BKSearch.isReady) BKSearch.init(wordData.words);
-      WordMembershipIndex.instance.rebuild(wordData.classes);
-      FSRS().init();
+    // 存储打开后立刻启动 FSRS 的「SQLite 打开 + 旧数据迁移」，但**不等待**：
+    // 它只依赖 storage 已就绪（读旧 fsrsData / pushSessionData 做首启迁移），
+    // 与后面的词库解析互不依赖，因此让两者重叠执行。
+    final Future<void> fsrsOpening = FSRS().initAsync();
+
+    // 词库 + 阅读数据解析（非首次启动才有数据）。原生端解码跑在后台 isolate。
+    final Future<void>? dictFuture = isFirstStart ? null : _initDictAndReading();
+
+    // 三个小键只依赖 storage，与词库解析并发：同义对 / 收藏 / 计划学习。
+    //
+    // 键缺失时用 `reload()`（= 只读，不写）而不是 `init()`（会立刻把默认值
+    // `setString` 写回）：启动阶段不该因为「读到空」就整份重写偏好文件，
+    // 默认值等到第一次真实改动时由各自的 `save()` 落地。
+    if(storage.containsKey("synonymData")) {
+      SynonymStore().init();
+    } else {
+      SynonymStore().reload();
+      logger.fine("未发现同义对数据，留待首次标记时写入");
     }
-    SynonymStore().init();
-    FavoriteStore().init(); // 收藏数据（键为词条 id）
-    await PlanStore().init(); // 计划学习（配置 + 当日快照）
+    if(storage.containsKey(FavoriteStore.storageKey)) {
+      FavoriteStore().init(); // 收藏数据（键为词条 id）
+    } else {
+      FavoriteStore().reload();
+      logger.fine("未发现收藏数据，留待首次收藏时写入");
+    }
+    final Future<void> planFuture = PlanStore().init(); // 计划学习（配置 + 当日快照）
+
+    // 汇合三路并发任务。词库解析内部已保证「解码 → 构造 → 索引重建」的串行
+    // 依赖（BKSearch 依赖 words，Membership 依赖 classes）。
+    //
+    // `Future.wait` 会给每个 Future 都挂上错误处理，因此任一路失败都不会留下
+    // 未处理的异步错误；默认 eagerError=false，会等全部完成后再抛第一个错误
+    // （与改造前「init 抛错」的对外行为一致）。
+    await Future.wait(<Future<void>>[
+      ?dictFuture,
+      planFuture,
+      fsrsOpening,
+    ]);
     inited = true;
   }
 
+  /// 读取、解析并落地 `wordData` / `readingData`（非首次启动路径）。
+  ///
+  /// 顺序依赖：解码（可在后台 isolate）→ 构造 [DictData] / [ReadingData]
+  /// （必须在主 isolate，自定义类不可跨 isolate）→ 索引重建。
+  ///
+  /// 失败语义与改造前逐条一致：
+  /// - `wordData` 缺失/为空 → 记 severe 日志并降级为空词库（不抛）；
+  /// - `wordData` 损坏 → 异常上抛（由 Global 的初始化错误处理接管，与改造前相同）；
+  /// - `readingData` 缺失 → 用 `{"units": []}`；损坏 → 异常上抛（同改造前）。
+  Future<void> _initDictAndReading() async {
+    final String? wordRaw = storage.getString("wordData");
+    final String readingRaw =
+        storage.getString("readingData") ?? "{\"units\": []}";
+
+    // 两个解码并发（原生端各占一个后台 isolate；Web 端是同步解码，立即返回）。
+    // 用 `Future.wait` 而不是「先 await A 再 await B」：后者在 A 较慢而 B 已
+    // 失败时，B 的错误会短暂没有监听者（Dart 会报 unhandled error）。`wait`
+    // 会立刻给两者挂上处理器，且按列表顺序抛第一个错误 —— 词库错误优先，
+    // 与改造前「先解析 wordData」的失败顺序一致。
+    final List<Object?> decoded = await Future.wait(<Future<Object?>>[
+      (wordRaw == null || wordRaw.isEmpty)
+          ? Future<Object?>.value(null)
+          : decodeJsonOffMain(wordRaw),
+      decodeJsonOffMain(readingRaw),
+    ]);
+
+    final Object? wordMap = decoded[0];
+    if(wordMap == null) {
+      // 存储缺失时不抛出：降级为空词库继续初始化，避免启动直接失败。
+      logger.severe("未找到词库数据，按空词库继续初始化");
+      wordData = DictData(words: [], classes: []);
+    } else {
+      wordData = DictData.buildFromMap(wordMap as Map<String, dynamic>);
+    }
+    readingData = ReadingData.buildFromMap(decoded[1] as Map<String, dynamic>);
+
+    // 存量阴阳性纠正：只有真的改动了才回写；回写不阻塞首帧（见 _scheduleWordDataPersist）。
+    if(normalizeWordGenders()) _scheduleWordDataPersist();
+
+    // 注意：`BKSearch.init` 仍在主 isolate 构建索引，这是启动路径上**剩余的最大
+    // 阻塞点**。实测（Linux x86_64 / Dart 3.13 / `flutter test`，含 BK-Tree 打乱
+    // 插入与中文 1-gram/2-gram 倒排）：
+    //   5000 词 ≈ 204ms，20000 词 ≈ 797ms。
+    // 本轮按计划**不改**搜索索引：索引内部持有 `Set<WordItem>` 与闭包，
+    // 无法直接跨 isolate 返回，要搬必须先改成可发送的纯数据结构，另行评估。
+    if(!BKSearch.isReady) BKSearch.init(wordData.words);
+    WordMembershipIndex.instance.rebuild(wordData.classes);
+  }
+
   Future<void> initStorageValue() async {
+      // 首次启动写默认值：作废任何进行中的异步词库回写（顺序不能反）。
+      _wordWriteGeneration++;
       await storage.setString("wordData", jsonEncode({"Words": [], "Classes": {}}));
       await storage.setString("readingData", jsonEncode({"units": []}));
       await storage.setString("synonymData", jsonEncode(const SynonymData().toMap()));
@@ -493,9 +608,41 @@ class AppData {
 
   /// 持久化当前 `wordData` 并重建检索 / 归属索引。
   void _persistWordData() {
+    _wordWriteGeneration++; // 作废进行中的异步回写（它的快照已过期）
     storage.setString("wordData", jsonEncode(wordData.toMap()));
+    debugWordWriteCount++;
     BKSearch.rebuild(wordData.words);
     WordMembershipIndex.instance.rebuild(wordData.classes);
+  }
+
+  /// 启动 / 备份恢复路径上的「存量数据纠正」回写：在后台 isolate 编码，不阻塞首帧。
+  ///
+  /// 与 [_persistWordData] 的差别只在编码位置：`toMap()` 必须在主 isolate
+  /// 做（自定义类），但 2~6MB 的 `jsonEncode` 可以搬走。编码期间若词库被
+  /// 改动（导入 / 删除 / 重置都会递增 [_wordWriteGeneration]），本次快照
+  /// 直接丢弃，绝不覆盖新数据。
+  ///
+  /// 调用方：启动解析（[init]）与备份恢复（`Global.reloadStoredData`）。
+  void persistWordDataDeferred() => _scheduleWordDataPersist();
+
+  void _scheduleWordDataPersist() {
+    final int generation = ++_wordWriteGeneration;
+    final Map<String, dynamic> snapshot = wordData.toMap();
+    _wordWriteInFlight = () async {
+      try {
+        final String encoded = await encodeJsonOffMain(snapshot);
+        if (generation != _wordWriteGeneration) {
+          logger.fine("词库已变更，丢弃过期的启动回写");
+          return;
+        }
+        await storage.setString("wordData", encoded);
+        debugWordWriteCount++;
+        logger.info("已回写纠正后的词库数据");
+      } catch (e) {
+        // 回写失败不影响启动：内存中的数据仍然可用，下次改动会再写。
+        logger.severe("词库回写失败: $e");
+      }
+    }();
   }
 
   static String _asString(dynamic value) => value == null ? "" : value.toString();
@@ -569,9 +716,9 @@ class AppData {
         dataFormater(parsed, wordData, source, displayName: displayName);
     wordData = fmt.data;
     normalizeWordGenders();
-    storage.setString("wordData", jsonEncode(wordData.toMap()));
-    BKSearch.rebuild(wordData.words); // 强制重建搜索索引，保证新词立即可搜
-    WordMembershipIndex.instance.rebuild(wordData.classes);
+    // 走统一的落盘入口：除了写盘 + 重建索引，还会递增写盘代际号，
+    // 使启动阶段可能在途的「纠正后回写」快照作废（否则它会覆盖本次导入）。
+    _persistWordData();
     logger.info("词汇导入完成");
 
     return DictImportResult(

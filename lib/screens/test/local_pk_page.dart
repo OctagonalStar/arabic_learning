@@ -10,6 +10,7 @@ import 'package:arabic_learning/models/dict.dart';
 import 'package:arabic_learning/models/reading.dart';
 import 'package:arabic_learning/services/global_state.dart';
 import 'package:arabic_learning/services/app_data.dart';
+import 'package:arabic_learning/screens/setting/dict_manage_page.dart' show DictManagePage;
 import 'package:arabic_learning/core/extensions.dart';
 import 'package:arabic_learning/core/statics.dart';
 import 'package:arabic_learning/theme/tokens.dart' show AppMotion;
@@ -56,7 +57,6 @@ class _LocalPKSelectPage extends State<LocalPKSelectPage> {
 
   @override
   Widget build(BuildContext context) {
-    context.read<Global>().uiLogger.info("构建局域网联机主页面");
     MediaQueryData mediaQuery = MediaQuery.of(context);
 
     return Scaffold(
@@ -235,7 +235,6 @@ class _ServerHostWatingPage extends State<ServerHostWatingPage> {
 
   @override
   Widget build(BuildContext context) {
-    context.read<Global>().uiLogger.info("构建局域网联机课程选择页面");
     MediaQueryData mediaQuery = MediaQuery.of(context);
 
     return Scaffold(
@@ -371,7 +370,17 @@ class PKClassSelectionPage extends StatelessWidget {
             SizedBox(height: mediaQuery.size.height * 0.1),
             Button(
               onPressed: () async {
-                ClassSelection selection = await popSelectClasses(context, forceSelectRange: context.read<PKServer>().selectableSource, withCache: false, withReviewChoose: false);
+                // 提前取出 NavigatorState：onImportDict 在弹窗关闭后才执行。
+                final NavigatorState navigator = Navigator.of(context);
+                ClassSelection selection = await popSelectClasses(
+                  context,
+                  forceSelectRange: context.read<PKServer>().selectableSource,
+                  withCache: false,
+                  withReviewChoose: false,
+                  onImportDict: () => navigator.push(
+                    MaterialPageRoute(builder: (BuildContext context) => const DictManagePage()),
+                  ),
+                );
                 if(!context.mounted || selection.selectedClass.isEmpty) return;
                 context.read<PKServer>().setSelectedClass(selection);
                 context.read<PKServer>().pageController!.nextPage(duration: AppMotion.medium, curve: AppMotion.standardCurve);
@@ -390,7 +399,6 @@ class ClientWatingPage extends StatelessWidget {
   
   @override
   Widget build(BuildContext context) {
-    context.read<Global>().uiLogger.info("构建局域网联机等待页面");
     MediaQueryData mediaQuery = MediaQuery.of(context);
 
     return Scaffold(
@@ -438,7 +446,6 @@ class PKPreparePage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    context.read<Global>().uiLogger.info("构建局域网联机准备页面");
     MediaQueryData mediaQuery = MediaQuery.of(context);
 
     return Scaffold(
@@ -552,7 +559,6 @@ class _PKOngoingPage extends State<PKOngoingPage> {
 
   @override
   Widget build(BuildContext context) {
-    context.read<Global>().uiLogger.info("构建局域网联机对局页面");
     MediaQueryData mediaQuery = MediaQuery.of(context);
 
     return PopScope(
@@ -641,7 +647,6 @@ class PKConclue extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    context.read<Global>().uiLogger.info("构建局域网联机总结");
     MediaQueryData mediaQuery = MediaQuery.of(context);
 
     return Column(

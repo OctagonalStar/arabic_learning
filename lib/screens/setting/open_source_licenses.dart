@@ -1,16 +1,13 @@
 import 'package:arabic_learning/widgets/kit.dart' show TextContainer;
 import 'package:flutter/material.dart';
-import 'package:arabic_learning/services/global_state.dart';
 import 'package:arabic_learning/oss_licenses.dart' as oss;
 import 'package:arabic_learning/core/license_storage.dart';
-import 'package:provider/provider.dart';
 
 class OpenSourceLicensePage extends StatelessWidget {
   const OpenSourceLicensePage({super.key});
 
   @override
   Widget build(BuildContext context) {
-    context.read<Global>().uiLogger.info("构建 OpenSourceLicensePage");
     List<oss.Package> licenses = [...oss.allDependencies];
     List<Widget> widgets = [];
 

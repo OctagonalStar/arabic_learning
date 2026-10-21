@@ -50,7 +50,6 @@ class _FavoritesPageState extends State<FavoritesPage> {
 
   @override
   Widget build(BuildContext context) {
-    context.read<Global>().uiLogger.fine("构建 FavoritesPage");
     final MediaQueryData mediaQuery = MediaQuery.of(context);
     final List<WordItem> words = AppData().wordData.words;
     // 按收藏顺序取词；越界 id 跳过（词库裁剪后的残留不应导致崩溃）。
@@ -106,7 +105,7 @@ class _FavoritesPageState extends State<FavoritesPage> {
                 size: Size.fromHeight(mediaQuery.size.height * 0.08),
                 backgroundColor: Theme.of(context).colorScheme.errorContainer,
                 onPressed: () {
-                  alart(context, "确定清空全部收藏吗？此操作不可撤销。", onConfirmed: () {
+                  alart(context, "确定清空全部收藏吗？此操作不可撤销。", destructive: true, onConfirmed: () {
                     context.read<Global>().uiLogger.info("清空全部收藏");
                     setState(() {
                       FavoriteStore().clear();

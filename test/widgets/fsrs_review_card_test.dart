@@ -8,6 +8,7 @@ import 'package:arabic_learning/services/global_state.dart' show Global;
 import 'package:arabic_learning/services/search.dart' show BKSearch;
 import 'package:arabic_learning/widgets/questions.dart' show ChoiceQuestions, ListeningQuestion, SelfRatingQuestion, SpellQuestion;
 import 'package:arabic_learning/widgets/flip_word_card.dart' show FlipWordCard;
+import 'package:arabic_learning/widgets/kit.dart' show ChooseButtonBox;
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
@@ -167,6 +168,19 @@ void main() {
     expect(find.text('相会'), findsOneWidget);
   });
 
+  testWidgets('复习选择题启用长按单词卡片', (WidgetTester tester) async {
+    await pumpReviewCard(tester);
+
+    expect(find.byType(ChoiceQuestions), findsOneWidget);
+    // 长按任一选项应打开与该选项词条对应的单词卡片；未透传 optionWords
+    // 时长按不会触发，浮层中的 FlipWordCard 也不会出现。
+    await tester.longPress(find.byType(ChooseButtonBox).first);
+    await tester.pumpAndSettle();
+
+    expect(tester.takeException(), isNull);
+    expect(find.byType(FlipWordCard), findsOneWidget);
+  });
+
   testWidgets('reviewQuestionSections: [3] 渲染拼写题且不抛异常', (WidgetTester tester) async {
     FSRS().config = FSRSConfig(reviewQuestionSections: const [3]);
     await pumpReviewCard(tester);
@@ -183,6 +197,18 @@ void main() {
     expect(find.byType(ChoiceQuestions), findsOneWidget);
     // 中译阿：题面为中文释义
     expect(find.text('相会'), findsOneWidget);
+  });
+
+  testWidgets('复习听力题启用长按单词卡片', (WidgetTester tester) async {
+    FSRS().config = FSRSConfig(reviewQuestionSections: const [4]);
+    await pumpReviewCard(tester);
+
+    expect(find.byType(ListeningQuestion), findsOneWidget);
+    await tester.longPress(find.byType(ChooseButtonBox).first);
+    await tester.pumpAndSettle();
+
+    expect(tester.takeException(), isNull);
+    expect(find.byType(FlipWordCard), findsOneWidget);
   });
 
   testWidgets('听力题重复跳过只记录一次复习（Bug 1 回归）', (WidgetTester tester) async {

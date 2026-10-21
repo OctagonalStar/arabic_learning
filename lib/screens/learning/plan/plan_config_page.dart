@@ -20,6 +20,8 @@ import 'package:arabic_learning/models/reading.dart' show ClassSelection;
 import 'package:arabic_learning/screens/learning/fsrs_screens.dart'
     show ForeFSRSSettingPage;
 import 'package:arabic_learning/screens/learning/plan/plan_shared.dart';
+import 'package:arabic_learning/screens/setting/dict_manage_page.dart'
+    show DictManagePage;
 import 'package:arabic_learning/services/app_data.dart' show AppData;
 import 'package:arabic_learning/services/fsrs.dart' show FSRS;
 import 'package:arabic_learning/services/plan_scheduler.dart';
@@ -184,12 +186,18 @@ class _PlanConfigPageState extends State<PlanConfigPage> {
   }
 
   Future<void> _pickCourses() async {
+    // 提前取出 NavigatorState：onImportDict 在弹窗关闭后才执行，届时
+    // 直接用 State.context 可能已失效。
+    final NavigatorState navigator = Navigator.of(context);
     final ClassSelection selection = await popSelectClasses(
       context,
       withCache: false,
       withReviewChoose: false,
       // 与常规学习一致的标签筛选（多选，或逻辑）。
       withCategoryFilter: true,
+      onImportDict: () => navigator.push(
+        MaterialPageRoute(builder: (BuildContext context) => const DictManagePage()),
+      ),
     );
     if (!mounted) return;
     final List<ClassItem> pickedClasses = selection.selectedClass;

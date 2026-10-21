@@ -4,11 +4,12 @@
 import 'package:flutter/foundation.dart' show ChangeNotifier;
 
 class SingleSelectionNotifier with ChangeNotifier {
-  dynamic _value;
+  // 目前唯一用途是选项下标：null 表示未选择。
+  int? _value;
 
-  dynamic get value => _value;
+  int? get value => _value;
 
-  void changeTo(dynamic value) {
+  void changeTo(int? value) {
     _value = value;
     notifyListeners();
   }

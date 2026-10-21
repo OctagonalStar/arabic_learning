@@ -9,8 +9,9 @@ import 'package:arabic_learning/core/version.dart' show versionIntToString;
 
 import 'package:arabic_learning/widgets/kit.dart' show Button, SettingItem, SettingRedirctButton, SettingRow;
 import 'package:arabic_learning/widgets/overlays.dart' show alart, showSnackBar;
+import 'package:arabic_learning/widgets/feedback.dart' show LoadingIndicator;
 import 'package:arabic_learning/core/extensions.dart';
-import 'package:arabic_learning/models/config.dart' show RegularConfig;
+import 'package:arabic_learning/models/config.dart' show Config, RegularConfig;
 import 'package:arabic_learning/services/global_state.dart';
 import 'package:arabic_learning/services/app_data.dart';
 import 'package:arabic_learning/screens/setting/help_page.dart'
@@ -43,7 +44,6 @@ class SettingPage extends StatefulWidget {
 class _SettingPage extends State<SettingPage> {
   @override
   Widget build(BuildContext context) {
-    context.read<Global>().uiLogger.fine("构建 SettingPage");
     MediaQueryData mediaQuery = MediaQuery.of(context);
     AppData appData = AppData();
 
@@ -84,12 +84,13 @@ class _SettingPage extends State<SettingPage> {
                     ],
                     onChanged: (value) async {
                       context.read<Global>().uiLogger.info("更新主题颜色: $value");
-                      AppData().config = AppData().config.copyWith(
-                        regular: AppData().config.regular.copyWith(
-                          theme: value,
+                      context.read<Global>().patchConfig(
+                        (Config config) => config.copyWith(
+                          regular: config.regular.copyWith(
+                            theme: value,
+                          ),
                         ),
                       );
-                      context.read<Global>().updateSetting();
                     },
                   )
                 ),
@@ -116,12 +117,13 @@ class _SettingPage extends State<SettingPage> {
                     onChanged: (value) {
                       if (value == null) return;
                       context.read<Global>().uiLogger.info("更新深色模式: $value");
-                      AppData().config = AppData().config.copyWith(
-                        regular: AppData().config.regular.copyWith(
-                          themeMode: value,
+                      context.read<Global>().patchConfig(
+                        (Config config) => config.copyWith(
+                          regular: config.regular.copyWith(
+                            themeMode: value,
+                          ),
                         ),
                       );
-                      context.read<Global>().updateSetting();
                     },
                   ),
                 ),
@@ -139,12 +141,13 @@ class _SettingPage extends State<SettingPage> {
                             context.read<Global>().uiLogger.info(
                               "更新动态取色设置: $value",
                             );
-                            AppData().config = AppData().config.copyWith(
-                              regular: AppData().config.regular.copyWith(
-                                dynamicColor: value,
+                            context.read<Global>().patchConfig(
+                              (Config config) => config.copyWith(
+                                regular: config.regular.copyWith(
+                                  dynamicColor: value,
+                                ),
                               ),
                             );
-                            context.read<Global>().updateSetting();
                           },
                   ),
                 ),
@@ -162,12 +165,13 @@ class _SettingPage extends State<SettingPage> {
                             context.read<Global>().uiLogger.info(
                               "更新 DoH 设置: $value",
                             );
-                            AppData().config = AppData().config.copyWith(
-                              regular: AppData().config.regular.copyWith(
-                                useDoh: value,
+                            context.read<Global>().patchConfig(
+                              (Config config) => config.copyWith(
+                                regular: config.regular.copyWith(
+                                  useDoh: value,
+                                ),
                               ),
                             );
-                            context.read<Global>().updateSetting();
                           },
                   ),
                 ),
@@ -187,15 +191,16 @@ class _SettingPage extends State<SettingPage> {
                       if (value == 2 && kIsWeb) {
                         showSnackBar(context, "网页版加载中文字体需要较长时间，请先耐心等待");
                       }
-                      AppData().config = AppData().config.copyWith(
-                        regular: AppData().config.regular.copyWith(
-                          font: value,
-                        ),
-                      );
                       Provider.of<Global>(
                         context,
                         listen: false,
-                      ).updateSetting();
+                      ).patchConfig(
+                        (Config config) => config.copyWith(
+                          regular: config.regular.copyWith(
+                            font: value,
+                          ),
+                        ),
+                      );
                     },
                   ),
                 ),
@@ -209,12 +214,13 @@ class _SettingPage extends State<SettingPage> {
                         context.read<Global>().uiLogger.info(
                           "更新网页端APP下载按钮隐藏设置: $value",
                         );
-                        AppData().config = AppData().config.copyWith(
-                          regular: AppData().config.regular.copyWith(
-                            hideAppDownloadButton: value,
+                        context.read<Global>().patchConfig(
+                          (Config config) => config.copyWith(
+                            regular: config.regular.copyWith(
+                              hideAppDownloadButton: value,
+                            ),
                           ),
                         );
-                        context.read<Global>().updateSetting();
                       },
                     ),
                   ),
@@ -251,12 +257,13 @@ class _SettingPage extends State<SettingPage> {
                             "警告: \n来自\"TextReadTTS.com\"的音频不支持发音符号，且只能合成40字以内的文本。\n开启此功能请知悉。",
                           );
                         }
-                        AppData().config = AppData().config.copyWith(
-                          audio: AppData().config.audio.copyWith(
-                            audioSource: value,
+                        context.read<Global>().patchConfig(
+                          (Config config) => config.copyWith(
+                            audio: config.audio.copyWith(
+                              audioSource: value,
+                            ),
                           ),
                         );
-                        context.read<Global>().updateSetting();
                       },
                       items: [
                         DropdownMenuItem(
@@ -327,12 +334,13 @@ class _SettingPage extends State<SettingPage> {
                       context.read<Global>().uiLogger.info(
                         "更新自动发音设置: $value",
                       );
-                      AppData().config = AppData().config.copyWith(
-                        audio: AppData().config.audio.copyWith(
-                          autoPlay: value
+                      context.read<Global>().patchConfig(
+                        (Config config) => config.copyWith(
+                          audio: config.audio.copyWith(
+                            autoPlay: value
+                          ),
                         ),
                       );
-                      context.read<Global>().updateSetting();
                     },
                   )
                 ),
@@ -355,12 +363,13 @@ class _SettingPage extends State<SettingPage> {
                           context.read<Global>().uiLogger.info(
                             "更新自动检查更新设置: $value",
                           );
-                          AppData().config = AppData().config.copyWith(
-                            regular: AppData().config.regular.copyWith(
-                              autoCheckUpdate: value,
+                          context.read<Global>().patchConfig(
+                            (Config config) => config.copyWith(
+                              regular: config.regular.copyWith(
+                                autoCheckUpdate: value,
+                              ),
                             ),
                           );
-                          context.read<Global>().updateSetting();
                         },
                       ),
                     ),
@@ -470,11 +479,7 @@ class _CheckUpdateRowState extends State<_CheckUpdateRow> {
         icon: Icons.refresh,
         note: "手动检查是否有新版本",
         end: _checking
-            ? const SizedBox(
-                width: 20,
-                height: 20,
-                child: CircularProgressIndicator(strokeWidth: 2),
-              )
+            ? const LoadingIndicator(size: 20, strokeWidth: 2)
             : const Icon(Icons.chevron_right),
       ),
     );

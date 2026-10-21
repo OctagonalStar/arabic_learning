@@ -1,5 +1,6 @@
 import 'package:arabic_learning/models/dict.dart';
 import 'package:arabic_learning/models/reading.dart';
+import 'package:arabic_learning/screens/setting/dict_manage_page.dart' show DictManagePage;
 import 'package:flutter/foundation.dart' show clampDouble;
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -33,7 +34,6 @@ class _ForeListeningSettingPage extends State<ForeListeningSettingPage> {
 
   @override
   Widget build(BuildContext context) {
-    context.read<Global>().uiLogger.info("构建 ForeListeningSettingPage");
     MediaQueryData mediaQuery = MediaQuery.of(context);
     int wordCount = getSelectedWords(AppData().wordData, selectedClasses.selectedClass).length;
     return Scaffold(
@@ -70,7 +70,17 @@ class _ForeListeningSettingPage extends State<ForeListeningSettingPage> {
               padding: EdgeInsets.all(16.0),
               size: Size.fromHeight(clampDouble(mediaQuery.size.height * 0.1, 56.0, 96.0)),
               onPressed: () async {
-                selectedClasses = await popSelectClasses(context, withCache: false, withReviewChoose: false);
+                // 提前取出 NavigatorState：onImportDict 在弹窗关闭后才执行，
+                // 此时不能依赖本方法作用域里的 context。
+                final NavigatorState navigator = Navigator.of(context);
+                selectedClasses = await popSelectClasses(
+                  context,
+                  withCache: false,
+                  withReviewChoose: false,
+                  onImportDict: () => navigator.push(
+                    MaterialPageRoute(builder: (BuildContext context) => const DictManagePage()),
+                  ),
+                );
                 setState(() {});
               }, 
               icon: Icon(Icons.arrow_forward_ios),
@@ -253,10 +263,8 @@ class _MainListeningPageState extends State<MainListeningPage> {
 
   @override
   Widget build(BuildContext context) {
-    context.read<Global>().uiLogger.info("构建 MainListeningPage");
     MediaQueryData mediaQuery = MediaQuery.of(context);
     if(stage == 3) {
-      context.read<Global>().uiLogger.info("构建 MainListeningPage:答案页面");
       // 答案页面
       // creat list view:
       List<Widget> list = [
@@ -399,6 +407,8 @@ class _MainListeningPageState extends State<MainListeningPage> {
         counter = (i/10).toString();
       });
       await Future.delayed(Duration(milliseconds: 100));
+      // 页面可能在倒计时期间被销毁，之后的 setState 需要跳过。
+      if (!mounted) return;
     }
     for (WordItem x in widget.words) {
       for(int t = 0; t < widget.playTimes; t++){ 
@@ -409,6 +419,7 @@ class _MainListeningPageState extends State<MainListeningPage> {
         });
         if(!context.mounted) return;
         await playTextToSpeech(x.arabic, speed: widget.playRate);
+        if (!mounted) return;
         setState((){
           state = "播放间隔中...";
         });
@@ -417,6 +428,7 @@ class _MainListeningPageState extends State<MainListeningPage> {
             counter = (i / 10).toString();
           });
           await Future.delayed(Duration(milliseconds: 100));
+          if (!mounted) return;
         }
       }
       setState((){
@@ -427,6 +439,7 @@ class _MainListeningPageState extends State<MainListeningPage> {
           counter = (i / 10).toString();
         });
         await Future.delayed(Duration(milliseconds: 100));
+        if (!mounted) return;
       }
     }
     setState((){
