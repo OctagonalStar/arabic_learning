@@ -41,20 +41,46 @@ if (!window._flutter) {
 _flutter.buildConfig = {"engineRevision":"af7e796e161ae0bb1ff0758c71a7105418bd9ded","wasmHashes":{"skwasm.wasm":"e540fd5e8303b7b68ec2718cb49e9c421f8ade3075b15e02a7059a62654df9a1","skwasm_heavy.wasm":"565f5cc1cca6ab120f11934b105f01fec4b58b480c82e0889dca93af8e6f8635","wimp.wasm":"e924eaafd801d41e017d178f3fd5cf8a417f641fe35c9ed34a4e1d7582283e0c","webparagraph/canvaskit.wasm":"0ce1b05082efdc8529550e8a01f6ff0593972d55525035010e26f5600aa9f254","chromium/canvaskit.wasm":"ae8ff1d858140f7b1300ced3fa89fb8c9dce0a400a0f4f1e11f6dcfb3315fdcf","canvaskit.wasm":"fbed517a43e82452404446683f00f2e876d835aed84410695759e67b6bb01cd3"},"builds":[{"compileTarget":"dart2js","renderer":"canvaskit","mainJsPath":"main.dart.js"},{}]};
 
 
-const loading = document.createElement('div');
-document.body.appendChild(loading);
-loading.textContent = "正在加载中(Step 1)...\n若长时间无响应请尝试更换网络";
+// 启动屏淡出：首帧渲染后移除 #splash。
+// 30s 兜底：仍未就绪则提示加载较慢，但不移除启动屏（此时引擎多半已死）。
+const splash = document.getElementById('splash');
+const splashHint = document.getElementById('splash-hint');
+
+function updateHint(text) {
+  if (splashHint) splashHint.textContent = text;
+}
+
+let splashDone = false;
+function finishSplash() {
+  if (splashDone || !splash) return;
+  splashDone = true;
+  splash.classList.add('is-done');
+  setTimeout(function () {
+    if (splash && splash.parentNode) splash.parentNode.removeChild(splash);
+  }, 400); // 与 index.html 中 #splash 的 0.35s transition 对应
+}
+
+window.addEventListener('flutter-first-frame', finishSplash);
+setTimeout(function () {
+  if (!splashDone) updateHint('加载较慢，请耐心等待或检查网络');
+}, 30000);
+
+updateHint('正在加载中…');
 _flutter.loader.load({
     serviceWorkerSettings: {
-        serviceWorkerVersion: "3335940297" /* Flutter's service worker is deprecated and will be removed in a future Flutter release. */,
+        serviceWorkerVersion: "3371068113" /* Flutter's service worker is deprecated and will be removed in a future Flutter release. */,
     },
     onEntrypointLoaded: async function (engineInitializer) {
-        loading.textContent = "正在加载中(Step 2)...长时间无响应请尝试删除缓存或更换浏览器";
+        updateHint('正在启动引擎…');
         const appRunner = await engineInitializer.initializeEngine({
             'fontFallbackBaseUrl': 'https://fonts.gstatic.cn/s/',
+            // CanvasKit 自托管：从构建产物相对路径加载 WASM，避免 gstatic
+            // 在国内网络下缓慢或被阻断。注意：flutter build web 的输出
+            // 目录必须包含 canvaskit/ 子目录，否则 Web 端无法渲染。
+            'canvasKitBaseUrl': 'canvaskit/',
         });
 
-        loading.textContent = "加载完成正在进入...";
+        updateHint('加载完成，正在进入…');
         await appRunner.runApp();
     },
 });
