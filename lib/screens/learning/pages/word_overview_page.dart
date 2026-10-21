@@ -92,7 +92,6 @@ class _WordCardOverViewPage extends State<WordCardOverViewPage> {
 
   @override
   Widget build(BuildContext context) {
-    context.read<Global>().uiLogger.fine("构建 WordCardOverViewPage: inSearch{$inSearch}");
     MediaQueryData mediaQuery = MediaQuery.of(context);
     return Scaffold(
       // 搜索框位于 AppBar，键盘弹出时不应压缩 body：否则网格 LayoutBuilder

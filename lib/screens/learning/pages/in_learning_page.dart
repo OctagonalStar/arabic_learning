@@ -251,7 +251,6 @@ class _InLearningPageState extends State<InLearningPage> {
 
   @override
   Widget build(BuildContext context) {
-    context.read<Global>().uiLogger.fine("构建 InLearningPage");
     final mediaQuery = MediaQuery.of(context);
     return PopScope(
       canPop: false,
@@ -348,7 +347,7 @@ class _InLearningPageState extends State<InLearningPage> {
               } else if(testItem.testType == 1 || testItem.testType == 2) {
                 // ar-zh choose questions
                 if(isAutoPlay && testItem.testType == 2 && !playedList.contains(testItem)) {
-                  context.read<Global>().uiLogger.fine("自动播放单词发音: [${testItem.testWord.arabic}]");
+                  context.read<Global>().uiLogger.finest(() => "自动播放单词发音: [${testItem.testWord.arabic}]");
                   playTextToSpeech(testItem.testWord.arabic);
                   playedList.add(testItem);
                 }

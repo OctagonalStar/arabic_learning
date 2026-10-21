@@ -57,7 +57,6 @@ class _LocalPKSelectPage extends State<LocalPKSelectPage> {
 
   @override
   Widget build(BuildContext context) {
-    context.read<Global>().uiLogger.info("构建局域网联机主页面");
     MediaQueryData mediaQuery = MediaQuery.of(context);
 
     return Scaffold(
@@ -236,7 +235,6 @@ class _ServerHostWatingPage extends State<ServerHostWatingPage> {
 
   @override
   Widget build(BuildContext context) {
-    context.read<Global>().uiLogger.info("构建局域网联机课程选择页面");
     MediaQueryData mediaQuery = MediaQuery.of(context);
 
     return Scaffold(
@@ -401,7 +399,6 @@ class ClientWatingPage extends StatelessWidget {
   
   @override
   Widget build(BuildContext context) {
-    context.read<Global>().uiLogger.info("构建局域网联机等待页面");
     MediaQueryData mediaQuery = MediaQuery.of(context);
 
     return Scaffold(
@@ -449,7 +446,6 @@ class PKPreparePage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    context.read<Global>().uiLogger.info("构建局域网联机准备页面");
     MediaQueryData mediaQuery = MediaQuery.of(context);
 
     return Scaffold(
@@ -563,7 +559,6 @@ class _PKOngoingPage extends State<PKOngoingPage> {
 
   @override
   Widget build(BuildContext context) {
-    context.read<Global>().uiLogger.info("构建局域网联机对局页面");
     MediaQueryData mediaQuery = MediaQuery.of(context);
 
     return PopScope(
@@ -652,7 +647,6 @@ class PKConclue extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    context.read<Global>().uiLogger.info("构建局域网联机总结");
     MediaQueryData mediaQuery = MediaQuery.of(context);
 
     return Column(

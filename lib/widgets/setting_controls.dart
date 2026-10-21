@@ -104,7 +104,6 @@ class SettingItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    context.read<Global>().uiLogger.info("构建 SettingItem: $title");
     MediaQueryData mediaQuery = MediaQuery.of(context);
     final ColorScheme scheme = Theme.of(context).colorScheme;
     List<Container> decoratedContainers = List.generate(children.length, (int index) {

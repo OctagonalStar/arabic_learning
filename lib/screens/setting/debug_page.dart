@@ -31,7 +31,6 @@ class _DebugPage extends State<DebugPage> {
 
   @override
   Widget build(BuildContext context) {
-    context.read<Global>().uiLogger.info("构建 DebugPage");
 
     List<String> debugInfo = [];
 

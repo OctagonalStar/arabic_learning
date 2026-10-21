@@ -14,7 +14,6 @@ class AboutPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    context.read<Global>().uiLogger.info("构建 AboutPage");
     return Scaffold(
       appBar: AppBar(
         title: Center(child: Text("关于")),

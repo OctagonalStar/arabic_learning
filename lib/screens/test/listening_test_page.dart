@@ -34,7 +34,6 @@ class _ForeListeningSettingPage extends State<ForeListeningSettingPage> {
 
   @override
   Widget build(BuildContext context) {
-    context.read<Global>().uiLogger.info("构建 ForeListeningSettingPage");
     MediaQueryData mediaQuery = MediaQuery.of(context);
     int wordCount = getSelectedWords(AppData().wordData, selectedClasses.selectedClass).length;
     return Scaffold(
@@ -264,10 +263,8 @@ class _MainListeningPageState extends State<MainListeningPage> {
 
   @override
   Widget build(BuildContext context) {
-    context.read<Global>().uiLogger.info("构建 MainListeningPage");
     MediaQueryData mediaQuery = MediaQuery.of(context);
     if(stage == 3) {
-      context.read<Global>().uiLogger.info("构建 MainListeningPage:答案页面");
       // 答案页面
       // creat list view:
       List<Widget> list = [

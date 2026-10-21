@@ -49,7 +49,6 @@ class _PolicyPage extends State<PolicyPage> {
 
   @override
   Widget build(BuildContext context) {
-    context.read<Global>().uiLogger.info("构建PP&TOU签署页面");
 
     return Scaffold(
       body: SafeArea(child: Column(

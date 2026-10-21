@@ -38,7 +38,9 @@ import 'package:provider/provider.dart';
 /// }
 /// ```
 void alart(BuildContext context, String msg, {Function? onConfirmed, Duration delayConfirm = const Duration(), bool destructive = false}) {
-  context.read<Global>().uiLogger.info("构建弹出窗口: 携带信息: $msg ;确认参数: ${onConfirmed != null}; 延迟: ${delayConfirm.inMilliseconds}; 危险操作: $destructive");
+  context.read<Global>().uiLogger.finest(
+    () => "构建弹出窗口: 携带信息: $msg ;确认参数: ${onConfirmed != null}; 延迟: ${delayConfirm.inMilliseconds}; 危险操作: $destructive",
+  );
   showDialog(
     context: context, 
     requestFocus: true,

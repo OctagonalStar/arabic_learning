@@ -44,7 +44,6 @@ class SettingPage extends StatefulWidget {
 class _SettingPage extends State<SettingPage> {
   @override
   Widget build(BuildContext context) {
-    context.read<Global>().uiLogger.fine("构建 SettingPage");
     MediaQueryData mediaQuery = MediaQuery.of(context);
     AppData appData = AppData();
 

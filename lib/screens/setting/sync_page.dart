@@ -30,9 +30,7 @@ class _DataSyncPage extends State<DataSyncPage> {
 
   @override
   Widget build(BuildContext context) {
-    context.read<Global>().uiLogger.info("构建 DataSyncPage");
     enabled ??= AppData().config.webSync.enabled;
-    context.read<Global>().uiLogger.fine("获取WebDAV实例");
     final WebDAV webdav = WebDAV(
       uri: AppData().config.webSync.account.uri, 
       user: AppData().config.webSync.account.userName,

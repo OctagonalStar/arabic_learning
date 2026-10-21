@@ -58,7 +58,7 @@ Future<ClassSelection> popSelectClasses(BuildContext context, {bool withCache = 
         }
       }
     }
-    context.read<Global>().uiLogger.fine("已缓存课程选择: $beforeSelectedClasses");
+    context.read<Global>().uiLogger.finest(() => "已缓存课程选择: $beforeSelectedClasses");
   }
 
   ClassSelection? selectedClasses = await showModalBottomSheet<ClassSelection>(
@@ -79,7 +79,7 @@ Future<ClassSelection> popSelectClasses(BuildContext context, {bool withCache = 
     appData.storage.setString("tempConfig", jsonEncode(tpcMap));
     context.read<Global>().uiLogger.info("课程选择缓存完成");
   }
-  if(context.mounted) context.read<Global>().uiLogger.fine("选择的课程: $selectedClasses");
+  if(context.mounted) context.read<Global>().uiLogger.fine(() => "选择的课程: $selectedClasses");
   return selectedClasses??ClassSelection(selectedClass: [], countInReview: false);
 }
 
@@ -99,7 +99,6 @@ Future<ClassSelection> popSelectClasses(BuildContext context, {bool withCache = 
 /// 
 /// 一般情况下该函数只会在 [ClassSelectPage] 中被使用，若非必要你不应该使用此函数
 List<Widget> classesSelectionList(BuildContext context, Function (ClassItem) onChanged, bool Function (ClassItem) isClassSelected, List<SourceItem>? forceSelectRange, {VoidCallback? onImportDict}) {
-  context.read<Global>().uiLogger.fine("构建课程选择列表");
   late List<SourceItem> sourcesList;
   if(forceSelectRange != null) {
     sourcesList = forceSelectRange;
@@ -188,7 +187,6 @@ List<Widget> classesSelectionList(BuildContext context, Function (ClassItem) onC
       ),
     );
   }
-  context.read<Global>().uiLogger.info("课程选择列表构建完成");
   return widgetList;
 }
 

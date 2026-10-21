@@ -28,7 +28,6 @@ class LearningPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    context.read<Global>().uiLogger.fine("构建 LearningPage");
 
     // 按钮高度按 Tab 可用高度推导（保留原 0.15/0.1/0.25 的比例关系），
     // 矮横屏下整体压缩，手机竖屏/桌面下与原观感接近。

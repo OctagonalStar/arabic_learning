@@ -1,11 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
 
 import 'package:arabic_learning/core/statics.dart';
 import 'package:arabic_learning/screens/learning/fsrs/fsrs_review_page.dart' show MainFSRSPage;
 import 'package:arabic_learning/services/app_data.dart';
 import 'package:arabic_learning/services/fsrs.dart';
-import 'package:arabic_learning/services/global_state.dart';
 import 'package:arabic_learning/services/words.dart';
 import 'package:arabic_learning/widgets/kit.dart' show Button, CategoryFilter, TextContainer;
 import 'package:arabic_learning/widgets/overlays.dart' show alart;
@@ -26,7 +24,6 @@ class ForeFSRSSettingPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    context.read<Global>().uiLogger.info("构建 ForeFSRSSettingPage");
     final FSRS fsrs = FSRS();
     if(fsrs.config.enabled && !forceChoosing) {
       return MainFSRSPage(fsrs: fsrs);

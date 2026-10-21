@@ -1,12 +1,10 @@
 // 学习结算页：从 learning_pages_build.dart 拆分而来。
 import 'dart:async';
 
-import 'package:arabic_learning/services/global_state.dart' show Global;
 import 'package:arabic_learning/widgets/kit.dart' show Button;
 import 'package:arabic_learning/widgets/shared.dart' show ConclusionCard;
 import 'package:flutter/foundation.dart' show clampDouble;
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
 
 class ConcludePage extends StatefulWidget {
   final List<int> data; // [wordCount, correctCount, secondsCount]
@@ -59,7 +57,6 @@ class _ConcludePageState extends State<ConcludePage> {
 
   @override
   Widget build(BuildContext context) {
-    context.read<Global>().uiLogger.fine("构建 ConcludePage");
     // 结果卡尺寸按页面实际可用约束推导并夹在合理区间；高度不足时整页可滚动，
     // 避免矮横屏下三张卡片 + 间距 + 按钮超出视口。
     return LayoutBuilder(

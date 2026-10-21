@@ -130,7 +130,6 @@ class _FSRSReviewCardPage extends State<FSRSReviewCardPage> {
 
   @override
   Widget build(BuildContext context) {
-    context.read<Global>().uiLogger.info("构建 FSRSReviewCardPage");
     MediaQueryData mediaQuery = MediaQuery.of(context);
     final List<WordItem> wordData = AppData().wordData.words;
 

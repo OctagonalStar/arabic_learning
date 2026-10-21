@@ -2,13 +2,11 @@ import 'dart:math';
 
 import 'package:flutter/foundation.dart' show clampDouble;
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
 
 import 'package:arabic_learning/core/statics.dart';
 import 'package:arabic_learning/screens/learning/fsrs/fsrs_review_card_page.dart' show FSRSReviewCardPage;
 import 'package:arabic_learning/screens/learning/fsrs/fsrs_setting_page.dart' show ForeFSRSSettingPage;
 import 'package:arabic_learning/services/fsrs.dart';
-import 'package:arabic_learning/services/global_state.dart';
 import 'package:arabic_learning/theme/tokens.dart' show AppMotion;
 import 'package:arabic_learning/widgets/kit.dart' show Button, TextContainer;
 
@@ -67,7 +65,6 @@ class _MainFSRSPageState extends State<MainFSRSPage> {
 
   @override
   Widget build(BuildContext context) {
-    context.read<Global>().uiLogger.info("构建 MainFSRSPage, 动态队列长度: ${queue.length}");
     MediaQueryData mediaQuery = MediaQuery.of(context);
     void Function(void Function()) refreshProgress =(_)=>();
 
@@ -79,7 +76,6 @@ class _MainFSRSPageState extends State<MainFSRSPage> {
             if(queue.isNotEmpty) StatefulBuilder(
               builder: (context, setLocalState) {
                 refreshProgress = setLocalState;
-                context.read<Global>().uiLogger.fine("刷新复习进度条");
                 return TweenAnimationBuilder(
                   tween: Tween<double>(
                     begin: 0,

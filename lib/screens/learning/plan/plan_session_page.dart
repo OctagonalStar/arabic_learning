@@ -510,8 +510,8 @@ class _PlanSessionPageState extends State<PlanSessionPage> {
       if (_autoPlay &&
           testItem.testType == 2 &&
           !_playedList.contains(testItem)) {
-        context.read<Global>().uiLogger.fine(
-          "自动播放单词发音: [${testItem.testWord.arabic}]",
+        context.read<Global>().uiLogger.finest(
+          () => "自动播放单词发音: [${testItem.testWord.arabic}]",
         );
         playTextToSpeech(testItem.testWord.arabic);
         _playedList.add(testItem);

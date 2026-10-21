@@ -31,7 +31,6 @@ class _QuestionsSettingPage extends State<QuestionsSettingPage> {
 
   @override
   Widget build(BuildContext context) {
-    context.read<Global>().uiLogger.info("构建 QuestionsSettingPage:$selectedTypes");
     late final QuizConfig section;
     section = AppData().config.quiz;
     selectedTypes ??= List.from(section.questionSections);

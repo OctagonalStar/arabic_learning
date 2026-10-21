@@ -51,7 +51,7 @@ class _WordLookupLayoutState extends State<WordLookupLayout> {
       match = match.where((WordItem word) => FavoriteStore().contains(word.id)).toList();
     }
 
-    context.read<Global>().uiLogger.finer("单词检索结果: ${match.length} 条");
+    context.read<Global>().uiLogger.finest(() => "单词检索结果: ${match.length} 条");
     if(!AppData().config.learning.wordLookupRealtime){
       // 固定展示延迟属业务时序（等待列表渲染完成），不参与动效 token 化。
       Future.delayed(Durations.medium1, () {

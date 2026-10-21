@@ -94,7 +94,6 @@ class _SynonymPage extends State<SynonymPage> {
 
   @override
   Widget build(BuildContext context) {
-    context.read<Global>().uiLogger.fine("构建 SynonymPage");
     MediaQueryData mediaQuery = MediaQuery.of(context);
     final List<GlossPair> synonyms = store.synonymList;
     final List<GlossPair> distincts = store.distinctList;

@@ -82,14 +82,13 @@ class _ChoiceQuestions extends State<ChoiceQuestions> {
 
   @override
   Widget build(BuildContext context) {
-    context.read<Global>().uiLogger.info("构建选择题页面: 主单词: ${widget.mainWord};选项: ${widget.choices}");
     MediaQueryData mediaQuery = MediaQuery.of(context);
     int showingMode = widget.bottonLayout;
     // showingMode 0: 1 Row, 1: 2 Rows, 2: 4 Rows
     if(showingMode == -1){
-      context.read<Global>().uiLogger.fine("未指定布局，开始计算");
+      context.read<Global>().uiLogger.finest("未指定布局，开始计算");
       showingMode = calculateButtonBoxLayout(widget.choices, AdaptiveScope.of(context));
-      context.read<Global>().uiLogger.info("最终采用布局方案: $showingMode");
+      context.read<Global>().uiLogger.finest(() => "最终采用布局方案: $showingMode");
     }
     return Material(
       child: Center(
@@ -173,7 +172,6 @@ class WordCardQuestion extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    context.read<Global>().uiLogger.info("构建单词卡片页面，主单词: ${word.arabic}");
     MediaQueryData mediaQuery = MediaQuery.of(context);
     return Material(
       child: Column(
@@ -239,7 +237,6 @@ class SelfRatingQuestion extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    context.read<Global>().uiLogger.info("构建自我评级题目，主单词: ${word.arabic}");
     final MediaQueryData mediaQuery = MediaQuery.of(context);
     final int showingMode = calculateButtonBoxLayout(choices, AdaptiveScope.of(context));
     return Material(
@@ -309,7 +306,6 @@ class _SpellQuestion extends State<SpellQuestion> {
 
   @override
   Widget build(BuildContext context) {
-    context.read<Global>().uiLogger.info("构建拼写题页面，主单词: ${widget.word.arabic}");
     MediaQueryData mediaQuery = MediaQuery.of(context);
     return Material(
       child: Column(
@@ -416,13 +412,12 @@ class _ListeningQuestion extends State<ListeningQuestion> {
 
   @override
   Widget build(BuildContext context) {
-    context.read<Global>().uiLogger.info("构建听力题页面: 主单词: ${widget.mainWord};选项: ${widget.choices}");
     MediaQueryData mediaQuery = MediaQuery.of(context);
     int showingMode = widget.bottonLayout;
     if(showingMode == -1){
-      context.read<Global>().uiLogger.fine("未指定布局，开始计算");
+      context.read<Global>().uiLogger.finest("未指定布局，开始计算");
       showingMode = calculateButtonBoxLayout(widget.choices, AdaptiveScope.of(context));
-      context.read<Global>().uiLogger.info("最终采用布局方案: $showingMode");
+      context.read<Global>().uiLogger.finest(() => "最终采用布局方案: $showingMode");
     }
     return Material(
       child: Center(
