@@ -3,7 +3,7 @@
 // 本文件只做 re-export，不再承载实现；实现按职责拆分到同目录的：
 // - widgets/app_button.dart       基础按钮 Button
 // - widgets/text_container.dart   纯展示容器 TextContainer
-// - widgets/category_chips.dart   分类标签 CategoryChips / 筛选 CategoryFilter
+// - widgets/category_chips.dart   分类标签 CategoryChips / 筛选 CategoryFilter / 单选 chip SelectChip
 // - widgets/choose_buttons.dart   选择题选项 ChooseButtons / ChooseButtonBox
 // - widgets/class_select.dart     课程选择 popSelectClasses / classesSelectionList / ClassSelectPage
 // - widgets/setting_controls.dart 设置控件 SettingItem / SettingRow / SettingRedirctButton

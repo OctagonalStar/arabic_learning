@@ -19,10 +19,11 @@
 // 公开 API 与拆分前完全一致（含静态常量与 [buildDeterministicAssetUrl]）。
 
 import 'dart:async';
-import 'dart:convert';
 
 import 'package:arabic_learning/core/statics.dart';
+import 'package:arabic_learning/models/config.dart' show Config;
 import 'package:arabic_learning/services/app_data.dart';
+import 'package:arabic_learning/services/global_state.dart' show Global;
 import 'package:arabic_learning/services/http_client.dart';
 import 'package:arabic_learning/services/notifications.dart' as notifications;
 import 'package:arabic_learning/services/update/github_release.dart' as release;
@@ -678,29 +679,24 @@ class UpdateService extends ChangeNotifier {
   Future<void> skipVersion() async {
     final int? latest = _latestVersionInt;
     if (latest == null) return;
-    AppData().config = AppData().config.copyWith(
-      regular: AppData().config.regular.copyWith(skippedVersion: latest),
+    await Global().patchConfig(
+      (Config config) => config.copyWith(
+        regular: config.regular.copyWith(skippedVersion: latest),
+      ),
+      refresh: false,
     );
-    await _persistSetting();
     notifyListeners();
   }
 
   /// 恢复被跳过的版本提示（设置页「恢复提示」）。
   Future<void> unskipVersion() async {
-    AppData().config = AppData().config.copyWith(
-      regular: AppData().config.regular.copyWith(skippedVersion: 0),
+    await Global().patchConfig(
+      (Config config) => config.copyWith(
+        regular: config.regular.copyWith(skippedVersion: 0),
+      ),
+      refresh: false,
     );
-    await _persistSetting();
     notifyListeners();
-  }
-
-  /// 直接落盘设置。等价于 `Global.updateSetting(refresh: false)` 的持久化部分：
-  /// [Global] 是通过 Provider 提供的实例，服务层无法取得，故此处只做存储写入。
-  Future<void> _persistSetting() async {
-    await AppData().storage.setString(
-      'settingData',
-      jsonEncode(AppData().config.toMap()),
-    );
   }
 
   // ---------------------------------------------------------------------------

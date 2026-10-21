@@ -2,6 +2,7 @@
 import 'dart:async';
 
 import 'package:arabic_learning/core/extensions.dart' show StringExtensions;
+import 'package:arabic_learning/models/config.dart' show Config;
 import 'package:arabic_learning/screens/setting/dict_manage_page.dart' show DictManagePage;
 import 'package:arabic_learning/services/app_data.dart' show AppData;
 import 'package:arabic_learning/services/global_state.dart' show Global;
@@ -191,13 +192,15 @@ class _WordCardOverViewPage extends State<WordCardOverViewPage> {
                                 size: Size(mediaQuery.size.width * 0.6, 100),
                                 onPressed: (){
                                   setState(() {
-                                    AppData().config = AppData().config.copyWith(
-                                      learning: AppData().config.learning.copyWith(
-                                        overviewForceColumn: forceCloumn,
-                                        wordLookupRealtime: lookupRealtime
-                                      )
+                                    context.read<Global>().patchConfig(
+                                      (Config config) => config.copyWith(
+                                        learning: config.learning.copyWith(
+                                          overviewForceColumn: forceCloumn,
+                                          wordLookupRealtime: lookupRealtime
+                                        ),
+                                      ),
+                                      refresh: false,
                                     );
-                                    context.read<Global>().updateSetting(refresh: false);
                                   });
                                   Navigator.pop(context);
                                 }, 

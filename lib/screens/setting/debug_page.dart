@@ -9,6 +9,7 @@ import 'package:arabic_learning/widgets/shared.dart' show SettingCard;
 import 'package:arabic_learning/core/adaptive.dart' show AdaptiveScope;
 import 'package:arabic_learning/core/extensions.dart';
 import 'package:arabic_learning/core/statics.dart';
+import 'package:arabic_learning/models/config.dart' show Config;
 import 'package:arabic_learning/services/global_state.dart';
 import 'package:arabic_learning/services/app_data.dart';
 import 'package:arabic_learning/theme/tokens.dart' show AppMotion;
@@ -70,12 +71,12 @@ class _DebugPage extends State<DebugPage> {
                 Switch(
                   value: AppData().config.debug.enableInternalLog, 
                   onChanged: (value){
-                    AppData().config = AppData().config.copyWith(
-                      debug: AppData().config.debug.copyWith(enableInternalLog: value)
+                    context.read<Global>().patchConfig(
+                      (Config config) => config.copyWith(
+                        debug: config.debug.copyWith(enableInternalLog: value)
+                      ),
                     );
-                    setState(() {
-                      context.read<Global>().updateSetting();
-                    });
+                    setState(() {});
                   }
                 )
               ],
@@ -102,10 +103,11 @@ class _DebugPage extends State<DebugPage> {
                   ], 
                   value:AppData().config.debug.internalLevel,
                   onChanged: (value) {
-                    AppData().config = AppData().config.copyWith(
-                      debug: AppData().config.debug.copyWith(internalLevel: value)
+                    context.read<Global>().patchConfig(
+                      (Config config) => config.copyWith(
+                        debug: config.debug.copyWith(internalLevel: value)
+                      ),
                     );
-                    context.read<Global>().updateSetting();
                   }
                 )
               ],

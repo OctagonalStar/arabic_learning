@@ -5,7 +5,7 @@ import 'dart:convert';
 
 import 'package:arabic_learning/core/date_utils.dart';
 import 'package:arabic_learning/core/statics.dart';
-import 'package:arabic_learning/models/config.dart' show Config, RegularConfig;
+import 'package:arabic_learning/models/config.dart' show Config, LearningConfig, RegularConfig;
 import 'package:arabic_learning/models/dict.dart' show DictData;
 import 'package:arabic_learning/models/reading.dart' show ReadingData;
 import 'package:arabic_learning/services/app_data.dart' show AppData;
@@ -212,6 +212,26 @@ class Global with ChangeNotifier {
     }
   }
 
+  /// 以不可变方式打补丁到 [Config] 并持久化；内容未变时 [updateSetting] 会跳过写盘。
+  ///
+  /// 这是「改设置」的唯一入口，取代散落各处的
+  /// `AppData().config = AppData().config.copyWith(...); updateSetting();` 样板：
+  /// 调用方只需描述「从当前配置到新配置」的变换，读-改-写与落盘时机由这里保证。
+  ///
+  /// [patch] 收到的是当前配置，必须返回**新**实例（内部一律 `copyWith`）。
+  /// [refresh] 与 [updateSetting] 的同名参数一致：默认 `true` 会走
+  /// `refreshApp()`（重建主题 + 通知监听者）；服务层等无 UI 的场景传 `false`。
+  ///
+  /// 返回的 Future 只在需要「确认已落盘」时 await（例如服务层）；UI 回调里
+  /// 直接作为语句调用即可，与改造前 `updateSetting()` 不 await 的时序一致。
+  Future<void> patchConfig(
+    Config Function(Config current) patch, {
+    bool refresh = true,
+  }) async {
+    AppData().config = patch(AppData().config);
+    await updateSetting(refresh: refresh);
+  }
+
   // 更新配置到存储中
   Future<void> updateSetting({Map<String, dynamic>? settingData, bool refresh = true}) async {
     logger.info("保存配置文件中");
@@ -298,11 +318,17 @@ class Global with ChangeNotifier {
     if (nowDate == AppData().config.learning.lastDate) return;
     logger.info("保存学习进度中");
     // 以 2025/11/1 为基准计算天数（因为这个bug是这天修的:} ）
-    if (nowDate - AppData().config.learning.lastDate > 1) {
-      AppData().config = AppData().config.copyWith(learning: AppData().config.learning.copyWith(startDate: nowDate));
-    }
-    AppData().config = AppData().config.copyWith(learning: AppData().config.learning.copyWith(lastDate: nowDate));
-    updateSetting(refresh: false);
+    // startDate 与 lastDate 在同一次 patch 里写入：原先的两次赋值之间没有任何
+    // 读取点，合并后只落盘一次。
+    patchConfig((Config config) {
+      final LearningConfig learning = config.learning;
+      return config.copyWith(
+        learning: learning.copyWith(
+          startDate: nowDate - learning.lastDate > 1 ? nowDate : learning.startDate,
+          lastDate: nowDate,
+        ),
+      );
+    }, refresh: false);
     logger.info("学习进度保存完成");
   }
 }

@@ -1,7 +1,6 @@
 // 单词检索结果布局：从 learning_pages_build.dart 拆分而来。
 import 'dart:math';
 
-import 'package:arabic_learning/core/statics.dart' show StaticsVar;
 import 'package:arabic_learning/models/dict.dart' show WordItem;
 import 'package:arabic_learning/services/app_data.dart' show AppData;
 import 'package:arabic_learning/services/favorites.dart' show FavoriteStore;
@@ -11,7 +10,7 @@ import 'package:arabic_learning/services/words.dart'
     show collectAllCategories, wordMatchesCategories;
 import 'package:arabic_learning/theme/tokens.dart' show AppSpacing;
 import 'package:arabic_learning/widgets/flip_word_card.dart' show FlipWordCard;
-import 'package:arabic_learning/widgets/kit.dart' show CategoryFilter;
+import 'package:arabic_learning/widgets/kit.dart' show CategoryFilter, SelectChip;
 import 'package:arabic_learning/widgets/motion.dart' show StaggeredEntrance;
 import 'package:arabic_learning/widgets/overlays.dart' show showSnackBar;
 import 'package:flutter/material.dart';
@@ -70,25 +69,9 @@ class _WordLookupLayoutState extends State<WordLookupLayout> {
           padding: const EdgeInsets.fromLTRB(AppSpacing.sm, AppSpacing.xs, AppSpacing.sm, 0),
           child: Row(
             children: [
-              FilterChip(
-                label: Text(
-                  "仅收藏",
-                  style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                    color: _onlyFavorite ? scheme.onSecondaryContainer : scheme.onSurfaceVariant,
-                  ),
-                ),
+              SelectChip(
+                label: "仅收藏",
                 selected: _onlyFavorite,
-                showCheckmark: false,
-                visualDensity: VisualDensity.compact,
-                materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                selectedColor: scheme.secondaryContainer,
-                backgroundColor: scheme.surfaceContainerLow,
-                shape: RoundedRectangleBorder(
-                  borderRadius: StaticsVar.br,
-                  side: BorderSide(
-                    color: _onlyFavorite ? scheme.secondary : scheme.outlineVariant,
-                  ),
-                ),
                 onSelected: (bool value) {
                   setState(() {
                     _onlyFavorite = value;

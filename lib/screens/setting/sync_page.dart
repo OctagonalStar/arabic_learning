@@ -370,16 +370,17 @@ Future<void> popAccountSetting(BuildContext context) async {
                 alart(context, e.toString());
                 return;
               }
-              AppData().config = AppData().config.copyWith(
-                webSync: AppData().config.webSync.copyWith(
-                  account: SyncAccountConfig(
-                    uri: uriController.text,
-                    userName: accountController.text,
-                    passWord: passwdController.text
+              context.read<Global>().patchConfig(
+                (Config config) => config.copyWith(
+                  webSync: config.webSync.copyWith(
+                    account: SyncAccountConfig(
+                      uri: uriController.text,
+                      userName: accountController.text,
+                      passWord: passwdController.text
+                    )
                   )
                 )
               );
-              context.read<Global>().updateSetting();
               uriController.dispose();
               accountController.dispose();
               passwdController.dispose();

@@ -62,6 +62,53 @@ class CategoryChips extends StatelessWidget {
   }
 }
 
+/// 多选筛选 chip（统一外观）
+///
+/// 三个调用点（分类筛选、检索页「仅收藏」、复习题型多选）原本各自手写同一份
+/// `FilterChip` 参数：labelMedium 文案 + 无勾选图标 + 紧凑密度 + 选中/未选中的
+/// 容器色与描边。抽成组件后外观只有一处定义，改动不会只落到某一个页面。
+///
+/// [onSelected] 直接透传 `FilterChip.onSelected`（布尔值是「新的选中态」），
+/// 选中集合的维护仍由调用方负责。
+class SelectChip extends StatelessWidget {
+  final String label;
+  final bool selected;
+  final ValueChanged<bool> onSelected;
+  const SelectChip({
+    super.key,
+    required this.label,
+    required this.selected,
+    required this.onSelected,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final ColorScheme scheme = Theme.of(context).colorScheme;
+    return FilterChip(
+      label: Text(
+        label,
+        style: Theme.of(context).textTheme.labelMedium?.copyWith(
+          // 未选中时与 chipTheme.labelStyle 的 onSurfaceVariant 保持一致
+          color: selected ? scheme.onSecondaryContainer : scheme.onSurfaceVariant,
+        ),
+      ),
+      selected: selected,
+      showCheckmark: false,
+      visualDensity: VisualDensity.compact,
+      materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+      selectedColor: scheme.secondaryContainer,
+      backgroundColor: scheme.surfaceContainerLow,
+      shape: RoundedRectangleBorder(
+        borderRadius: StaticsVar.br,
+        side: BorderSide(
+          color: selected ? scheme.secondary : scheme.outlineVariant,
+        ),
+      ),
+      onSelected: onSelected,
+    );
+  }
+}
+
 /// 分类筛选组件
 /// 
 /// [available] :可供选择的分类列表（展示顺序由调用方决定，组件不硬编码顺序）
@@ -138,30 +185,9 @@ class CategoryFilter extends StatelessWidget {
             children: List<Widget>.generate(available.length, (int index) {
               final String category = available[index];
               final bool isSelected = selected.contains(category);
-              return FilterChip(
-                label: Text(
-                  category,
-                  style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                    // 未选中时与 chipTheme.labelStyle 的 onSurfaceVariant 保持一致
-                    color: isSelected
-                      ? Theme.of(context).colorScheme.onSecondaryContainer
-                      : Theme.of(context).colorScheme.onSurfaceVariant,
-                  ),
-                ),
+              return SelectChip(
+                label: category,
                 selected: isSelected,
-                showCheckmark: false,
-                visualDensity: VisualDensity.compact,
-                materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                selectedColor: Theme.of(context).colorScheme.secondaryContainer,
-                backgroundColor: Theme.of(context).colorScheme.surfaceContainerLow,
-                shape: RoundedRectangleBorder(
-                  borderRadius: StaticsVar.br,
-                  side: BorderSide(
-                    color: isSelected
-                      ? Theme.of(context).colorScheme.secondary
-                      : Theme.of(context).colorScheme.outlineVariant,
-                  ),
-                ),
                 onSelected: (bool value) {
                   final Set<String> next = Set<String>.of(selected);
                   if(value) {

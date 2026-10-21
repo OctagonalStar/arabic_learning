@@ -5,7 +5,7 @@ import 'package:arabic_learning/screens/learning/fsrs/fsrs_review_page.dart' sho
 import 'package:arabic_learning/services/app_data.dart';
 import 'package:arabic_learning/services/fsrs.dart';
 import 'package:arabic_learning/services/words.dart';
-import 'package:arabic_learning/widgets/kit.dart' show Button, CategoryFilter, TextContainer;
+import 'package:arabic_learning/widgets/kit.dart' show Button, CategoryFilter, SelectChip, TextContainer;
 import 'package:arabic_learning/widgets/overlays.dart' show alart;
 import 'package:arabic_learning/widgets/shared.dart' show SettingCard;
 
@@ -239,29 +239,9 @@ class ForeFSRSSettingPage extends StatelessWidget {
                       runSpacing: 6.0,
                       children: List<Widget>.generate(reviewCastMap.length, (int index) {
                         final bool isSelected = fsrs.config.reviewQuestionSections.contains(index);
-                        return FilterChip(
-                          label: Text(
-                            reviewCastMap[index]!,
-                            style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                              color: isSelected
-                                ? Theme.of(context).colorScheme.onSecondaryContainer
-                                : Theme.of(context).colorScheme.onSurfaceVariant,
-                            ),
-                          ),
+                        return SelectChip(
+                          label: reviewCastMap[index]!,
                           selected: isSelected,
-                          showCheckmark: false,
-                          visualDensity: VisualDensity.compact,
-                          materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                          selectedColor: Theme.of(context).colorScheme.secondaryContainer,
-                          backgroundColor: Theme.of(context).colorScheme.surfaceContainerLow,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: StaticsVar.br,
-                            side: BorderSide(
-                              color: isSelected
-                                ? Theme.of(context).colorScheme.secondary
-                                : Theme.of(context).colorScheme.outlineVariant,
-                            ),
-                          ),
                           onSelected: (bool value) {
                             final Set<int> next = fsrs.config.reviewQuestionSections.toSet();
                             if(value) {
