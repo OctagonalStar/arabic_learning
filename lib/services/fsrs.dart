@@ -458,6 +458,32 @@ class FSRS {
     return _cardIndexById.containsKey(wordId);
   }
 
+  /// 取某词的 FSRS 卡片（未初始化 / 无记录时返回 null）。
+  Card? cardFor(int wordId) {
+    if (!_inited) return null;
+    final int? index = _cardIndexById[wordId];
+    return index == null ? null : config.cards[index];
+  }
+
+  /// 取某词最近一次复习日志（未初始化 / 无记录时返回 null）。
+  ///
+  /// 数据模型每张卡只保留**一条**日志（复习时原地覆盖），因此这里拿到的就是
+  /// 最近一次复习；历史记录未持久化。
+  ReviewLog? logFor(int wordId) {
+    if (!_inited) return null;
+    final int? index = _logIndexByCardId[wordId];
+    return index == null ? null : config.reviewLogs[index];
+  }
+
+  /// 某词当前的可提取率（0–1）；无卡片 / 没复习过 / 无稳定度时返回 null。
+  ///
+  /// 与调度器同一套参数；[FSRSConfig.scheduler] 为空时用默认调度器。
+  double? retrievabilityFor(int wordId) {
+    final Card? card = cardFor(wordId);
+    if (card == null || card.lastReview == null || card.stability == null) return null;
+    return (config.scheduler ?? Scheduler()).getCardRetrievability(card);
+  }
+
   Rating calculate(int duration, bool isCorrect) {
     // duration in milliseconds
     if (!isCorrect) {

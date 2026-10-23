@@ -23,13 +23,16 @@ import 'dart:ui' show ImageFilter;
 
 import 'package:arabic_learning/models/dict.dart' show WordItem;
 import 'package:arabic_learning/services/favorites.dart' show FavoriteStore;
+import 'package:arabic_learning/services/fsrs.dart' show FSRS;
 import 'package:arabic_learning/services/memberships.dart' show WordMembership, WordMembershipIndex;
 import 'package:arabic_learning/services/tts.dart' show playTextToSpeech;
-import 'package:arabic_learning/theme/tokens.dart' show AppMotion, AppRadius, AppSpacing;
+import 'package:arabic_learning/theme/tokens.dart' show AppMotion, AppRadius, AppSemanticColors, AppSpacing;
 import 'package:arabic_learning/theme/typography.dart' show arabicStyle, withoutColor;
 import 'package:arabic_learning/widgets/kit.dart' show Button, CategoryChips;
 import 'package:arabic_learning/widgets/shared.dart' show ButtonLabel;
 import 'package:flutter/material.dart';
+// fsrs 的 Card / State 与 Material / Flutter 同名类冲突，统一加前缀引用。
+import 'package:fsrs/fsrs.dart' as fsrs;
 
 /// 正面卡片底部提示文案（未遮挡释义）。
 const String _expandHint = '点击查看更多信息';
@@ -519,6 +522,8 @@ class _FlipCardDetailBody extends StatelessWidget {
                     SizedBox(height: gapXs),
                     CategoryChips(categories: word.categories, dense: true, scale: scale),
                   ],
+                  // ── 记忆状态（FSRS 有该词记录时才出现，无记录不占位） ──
+                  _buildMemorySection(context, scale, gapXs, gapXxs),
                   // ── 页脚：归属课程（可能跨多词库 / 多课程） ──
                   if (memberships.isNotEmpty) ...[
                     SizedBox(height: gapXs),
@@ -566,6 +571,22 @@ class _FlipCardDetailBody extends StatelessWidget {
           ),
         );
       },
+    );
+  }
+
+  /// 记忆状态区：FSRS 中有该词的卡片记录时才渲染，否则完全省略。
+  ///
+  /// 懒读全局单例 [FSRS]（非监听，不参与重建）；
+  /// 与其它分组一样按 [scale] 放大后由外层 [FittedBox] 兜底。
+  Widget _buildMemorySection(BuildContext context, double scale, double gapXs, double gapXxs) {
+    final fsrs.Card? card = FSRS().cardFor(word.id);
+    if (card == null) return const SizedBox.shrink();
+    return _FlipCardMemorySection(
+      card: card,
+      log: FSRS().logFor(word.id),
+      scale: scale,
+      gapXs: gapXs,
+      gapXxs: gapXxs,
     );
   }
 }
@@ -698,6 +719,211 @@ class _FlipCardMorphChip extends StatelessWidget {
             overflow: TextOverflow.ellipsis,
             style: isArabic ? arabicStyle(context, base: valueStyle) : valueStyle,
           ),
+        ],
+      ),
+    );
+  }
+}
+
+/// 反面「记忆状态」区：难度 / 可提取率 / 下次复习三枚等高紧凑数值块 + 一行最近复习。
+///
+/// 仅在 FSRS 存在该词的卡片时由 [_FlipCardDetailBody] 挂载，无记录完全不占位。
+/// 布局刻意横向紧凑（三块并排 + 单行摘要），避免推高详情列总高导致整卡缩小。
+/// 颜色语义：
+/// - 评分 再来=错误色 / 困难=警告色 / 一般=主题色 / 简单=成功色；
+/// - 难度 ≤4.5=成功色 / ≤7=警告色 / >7=错误色（越低越轻松）；
+/// - 可提取率 ≥0.9=成功色 / ≥0.7=警告色 / <0.7=错误色（0.9 为 FSRS 默认目标保持率）；
+/// - 逾期用错误色提示。均经主题扩展 [AppSemanticColors] 保证亮暗主题均可读。
+class _FlipCardMemorySection extends StatelessWidget {
+  final fsrs.Card card;
+  final fsrs.ReviewLog? log;
+  final double scale;
+
+  /// 已按 [scale] 预乘的区块间距（与详情列其它分组共用同一节奏）。
+  final double gapXs;
+  final double gapXxs;
+
+  const _FlipCardMemorySection({
+    required this.card,
+    required this.log,
+    required this.scale,
+    required this.gapXs,
+    required this.gapXxs,
+  });
+
+  /// 评分 → 中文标签。
+  String _ratingLabel(fsrs.Rating rating) {
+    switch (rating) {
+      case fsrs.Rating.again: return "重来";
+      case fsrs.Rating.hard: return "困难";
+      case fsrs.Rating.good: return "一般";
+      case fsrs.Rating.easy: return "简单";
+    }
+  }
+
+  /// 评分 → 语义色（主题扩展缺色时回退主题色）。
+  Color _ratingColor(fsrs.Rating rating, AppSemanticColors semantic, ColorScheme scheme) {
+    switch (rating) {
+      case fsrs.Rating.again: return semantic.error;
+      case fsrs.Rating.hard: return semantic.warning;
+      case fsrs.Rating.good: return scheme.primary;
+      case fsrs.Rating.easy: return semantic.success;
+    }
+  }
+
+  /// `due` 相对今天的文案：已逾期 N 天 / 今天 / N 天后（按自然日比较）。
+  String _dueText(DateTime due, DateTime now) {
+    final DateTime today = DateTime(now.year, now.month, now.day);
+    final DateTime dueDay = DateTime(due.year, due.month, due.day);
+    final int days = dueDay.difference(today).inDays;
+    if (days < 0) return "已逾期 ${-days} 天";
+    if (days == 0) return "今天";
+    return "$days 天后";
+  }
+
+  /// 难度 → 语义色：越低越轻松（≤4.5 成功 / ≤7 警告 / >7 错误）。
+  Color? _difficultyColor(double? difficulty, AppSemanticColors semantic) {
+    if (difficulty == null) return null;
+    if (difficulty <= 4.5) return semantic.success;
+    if (difficulty <= 7.0) return semantic.warning;
+    return semantic.error;
+  }
+
+  /// 可提取率 → 语义色：≥0.9 成功 / ≥0.7 警告 / <0.7 错误
+  /// （0.9 为 FSRS 默认目标保持率，低于阈值越远越危险）。
+  Color? _retrievabilityColor(double? retrievability, AppSemanticColors semantic) {
+    if (retrievability == null) return null;
+    if (retrievability >= 0.9) return semantic.success;
+    if (retrievability >= 0.7) return semantic.warning;
+    return semantic.error;
+  }
+
+  /// 极简日期格式化（yyyy-MM-dd），不引入 intl。
+  String _formatDate(DateTime d) {
+    final String m = d.month.toString().padLeft(2, '0');
+    final String day = d.day.toString().padLeft(2, '0');
+    return "${d.year}-$m-$day";
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final ColorScheme scheme = Theme.of(context).colorScheme;
+    final TextTheme textTheme = Theme.of(context).textTheme;
+    final AppSemanticColors semantic =
+        Theme.of(context).extension<AppSemanticColors>() ?? AppSemanticColors.of(scheme);
+    final DateTime now = DateTime.now();
+    final double? retrievability = FSRS().retrievabilityFor(card.cardId);
+
+    // 三枚数值块：难度 / 可提取率 / 下次复习；空值以「—」占位保持对齐。
+    final List<(String, String, Color?, String?)> stats = <(String, String, Color?, String?)>[
+      ("难度", card.difficulty?.toStringAsFixed(1) ?? "—",
+          _difficultyColor(card.difficulty, semantic), null),
+      ("可提取率", retrievability != null ? "${(retrievability * 100).round()}%" : "—",
+          _retrievabilityColor(retrievability, semantic), null),
+      ("下次复习", _dueText(card.due, now),
+          card.due.isBefore(now) ? semantic.error : null, _formatDate(card.due)),
+    ];
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _FlipCardSectionLabel(icon: Icons.insights_outlined, label: "记忆状态", scale: scale),
+        SizedBox(height: gapXxs),
+        // IntrinsicHeight + stretch：三块以最高者（含绝对日期小注）为准严格等高，
+        // 内容各自顶部对齐，不使用固定像素高度。
+        IntrinsicHeight(
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              for (int i = 0; i < stats.length; i++) ...[
+                if (i > 0) SizedBox(width: gapXxs),
+                Expanded(
+                  child: _memoryTile(
+                    label: stats[i].$1,
+                    value: stats[i].$2,
+                    valueColor: stats[i].$3,
+                    hint: stats[i].$4,
+                    scheme: scheme,
+                    textTheme: textTheme,
+                  ),
+                ),
+              ],
+            ],
+          ),
+        ),
+        if (log != null) ...[
+          SizedBox(height: gapXxs),
+          // 最近一次复习：彩色评分 + 日期（+ 可选用时），单行省略兜底。
+          Text.rich(
+            TextSpan(
+              children: <InlineSpan>[
+                TextSpan(text: "上次复习："),
+                TextSpan(
+                  text: _ratingLabel(log!.rating),
+                  style: TextStyle(color: _ratingColor(log!.rating, semantic, scheme), fontWeight: FontWeight.bold),
+                ),
+                TextSpan(text: " · ${_formatDate(log!.reviewDateTime)}"),
+                if (log!.reviewDuration != null && log!.reviewDuration! > 0)
+                  TextSpan(text: " · 用时 ${(log!.reviewDuration! / 1000).toStringAsFixed(1)} 秒"),
+              ],
+            ),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: _scaledTextStyle(
+              textTheme.labelSmall,
+              scale,
+              color: scheme.onSurfaceVariant,
+            ),
+          ),
+        ],
+      ],
+    );
+  }
+
+  /// 单枚数值块：上小标签 / 下主值（+ 可选灰值小注），样式与词形芯片同族。
+  Widget _memoryTile({
+    required String label,
+    required String value,
+    required Color? valueColor,
+    required String? hint,
+    required ColorScheme scheme,
+    required TextTheme textTheme,
+  }) {
+    return Container(
+      padding: EdgeInsets.symmetric(horizontal: AppSpacing.xs * scale, vertical: AppSpacing.xxs * scale),
+      decoration: BoxDecoration(
+        color: scheme.surfaceContainerLow,
+        borderRadius: BorderRadius.circular(AppRadius.control * scale),
+        border: Border.all(color: scheme.outlineVariant, width: scale),
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            label,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: _scaledTextStyle(textTheme.labelSmall, scale, color: scheme.onSurfaceVariant),
+          ),
+          Text(
+            value,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: _scaledTextStyle(
+              textTheme.labelMedium,
+              scale,
+              color: valueColor ?? scheme.onSurface,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          if (hint != null)
+            Text(
+              hint,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: _scaledTextStyle(textTheme.labelSmall, scale, color: scheme.onSurfaceVariant),
+            ),
         ],
       ),
     );
