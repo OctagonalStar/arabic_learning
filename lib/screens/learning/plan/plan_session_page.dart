@@ -78,6 +78,9 @@ class _PlanSessionPageState extends State<PlanSessionPage> {
   /// 按 [TestItem] 对象记录已选索引（选项组件可能被重建）。
   final Map<TestItem, int> _chosenIndexByItem = <TestItem, int>{};
 
+  /// 已惩罚过的「题目 + 选项」：多选允许重复点选，同一错选只记一次 FORGOT。
+  final Set<(TestItem, int)> _penalizedChoices = <(TestItem, int)>{};
+
   /// 已自动播放过发音的听力题，避免重建时重复朗读。
   final List<TestItem> _playedList = <TestItem>[];
 
@@ -542,6 +545,10 @@ class _PlanSessionPageState extends State<PlanSessionPage> {
             isCorrect: ans,
             takenTime: DateTime.now().difference(quizStart).inMilliseconds,
           );
+          if (value != testItem.correctIndex &&
+              _penalizedChoices.add((testItem, value))) {
+            FSRS().penalizeWrongChoice(testItem.optionWords?[value].id);
+          }
           Future.delayed(const Duration(milliseconds: 700), () {
             if (mounted) {
               setState(() {
@@ -636,6 +643,10 @@ class _PlanSessionPageState extends State<PlanSessionPage> {
             isCorrect: ans,
             takenTime: DateTime.now().difference(quizStart).inMilliseconds,
           );
+          if (value != testItem.correctIndex &&
+              _penalizedChoices.add((testItem, value))) {
+            FSRS().penalizeWrongChoice(testItem.optionWords?[value].id);
+          }
           Future.delayed(const Duration(milliseconds: 700), () {
             if (mounted) {
               setState(() {

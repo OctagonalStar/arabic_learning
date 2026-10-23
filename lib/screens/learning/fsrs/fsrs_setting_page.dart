@@ -1,12 +1,13 @@
 import 'package:flutter/material.dart';
 
 import 'package:arabic_learning/core/statics.dart';
+import 'package:arabic_learning/screens/learning/fsrs/fsrs_calibration_page.dart' show FsrsCalibrationPage;
 import 'package:arabic_learning/screens/learning/fsrs/fsrs_review_page.dart' show MainFSRSPage;
 import 'package:arabic_learning/services/app_data.dart';
 import 'package:arabic_learning/services/fsrs.dart';
 import 'package:arabic_learning/services/words.dart';
 import 'package:arabic_learning/widgets/kit.dart' show Button, CategoryFilter, SelectChip, TextContainer;
-import 'package:arabic_learning/widgets/overlays.dart' show alart;
+import 'package:arabic_learning/widgets/overlays.dart' show alart, showSnackBar;
 import 'package:arabic_learning/widgets/shared.dart' show SettingCard;
 
 class ForeFSRSSettingPage extends StatelessWidget {
@@ -290,6 +291,83 @@ class ForeFSRSSettingPage extends StatelessWidget {
                     ),
                     Text("开启后同一个到期卡片在队列中将按交错顺序出现多次（3次），加深印象。"),
                     Text("关闭后每个词汇当次复习只在队列里出现一次。")
+                  ],
+                ),
+              ),
+              SettingCard(
+                color: Theme.of(context).colorScheme.surfaceContainerHigh,
+                margin: EdgeInsets.all(8.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Expanded(child: Text("个性化校准", style: Theme.of(context).textTheme.bodyLarge)),
+                        Text(
+                          fsrs.config.personalFactor == 1.0
+                              ? "默认"
+                              : "${fsrs.config.personalFactor.toStringAsFixed(2)}×",
+                          style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                                color: fsrs.config.personalFactor == 1.0
+                                    ? null
+                                    : Theme.of(context).colorScheme.primary,
+                              ),
+                        ),
+                      ],
+                    ),
+                    Text("通过一次小测试测出你对新词的初始记忆强度，自动调整新词的初始复习间隔。"),
+                    TextButton(
+                      onPressed: () async {
+                        final BuildContext pageContext = context;
+                        final double? result = await Navigator.push<double>(
+                          context,
+                          MaterialPageRoute<double>(builder: (BuildContext context) => const FsrsCalibrationPage()),
+                        );
+                        if (!pageContext.mounted) return;
+                        if (result != null) {
+                          showSnackBar(pageContext, "已应用个性化系数 ${result.toStringAsFixed(2)}×");
+                        }
+                        setState((){});
+                      },
+                      child: const Text("开始校准"),
+                    ),
+                    if (fsrs.config.personalFactor != 1.0)
+                      Align(
+                        alignment: Alignment.centerLeft,
+                        child: TextButton(
+                          onPressed: () {
+                            fsrs.applyPersonalFactor(1.0);
+                            setState((){});
+                          },
+                          child: const Text("恢复默认"),
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+              SettingCard(
+                color: Theme.of(context).colorScheme.surfaceContainerLow,
+                margin: EdgeInsets.all(8.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Expanded(child: Text("错选惩罚", style: Theme.of(context).textTheme.bodyLarge)),
+                        Switch(
+                          value: fsrs.config.penalizeWrongOption, 
+                          onChanged: (value){
+                            setState(() {
+                              fsrs.config = fsrs.config.copyWith(
+                                penalizeWrongOption: value
+                              );
+                            });
+                          }
+                        )
+                      ],
+                    ),
+                    Text("开启后在选择题中选错时，会把错选的那个词记为一次「忘了」，让它更早出现在复习队列中。"),
+                    Text("只有已加入规律学习的词会被惩罚，陌生词不受影响。")
                   ],
                 ),
               ),

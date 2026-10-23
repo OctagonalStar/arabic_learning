@@ -82,6 +82,8 @@ Map<String, dynamic> fsrsConfigMeta(FSRSConfig config) {
     'selfEvaluate': config.selfEvaluate,
     'pushAmount': config.pushAmount,
     'reinforceMemory': config.reinforceMemory,
+    'penalizeWrongOption': config.penalizeWrongOption,
+    'personalFactor': config.personalFactor,
     'pushCategories': config.pushCategories,
     'reviewQuestionSections': config.reviewQuestionSections,
   };

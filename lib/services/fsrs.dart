@@ -397,7 +397,10 @@ class FSRS {
     logger.info("初始化scheduler，选择相关配置 ${config.toMap().toString()}");
     config = config.copyWith(
       enabled: true,
-      scheduler: Scheduler(desiredRetention: config.desiredRetention)
+      scheduler: FSRSConfig.scaleScheduler(
+        Scheduler(desiredRetention: config.desiredRetention),
+        config.personalFactor,
+      )
     );
     save();
   }
@@ -482,6 +485,30 @@ class FSRS {
     final Card? card = cardFor(wordId);
     if (card == null || card.lastReview == null || card.stability == null) return null;
     return (config.scheduler ?? Scheduler()).getCardRetrievability(card);
+  }
+
+  /// 应用个性化系数（0.5–2.0）：缩放 w0–w3 后立即落盘；传 1.0 即恢复默认。
+  void applyPersonalFactor(double factor) {
+    final double f = factor.clamp(0.5, 2.0);
+    config = config.copyWith(
+      personalFactor: f,
+      scheduler: FSRSConfig.scaleScheduler(
+        config.scheduler ?? Scheduler(desiredRetention: config.desiredRetention),
+        f,
+      ),
+    );
+    logger.info("应用个性化系数: $f");
+    save(immediate: true);
+  }
+
+  /// 选项题选错时的惩罚：开关开启且错选的词已在 FSRS 中时，记一次 FORGOT。
+  ///
+  /// 不在 FSRS 中的词直接跳过——避免做题顺手把陌生词塞进牌组。
+  void penalizeWrongChoice(int? wrongWordId) {
+    if (wrongWordId == null || !config.penalizeWrongOption) return;
+    if (!isContained(wrongWordId)) return;
+    logger.fine("错选惩罚: 给词 $wrongWordId 记一次 FORGOT");
+    produceCard(wrongWordId, forceRate: Rating.again);
   }
 
   Rating calculate(int duration, bool isCorrect) {
@@ -627,6 +654,12 @@ class FSRSConfig {
   final int pushAmount;
   final bool reinforceMemory;
 
+  /// 选项题选错时，若错选的那个词也在 FSRS 中，给它记一次 FORGOT。
+  final bool penalizeWrongOption;
+
+  /// 个性化系数：按比例缩放 w0–w3（四档初始稳定度）。1.0 = FSRS 默认。
+  final double personalFactor;
+
   /// 每日推送单词的分类筛选（AND 语义，空列表=不筛选）
   final List<String> pushCategories;
 
@@ -648,6 +681,8 @@ class FSRSConfig {
     bool? selfEvaluate,
     int? pushAmount,
     bool? reinforceMemory,
+    bool? penalizeWrongOption,
+    double? personalFactor,
     List<String>? pushCategories,
     List<int>? reviewQuestionSections
   }) :
@@ -661,8 +696,30 @@ class FSRSConfig {
     selfEvaluate = selfEvaluate??false,
     pushAmount = pushAmount??0,
     reinforceMemory = reinforceMemory??false,
+    penalizeWrongOption = penalizeWrongOption??false,
+    personalFactor = personalFactor??1.0,
     pushCategories = pushCategories??const [],
     reviewQuestionSections = _normalizeSections(reviewQuestionSections);
+
+  /// 按个人系数重建调度器：只缩放 w0–w3（四档初始稳定度），
+  /// 学习步长 / 上限等其余设置沿用 [base]；系数 1.0 即 FSRS 默认参数。
+  static Scheduler scaleScheduler(Scheduler base, double factor) {
+    final List<double> parameters = List<double>.from(defaultParameters);
+    if (factor != 1.0) {
+      for (int i = 0; i < 4; i++) {
+        parameters[i] = (defaultParameters[i] * factor)
+            .clamp(lowerBoundsParameters[i], upperBoundsParameters[i]);
+      }
+    }
+    return Scheduler(
+      parameters: parameters,
+      desiredRetention: base.desiredRetention,
+      learningSteps: base.learningSteps,
+      relearningSteps: base.relearningSteps,
+      maximumInterval: base.maximumInterval,
+      enableFuzzing: base.enableFuzzing,
+    );
+  }
 
   /// 清洗题型集合：null/空/全部越界时回退到 `[2]`（保持旧行为），
   /// 否则仅保留 0-4 的合法题型。
@@ -685,6 +742,8 @@ class FSRSConfig {
       "selfEvaluate": selfEvaluate,
       "pushAmount": pushAmount,
       "reinforceMemory": reinforceMemory,
+      "penalizeWrongOption": penalizeWrongOption,
+      "personalFactor": personalFactor,
       "pushCategories": pushCategories,
       "reviewQuestionSections": reviewQuestionSections
     };
@@ -702,6 +761,8 @@ class FSRSConfig {
     bool? selfEvaluate,
     int? pushAmount,
     bool? reinforceMemory,
+    bool? penalizeWrongOption,
+    double? personalFactor,
     List<String>? pushCategories,
     List<int>? reviewQuestionSections
   }) {
@@ -717,6 +778,8 @@ class FSRSConfig {
       selfEvaluate: selfEvaluate??this.selfEvaluate,
       pushAmount: pushAmount??this.pushAmount,
       reinforceMemory: reinforceMemory??this.reinforceMemory,
+      penalizeWrongOption: penalizeWrongOption??this.penalizeWrongOption,
+      personalFactor: personalFactor??this.personalFactor,
       pushCategories: pushCategories??this.pushCategories,
       reviewQuestionSections: reviewQuestionSections??this.reviewQuestionSections
     );
@@ -724,9 +787,15 @@ class FSRSConfig {
 
   static FSRSConfig buildFromMap(Map<String, dynamic> configData){
     if(configData["enabled"]??false) {
+      final Scheduler persisted = Scheduler.fromMap(configData["scheduler"]);
+      final double personalFactor =
+          ((configData["personalFactor"] as num?) ?? 1.0).toDouble();
       return FSRSConfig(
         enabled: configData["enabled"],
-        scheduler: Scheduler.fromMap(configData["scheduler"]),
+        // 个性化系数不是 1.0 时按默认参数重算，避免与被缩放过的旧快照叠加。
+        scheduler: personalFactor == 1.0
+            ? persisted
+            : scaleScheduler(persisted, personalFactor),
         cards: List<Card>.generate(configData["cards"].length,(index) => Card.fromMap(configData["cards"][index]), growable: true),
         reviewLogs: List<ReviewLog>.generate(configData["reviewLog"].length,(index) => ReviewLog.fromMap(configData["reviewLog"][index]), growable: true),
         desiredRetention: configData["desiredRetention"],
@@ -736,6 +805,8 @@ class FSRSConfig {
         selfEvaluate: configData["selfEvaluate"],
         pushAmount: configData["pushAmount"],
         reinforceMemory: configData["reinforceMemory"],
+        penalizeWrongOption: configData["penalizeWrongOption"],
+        personalFactor: personalFactor,
         pushCategories: configData["pushCategories"] == null
             ? const []
             : List<String>.from(configData["pushCategories"]),
@@ -746,4 +817,12 @@ class FSRSConfig {
     }
     return FSRSConfig(enabled: false);
   }
+}
+/// 个性化校准（0–10 题）得分 → 个人系数，五档；越接近中位越保守。
+double personalFactorForScore(int correct) {
+  if (correct <= 3) return 0.75;
+  if (correct <= 5) return 0.9;
+  if (correct <= 7) return 1.0;
+  if (correct <= 9) return 1.1;
+  return 1.25;
 }

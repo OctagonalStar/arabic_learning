@@ -89,6 +89,7 @@ class _FSRSReviewCardPage extends State<FSRSReviewCardPage> {
       return true;
     }
     widget.fsrs.produceCard(widget.wordID, duration: end!.difference(start).inMilliseconds, isCorrect: false);
+    widget.fsrs.penalizeWrongChoice(item.optionWords?[value].id);
     return false;
   }
 
