@@ -1,9 +1,12 @@
+import 'dart:convert';
+
 import 'package:arabic_learning/models/config.dart';
 import 'package:arabic_learning/models/dict.dart';
 import 'package:arabic_learning/models/reading.dart';
 import 'package:arabic_learning/core/statics.dart';
-import 'package:arabic_learning/services/fsrs.dart' show FSRSConfig;
+import 'package:arabic_learning/services/fsrs.dart' show FSRSConfig, personalFactorForScore;
 import 'package:flutter_test/flutter_test.dart';
+import 'package:fsrs/fsrs.dart' show Scheduler, defaultParameters;
 
 void main() {
   group('Config 往返一致性', () {
@@ -350,8 +353,67 @@ void main() {
     });
   });
 
-  group('FSRSConfig 复习/推送随机题型', () {
-    test('默认题型为 [2]（保持既有行为）', () {
+  group('FSRSConfig 个性化与错选惩罚', () {
+    test('默认：错选惩罚关闭、个人系数 1.0', () {
+      final FSRSConfig config = FSRSConfig();
+      expect(config.penalizeWrongOption, isFalse);
+      expect(config.personalFactor, 1.0);
+    });
+
+    test('copyWith 覆盖新字段，未指定时保持原值', () {
+      final FSRSConfig updated = FSRSConfig().copyWith(
+        penalizeWrongOption: true,
+        personalFactor: 1.1,
+      );
+      expect(updated.penalizeWrongOption, isTrue);
+      expect(updated.personalFactor, 1.1);
+      expect(updated.copyWith().personalFactor, 1.1);
+      expect(updated.copyWith().penalizeWrongOption, isTrue);
+    });
+
+    test('toMap / buildFromMap 往返保留新字段并按系数缩放 w0–w3', () {
+      final FSRSConfig config = FSRSConfig(
+        enabled: true,
+        scheduler: Scheduler(desiredRetention: 0.9),
+        penalizeWrongOption: true,
+        personalFactor: 1.25,
+      );
+      final FSRSConfig back = FSRSConfig.buildFromMap(
+        jsonDecode(jsonEncode(config.toMap())) as Map<String, dynamic>,
+      );
+      expect(back.penalizeWrongOption, isTrue);
+      expect(back.personalFactor, 1.25);
+      for (int i = 0; i < 4; i++) {
+        expect(back.scheduler!.parameters[i], closeTo(defaultParameters[i] * 1.25, 1e-9));
+      }
+      expect(back.scheduler!.parameters[4], defaultParameters[4]);
+    });
+
+    test('系数 1.0 时沿用快照里的调度器参数', () {
+      final Map<String, dynamic> map = FSRSConfig(
+        enabled: true,
+        scheduler: Scheduler(desiredRetention: 0.85),
+      ).toMap();
+      final FSRSConfig back = FSRSConfig.buildFromMap(map);
+      expect(back.personalFactor, 1.0);
+      expect(back.scheduler!.parameters, defaultParameters);
+      expect(back.scheduler!.desiredRetention, 0.85);
+    });
+
+    test('校准得分 → 五档系数', () {
+      expect(personalFactorForScore(0), 0.75);
+      expect(personalFactorForScore(3), 0.75);
+      expect(personalFactorForScore(4), 0.9);
+      expect(personalFactorForScore(5), 0.9);
+      expect(personalFactorForScore(6), 1.0);
+      expect(personalFactorForScore(7), 1.0);
+      expect(personalFactorForScore(8), 1.1);
+      expect(personalFactorForScore(9), 1.1);
+      expect(personalFactorForScore(10), 1.25);
+    });
+  });
+
+  group('FSRSConfig 复习/推送随机题型', () {    test('默认题型为 [2]（保持既有行为）', () {
       expect(FSRSConfig().reviewQuestionSections, const [2]);
     });
 

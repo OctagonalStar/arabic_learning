@@ -660,5 +660,21 @@ void main() {
       expect(meta['enabled'], isTrue);
       expect(meta['pushAmount'], 4);
     });
+
+    test('fsrsConfigMeta 保留错选惩罚与个人系数', () {
+      final FSRSConfig config = FSRSConfig(
+        enabled: true,
+        scheduler: Scheduler(desiredRetention: 0.9),
+        penalizeWrongOption: true,
+        personalFactor: 1.1,
+      );
+      final Map<String, dynamic> meta = fsrsConfigMeta(config);
+      expect(meta['penalizeWrongOption'], isTrue);
+      expect(meta['personalFactor'], 1.1);
+
+      final FSRSConfig back = fsrsConfigFromRows(meta, const <FsrsCardRow>[]);
+      expect(back.penalizeWrongOption, isTrue);
+      expect(back.personalFactor, 1.1);
+    });
   });
 }
