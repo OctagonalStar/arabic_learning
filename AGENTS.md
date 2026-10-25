@@ -1,6 +1,6 @@
 # AGENTS.md
 
-Cross-platform Flutter/Dart app for learning Arabic vocabulary (AGPL-3.0). Targets **Android / Windows / Linux / macOS / Web**; iOS was dropped in v0.1.12. UI and comments are Chinese.
+Cross-platform Flutter/Dart app for learning Arabic vocabulary (AGPL-3.0). Targets **Android / Windows / Linux / macOS / iOS / Web**; iOS ships as an unsigned IPA only (no signing, no App Store). UI and comments are Chinese.
 
 ## Commands
 
@@ -73,6 +73,8 @@ A new id-keyed store MUST: (1) back membership with `Set<int>` for O(1) lookups;
 - Because Dart cannot conditionally import per platform at will, native-only code uses the **`fake_*.dart` shim pattern**: `import 'package:.../fake_dart_io.dart' if (dart.library.io) 'dart:io' as io;`. The empties in `lib/package_replacement/` are load-bearing for Web — do not delete them (see its README).
 - Existing fakes: `fake_dart_io.dart` (dart:io + idb types) and `fake_sherpa_onnx.dart` (native-only). `sherpa_onnx` must always be behind the conditional import. Other plugins (`window_manager`, workmanager/notifications, `mobile_scanner`, `flutter_webrtc`, `wakelock_plus`, `flutter_tts`, `dynamic_color`) are imported directly but guarded at runtime by `StaticsVar.isDesktop` / `kIsWeb` / `io.Platform.isAndroid` (or wrapped in a `MissingPluginException` catch).
 - Adding a new native-only dependency requires either a new `fake_*.dart` + conditional import or a runtime `kIsWeb`/`io.Platform` guard, plus regenerating `lib/oss_licenses.dart`.
+- `ios/` 在 v1.2.0 恢复（此前 v0.1.12 删除）：由 Flutter 3.47 模板生成（含 `SceneDelegate`，走 CocoaPods；`ios/Podfile` 由 `flutter build ios` 首次自动生成，未入库），bundle id 沿用 `com.ayuban.arlearning`。仅支持无签名 IPA：`flutter build ios --release --no-codesign`，CI 把 `Runner.app` 装进 `Payload/` 打包为 `ios-unsigned.ipa`（旧版直接压缩 `iphoneos` 目录得到的 ipa 结构无效）。
+- `ios/Runner/Info.plist` 已声明相机与本地网络用途说明（`mobile_scanner` 扫码、`flutter_webrtc` 局域网对战）；新增需要权限的原生功能时同步补 key，否则 iOS 上调用即失败。iOS 端不提供应用内检查更新/APK 安装，相关入口由 `io.Platform.isAndroid` 守卫。
 
 ## Contributing constraints
 
