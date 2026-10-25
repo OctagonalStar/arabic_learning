@@ -1,0 +1,8 @@
+blank_issues_enabled: true
+contact_links:
+  - name: 在线体验（Web 版）
+    url: https://octagonalstar.github.io/arabic_learning/
+    about: 不想安装？直接在浏览器中试用最新构建版本
+  - name: 下载最新版本
+    url: https://github.com/OctagonalStar/arabic_learning/releases/latest
+    about: Release 页提供 Android / Windows / macOS / iOS（无签名 IPA）构建
