@@ -6,7 +6,7 @@
     <img src="https://img.shields.io/badge/License-AGPL_3.0-blue.svg" alt="License: AGPL-3.0">
 </p>
 
-一个跨平台的阿拉伯语 ~~背单词~~ 单词学习软件，支持 **Android / Windows / Linux / macOS / Web**。
+一个跨平台的阿拉伯语 ~~背单词~~ 单词学习软件，支持 **Android / Windows / Linux / macOS / iOS / Web**。
 
 ## 功能
 
@@ -88,7 +88,7 @@
 | Windows | ✅ |
 | Linux | ✅ (请自行构建) |
 | macOS | ✅ |
-| iOS | 已在v0.1.12终止支持 |
+| iOS | ✅ 无签名 IPA（需自行签名后安装） |
 | Web | ✅ [在线体验](https://octagonalstar.github.io/arabic_learning/) |
 
 > 网页版为最新构建版，相对于软件版本可能有更多功能和更多 bug。
@@ -113,6 +113,8 @@
 flutter pub get
 flutter run
 ```
+
+iOS 仅提供无签名构建（需 macOS）：`flutter build ios --release --no-codesign`，产物为 `build/ios/iphoneos/Runner.app`；CI 会把它打包成 `Payload/` 结构的 `ios-unsigned.ipa`，安装需自行签名。
 
 各平台构建产物参见 GitHub Releases 和 GitHub Actions。
 
