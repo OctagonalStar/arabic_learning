@@ -44,7 +44,7 @@ const int _kGroupSizeMax = 30;
 const int _kGroupSizeDivisions = _kGroupSizeMax - _kGroupSizeMin;
 
 /// 可选题型（与 `kQuestionTypeLabels` 的键一致）。
-const List<int> _kQuestionTypes = <int>[0, 1, 2, 3, 4];
+const List<int> _kQuestionTypes = <int>[0, 1, 2, 3];
 
 /// 题型编号 → 添加 chip 的图标。
 const Map<int, IconData> _kQuestionTypeIcons = <int, IconData>{
@@ -52,7 +52,6 @@ const Map<int, IconData> _kQuestionTypeIcons = <int, IconData>{
   1: Icons.translate,
   2: Icons.abc,
   3: Icons.keyboard_outlined,
-  4: Icons.headphones_outlined,
 };
 
 /// 「配置学习计划」页面。

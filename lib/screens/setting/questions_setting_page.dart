@@ -33,7 +33,7 @@ class _QuestionsSettingPage extends State<QuestionsSettingPage> {
   Widget build(BuildContext context) {
     late final QuizConfig section;
     section = AppData().config.quiz;
-    selectedTypes ??= List.from(section.questionSections);
+    selectedTypes ??= section.questionSections.where((int type) => type != 4).toList(); // 题型 4（听力题）已删除，老配置残留直接丢弃
 
     return PopScope(
       canPop: true,

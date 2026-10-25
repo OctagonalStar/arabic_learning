@@ -1,6 +1,6 @@
 // 翻卡式单词卡片组件（项目中唯一的单词卡片实现）。
 //
-// 卡片由顶部“阿语 + 发音”按钮与主体组成，主体按使用场景切换布局：
+// 卡片由顶部阿语词与主体组成，主体按使用场景切换布局：
 // - 正面摘要（默认，词汇总览 / 查找网格单元同样复用）：中文 / 解释两行
 //   彩色标签，按 flex 分配高度并由 FittedBox 等比缩小兜底；
 // - 反面详情（翻卡后 / `startOnBack`）：中文与解释组成的释义区、词形信息
@@ -25,11 +25,9 @@ import 'package:arabic_learning/models/dict.dart' show WordItem;
 import 'package:arabic_learning/services/favorites.dart' show FavoriteStore;
 import 'package:arabic_learning/services/fsrs.dart' show FSRS;
 import 'package:arabic_learning/services/memberships.dart' show WordMembership, WordMembershipIndex;
-import 'package:arabic_learning/services/tts.dart' show playTextToSpeech;
 import 'package:arabic_learning/theme/tokens.dart' show AppMotion, AppRadius, AppSemanticColors, AppSpacing;
 import 'package:arabic_learning/theme/typography.dart' show arabicStyle, withoutColor;
-import 'package:arabic_learning/widgets/kit.dart' show Button, CategoryChips;
-import 'package:arabic_learning/widgets/shared.dart' show ButtonLabel;
+import 'package:arabic_learning/widgets/kit.dart' show CategoryChips;
 import 'package:flutter/material.dart';
 // fsrs 的 Card / State 与 Material / Flutter 同名类冲突，统一加前缀引用。
 import 'package:fsrs/fsrs.dart' as fsrs;
@@ -230,7 +228,7 @@ class _FlipWordCardState extends State<FlipWordCard> {
   }
 }
 
-/// 卡片本体：顶部阿语发音按钮 + 信息区 + 可选提示行。
+/// 卡片本体：顶部阿语词 + 信息区 + 可选提示行。
 ///
 /// 信息区渲染 [WordCardInfoRow] 组成的正面摘要或 [_FlipCardDetailBody] 详情；
 /// [masked] 时在信息区叠加毛玻璃遮挡层。
@@ -273,7 +271,22 @@ class _FlipCardSurface extends StatelessWidget {
           children: [
             Column(
               children: [
-                WordCardArabicButton(word: word, width: width, height: height * 0.3),
+                SizedBox(
+                  width: width,
+                  height: height * 0.3,
+                  child: Center(
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xs),
+                      child: FittedBox(
+                        fit: BoxFit.scaleDown,
+                        child: Text(
+                          word.arabic,
+                          style: arabicStyle(context, base: withoutColor(textTheme.displayLarge!)),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
                 Expanded(
                   child: SizedBox(
                     width: width,
@@ -1073,41 +1086,6 @@ class WordCardInfoRow extends StatelessWidget {
             ),
           ),
         ],
-      ),
-    );
-  }
-}
-
-/// 单词卡片顶部的阿语发音按钮：点击朗读 [word] 的 `arabic`。
-///
-/// 卡片正面与反面共用，保证阿语展示风格一致。
-class WordCardArabicButton extends StatelessWidget {
-  final WordItem word;
-  final double width;
-  final double height;
-
-  const WordCardArabicButton({
-    super.key,
-    required this.word,
-    required this.width,
-    required this.height,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    // 用 SizedBox 收紧到卡片给定的槽位：M3 按钮默认最小高度（40 / 48）
-    // 大于小卡片 0.3 倍高度时，否则会撑破卡片布局。
-    return SizedBox(
-      width: width,
-      height: height,
-      child: Button(
-        size: Size(width, height),
-        icon: const Icon(Icons.volume_up, size: 24.0),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadiusGeometry.vertical(top: Radius.circular(AppRadius.card))),
-        onPressed: (){
-          playTextToSpeech(word.arabic);
-        },
-        child: ButtonLabel(child: Text(word.arabic, style: arabicStyle(context, base: withoutColor(Theme.of(context).textTheme.displayLarge!)))),
       ),
     );
   }

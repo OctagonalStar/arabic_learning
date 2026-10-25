@@ -1,5 +1,5 @@
 // 新增阅读题流程的第 3 步：生成配置（难度 / 主题 / 数量）与提交。
-// 支持 AI API 直连、AI Prompt 复制、现有 JSON 粘贴三种来源。
+// 支持 AI Prompt 复制、现有 JSON 粘贴两种来源。
 
 import 'dart:convert';
 
@@ -9,12 +9,10 @@ import 'package:arabic_learning/models/reading.dart';
 import 'package:arabic_learning/screens/test/reading/reading_ai_generator.dart';
 import 'package:arabic_learning/screens/test/reading/reading_shared.dart';
 import 'package:arabic_learning/services/app_data.dart';
-import 'package:arabic_learning/services/http_client.dart';
 import 'package:arabic_learning/widgets/feedback.dart' show LoadingIndicator;
 import 'package:arabic_learning/widgets/kit.dart' show Button, SettingItem, SettingRow;
 import 'package:arabic_learning/widgets/overlays.dart' show alart;
 import 'package:arabic_learning/widgets/shared.dart' show appInputDecoration;
-import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart' show Clipboard, ClipboardData;
 
@@ -28,9 +26,6 @@ class QuestionConfigPage extends StatefulWidget {
 
 class _QuestionConfigPage extends State<QuestionConfigPage> {
   final TextEditingController themeEditController = TextEditingController();
-  final TextEditingController apiAddressEditController = TextEditingController();
-  final TextEditingController apiKeyEditController = TextEditingController();
-  final TextEditingController apiModelEditController = TextEditingController();
   final TextEditingController promptEditController = TextEditingController();
   bool adding = false;
 
@@ -51,30 +46,6 @@ class _QuestionConfigPage extends State<QuestionConfigPage> {
     });
     qconfig.theme = themeEditController.text == "" ? getRandomTheme() : themeEditController.text;
     switch (qconfig.sourceType) {
-      case 1 : {
-        String prompt = buildPrompt(qc: qconfig, useSafe: true);
-        final Dio dio = createDio();
-        try {
-          final ReadingUnit? unit = await requestReadingUnitFromApi(
-            dio: dio,
-            qconfig: qconfig,
-            prompt: prompt,
-            apiAddress: apiAddressEditController.text,
-            apiKey: apiKeyEditController.text,
-            apiModel: apiModelEditController.text,
-          );
-          if(unit != null) {
-            AppData().readingData.units.add(unit);
-            AppData().saveReadingData();
-            // ignore: use_build_context_synchronously
-            if(context.mounted) alart(context, "添加成功: ${unit.title}");
-          }
-        } catch (e) {
-          // ignore: use_build_context_synchronously
-          if(context.mounted) alart(context, "生成错误: $e");
-        }
-        break;
-      }
       case 2 : {
         promptEditController.text = buildPrompt(qc: qconfig,useSafe: false);
         showModalBottomSheet(
@@ -172,9 +143,6 @@ class _QuestionConfigPage extends State<QuestionConfigPage> {
   @override
   void dispose() {
     themeEditController.dispose();
-    apiAddressEditController.dispose();
-    apiKeyEditController.dispose();
-    apiModelEditController.dispose();
     promptEditController.dispose();
     super.dispose();
   }
@@ -187,42 +155,6 @@ class _QuestionConfigPage extends State<QuestionConfigPage> {
         ? SettingItem(
           title: "题目生成配置", 
           children: [
-            if(widget.qconfig.sourceType == 1) SettingRow(
-              leading: "API接口地址", 
-              icon: Icons.webhook,
-              end: Expanded(
-                child: TextField(
-                  controller: apiAddressEditController,
-                  maxLines: 1,
-                  decoration: appInputDecoration(context)
-                ),
-              ),
-              note: "从你的AI提供商获取，要求兼容OpenAI标准，例如DeepSeek的API地址为 https://api.deepseek.com \n如果出错，可以在地址末尾加入 /v1 尝试\n注意：末尾不要有 / "
-            ),
-            if(widget.qconfig.sourceType == 1) SettingRow(
-              leading: "API key", 
-              icon: Icons.key,
-              end: Expanded(
-                child: TextField(
-                  controller: apiKeyEditController,
-                  maxLines: 1,
-                  decoration: appInputDecoration(context)
-                ),
-              ),
-              note: "你的API Key，注意，本软件不保存你的API Key，请自行妥善保管"
-            ),
-            if(widget.qconfig.sourceType == 1) SettingRow(
-              leading: "API模型", 
-              icon: Icons.webhook,
-              end: Expanded(
-                child: TextField(
-                  controller: apiModelEditController,
-                  maxLines: 1,
-                  decoration: appInputDecoration(context)
-                ),
-              ),
-              note: "你要使用的AI模型名称，通常你的提供商会提供给你，例如: deepseek-v4-flash"
-            ),
             SettingRow(
               icon: Icons.align_vertical_bottom,
               leading: "文章难度", 

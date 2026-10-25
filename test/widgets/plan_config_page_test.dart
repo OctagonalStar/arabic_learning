@@ -230,10 +230,10 @@ void main() {
       await _pumpConfig(tester, initial: _plan(sections: const <int>[0, 2]));
 
       expect(find.text('2 个'), findsOneWidget);
-      expect(find.byType(ActionChip), findsNWidgets(5));
+      expect(find.byType(ActionChip), findsNWidgets(4));
 
       await tester.tap(
-        find.widgetWithText(ActionChip, '听力题'),
+        find.widgetWithText(ActionChip, '中译阿 拼写题'),
       );
       await tester.pumpAndSettle();
 
@@ -244,7 +244,7 @@ void main() {
 
       expect(
         PlanStore().state.plan?.chain.sections,
-        <int>[0, 2, 4],
+        <int>[0, 2, 3],
       );
     });
 

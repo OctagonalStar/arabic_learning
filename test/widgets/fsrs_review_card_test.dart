@@ -6,7 +6,7 @@ import 'package:arabic_learning/services/app_data.dart' show AppData;
 import 'package:arabic_learning/services/fsrs.dart' show FSRS, FSRSConfig;
 import 'package:arabic_learning/services/global_state.dart' show Global;
 import 'package:arabic_learning/services/search.dart' show BKSearch;
-import 'package:arabic_learning/widgets/questions.dart' show ChoiceQuestions, ListeningQuestion, SelfRatingQuestion, SpellQuestion;
+import 'package:arabic_learning/widgets/questions.dart' show ChoiceQuestions, SelfRatingQuestion, SpellQuestion;
 import 'package:arabic_learning/widgets/flip_word_card.dart' show FlipWordCard;
 import 'package:arabic_learning/widgets/kit.dart' show ChooseButtonBox;
 import 'package:flutter/material.dart';
@@ -197,37 +197,6 @@ void main() {
     expect(find.byType(ChoiceQuestions), findsOneWidget);
     // 中译阿：题面为中文释义
     expect(find.text('相会'), findsOneWidget);
-  });
-
-  testWidgets('复习听力题启用长按单词卡片', (WidgetTester tester) async {
-    FSRS().config = FSRSConfig(reviewQuestionSections: const [4]);
-    await pumpReviewCard(tester);
-
-    expect(find.byType(ListeningQuestion), findsOneWidget);
-    await tester.longPress(find.byType(ChooseButtonBox).first);
-    await tester.pumpAndSettle();
-
-    expect(tester.takeException(), isNull);
-    expect(find.byType(FlipWordCard), findsOneWidget);
-  });
-
-  testWidgets('听力题重复跳过只记录一次复习（Bug 1 回归）', (WidgetTester tester) async {
-    FSRS().config = FSRSConfig(reviewQuestionSections: const [4]);
-    await pumpReviewCard(tester);
-
-    expect(find.byType(ListeningQuestion), findsOneWidget);
-
-    // 首次跳过：新卡片被加入复习
-    await tester.tap(find.text('跳过听力题目'));
-    await tester.pumpAndSettle();
-    expect(tester.takeException(), isNull);
-    expect(FSRS().config.cards.length, 1);
-
-    // 第二次跳过必须是 no-op；否则 scheduler 为 null 会抛异常并重复记录
-    await tester.tap(find.text('跳过听力题目'));
-    await tester.pumpAndSettle();
-    expect(tester.takeException(), isNull);
-    expect(FSRS().config.cards.length, 1);
   });
 
   testWidgets('推送单词卡片题在最后一题可进入完成页（Bug 2 回归）', (WidgetTester tester) async {

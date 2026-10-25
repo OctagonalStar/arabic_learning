@@ -4,7 +4,6 @@ import 'package:arabic_learning/core/statics.dart';
 import 'package:arabic_learning/screens/test/reading/reading_config_page.dart';
 import 'package:arabic_learning/screens/test/reading/reading_shared.dart';
 import 'package:arabic_learning/theme/tokens.dart' show AppMotion;
-import 'package:arabic_learning/widgets/overlays.dart' show alart;
 import 'package:flutter/foundation.dart' show clampDouble;
 import 'package:flutter/material.dart';
 
@@ -22,7 +21,7 @@ class _ReadingTestAddLeading extends State<ReadingTestAddLeading> {
 
   Function defType(int type, int toPage){
     if(toPage == 1 && (type > 2 || type < 1)) throw Exception("Unknown Question Type: $type");
-    if(toPage == 2 && (type > 4 || type < 1)) throw Exception("Unknown Source Type: $type");
+    if(toPage == 2 && (type > 4 || type < 2)) throw Exception("Unknown Source Type: $type");
     return (){
       switch (toPage){
         case 1: qconfig.testType = type;
@@ -100,15 +99,8 @@ class _ReadingTestAddLeading extends State<ReadingTestAddLeading> {
             ],
           ),
           buildTypePage(
-            alignment: MainAxisAlignment.spaceBetween,
+            alignment: MainAxisAlignment.spaceEvenly,
             cards: (double cardHeight, double cardWidth) => <Widget>[
-              TypeChoose(
-                mainTitle: Text("使用AI API生成", style: Theme.of(context).textTheme.headlineMedium), 
-                rt: defType(1, 2), 
-                subTitle: Text("调用兼容OpenAI标准的接口，直接请求题目生成\n快，题目质量高，错误率低\n可能要向提供商缴费\n如果你不知道\"API\"是什么，那么你不会用这个", style: Theme.of(context).textTheme.bodyMedium), 
-                widget: cardWidth, 
-                height: cardHeight
-              ),
               TypeChoose(
                 mainTitle: Text("使用AI Prompt生成", style: Theme.of(context).textTheme.headlineMedium), 
                 rt: defType(2, 2), 
@@ -120,13 +112,6 @@ class _ReadingTestAddLeading extends State<ReadingTestAddLeading> {
                 mainTitle: Text("使用现有JSON导入", style: Theme.of(context).textTheme.headlineMedium), 
                 rt: defType(3, 2), 
                 subTitle: Text("在使用AI Prompt方式获取到结果后选择此项粘贴", style: Theme.of(context).textTheme.bodyMedium), 
-                widget: cardWidth, 
-                height: cardHeight
-              ),
-              TypeChoose(
-                mainTitle: Text("从在线仓库中获取", style: Theme.of(context).textTheme.headlineMedium), 
-                rt: (){alart(context, "都说了在施工了...");}, 
-                subTitle: Text("施工中，暂时无法使用", style: Theme.of(context).textTheme.bodyMedium), 
                 widget: cardWidth, 
                 height: cardHeight
               ),

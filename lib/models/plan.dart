@@ -46,9 +46,9 @@ class PlanScopeRef {
 /// 学习链条：一次学习会话依次经过的题型，以及组内是否乱序。
 ///
 /// 题型编号与项目既有约定一致：0 单词卡片、1 中译阿选择、2 阿译中选择、
-/// 3 中译阿拼写、4 听力。
+/// 3 中译阿拼写。
 class PlanChain {
-  /// 题型序列（0..4）
+  /// 题型序列（0..3）
   final List<int> sections;
 
   /// 同一组内的单词是否乱序
@@ -59,14 +59,14 @@ class PlanChain {
     this.shuffleWithinSection = false,
   });
 
-  /// 是否包含非卡片题型（1/2/3/4）。只有 `[0]` 的链条视为无效。
+  /// 是否包含非卡片题型（1/2/3）。只有 `[0]` 的链条视为无效。
   bool get hasNonCardType =>
-      sections.any((int type) => type >= 1 && type <= 4);
+      sections.any((int type) => type >= 1 && type <= 3);
 
   /// 链条是否可用：非空、题型全部合法且至少含一个非卡片题型。
   bool get isValid =>
       sections.isNotEmpty &&
-      sections.every((int type) => type >= 0 && type <= 4) &&
+      sections.every((int type) => type >= 0 && type <= 3) &&
       hasNonCardType;
 
   PlanChain copyWith({List<int>? sections, bool? shuffleWithinSection}) {
@@ -92,10 +92,10 @@ class PlanChain {
         "shuffleWithinSection": shuffleWithinSection,
       };
 
-  /// 清洗题型：丢弃越界值；全部非法 / 为空时回退到默认 `[0, 2]`。
+  /// 清洗题型：丢弃越界值（4 听力题已删除）；全部非法 / 为空时回退到默认 `[0, 2]`。
   static List<int> _normalizeSections(List<int> raw) {
     final List<int> filtered =
-        raw.where((int type) => type >= 0 && type <= 4).toList(growable: false);
+        raw.where((int type) => type >= 0 && type <= 3).toList(growable: false);
     return filtered.isEmpty ? const <int>[0, 2] : filtered;
   }
 }

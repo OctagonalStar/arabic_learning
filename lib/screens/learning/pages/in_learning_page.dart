@@ -11,12 +11,11 @@ import 'package:arabic_learning/services/fsrs.dart' show FSRS;
 import 'package:arabic_learning/services/global_state.dart' show Global;
 import 'package:arabic_learning/services/learning_session.dart'
     show LearningSessionCheckpoint, LearningSessionStore;
-import 'package:arabic_learning/services/tts.dart' show playTextToSpeech;
 import 'package:arabic_learning/theme/tokens.dart' show AppMotion;
 import 'package:arabic_learning/widgets/kit.dart' show Button, TextContainer;
 import 'package:arabic_learning/widgets/overlays.dart' show viewAnswer;
 import 'package:arabic_learning/widgets/questions.dart'
-    show ChoiceQuestions, ListeningQuestion, SpellQuestion, TestItem, WordCardQuestion;
+    show ChoiceQuestions, SpellQuestion, TestItem, WordCardQuestion;
 import 'package:flutter/foundation.dart' show clampDouble;
 import 'package:flutter/material.dart';
 import 'package:fsrs/fsrs.dart' show Rating;
@@ -36,7 +35,6 @@ class InLearningPage extends StatefulWidget {
     1: 中译阿 选择题
     2: 阿译中 选择题
     3: 中译阿 拼写题
-    4: 听力题
   */
   final List<WordItem> words;
   final bool countInReview;
@@ -62,14 +60,12 @@ class _InLearningPageState extends State<InLearningPage> {
   late final DateTime startTime;
   bool finished = false;
   late final PageController controller;
-  final bool isAutoPlay = AppData().config.audio.autoPlay;
-  final List<TestItem> playedList = [];
 
   /// 当前展示的 testList 下标（== testList.length 表示结算页）。
   /// 由 [PageView.onPageChanged] 维护，避免首帧 controller 尚未挂载时读到 0。
   late int _pageIndex;
 
-  /// 洗牌完成、尚未因「跳过听力题」删改之前的完整题目列表。
+  /// 洗牌完成、尚未因逐题删除而改动的完整题目列表。
   /// 断点里的 itemIndices 是这份列表的下标，恢复时据此取回剩余题目。
   List<TestItem> _allItems = [];
 
@@ -79,7 +75,7 @@ class _InLearningPageState extends State<InLearningPage> {
     for (int i = 0; i < _allItems.length; i++) _allItems[i]: i,
   };
 
-  /// 已提交答案的题目（按对象记录：testList 会被「跳过听力题」就地删改，下标会前移）。
+  /// 已提交答案的题目（按对象记录：testList 可能被就地删改，下标会前移）。
   final Set<TestItem> _answeredItems = <TestItem>{};
 
   /// 退出确认弹窗是否已打开，避免重复弹出。
@@ -117,14 +113,18 @@ class _InLearningPageState extends State<InLearningPage> {
 
     // 加载测试词
     final QuizConfig questionsSetting = _quiz;
-    List<List<TestItem>> questionsInSections = List.generate(questionsSetting.questionSections.length, (_) => []);
+    // 题型 4（听力题）已删除：老配置里可能残留，构建时直接过滤；
+    // 过滤后为空（只配了听力题）时退回中译阿选择题，避免空白会话。
+    final List<int> sections = questionsSetting.questionSections.where((int type) => type != 4).toList();
+    if(sections.isEmpty) sections.add(1);
+    List<List<TestItem>> questionsInSections = List.generate(sections.length, (_) => []);
 
-    for(int sectionIndex = 0; sectionIndex < questionsSetting.questionSections.length; sectionIndex++) {
+    for(int sectionIndex = 0; sectionIndex < sections.length; sectionIndex++) {
       for(WordItem wordItem in widget.words) {
         questionsInSections[sectionIndex].add(
           TestItem.buildTestItem(
             wordItem, 
-            questionsSetting.questionSections[sectionIndex], 
+            sections[sectionIndex], 
             AppData().wordData, 
             questionsSetting.preferSimilar, 
             rnd
@@ -148,7 +148,7 @@ class _InLearningPageState extends State<InLearningPage> {
     if(resume != null) {
       final bool valid = resume.itemIndices.every((int index) => index >= 0 && index < _allItems.length);
       if(valid) {
-        // 只保留断点中未完成的题目（被「跳过听力题」移除的题目不会回来）。
+        // 只保留断点中未完成的题目。
         testList = resume.itemIndices.map((int index) => _allItems[index]).toList();
         correctCount = resume.correctCount;
         // 已消耗时长接续计：结算页展示的总耗时不含暂存期间。
@@ -346,21 +346,14 @@ class _InLearningPageState extends State<InLearningPage> {
                 );
               } else if(testItem.testType == 1 || testItem.testType == 2) {
                 // ar-zh choose questions
-                if(isAutoPlay && testItem.testType == 2 && !playedList.contains(testItem)) {
-                  context.read<Global>().uiLogger.finest(() => "自动播放单词发音: [${testItem.testWord.arabic}]");
-                  playTextToSpeech(testItem.testWord.arabic);
-                  playedList.add(testItem);
-                }
-
                 return ChoiceQuestions(
                   mainWord: testItem.testType == 1 ? testItem.testWord.chinese :  testItem.testWord.arabic, 
                   choices: testItem.options!, 
-                  allowAudio: testItem.testType == 2, 
                   optionWords: testItem.optionWords,
                   onSelected: (value) {
                     chosenIndexByItem[testItem] = value;
                     bool ans = value == testItem.correctIndex;
-                    // 多选/听力题答错后仍可重试，只有答对（会锁定）才算完成本题；
+                    // 多选答错后仍可重试，只有答对（会锁定）才算完成本题；
                     // 否则暂存后应回到本题，而不是跳过。
                     if(ans) _answeredItems.add(testItem);
                     if(!ans) {
@@ -418,59 +411,6 @@ class _InLearningPageState extends State<InLearningPage> {
                     }, 
                     onTipClicked: (){
                       viewAnswer(context, testItem.testWord);
-                    }
-                  )
-                );
-              } else if(testItem.testType == 4){
-                // 听力题
-                return ListeningQuestion(
-                  mainWord: testItem.testWord.arabic, 
-                  choices: testItem.options!, 
-                  optionWords: testItem.optionWords,
-                  onSelected: (value) {
-                    if(value == -1) {
-                      // 跳过本题：后续听力题会被移除，本题视为已处理。
-                      _answeredItems.add(testItem);
-                      setState(() {
-                        // 跳过后移除其后的听力题，避免同一段音频被反复播放。
-                        // 用线性遍历替代 removeWhere + indexOf（原写法是 O(n²)）。
-                        final List<TestItem> kept = testList.sublist(0, index + 1);
-                        for (int i = index + 1; i < testList.length; i++) {
-                          if (testList[i].testType != 4) kept.add(testList[i]);
-                        }
-                        testList = kept;
-                        if (_pageIndex > testList.length) {
-                          _pageIndex = testList.length;
-                        }
-                        clicked = true;
-                      });
-                      return false;
-                    }
-                    chosenIndexByItem[testItem] = value;
-                    bool ans = value == testItem.correctIndex;
-                    if(ans) _answeredItems.add(testItem);
-                    if(!ans) {
-                      Future.delayed(Duration(seconds: 1), (){if(context.mounted) viewAnswer(context, testItem.testWord, chosenWrong: testItem.optionWords![value]);});
-                    } 
-                    onSolve(targetWord: testItem.testWord, isCorrect: ans, takentime: DateTime.now().difference(quizStart).inMilliseconds);
-                    Future.delayed(Duration(milliseconds: 700) ,(){if(!mounted) return; setState(() {
-                      clicked = true;
-                    });});
-                    return ans;
-                  },
-                  allowMutipleSelect: true,
-                  hint: "听下面的音频，选择最合适的选项",
-                  bottom: BottomTip(
-                    isShowNext: clicked, 
-                    isLast: _pageIndex == testList.length - 1,
-                    onNextClicked: (){
-                      controller.nextPage(duration: AppMotion.medium, curve: AppMotion.standardCurve);
-                      setState(() {
-                        clicked = false;
-                      });
-                    }, 
-                    onTipClicked: (){
-                      viewAnswer(context, testItem.testWord, chosenWrong: (chosenIndexByItem[testItem] != null && chosenIndexByItem[testItem] != testItem.correctIndex) ? testItem.optionWords![chosenIndexByItem[testItem]!] : null);
                     }
                   )
                 );

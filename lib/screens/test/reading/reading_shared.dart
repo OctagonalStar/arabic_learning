@@ -18,7 +18,7 @@ class QuestionConfig {
   /// 0: 未定义, 1: 阅读，2: 完形，稍后再做成常量
   int testType = 0;
 
-  /// 0：未定义，1: AI API, 2: AI Prompt, 3: 现有JSON导入, 4: Github仓库
+  /// 0：未定义，1: 保留（原 AI API 直连，已随小程序试用版移除）, 2: AI Prompt, 3: 现有JSON导入, 4: Github仓库
   int sourceType = 0;
 
   /// 文章主题

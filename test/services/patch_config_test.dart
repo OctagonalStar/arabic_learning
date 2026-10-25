@@ -38,8 +38,7 @@ void main() {
     await Global().patchConfig(
       (Config config) => config.copyWith(
         user: '阿里',
-        regular: config.regular.copyWith(theme: 3),
-        audio: config.audio.copyWith(playRate: 1.2),
+        regular: config.regular.copyWith(theme: 3, font: 1),
         learning: config.learning.copyWith(wordLookupRealtime: false),
       ),
       refresh: false,
@@ -47,14 +46,14 @@ void main() {
 
     expect(AppData().config.user, '阿里');
     expect(AppData().config.regular.theme, 3);
-    expect(AppData().config.audio.playRate, 1.2);
+    expect(AppData().config.regular.font, 1);
     expect(AppData().config.learning.wordLookupRealtime, isFalse);
   });
 
   test('patch 生效：改动已落盘，重新读取存储可见', () async {
     await Global().patchConfig(
       (Config config) => config.copyWith(
-        regular: config.regular.copyWith(useDoh: true),
+        regular: config.regular.copyWith(font: 2),
       ),
       refresh: false,
     );
@@ -63,7 +62,7 @@ void main() {
       jsonDecode(AppData().storage.getString('settingData')!)
           as Map<String, dynamic>,
     );
-    expect(stored.regular.useDoh, isTrue);
+    expect(stored.regular.font, 2);
     expect(Global.debugSettingWriteCount, 1);
   });
 
@@ -139,16 +138,16 @@ void main() {
 
     await Global().patchConfig(
       (Config config) => config.copyWith(
-        regular: config.regular.copyWith(theme: 5, useDoh: true),
-        audio: config.audio.copyWith(autoPlay: true),
+        regular: config.regular.copyWith(theme: 5, font: 2),
+        learning: config.learning.copyWith(overviewForceColumn: 4),
       ),
       refresh: false,
     );
 
     expect(Global.debugSettingWriteCount, writesBefore + 1);
     expect(AppData().config.regular.theme, 5);
-    expect(AppData().config.regular.useDoh, isTrue);
-    expect(AppData().config.audio.autoPlay, isTrue);
+    expect(AppData().config.regular.font, 2);
+    expect(AppData().config.learning.overviewForceColumn, 4);
   });
 
   test('patch 抛错时不改动配置（读-改-写是原子的）', () async {

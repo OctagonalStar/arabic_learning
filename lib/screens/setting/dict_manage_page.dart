@@ -10,8 +10,8 @@ import 'package:arabic_learning/models/dict.dart' show SourceItem;
 import 'package:arabic_learning/package_replacement/fake_dart_io.dart'
     if (dart.library.io) 'dart:io'
     as io;
-import 'package:arabic_learning/screens/setting/data_download_page.dart'
-    show DownloadPage;
+import 'package:arabic_learning/screens/setting/builtin_dict_page.dart'
+    show BuiltinDictPage;
 import 'package:arabic_learning/services/app_data.dart';
 import 'package:arabic_learning/services/fsrs.dart';
 import 'package:arabic_learning/services/global_state.dart';
@@ -255,16 +255,16 @@ class _DictManagePage extends State<DictManagePage> {
           ),
           onPressed: () async {
             context.read<Global>().uiLogger.info(
-              "跳转: DictManagePage => DownloadPage",
+              "跳转: DictManagePage => BuiltinDictPage",
             );
             await Navigator.of(context).push(
-              MaterialPageRoute(builder: (context) => DownloadPage()),
+              MaterialPageRoute(builder: (context) => const BuiltinDictPage()),
             );
-            // 从下载页返回后刷新已安装词库列表（下载页内可能已导入词库）。
+            // 从内置词库页返回后刷新已安装词库列表（该页内可能已导入词库）。
             if (context.mounted) setState(() {});
           },
-          icon: const Icon(Icons.cloud_download),
-          child: const Text("线上下载"),
+          icon: const Icon(Icons.menu_book),
+          child: const Text("内置词库"),
         ),
         Button(
           size: Size(mediaQuery.size.width * 0.4, mediaQuery.size.height * 0.06),

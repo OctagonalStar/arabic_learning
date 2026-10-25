@@ -13,19 +13,13 @@ import 'package:arabic_learning/services/global_state.dart' show Global;
 import 'package:arabic_learning/services/plan_scheduler.dart'
     show PlanStatus, evaluateNow, nextGroupWords;
 import 'package:arabic_learning/services/plan_store.dart' show PlanStore;
-import 'package:arabic_learning/services/tts.dart' show playTextToSpeech;
 import 'package:arabic_learning/theme/tokens.dart'
     show AppMotion, AppRadius, AppSpacing;
 import 'package:arabic_learning/widgets/kit.dart' show Button, TextContainer;
 import 'package:arabic_learning/widgets/overlays.dart'
     show showSnackBar, viewAnswer;
 import 'package:arabic_learning/widgets/questions.dart'
-    show
-        ChoiceQuestions,
-        ListeningQuestion,
-        SpellQuestion,
-        TestItem,
-        WordCardQuestion;
+    show ChoiceQuestions, SpellQuestion, TestItem, WordCardQuestion;
 import 'package:flutter/foundation.dart' show clampDouble;
 import 'package:flutter/material.dart';
 import 'package:fsrs/fsrs.dart' show Rating;
@@ -37,7 +31,7 @@ import 'plan_question_builder.dart'
 /// 计划学习：单组答题会话。
 ///
 /// 出题顺序为 section-major（外层题型、内层单词），与学习页一致地渲染
-/// 题型 0..4；非卡片题作答后写入 FSRS，并在本组结束时统计「新增已学词」
+/// 题型 0..3；非卡片题作答后写入 FSRS，并在本组结束时统计「新增已学词」
 /// 写入当日计划进度。页面通过 `Navigator.pop(context, bool)` 告知调用方
 /// 本组是否至少新增了 1 个 FSRS 卡片。
 class PlanSessionPage extends StatefulWidget {
@@ -81,11 +75,7 @@ class _PlanSessionPageState extends State<PlanSessionPage> {
   /// 已惩罚过的「题目 + 选项」：多选允许重复点选，同一错选只记一次 FORGOT。
   final Set<(TestItem, int)> _penalizedChoices = <(TestItem, int)>{};
 
-  /// 已自动播放过发音的听力题，避免重建时重复朗读。
-  final List<TestItem> _playedList = <TestItem>[];
-
   final DateTime _startTime = DateTime.now();
-  final bool _autoPlay = AppData().config.audio.autoPlay;
 
   /// 本组单词在进入页面时已经进入 FSRS 的 id，用于计算新增已学词。
   late final Set<int> _beforeIds;
@@ -510,22 +500,11 @@ class _PlanSessionPageState extends State<PlanSessionPage> {
 
     if (testItem.testType == 1 || testItem.testType == 2) {
       // 中译阿 / 阿译中选择题。
-      if (_autoPlay &&
-          testItem.testType == 2 &&
-          !_playedList.contains(testItem)) {
-        context.read<Global>().uiLogger.finest(
-          () => "自动播放单词发音: [${testItem.testWord.arabic}]",
-        );
-        playTextToSpeech(testItem.testWord.arabic);
-        _playedList.add(testItem);
-      }
-
       return ChoiceQuestions(
         mainWord: testItem.testType == 1
             ? testItem.testWord.chinese
             : testItem.testWord.arabic,
         choices: testItem.options!,
-        allowAudio: testItem.testType == 2,
         optionWords: testItem.optionWords,
         onSelected: (int value) {
           _chosenIndexByItem[testItem] = value;
@@ -604,74 +583,6 @@ class _PlanSessionPageState extends State<PlanSessionPage> {
           onNextClicked: () => _advance(index),
           onTipClicked: () {
             viewAnswer(context, testItem.testWord);
-          },
-        ),
-      );
-    }
-
-    if (testItem.testType == 4) {
-      // 听力题：跳过（-1）不写 FSRS，并移除后续听力题（与学习页一致）。
-      return ListeningQuestion(
-        mainWord: testItem.testWord.arabic,
-        choices: testItem.options!,
-        optionWords: testItem.optionWords,
-        onSelected: (int value) {
-          if (value == -1) {
-            setState(() {
-              _testList.removeWhere(
-                (TestItem item) =>
-                    item.testType == 4 && index < _testList.indexOf(item),
-              );
-              _answeredIndexes.add(index);
-            });
-            return false;
-          }
-          _chosenIndexByItem[testItem] = value;
-          final bool ans = value == testItem.correctIndex;
-          if (!ans) {
-            Future.delayed(const Duration(seconds: 1), () {
-              if (!mounted || !context.mounted) return;
-              viewAnswer(
-                context,
-                testItem.testWord,
-                chosenWrong: testItem.optionWords![value],
-              );
-            });
-          }
-          _onSolve(
-            targetWord: testItem.testWord,
-            isCorrect: ans,
-            takenTime: DateTime.now().difference(quizStart).inMilliseconds,
-          );
-          if (value != testItem.correctIndex &&
-              _penalizedChoices.add((testItem, value))) {
-            FSRS().penalizeWrongChoice(testItem.optionWords?[value].id);
-          }
-          Future.delayed(const Duration(milliseconds: 700), () {
-            if (mounted) {
-              setState(() {
-                _answeredIndexes.add(index);
-              });
-            }
-          });
-          return ans;
-        },
-        allowMutipleSelect: true,
-        hint: "听下面的音频，选择最合适的选项",
-        bottom: BottomTip(
-          isShowNext: _answeredIndexes.contains(index),
-          isLast: isLast,
-          onNextClicked: () => _advance(index),
-          onTipClicked: () {
-            viewAnswer(
-              context,
-              testItem.testWord,
-              chosenWrong:
-                  (_chosenIndexByItem[testItem] != null &&
-                      _chosenIndexByItem[testItem] != testItem.correctIndex)
-                  ? testItem.optionWords![_chosenIndexByItem[testItem]!]
-                  : null,
-            );
           },
         ),
       );

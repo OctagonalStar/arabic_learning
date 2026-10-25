@@ -1,3 +1,4 @@
+import 'package:arabic_learning/services/app_data.dart' show AppData;
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -32,4 +33,7 @@ void mockPathProvider() {
 /// 底层使用的插件实现）。
 void mockStorage(Map<String, Object> values) {
   SharedPreferences.setMockInitialValues(values);
+  // 首次启动会自动导入内置词库（1.7 万词），那属于生产行为；
+  // 测试统一关掉，让每个用例从空词库开始，断言才有确定性。
+  AppData.seedBuiltinDicts = false;
 }

@@ -10,10 +10,8 @@ import 'package:arabic_learning/core/extensions.dart';
 import 'package:arabic_learning/theme/tokens.dart' show AppRadius;
 import 'package:arabic_learning/theme/typography.dart';
 import 'package:arabic_learning/widgets/kit.dart' show Button;
-import 'package:arabic_learning/widgets/overlays.dart' show alart;
 import 'package:arabic_learning/widgets/shared.dart' show StatCard;
 import 'package:arabic_learning/services/words.dart';
-import 'package:arabic_learning/services/tts.dart';
 import 'package:arabic_learning/screens/setting/dict_manage_page.dart';
 import 'package:arabic_learning/models/dict.dart';
 import 'package:arabic_learning/services/global_state.dart';
@@ -108,44 +106,25 @@ class DailyWord extends StatefulWidget {
 
 
 class _DailyWord extends State<DailyWord> {
-  bool playing = false;
-
   @override
   Widget build(BuildContext context) {
     // 内部间距按卡片高度等比换算，维持原有 0.02/0.005/0.03 : 0.3 的比例。
     final double titleGap = widget.height * 0.067;
     final double wordGap = widget.height * 0.017;
-    final double iconGap = widget.height * 0.1;
     final now = DateTime.now();
     final seed = now.year * 10000 + now.month * 100 + now.day;
     Random rnd = Random(seed);
     late WordItem data;
-    late String dailyWord;
     AppData appData = AppData();
     if(appData.wordCount != 0) {
       data = appData.wordData.words[rnd.nextInt(appData.wordCount)];
-      dailyWord = data.arabic;
     }
 
     return Button(
-      onPressed: () async {
-        if(playing) return;
-        if(appData.wordCount != 0) {
-          setState(() {
-            playing = true;
-          });
-          try {
-            await playTextToSpeech(dailyWord);
-          } catch (e) {
-            if(context.mounted) alart(context, e.toString());
-          }
-          setState(() {
-            playing = false;
-          });
-        } else {
-          context.read<Global>().uiLogger.info("跳转: DailyWord => DictManagePage");
-          Navigator.of(context).push(MaterialPageRoute(builder: (context) => const DictManagePage()));
-        }
+      onPressed: () {
+        if(appData.wordCount != 0) return;
+        context.read<Global>().uiLogger.info("跳转: DailyWord => DictManagePage");
+        Navigator.of(context).push(MaterialPageRoute(builder: (context) => const DictManagePage()));
       },
       backgroundColor: Theme.of(context).colorScheme.primaryContainer,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.vertical(bottom: Radius.circular(AppRadius.card))),
@@ -174,8 +153,6 @@ class _DailyWord extends State<DailyWord> {
                   style: withoutColor(Theme.of(context).textTheme.titleMedium!),
                   textAlign: TextAlign.center,
                 ),
-                SizedBox(height: iconGap),
-                Icon(Icons.volume_up, size: 18.0),
               ],
             )
           ),

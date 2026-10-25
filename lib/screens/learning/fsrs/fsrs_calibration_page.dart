@@ -383,7 +383,6 @@ class _FsrsCalibrationPageState extends State<FsrsCalibrationPage> {
               mainWord: question.word.chinese,
               choices: question.options,
               optionWords: question.optionWords,
-              allowAudio: false,
               allowAnitmation: true,
               allowMutipleSelect: false,
               hint: "通过中文选择阿拉伯语",

@@ -12,7 +12,7 @@ import 'package:arabic_learning/services/global_state.dart';
 import 'package:arabic_learning/theme/tokens.dart' show AppMotion;
 import 'package:arabic_learning/widgets/kit.dart' show TextContainer;
 import 'package:arabic_learning/widgets/overlays.dart' show viewAnswer;
-import 'package:arabic_learning/widgets/questions.dart' show ChoiceQuestions, ListeningQuestion, SelfRatingQuestion, SpellQuestion, TestItem;
+import 'package:arabic_learning/widgets/questions.dart' show ChoiceQuestions, SelfRatingQuestion, SpellQuestion, TestItem;
 import 'package:arabic_learning/widgets/shared.dart' show RevealableActionBar;
 
 // 有东西复习的时候
@@ -49,8 +49,8 @@ class _FSRSReviewCardPage extends State<FSRSReviewCardPage> {
   bool spellAnswered = false;
   bool spellResult = false;
 
-  /// 选择题/听力题防止重复作答（听力「跳过」按钮在作答后仍可点击，
-  /// 重复调用会对同一张卡片重复 reviewCard，产生重复/损坏的复习记录）。
+  /// 选择题防止重复作答（重复调用会对同一张卡片重复 reviewCard，
+  /// 产生重复/损坏的复习记录）。
   /// 不复用 [choosed]：详解会提前置位 choosed，但仍需允许首次作答。
   bool answered = false;
 
@@ -71,17 +71,12 @@ class _FSRSReviewCardPage extends State<FSRSReviewCardPage> {
 
   String _hint() => "单词ID: ${widget.wordID}${choosed ? " 用时: ${end!.difference(start).inMilliseconds}毫秒" : ""}";
 
-  /// 选择题/听力题统一作答（含听力跳过 value == -1）
+  /// 选择题统一作答。
   bool _onChoiceSelected(int value) {
     if(answered) return false;
     answered = true;
     _reveal();
     context.read<Global>().updateLearningStreak();
-    if(value == -1) {
-      // 听力跳过得记为失败，否则卡片仍到期，_extendQueue 会无限重加
-      widget.fsrs.produceCard(widget.wordID, forceRate: Rating.again);
-      return false;
-    }
     chosenIndex = value;
     final int correct = item.correctIndex ?? -1;
     if(correct == value) {
@@ -164,8 +159,6 @@ class _FSRSReviewCardPage extends State<FSRSReviewCardPage> {
       question = ChoiceQuestions(
         mainWord: testType == 1 ? item.testWord.chinese : item.testWord.arabic,
         choices: item.options!,
-        // 中译阿题面为中文，禁止音频，避免 TTS 朗读中文含义
-        allowAudio: testType == 2,
         allowAnitmation: true,
         allowMutipleSelect: false,
         optionWords: item.optionWords,
@@ -191,18 +184,8 @@ class _FSRSReviewCardPage extends State<FSRSReviewCardPage> {
         },
         bottomWidget: _bottomBar(mediaQuery, wordData, correct),
       );
-    } else if(testType == 4) {
-      question = ListeningQuestion(
-        mainWord: item.testWord.arabic,
-        choices: item.options!,
-        allowMutipleSelect: false,
-        optionWords: item.optionWords,
-        hint: "听下面的音频，选择最合适的选项",
-        onSelected: _onChoiceSelected,
-        bottom: _bottomBar(mediaQuery, wordData, correct),
-      );
     } else {
-      // 正常配置不会走到这里（题型已被 _normalizeSections 限制为 0-4）
+      // 正常配置不会走到这里（题型已被 _normalizeSections 限制为 0-3）
       question = Center(child: TextContainer(text: "未知题型"));
     }
 

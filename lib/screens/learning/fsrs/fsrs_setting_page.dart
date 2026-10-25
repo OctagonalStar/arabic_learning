@@ -20,7 +20,6 @@ class ForeFSRSSettingPage extends StatelessWidget {
     1: "中译阿 选择题",
     2: "阿译中 选择题",
     3: "中译阿 拼写题",
-    4: "听力题",
   };
 
   @override

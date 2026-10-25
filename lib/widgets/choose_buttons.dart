@@ -37,8 +37,8 @@ import 'package:flutter/services.dart' show HapticFeedback;
 /// 多选（`ChoiceQuestions.allowMutipleSelect`）应保持 false，以免干扰继续选择。
 /// 默认为false
 ///
-/// 该组件供各 *Question 组件（ChoiceQuestions / ListeningQuestion /
-/// SelfRatingQuestion）复用；业务代码不应直接调用。
+/// 该组件供各 *Question 组件（ChoiceQuestions / SelfRatingQuestion）复用；
+/// 业务代码不应直接调用。
 class ChooseButtons extends StatefulWidget {
   final List<String> options;
   final bool? Function(int) onSelected;

@@ -24,7 +24,7 @@ List<TestItem> buildPlanTestItems({
 }) {
   final List<TestItem> items = <TestItem>[];
   for (final int type in chain.sections) {
-    if (type < 0 || type > 4) continue;
+    if (type < 0 || type > 3) continue; // 题型 4（听力题）已删除
     final List<WordItem> sectionWords = List<WordItem>.of(words);
     if (chain.shuffleWithinSection) sectionWords.shuffle(rnd);
     for (final WordItem word in sectionWords) {

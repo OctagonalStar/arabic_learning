@@ -1,40 +1,27 @@
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:url_launcher/url_launcher.dart';
 
-import 'package:arabic_learning/package_replacement/fake_dart_io.dart' if (dart.library.io) 'dart:io' as io;
-import 'package:arabic_learning/core/statics.dart' show StaticsVar;
-import 'package:arabic_learning/core/version.dart' show versionIntToString;
-
-import 'package:arabic_learning/widgets/kit.dart' show Button, SettingItem, SettingRedirctButton, SettingRow;
-import 'package:arabic_learning/widgets/overlays.dart' show alart, showSnackBar;
-import 'package:arabic_learning/widgets/feedback.dart' show LoadingIndicator;
-import 'package:arabic_learning/core/extensions.dart';
+import 'package:arabic_learning/widgets/kit.dart' show SettingItem, SettingRedirctButton, SettingRow;
+import 'package:arabic_learning/widgets/overlays.dart' show showSnackBar;
 import 'package:arabic_learning/models/config.dart' show Config, RegularConfig;
 import 'package:arabic_learning/services/global_state.dart';
 import 'package:arabic_learning/services/app_data.dart';
-import 'package:arabic_learning/screens/setting/help_page.dart'
-    show HelpPage;
-import 'package:arabic_learning/screens/setting/debug_page.dart'
-    show DebugPage;
-import 'package:arabic_learning/screens/setting/about_page.dart'
-    show AboutPage;
-import 'package:arabic_learning/screens/setting/dict_manage_page.dart'
-    show DictManagePage;
-import 'package:arabic_learning/screens/setting/model_download_page.dart'
-    show ModelDownload;
+
+import 'package:arabic_learning/screens/setting/help_page.dart' show HelpPage;
+import 'package:arabic_learning/screens/setting/debug_page.dart' show DebugPage;
+import 'package:arabic_learning/screens/setting/about_page.dart' show AboutPage;
+import 'package:arabic_learning/screens/setting/dict_manage_page.dart' show DictManagePage;
 import 'package:arabic_learning/screens/setting/questions_setting_page.dart'
     show QuestionsSettingPage;
-import 'package:arabic_learning/screens/setting/sync_page.dart'
-    show DataSyncPage;
-import 'package:arabic_learning/screens/setting/synonym_page.dart'
-    show SynonymPage;
+import 'package:arabic_learning/screens/setting/synonym_page.dart' show SynonymPage;
 import 'package:arabic_learning/screens/learning/fsrs_screens.dart'
     show ForeFSRSSettingPage;
-import 'package:arabic_learning/services/update_service.dart' show UpdateService, UpdateStage;
-import 'package:arabic_learning/widgets/update_sheet.dart' show showUpdateSheet;
 
+/// 设置页。
+///
+/// 小程序试用版分支：发音、动态取色、DoH、WebDAV 同步、软件更新、APP 下载
+/// 全部移除，项目地址只作为文本显示（小程序内无法打开外部链接）。
 class SettingPage extends StatefulWidget {
   const SettingPage({super.key});
   @override
@@ -44,7 +31,6 @@ class SettingPage extends StatefulWidget {
 class _SettingPage extends State<SettingPage> {
   @override
   Widget build(BuildContext context) {
-    MediaQueryData mediaQuery = MediaQuery.of(context);
     AppData appData = AppData();
 
     return Consumer<Global>(
@@ -64,9 +50,6 @@ class _SettingPage extends State<SettingPage> {
                 SettingRow(
                   leading: "主题颜色",
                   icon: Icons.color_lens,
-                  note: appData.config.regular.dynamicColor
-                      ? "动态取色开启时作为回退色"
-                      : null,
                   end: DropdownButton<int>(
                     value: appData.config.regular.theme,
                     items: const [
@@ -128,54 +111,6 @@ class _SettingPage extends State<SettingPage> {
                   ),
                 ),
                 SettingRow(
-                  leading: "动态取色",
-                  icon: Icons.palette,
-                  note: kIsWeb
-                      ? "网页版不支持动态取色，将使用上方主题颜色"
-                      : "使用系统壁纸/主题配色（Material You），不支持时回退到主题颜色",
-                  end: Switch(
-                    value: appData.config.regular.dynamicColor,
-                    onChanged: kIsWeb
-                        ? null
-                        : (value) {
-                            context.read<Global>().uiLogger.info(
-                              "更新动态取色设置: $value",
-                            );
-                            context.read<Global>().patchConfig(
-                              (Config config) => config.copyWith(
-                                regular: config.regular.copyWith(
-                                  dynamicColor: value,
-                                ),
-                              ),
-                            );
-                          },
-                  ),
-                ),
-                SettingRow(
-                  leading: "使用 DoH 解析域名",
-                  icon: Icons.dns,
-                  note: kIsWeb
-                      ? "网页版由浏览器决定域名解析，不支持 DoH"
-                      : "通过 HTTPS 加密解析域名（DNS over HTTPS），可绕过部分网络的域名劫持或污染；DoH 不可用时自动回退到系统 DNS，开启后网络请求可能略有延迟",
-                  end: Switch(
-                    value: appData.config.regular.useDoh,
-                    onChanged: kIsWeb
-                        ? null
-                        : (value) {
-                            context.read<Global>().uiLogger.info(
-                              "更新 DoH 设置: $value",
-                            );
-                            context.read<Global>().patchConfig(
-                              (Config config) => config.copyWith(
-                                regular: config.regular.copyWith(
-                                  useDoh: value,
-                                ),
-                              ),
-                            );
-                          },
-                  ),
-                ),
-                SettingRow(
                   leading: "字体设置", 
                   icon: Icons.font_download,
                   note: "若你的系统上阿语/中文字体异常，可在此更换备用",
@@ -204,26 +139,6 @@ class _SettingPage extends State<SettingPage> {
                     },
                   ),
                 ),
-                if (kIsWeb)
-                  SettingRow(
-                    leading: "隐藏网页版右上角APP下载按钮", 
-                    icon: Icons.hide_source, 
-                    end: Switch(
-                      value: AppData().config.regular.hideAppDownloadButton,
-                      onChanged: (value) {
-                        context.read<Global>().uiLogger.info(
-                          "更新网页端APP下载按钮隐藏设置: $value",
-                        );
-                        context.read<Global>().patchConfig(
-                          (Config config) => config.copyWith(
-                            regular: config.regular.copyWith(
-                              hideAppDownloadButton: value,
-                            ),
-                          ),
-                        );
-                      },
-                    ),
-                  ),
               ],
             ),
             SettingItem(
@@ -232,206 +147,18 @@ class _SettingPage extends State<SettingPage> {
                 SettingRedirctButton(title: "题型配置",icon: Icons.quiz, target: QuestionsSettingPage()),
                 SettingRedirctButton(title: "同义词管理", icon: Icons.sync_alt, target: SynonymPage()),
                 SettingRedirctButton(title: "词库管理", icon: Icons.library_books, target: DictManagePage()),
-                SettingRedirctButton(title: "数据备份及同步", icon: Icons.sync, target: DataSyncPage()),
                 SettingRedirctButton(title: "复习配置", icon: Icons.bookmark, target: ForeFSRSSettingPage(forceChoosing: true)),
               ],
             ),
             SettingItem(
-              title: "音频设置",
-              children: [
-                Column(
-                  children: [
-                    SettingRow(
-                      leading: "选择文本转语音接口",
-                      icon: Icons.api,
-                      note: "默认使用系统自带的文本转语音接口，但有些厂商可能没有阿拉伯语支持\n若使用\"神经网络合成语音\"你必须使用APP端并下载模型。",
-                      end: SizedBox()
-                    ),
-                    DropdownButton(
-                      value: AppData().config.audio.audioSource,
-                      onChanged: (value) {
-                        context.read<Global>().uiLogger.info("更新音频接口: $value");
-                        if (value == 1) {
-                          alart(
-                            context,
-                            "警告: \n来自\"TextReadTTS.com\"的音频不支持发音符号，且只能合成40字以内的文本。\n开启此功能请知悉。",
-                          );
-                        }
-                        context.read<Global>().patchConfig(
-                          (Config config) => config.copyWith(
-                            audio: config.audio.copyWith(
-                              audioSource: value,
-                            ),
-                          ),
-                        );
-                      },
-                      items: [
-                        DropdownMenuItem(
-                          value: 0,
-                          child: Text(
-                            "系统文本转语音",
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                        DropdownMenuItem(
-                          value: 1,
-                          child: Text(
-                            "请求TextReadTTS.com的语音",
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                        DropdownMenuItem(
-                          value: 2,
-                          enabled: !kIsWeb && AppData().modelTTSDownloaded ? true : false,
-                          child: Text(
-                            "神经网络合成语音",
-                            overflow: TextOverflow.ellipsis,
-                            style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                              color: !kIsWeb && AppData().modelTTSDownloaded ? null : context.semanticColors.disabled,
-                            ),
-                          ),
-                        ),
-                      ],
-                      isExpanded: true,
-                    ),
-                    SizedBox(width: mediaQuery.size.width * 0.02),
-                  ],
-                ),
-                SettingRow(
-                  leading: "设置播放速度", 
-                  icon: Icons.speed,
-                  note: "默认为1.0，即正常播放速度。",
-                  end: Slider(
-                    value: AppData().config.audio.playRate,
-                    min: 0.5,
-                    max: 1.5,
-                    divisions: 10,
-                    label: "${AppData().config.audio.playRate}",
-                    onChanged: (value) {
-                      setState(() {
-                        AppData().config = AppData().config.copyWith(
-                          audio: AppData().config.audio.copyWith(
-                            playRate: value,
-                          ),
-                        );
-                      });
-                    },
-                    onChangeEnd: (value) {
-                      context.read<Global>().uiLogger.info(
-                        "更新音频速度设置: $value",
-                      );
-                      context.read<Global>().updateSetting();
-                    },
-                  )
-                ),
-                SettingRow(
-                  leading: "自动播放发音", 
-                  icon: Icons.play_arrow, 
-                  note: "开启后将会在<学习>模块中，每进入阿译中选择题时阅读当前单词发音。", 
-                  end: Switch(
-                    value: appData.config.audio.autoPlay,
-                    onChanged: (value) {
-                      context.read<Global>().uiLogger.info(
-                        "更新自动发音设置: $value",
-                      );
-                      context.read<Global>().patchConfig(
-                        (Config config) => config.copyWith(
-                          audio: config.audio.copyWith(
-                            autoPlay: value
-                          ),
-                        ),
-                      );
-                    },
-                  )
-                ),
-                if(!kIsWeb) SettingRedirctButton(title: "下载神经网络文本转语音模型", icon: Icons.model_training, target: ModelDownload())
-              ],
-            ),
-            if (!kIsWeb && io.Platform.isAndroid)
-              ListenableBuilder(
-                listenable: UpdateService(),
-                builder: (context, child) => SettingItem(
-                  title: "软件更新",
-                  children: [
-                    SettingRow(
-                      leading: "自动检查更新",
-                      icon: Icons.system_update,
-                      note: "启动时在后台检查是否有新版本",
-                      end: Switch(
-                        value: appData.config.regular.autoCheckUpdate,
-                        onChanged: (value) {
-                          context.read<Global>().uiLogger.info(
-                            "更新自动检查更新设置: $value",
-                          );
-                          context.read<Global>().patchConfig(
-                            (Config config) => config.copyWith(
-                              regular: config.regular.copyWith(
-                                autoCheckUpdate: value,
-                              ),
-                            ),
-                          );
-                        },
-                      ),
-                    ),
-                    SettingRow(
-                      leading: "当前版本",
-                      icon: Icons.info_outline,
-                      end: Text(versionIntToString(StaticsVar.appVersion)),
-                    ),
-                    const _CheckUpdateRow(),
-                    if (appData.config.regular.skippedVersion != 0)
-                      SettingRow(
-                        leading:
-                            "已跳过 ${versionIntToString(appData.config.regular.skippedVersion)}",
-                        icon: Icons.visibility_off,
-                        end: TextButton(
-                          onPressed: () {
-                            UpdateService().unskipVersion();
-                          },
-                          child: const Text("恢复提示"),
-                        ),
-                      ),
-                  ],
-                ),
-              ),
-            SettingItem(
               title: "关于",
               children: [
                 SettingRedirctButton(title: "调试信息", icon: Icons.bug_report, target: DebugPage()),
-                Button(
-                  size: Size.fromHeight(mediaQuery.size.height * 0.08),
-                  shape: BeveledRectangleBorder(),
-                  onPressed: () {
-                    context.read<Global>().uiLogger.info("打开Github项目网站");
-                    launchUrl(
-                      Uri.parse(
-                        "https://github.com/OctagonalStar/arabic_learning/",
-                      ),
-                    );
-                  },
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.start,
-                    children: [
-                      Icon(Icons.star_rounded, size: 24.0),
-                      SizedBox(width: mediaQuery.size.width * 0.01),
-                      Expanded(
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text("项目地址"),
-                            Text(
-                              "去github上点个star~",
-                              style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                                color: Theme.of(context).colorScheme.onSurfaceVariant,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      Icon(Icons.open_in_new),
-                    ],
-                  ),
+                SettingRow(
+                  leading: "项目地址",
+                  icon: Icons.link,
+                  note: "github.com/OctagonalStar/arabic_learning",
+                  end: const SizedBox(),
                 ),
                 SettingRedirctButton(title: "关于本软件", icon: Icons.adb, target: AboutPage())
               ],
@@ -442,47 +169,3 @@ class _SettingPage extends State<SettingPage> {
     );
   }
 }
-
-/// 「检查更新」行：手动触发检查，命中新版本时弹出更新提示。
-class _CheckUpdateRow extends StatefulWidget {
-  const _CheckUpdateRow();
-
-  @override
-  State<_CheckUpdateRow> createState() => _CheckUpdateRowState();
-}
-
-class _CheckUpdateRowState extends State<_CheckUpdateRow> {
-  bool _checking = false;
-
-  Future<void> _check() async {
-    if (_checking) return;
-    setState(() => _checking = true);
-    final UpdateService update = UpdateService();
-    await update.check(manual: true);
-    if (!mounted) return;
-    setState(() => _checking = false);
-    if (update.hasPendingUpdate) {
-      await showUpdateSheet(context);
-    } else if (update.stage == UpdateStage.error) {
-      showSnackBar(context, "检查更新失败，请检查网络后重试");
-    } else {
-      showSnackBar(context, "已是最新版本");
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return InkWell(
-      onTap: _checking ? null : _check,
-      child: SettingRow(
-        leading: "检查更新",
-        icon: Icons.refresh,
-        note: "手动检查是否有新版本",
-        end: _checking
-            ? const LoadingIndicator(size: 20, strokeWidth: 2)
-            : const Icon(Icons.chevron_right),
-      ),
-    );
-  }
-}
-

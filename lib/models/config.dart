@@ -21,17 +21,11 @@ class Config {
   /// 常规设置类
   final RegularConfig regular;
 
-  /// 音频设置类
-  final AudioConfig audio;
-
   /// 学习设置类
   final LearningConfig learning;
 
   /// 题型设置类
   final QuizConfig quiz;
-
-  /// 同步设置类
-  final SyncConfig webSync;
 
   
   const Config({
@@ -40,10 +34,8 @@ class Config {
     this.lastVersion = StaticsVar.appVersion, 
     this.debug = const DebugConfig(),
     this.regular = const RegularConfig(),
-    this.audio = const AudioConfig(),
     this.learning = const LearningConfig(),
-    this.quiz = const QuizConfig(),
-    this.webSync = const SyncConfig()
+    this.quiz = const QuizConfig()
   });
 
   /// 将设置转为Map格式
@@ -54,10 +46,8 @@ class Config {
       "LastTermVersion": lastTermVersion,
       "Debug": debug.toMap(),
       "regular": regular.toMap(),
-      "audio": audio.toMap(),
       "learning": learning.toMap(),
-      "quiz": quiz.toMap(),
-      "sync": webSync.toMap()
+      "quiz": quiz.toMap()
     };
   }
 
@@ -69,10 +59,8 @@ class Config {
       lastTermVersion: setting["LastTermVersion"]??0,
       debug: DebugConfig.buildFromMap(setting["Debug"]),
       regular: RegularConfig.buildFromMap(setting["regular"]),
-      audio: AudioConfig.buildFromMap(setting["audio"]),
       learning: LearningConfig.buildFromMap(setting["learning"]),
-      quiz: QuizConfig.buildFromMap(setting["quiz"]),
-      webSync: SyncConfig.buildFromMap(setting["sync"])
+      quiz: QuizConfig.buildFromMap(setting["quiz"])
     );
   }
 
@@ -82,10 +70,8 @@ class Config {
     int? lastTermVersion,
     DebugConfig? debug,
     RegularConfig? regular,
-    AudioConfig? audio,
     LearningConfig? learning,
-    QuizConfig? quiz,
-    SyncConfig? webSync
+    QuizConfig? quiz
   }) {
     return Config(
       user: user??this.user, 
@@ -93,10 +79,8 @@ class Config {
       lastTermVersion: lastTermVersion??this.lastTermVersion,
       debug: debug??this.debug,
       regular: regular??this.regular,
-      audio: audio??this.audio,
       learning: learning??this.learning,
-      quiz: quiz??this.quiz,
-      webSync: webSync??this.webSync
+      quiz: quiz??this.quiz
     );
     
   }
@@ -195,23 +179,6 @@ class RegularConfig {
   /// 新安装默认 `0`（跟随系统）。
   final int themeMode;
 
-  /// 是否启用动态取色（Material You）。
-  ///
-  /// 平台不支持或 Web 端时自动回退到 [theme] 指定的种子色。
-  final bool dynamicColor;
-
-  /// 是否隐藏Web端`下载App`按钮
-  final bool hideAppDownloadButton;
-
-  /// 是否自动检查更新。
-  final bool autoCheckUpdate;
-
-  /// 已跳过的版本号（int 编码，见 `core/version.dart`），为 0 表示不跳过任何版本。
-  final int skippedVersion;
-
-  /// 是否使用 DoH（DNS over HTTPS）解析域名；Web 端无自定义 DNS 能力，忽略此设置。
-  final bool useDoh;
-
   /// [themeMode] 取值：跟随系统。
   static const int themeModeSystem = 0;
 
@@ -226,11 +193,6 @@ class RegularConfig {
     this.font = 0,
     this.darkMode = false,
     this.themeMode = themeModeSystem,
-    this.dynamicColor = false,
-    this.hideAppDownloadButton = false,
-    this.autoCheckUpdate = true,
-    this.skippedVersion = 0,
-    this.useDoh = false
   });
 
   Map<String, dynamic> toMap() {
@@ -239,11 +201,6 @@ class RegularConfig {
       "font": font,
       "darkMode": darkMode,
       "themeMode": themeMode,
-      "dynamicColor": dynamicColor,
-      "hideAppDownloadButton": hideAppDownloadButton,
-      "autoCheckUpdate": autoCheckUpdate,
-      "skippedVersion": skippedVersion,
-      "useDoh": useDoh,
     };
   }
 
@@ -266,11 +223,6 @@ class RegularConfig {
       font: setting["font"] ?? 0,
       darkMode: setting["darkMode"] ?? false,
       themeMode: themeMode,
-      dynamicColor: setting["dynamicColor"] ?? false,
-      hideAppDownloadButton: setting["hideAppDownloadButton"] ?? false,
-      autoCheckUpdate: setting["autoCheckUpdate"] ?? true,
-      skippedVersion: setting["skippedVersion"] ?? 0,
-      useDoh: setting["useDoh"] ?? false
     );
   }
 
@@ -279,11 +231,6 @@ class RegularConfig {
     int? font,
     bool? darkMode,
     int? themeMode,
-    bool? dynamicColor,
-    bool? hideAppDownloadButton,
-    bool? autoCheckUpdate,
-    int? skippedVersion,
-    bool? useDoh,
   }) {
     final int nextThemeMode = themeMode ?? this.themeMode;
     // 显式传入 themeMode 时同步旧 darkMode 字段，保证降级兼容；
@@ -301,63 +248,6 @@ class RegularConfig {
       font: font ?? this.font,
       darkMode: nextDarkMode,
       themeMode: nextThemeMode,
-      dynamicColor: dynamicColor ?? this.dynamicColor,
-      hideAppDownloadButton: hideAppDownloadButton ?? this.hideAppDownloadButton,
-      autoCheckUpdate: autoCheckUpdate ?? this.autoCheckUpdate,
-      skippedVersion: skippedVersion ?? this.skippedVersion,
-      useDoh: useDoh ?? this.useDoh,
-    );
-  }
-}
-
-@immutable
-class AudioConfig {
-  /// 使用的TTS音源
-  /// ```
-  /// 0: System TTS
-  /// 1: Online
-  /// 2: LocalViTS
-  /// ```
-  final int audioSource;
-
-  /// 播放速度
-  final double playRate;
-
-  /// 自动播放发音
-  final bool autoPlay;
-
-  const AudioConfig({
-    this.audioSource = 0,
-    this.playRate = 1.0,
-    this.autoPlay = false
-  });
-
-  Map<String, dynamic> toMap(){
-    return {
-      "useBackupSource": audioSource,
-      "playRate": playRate,
-      "autoPlay": autoPlay
-    };
-  }
-
-  static AudioConfig buildFromMap(Map<String, dynamic>? setting) {
-    if(setting == null) return AudioConfig();
-    return AudioConfig(
-      audioSource: setting["useBackupSource"],
-      playRate: setting["playRate"],
-      autoPlay: setting["autoPlay"]??false
-    );
-  }
-
-  AudioConfig copyWith({
-    int? audioSource,
-    double? playRate,
-    bool? autoPlay
-  }) {
-    return AudioConfig(
-      audioSource: audioSource ?? this.audioSource,
-      playRate: playRate ?? this.playRate,
-      autoPlay: autoPlay ?? this.autoPlay
     );
   }
 }
@@ -507,92 +397,6 @@ class QuizConfig {
       shuffleExternaly: shuffleExternaly ?? this.shuffleExternaly,
       modifyAllowed: modifyAllowed ?? this.modifyAllowed,
       preferSimilar: preferSimilar?? this.preferSimilar
-    );
-  }
-}
-
-@immutable
-class SyncConfig {
-  /// 是否启用同步
-  final bool enabled;
-
-  /// 同步账号配置类
-  final SyncAccountConfig account;
-
-  const SyncConfig({
-    this.enabled = false,
-    this.account = const SyncAccountConfig()
-  });
-
-  Map<String,dynamic> toMap(){
-    return {
-      "enabled": enabled,
-      "account": account.toMap()
-    };
-  }
-
-  static SyncConfig buildFromMap(Map<String, dynamic>? setting) {
-    if(setting == null) return SyncConfig();
-    return SyncConfig(
-      enabled: setting["enabled"],
-      account: SyncAccountConfig.buildFromMap(setting["account"])
-    );
-  }
-
-  SyncConfig copyWith({
-    bool? enabled,
-    SyncAccountConfig? account,
-  }) {
-    return SyncConfig(
-      enabled: enabled ?? this.enabled,
-      account: account ?? this.account,
-    );
-  }
-}
-
-@immutable
-class SyncAccountConfig {
-  /// 同步使用的Uri
-  final String uri;
-
-  /// 同步使用的用户名
-  final String userName;
-
-  /// 同步使用的密码
-  final String passWord;
-
-  const SyncAccountConfig({
-    this.uri = "",
-    this.userName = "",
-    this.passWord = ""
-  });
-
-  Map<String, dynamic> toMap(){
-    return {
-      "uri": uri,
-      "userName": userName,
-      "passWord": passWord
-    };
-  }
-
-  static SyncAccountConfig buildFromMap(Map<String, dynamic>? setting) {
-    if(setting == null) return SyncAccountConfig();
-    return SyncAccountConfig(
-      uri: setting["uri"],
-      userName: setting["userName"],
-      passWord: setting["passWord"]
-    );
-  }
-
-  SyncAccountConfig copyWith({
-    String? uri,
-    String? userName,
-    String? passWord,
-  }) {
-    return SyncAccountConfig(
-      uri: uri ?? this.uri,
-      userName: userName ?? this.userName,
-      passWord: passWord ?? this.passWord,
     );
   }
 }

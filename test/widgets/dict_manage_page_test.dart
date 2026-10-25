@@ -70,7 +70,7 @@ void main() {
     expect(find.text('词库管理'), findsOneWidget);
     expect(find.text('词库A'), findsOneWidget);
     expect(find.text('词条 2 · 课程 1'), findsOneWidget);
-    expect(find.text('线上下载'), findsOneWidget);
+    expect(find.text('内置词库'), findsOneWidget);
     expect(find.text('文件导入'), findsOneWidget);
     expect(find.text('修复/重建索引'), findsOneWidget);
     expect(find.text('清理未归属词条'), findsOneWidget);

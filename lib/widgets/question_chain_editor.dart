@@ -7,13 +7,12 @@ import 'package:arabic_learning/theme/tokens.dart' show AppRadius;
 /// 题型编号 → 显示名称的唯一来源。
 ///
 /// 0: 单词卡片学习；1: 中译阿 选择题；2: 阿译中 选择题；
-/// 3: 中译阿 拼写题；4: 听力题。
+/// 3: 中译阿 拼写题。
 const Map<int, String> kQuestionTypeLabels = {
   0: "单词卡片学习",
   1: "中译阿 选择题",
   2: "阿译中 选择题",
   3: "中译阿 拼写题",
-  4: "听力题",
 };
 
 /// 题型序号链的展示列表（可长按拖动排序、可删除单项）。
@@ -37,7 +36,7 @@ class QuestionChainListView extends StatelessWidget {
     required this.sections,
     required this.onReorder,
     required this.onRemove,
-    this.allowedTypes = const [0, 1, 2, 3, 4],
+    this.allowedTypes = const [0, 1, 2, 3],
     this.emptyHint,
   });
 
@@ -108,7 +107,7 @@ class QuestionTypeAddMenu extends StatelessWidget {
     super.key,
     required this.expandValue,
     required this.onAdd,
-    this.allowedTypes = const [0, 1, 2, 3, 4],
+    this.allowedTypes = const [0, 1, 2, 3],
   });
 
   String _labelOf(int type) => kQuestionTypeLabels[type] ?? "未知类型";

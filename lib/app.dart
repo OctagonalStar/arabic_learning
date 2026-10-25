@@ -13,8 +13,6 @@ import 'package:arabic_learning/screens/test/test_screen.dart' show TestPage;
 import 'package:arabic_learning/package_replacement/fake_dart_io.dart' if (dart.library.io) 'dart:io' as io;
 import 'package:arabic_learning/services/app_data.dart' show AppData;
 import 'package:arabic_learning/services/global_state.dart' show Global;
-import 'package:arabic_learning/services/update_service.dart' show UpdateService;
-import 'package:arabic_learning/widgets/update_sheet.dart' show showUpdateSheet;
 import 'package:arabic_learning/theme/tokens.dart' show AppBreakpoints, AppMotion;
 import 'package:arabic_learning/widgets/feedback.dart' show LoadingIndicator;
 import 'package:arabic_learning/widgets/kit.dart';
@@ -25,7 +23,6 @@ import 'package:flutter/services.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter_markdown_plus/flutter_markdown_plus.dart';
 import 'package:provider/provider.dart';
-import 'package:url_launcher/url_launcher.dart';
 
 class MyApp extends StatefulWidget {
   const MyApp({super.key});
@@ -302,8 +299,7 @@ class _MyHomePageState extends State<MyHomePage> {
     super.dispose();
   }
 
-  /// 启动提示调度：先自动检查更新（仅 Android 且开关开启），命中新版本时弹出
-  /// 底部更新提示；用户处理完后再顺延展示「更新日志」，避免两个底部弹窗叠加。
+  /// 启动提示调度：先展示「更新日志」底部弹窗。
   void _scheduleStartupPrompts(Global global) {
     if (_startupPromptsScheduled) return;
     _startupPromptsScheduled = true;
@@ -320,17 +316,6 @@ class _MyHomePageState extends State<MyHomePage> {
         FlutterLocalNotificationsPlugin()
             .resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>()
             ?.requestNotificationsPermission();
-      }
-      if (!kIsWeb &&
-          io.Platform.isAndroid &&
-          AppData().config.regular.autoCheckUpdate) {
-        final UpdateService update = UpdateService();
-        await update.check();
-        if (!mounted) return;
-        if (update.shouldPromptOnStartup) {
-          context.read<Global>().uiLogger.info("启动检查发现新版本，弹出更新提示");
-          await showUpdateSheet(context);
-        }
       }
       if (!mounted || !needChangeLog) return;
       final String changeLog = await rootBundle.loadString('CHANGELOG.md');
@@ -382,15 +367,6 @@ class _MyHomePageState extends State<MyHomePage> {
       appBar: AppBar(
         centerTitle: true,
         title: Text(StaticsVar.appName),
-        actions: [
-          if(kIsWeb && !AppData().config.regular.hideAppDownloadButton) Button(
-            icon: Icon(Icons.add_to_home_screen),
-            child: Text('下载APP版本'),
-            onPressed: () {
-              launchUrl(Uri.parse("https://github.com/OctagonalStar/arabic_learning/releases/latest"));
-            }
-          ),
-        ],
       ),
       body: SafeArea(top: false, child: LayoutBuilder(
         builder: (context, constraints) {

@@ -13,6 +13,33 @@ class SharedPreferences {
   static const List<String> usedKeys = ["settingData", "wordData", "fsrsData", "readingData", "synonymData", "favoriteData", "pushSessionData", "planData", "learningSessionData"]; // ! change this whenever add new setting key !
   Map<String, dynamic> dbCache = {}; // 使用缓存避免异步加载
 
+  /// 小程序里 `wx.setStorage` 单键上限 1MB，而 `wordData` 是 2~3MB 的整串 JSON。
+  /// 超过 [chunkChars] 的值会被切成多个键，主键只留分片标记。
+  /// 仅 Web 走 shared_preferences 后端时启用（即小程序），原生端和 IndexedDB 端不受影响。
+  bool chunked = false;
+
+  /// 每片字符数。中文 UTF-8 占 3 字节，250k 字符最坏 750KB，留足余量。
+  static const int chunkChars = 250000;
+  static const String _chunkPrefix = "\u0000mpc:";
+
+  static String _partKey(String key, int i) => "$key\u0000p$i";
+
+  /// 分片标记里的片数；非分片值返回 0。
+  static int chunkCount(String? raw) {
+    if (raw == null || !raw.startsWith(_chunkPrefix)) return 0;
+    return int.tryParse(raw.substring(_chunkPrefix.length)) ?? 0;
+  }
+
+  /// 按 [chunkChars] 切片（纯函数，便于测试）。
+  static List<String> slice(String value) {
+    final List<String> parts = [];
+    for (int i = 0; i < value.length; i += chunkChars) {
+      final int end = i + chunkChars;
+      parts.add(value.substring(i, end < value.length ? end : value.length));
+    }
+    return parts;
+  }
+
   static Future<SharedPreferences> getInstance() async {
     SharedPreferences rt = SharedPreferences();
     rt.logger.info("开始存储实例初始化;kIsWeb: $kIsWeb");
@@ -47,22 +74,59 @@ class SharedPreferences {
       rt.type = true;
     }
     rt.logger.info("存储实例初始化完成");
+    rt.chunked = kIsWeb && rt.type;
     return rt;
   }
 
   String? getString(String name){
     logger.finer("获取键$name");
     if(type) {
-      return prefs.getString(name);
+      final String? raw = prefs.getString(name);
+      final int n = chunkCount(raw);
+      if (n == 0) return raw;
+      final StringBuffer sb = StringBuffer();
+      for (int i = 0; i < n; i++) {
+        final String? part = prefs.getString(_partKey(name, i));
+        if (part == null) {
+          logger.severe("键$name 分片$i 缺失，按无数据处理");
+          return null;
+        }
+        sb.write(part);
+      }
+      return sb.toString();
     } else {
       if(dbCache.containsKey(name)) return dbCache[name];
       return null;
     }
   }
 
+  /// 清掉 [key] 遗留的分片键（从头到 [keep] 之前）。
+  ///
+  /// 故意同步、不 await：{@link setString} 的非分片路径必须保持「调用即写盘」，
+  /// 否则调用方紧接着读 `prefs.getString` 会读不到刚写的内容（有单测依赖此顺序）。
+  void _dropChunks(String key, {int keep = 0}) {
+    final int old = chunkCount(prefs.getString(key));
+    for (int i = keep; i < old; i++) {
+      prefs.remove(_partKey(key, i));
+    }
+  }
+
   Future<bool> setString(String key, String value) async {
     if (type) {
-      return prefs.setString(key, value);
+      if (!chunked || value.length <= chunkChars) {
+        _dropChunks(key);
+        return prefs.setString(key, value);
+      }
+      final List<String> parts = slice(value);
+      for (int i = 0; i < parts.length; i++) {
+        if (!await prefs.setString(_partKey(key, i), parts[i])) {
+          logger.severe("键$key 分片$i 写入失败");
+          return false;
+        }
+      }
+      _dropChunks(key, keep: parts.length);
+      logger.fine("键$key 分 ${parts.length} 片存储（${value.length} 字符）");
+      return prefs.setString(key, "$_chunkPrefix${parts.length}");
     } else {
       try {
         dbCache[key] = value;
@@ -126,7 +190,7 @@ class SharedPreferences {
     if(type) {
       Map<String, dynamic> overall = {};
       for(String keyName in usedKeys){
-        overall[keyName] = prefs.getString(keyName);
+        overall[keyName] = getString(keyName);
       }
       if(overrides != null) overall.addAll(overrides);
       return overall;

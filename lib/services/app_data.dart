@@ -3,14 +3,14 @@
 
 import 'dart:convert';
 
+import 'package:archive/archive.dart' show GZipDecoder;
 import 'package:logging/logging.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart' show ByteData, rootBundle;
 import 'package:fsrs/fsrs.dart' show Card, ReviewLog;
-import 'package:path_provider/path_provider.dart' as path_provider;
 
 import 'package:arabic_learning/core/extensions.dart';
 import 'package:arabic_learning/core/json_offload.dart';
-import 'package:arabic_learning/core/statics.dart';
 import 'package:arabic_learning/models/config.dart' show Config;
 import 'package:arabic_learning/models/dict.dart' show ClassItem, DictData, SourceItem, WordItem;
 import 'package:arabic_learning/models/reading.dart' show ReadingData;
@@ -23,8 +23,6 @@ import 'package:arabic_learning/services/push_session.dart';
 import 'package:arabic_learning/services/search.dart';
 import 'package:arabic_learning/services/synonyms.dart';
 import 'package:arabic_learning/package_replacement/storage.dart';
-import 'package:arabic_learning/package_replacement/fake_dart_io.dart' if (dart.library.io) 'dart:io' as io;
-import 'package:arabic_learning/package_replacement/fake_sherpa_onnx.dart' if (dart.library.io) 'package:sherpa_onnx/sherpa_onnx.dart' as sherpa_onnx;
 
 /// 词库导入结果摘要
 class DictImportResult {
@@ -55,6 +53,19 @@ class DictImportResult {
       "导入词条: $importedCount\n跳过无效词条: $skippedCount\n课程数: $classCount\n词库名称: $sourceName";
 }
 
+/// 随包分发的词库描述（[asset] 为 gzip 压缩的 JSONL）。
+class BuiltinDict {
+  const BuiltinDict({
+    required this.asset,
+    required this.source,
+    required this.title,
+  });
+
+  final String asset;
+  final String source;
+  final String title;
+}
+
 class AppData {
   // 作为单例
   static final AppData _instance = AppData._internal();
@@ -70,13 +81,8 @@ class AppData {
   /// 存储实例。非 final：每次 [init] 都重新获取（测试可借 [debugResetForInit]
   /// 在同一个进程里换一份 mock 存储重复初始化）。
   late SharedPreferences storage;
-  late final io.Directory basePath;
-
-  /// [basePath] 是否已赋值（`late final` 只能赋值一次，重复 [init] 需跳过）。
-  bool _basePathReady = false;
   late DictData wordData;
   late ReadingData readingData;
-  sherpa_onnx.OfflineTts? vitsTTS;
 
   /// 启动阶段那次「后台 isolate 编码后回写词库」的进行中任务。
   Future<void>? _wordWriteInFlight;
@@ -113,18 +119,10 @@ class AppData {
   
   int get wordCount => wordData.words.length;
   bool get isFirstStart => storage.getString("settingData") == null;
-  bool get modelTTSDownloaded => io.File("${basePath.path}/${StaticsVar.modelPath}/ar_JO-kareem-medium.onnx").existsSync();
 
   Future<void> init() async {
     if(inited) return;
     storage = await SharedPreferences.getInstance();
-    // `basePath` 是 `late final`，只能赋值一次（测试会重复 init 同一个单例）；
-    // Web 上从不读取它（path_provider 在浏览器无实现）。
-    if(!kIsWeb && !_basePathReady) {
-      basePath = (await path_provider.getApplicationDocumentsDirectory()) as io.Directory;
-      _basePathReady = true;
-    }
-
     // 存储打开后立刻启动 FSRS 的「SQLite 打开 + 旧数据迁移」，但**不等待**：
     // 它只依赖 storage 已就绪（读旧 fsrsData / pushSessionData 做首启迁移），
     // 与后面的词库解析互不依赖，因此让两者重叠执行。
@@ -224,34 +222,63 @@ class AppData {
       await storage.setString("favoriteData", jsonEncode(FavoriteStore().toMap()));
       await storage.setString("planData", jsonEncode(PlanStore.defaultData()));
       wordData = DictData(words: [], classes: []);
+      // 小程序分支：没有网络，词库随包分发。首次启动直接灌入内置词库，
+      // 否则新装用户会停在空词库上无路可走。
+      if (seedBuiltinDicts) {
+        for (final BuiltinDict dict in builtinDicts) {
+          await importBuiltinDict(dict);
+        }
+      }
+      // 内置词库导入后词表已非空，搜索索引要在这之后建（否则查不到内置词）。
+      if(!BKSearch.isReady) BKSearch.init(wordData.words);
       WordMembershipIndex.instance.rebuild(wordData.classes);
       logger.info("配置表初始化完成");
   }
 
-  // load TTS model if any
-  Future<void> loadTTS(double playRate) async {
-    if(kIsWeb || vitsTTS != null || !modelTTSDownloaded) return;
-    logger.info("TTS: 加载本地TTS中");
-    sherpa_onnx.initBindings();
-    final vits = sherpa_onnx.OfflineTtsVitsModelConfig(
-      model: "${basePath.path}/${StaticsVar.modelPath}/ar_JO-kareem-medium.onnx",
-      dataDir: "${basePath.path}/${StaticsVar.modelPath}/espeak-ng-data",
-      tokens: '${basePath.path}/${StaticsVar.modelPath}/tokens.txt',
-      lengthScale: 1 / playRate,
-    );
-    final modelConfig = sherpa_onnx.OfflineTtsModelConfig(
-      vits: vits,
-      numThreads: 2,
-      debug: false,
-      provider: 'cpu',
-    );
-    final config = sherpa_onnx.OfflineTtsConfig(
-      model: modelConfig,
-      maxNumSenetences: 1,
-    );
+  /// 首次启动是否自动导入 [builtinDicts]。
+  ///
+  /// 测试通过 `mockStorage` 置为 false，避免每个用例都灌入 1.7 万词。
+  static bool seedBuiltinDicts = true;
 
-    vitsTTS = sherpa_onnx.OfflineTts(config);
-    logger.info("TTS: 本地TTS加载完成");
+  /// 随包分发的词库清单（全部线上词库，gzip 压缩，运行时解压导入）。
+  /// 来源见 assets/words/LICENSE；源文件合计 5.86MB，压缩后 1.16MB。
+  static const List<BuiltinDict> builtinDicts = <BuiltinDict>[
+    BuiltinDict(
+      asset: "assets/words/gaodeng_syllabus.jsonl.gz",
+      source: "gaodeng_syllabus",
+      title: "高等学校阿拉伯语教学大纲词汇",
+    ),
+    BuiltinDict(
+      asset: "assets/words/dagang_24.json.gz",
+      source: "dagang_24",
+      title: "大纲二四级词库（不全版）",
+    ),
+    BuiltinDict(
+      asset: "assets/words/xinbian_1.json.gz",
+      source: "xinbian_1",
+      title: "新编阿拉伯语第一册",
+    ),
+    BuiltinDict(
+      asset: "assets/words/xinbian_2.json.gz",
+      source: "xinbian_2",
+      title: "新编阿拉伯语第二册",
+    ),
+  ];
+
+  /// 解压并导入一个内置词库。失败只记日志、返回 null，不阻断启动。
+  Future<DictImportResult?> importBuiltinDict(BuiltinDict dict) async {
+    try {
+      final ByteData data = await rootBundle.load(dict.asset);
+      final String text = utf8.decode(
+        GZipDecoder().decodeBytes(data.buffer.asUint8List()),
+      );
+      final DictImportResult result = importDictData(text, dict.source);
+      logger.info("内置词库[${dict.title}]导入完成：${result.importedCount} 词 / ${result.classCount} 课");
+      return result;
+    } catch (e) {
+      logger.severe("内置词库[${dict.title}]导入失败: $e");
+      return null;
+    }
   }
 
   /// Non-Format Data:

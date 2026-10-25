@@ -64,7 +64,7 @@ class _ButtonState extends State<Button> {
                 : background == scheme.errorContainer
                     ? scheme.onErrorContainer
                     : scheme.onSurface);
-    // 透明背景按钮（如 WordCardArabicButton 发音、ChooseButtonBox 选项）没有容器色，
+    // 透明背景按钮（如 ChooseButtonBox 选项）没有容器色，
     // 以前景色作为 state layer 底色；前景也透明时回退 onSurface，保证亮暗模式可读。
     final Color overlayBase = foreground.a == 0 ? scheme.onSurface : foreground;
     final Widget button = ElevatedButton(

@@ -1,7 +1,6 @@
 import 'package:arabic_learning/core/statics.dart';
 import 'package:arabic_learning/models/config.dart';
 import 'package:arabic_learning/theme/theme_resolver.dart';
-import 'package:dynamic_color_testing/dynamic_color_testing.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -86,45 +85,6 @@ void main() {
           seedColor: StaticsVar.themeList[9],
           brightness: Brightness.light,
         ),
-      );
-    });
-  });
-
-  group('ThemeResolver.resolveSchemes', () {
-    test('未开启动态取色时使用种子色', () async {
-      const RegularConfig config = RegularConfig(theme: 2);
-      final ResolvedSchemes schemes = await ThemeResolver.resolveSchemes(config);
-      expect(
-        schemes.light,
-        ThemeResolver.seedScheme(config, Brightness.light),
-      );
-      expect(
-        schemes.dark,
-        ThemeResolver.seedScheme(config, Brightness.dark),
-      );
-    });
-
-    test('测试 VM 无插件时开启动态取色也不崩溃并回退种子色', () async {
-      const RegularConfig config = RegularConfig(theme: 2, dynamicColor: true);
-      final ResolvedSchemes schemes = await ThemeResolver.resolveSchemes(config);
-      expect(schemes.light.brightness, Brightness.light);
-      expect(schemes.dark.brightness, Brightness.dark);
-    });
-
-    test('mock 系统强调色时采用动态配色', () async {
-      const Color accent = Color(0xFF123456);
-      DynamicColorTestingUtils.setMockDynamicColors(accentColor: accent);
-      const RegularConfig config = RegularConfig(theme: 2, dynamicColor: true);
-      final ResolvedSchemes schemes = await ThemeResolver.resolveSchemes(config);
-      expect(
-        schemes.light.primary,
-        ColorScheme.fromSeed(seedColor: accent, brightness: Brightness.light)
-            .primary,
-      );
-      expect(
-        schemes.dark.primary,
-        ColorScheme.fromSeed(seedColor: accent, brightness: Brightness.dark)
-            .primary,
       );
     });
   });

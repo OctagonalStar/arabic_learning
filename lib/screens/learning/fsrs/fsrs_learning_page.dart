@@ -11,7 +11,7 @@ import 'package:arabic_learning/theme/tokens.dart' show AppMotion;
 import 'package:arabic_learning/widgets/flip_word_card.dart' show FlipWordCard;
 import 'package:arabic_learning/widgets/kit.dart' show Button, TextContainer;
 import 'package:arabic_learning/widgets/overlays.dart' show viewAnswer;
-import 'package:arabic_learning/widgets/questions.dart' show ChoiceQuestions, ListeningQuestion, SpellQuestion, TestItem, WordCardQuestion;
+import 'package:arabic_learning/widgets/questions.dart' show ChoiceQuestions, SpellQuestion, TestItem, WordCardQuestion;
 import 'package:arabic_learning/widgets/shared.dart' show RevealableActionBar;
 
 // 学习新东西的页面： 展示释义 -> 选择题
@@ -190,8 +190,6 @@ class _FSRSLearningPageState extends State<FSRSLearningPage> {
                 return ChoiceQuestions(
                   mainWord: testItem.testType == 1 ? testItem.testWord.chinese : testItem.testWord.arabic,
                   choices: testItem.options!,
-                  // 中译阿题面为中文，禁止音频，避免 TTS 朗读中文含义
-                  allowAudio: testItem.testType == 2,
                   allowAnitmation: true,
                   allowMutipleSelect: true,
                   optionWords: testItem.optionWords,
@@ -227,35 +225,6 @@ class _FSRSLearningPageState extends State<FSRSLearningPage> {
                     return ok;
                   },
                   bottomWidget: _bottomBar(context, mediaQuery, index, correct),
-                );
-              } else if(testItem.testType == 4) {
-                return ListeningQuestion(
-                  mainWord: testItem.testWord.arabic,
-                  choices: testItem.options!,
-                  allowMutipleSelect: true,
-                  optionWords: testItem.optionWords,
-                  hint: "听下面的音频，选择最合适的选项",
-                  onSelected: (value) {
-                    if(value == -1) {
-                      // 跳过也放行，否则 PageView 被锁死
-                      setState(() {
-                        corrected = true;
-                      });
-                      widget.fsrs.produceCard(testItem.testWord.id);
-                      return false;
-                    }
-                    if(value == correct) {
-                      setState(() {
-                        corrected = true;
-                      });
-                      widget.fsrs.produceCard(testItem.testWord.id);
-                      return true;
-                    } else {
-                      chosenWrong[index] = value;
-                      return false;
-                    }
-                  },
-                  bottom: _bottomBar(context, mediaQuery, index, correct),
                 );
               } else {
                 // 单词卡片题（type 0）

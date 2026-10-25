@@ -1,6 +1,6 @@
 // 题目控件（原 lib/funcs/ui.dart 拆分）。
 // 承载选择题 ChoiceQuestions、单词卡片题 WordCardQuestion、自我评级题
-// SelfRatingQuestion、拼写题 SpellQuestion 与听力题 ListeningQuestion。
+// SelfRatingQuestion 与拼写题 SpellQuestion。
 
 import 'dart:math' show Random;
 
@@ -8,14 +8,13 @@ import 'package:arabic_learning/core/adaptive.dart' show AdaptiveScope;
 import 'package:arabic_learning/core/extensions.dart';
 import 'package:arabic_learning/models/dict.dart' show DictData, WordItem;
 import 'package:arabic_learning/services/global_state.dart';
-import 'package:arabic_learning/services/tts.dart';
 import 'package:arabic_learning/services/words.dart' show calculateButtonBoxLayout, getRandomWords;
 import 'package:arabic_learning/theme/tokens.dart' show AppMotion;
 import 'package:arabic_learning/theme/typography.dart';
 import 'package:arabic_learning/widgets/flip_word_card.dart' show FlipWordCard;
 import 'package:arabic_learning/widgets/kit.dart' show Button, ChooseButtons, TextContainer;
-import 'package:arabic_learning/widgets/overlays.dart' show alart, showSnackBar, showWordCardOverlay;
-import 'package:arabic_learning/widgets/shared.dart' show ButtonLabel, appInputDecoration;
+import 'package:arabic_learning/widgets/overlays.dart' show showSnackBar, showWordCardOverlay;
+import 'package:arabic_learning/widgets/shared.dart' show appInputDecoration;
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -36,8 +35,6 @@ import 'package:provider/provider.dart';
 /// 
 /// [onDisAllowMutipleSelect] :在不允许多次选择的题目中尝试多选时触发，默认会触发底部通知"该题目不允许多次选择"
 /// 
-/// [allowAudio] :是否允许播放音频（通常 [mainWord] 为中文时设置为不允许(false)）
-/// 
 /// [bottonLayout] :控制选项按钮的排布
 /// 允许值：-1：自动；0：1行；1：2行；2：4行，默认自动
 /// 
@@ -56,14 +53,12 @@ class ChoiceQuestions extends StatefulWidget {
   final Widget? bottomWidget;
   final Function? onDisAllowMutipleSelect;
   final bool allowMutipleSelect;
-  final bool allowAudio;
   final int bottonLayout;
   final bool allowAnitmation;
   final List<WordItem>? optionWords;
   const ChoiceQuestions({super.key, 
                         required this.mainWord, 
                         required this.choices, 
-                        required this.allowAudio, 
                         required this.onSelected,
                         this.hint, 
                         this.midWidget,
@@ -78,8 +73,6 @@ class ChoiceQuestions extends StatefulWidget {
   State<StatefulWidget> createState() => _ChoiceQuestions();
 }
 class _ChoiceQuestions extends State<ChoiceQuestions> {
-  bool playing = false;
-
   @override
   Widget build(BuildContext context) {
     MediaQueryData mediaQuery = MediaQuery.of(context);
@@ -96,34 +89,16 @@ class _ChoiceQuestions extends State<ChoiceQuestions> {
           children: [
             if(widget.hint!=null) TextContainer(text: widget.hint!, animated: true),
             Expanded(
-              child: widget.midWidget ?? StatefulBuilder(
-                builder: (context, setLocalState) {
-                  return Button(
-                    icon: Icon(widget.allowAudio ? (playing ? Icons.multitrack_audio : Icons.volume_up) : Icons.short_text, size: 24.0),
-                    size: Size.fromWidth(mediaQuery.size.width * 0.8),
-                    onPressed: () async {
-                      if (playing || !widget.allowAudio) {
-                        context.read<Global>().uiLogger.warning("${playing ? "正在播放" : "不准许音频"}，中断TTS");
-                        return;
-                      }
-                      setLocalState(() {
-                        playing = true;
-                      });
-                      try {
-                        await playTextToSpeech(widget.mainWord);
-                      } catch (e) {
-                        if(context.mounted) alart(context, e.toString());
-                      }
-                      
-                      setLocalState(() {
-                        playing = false;
-                      });
-                    },
+              child: widget.midWidget ?? Center(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                  child: FittedBox(
+                    fit: BoxFit.scaleDown,
                     // displayLarge(57) 为封顶字号：长词由 scaleDown 缩小，
-                    // 短词保持封顶而不会被 contain 放大填满按钮。
-                    child: ButtonLabel(child: Text(widget.mainWord, style: arabicTextStyle(context, widget.mainWord, base: withoutColor(Theme.of(context).textTheme.displayLarge!)))),
-                  );
-                }
+                    // 短词保持封顶而不会被放大填满整行。
+                    child: Text(widget.mainWord, style: arabicTextStyle(context, widget.mainWord, base: withoutColor(Theme.of(context).textTheme.displayLarge!))),
+                  ),
+                ),
               ),
             ),
             SizedBox(height: mediaQuery.size.height *0.01),
@@ -374,127 +349,6 @@ class _SpellQuestion extends State<SpellQuestion> {
   }
 }
 
-/// 听力题目页面
-class ListeningQuestion extends StatefulWidget {
-  final String mainWord;
-  final List<String> choices;
-  final bool? Function(int) onSelected;
-  final String? hint;
-  final Widget? bottom;
-  final Function? onDisAllowMutipleSelect;
-  final bool allowMutipleSelect;
-  final int bottonLayout;
-  final bool allowAnitmation;
-
-  /// 与 [choices] 一一对应的选项词条；非空时启用与 [ChoiceQuestions]
-  /// 相同的长按单词卡片与作答后释义揭示。
-  final List<WordItem>? optionWords;
-
-  const ListeningQuestion({super.key, 
-                        required this.mainWord, 
-                        required this.choices, 
-                        required this.onSelected,
-                        this.hint, 
-                        this.bottom, 
-                        this.onDisAllowMutipleSelect,
-                        this.bottonLayout = -1,
-                        this.allowMutipleSelect = true,
-                        this.allowAnitmation = true,
-                        this.optionWords});
-
-  @override
-  State<StatefulWidget> createState() => _ListeningQuestion();
-}
-
-class _ListeningQuestion extends State<ListeningQuestion> {
-  bool choosed = false;
-  bool playing = false;
-
-  @override
-  Widget build(BuildContext context) {
-    MediaQueryData mediaQuery = MediaQuery.of(context);
-    int showingMode = widget.bottonLayout;
-    if(showingMode == -1){
-      context.read<Global>().uiLogger.finest("未指定布局，开始计算");
-      showingMode = calculateButtonBoxLayout(widget.choices, AdaptiveScope.of(context));
-      context.read<Global>().uiLogger.finest(() => "最终采用布局方案: $showingMode");
-    }
-    return Material(
-      child: Center(
-        child: Column(
-          children: [
-            if(widget.hint!=null) TextContainer(text: widget.hint!, animated: true),
-            Expanded(
-              child: StatefulBuilder(
-                builder: (context, setLocalState) {
-                  return Button(
-                    size: Size.fromWidth(mediaQuery.size.width * 0.8),
-                    onPressed: () async {
-                      if (playing) {
-                        context.read<Global>().uiLogger.warning("正在播放，中断TTS");
-                        return;
-                      }
-                      setLocalState(() {
-                        playing = true;
-                      });
-                      try {
-                        await playTextToSpeech(widget.mainWord);
-                      } catch (e) {
-                        if(context.mounted) alart(context, e.toString());
-                      }
-                      
-                      setLocalState(() {
-                        playing = false;
-                      });
-                    },
-                    child: Icon(playing ? Icons.multitrack_audio : Icons.volume_up, size: 60,),
-                  );
-                }
-              ),
-            ),
-            SizedBox(height: mediaQuery.size.height *0.01),
-            ChooseButtons(
-              options: widget.choices,
-              settingShowingMode: showingMode,
-              onSelected: widget.onSelected,
-              isShowAnimation: widget.allowAnitmation,
-              // 单选时判定后聚焦选中项并淡化其余选项；多选保持原样。
-              isSingleSelect: !widget.allowMutipleSelect,
-              // 单选作答后锁定全部选项；「跳过」后由 locked 统一锁定。
-              lockAfterSelect: !widget.allowMutipleSelect,
-              locked: choosed,
-              // 听力选项同样对应词条：非空时启用长按卡片与释义揭示。
-              optionWords: widget.optionWords,
-              onOptionLongPress: (WordItem word) {
-                showWordCardOverlay(context, word);
-              },
-              onLockedTap: (int value) {
-                if(widget.onDisAllowMutipleSelect != null) {
-                  widget.onDisAllowMutipleSelect!(value);
-                  return;
-                }
-                showSnackBar(context, "该页面不允许多次选择");
-              },
-            ),
-            TextButton(
-              onPressed: (){
-                setState(() {
-                  choosed = true;
-                });
-                widget.onSelected(-1);
-              },
-              child: Text("跳过听力题目")
-            ),
-            SizedBox(height: mediaQuery.size.height *0.01),
-            if(widget.bottom != null) widget.bottom!,
-            SizedBox(height: mediaQuery.size.height *0.05),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
 /// 单个待测单词及其题型、选项数据。
 ///
 /// 学习页面与复习/推送页面共用，保证同一配置下题目构建方式一致。
@@ -508,16 +362,15 @@ class TestItem {
   /// 1: 中译阿 选择题
   /// 2: 阿译中 选择题
   /// 3: 拼写题
-  /// 4: 听力题
   final int testType;
 
-  /// 选择题和听力题的选项
+  /// 选择题的选项
   final List<String>? options;
 
-  /// 选择题和听力题的选项词（与 [options] 一一对应，用于取回选错的词条）
+  /// 选择题的选项词（与 [options] 一一对应，用于取回选错的词条）
   final List<WordItem>? optionWords;
 
-  /// 选择题和听力题的正确血选项索引号
+  /// 选择题的正确血选项索引号
   final int? correctIndex;
 
   const TestItem({
@@ -536,7 +389,7 @@ class TestItem {
       return TestItem(
         testWord: word, 
         testType: testType,
-        options: List.generate(4, (int index) => ((testType == 2 || (testType == 4 && rnd.nextBool())) ? optionWords[index].chinese : optionWords[index].arabic), growable: false),
+        options: List.generate(4, (int index) => testType == 2 ? optionWords[index].chinese : optionWords[index].arabic, growable: false),
         optionWords: optionWords,
         correctIndex: optionWords.indexOf(word)
       );
@@ -545,6 +398,12 @@ class TestItem {
 
   /// 从 [sections] 中随机挑选一个题型；单元素时直接返回且不消耗随机数
   /// （保持既有确定性测试的随机序列不变）。
-  static int pickType(List<int> sections, Random rnd) =>
-      sections.length == 1 ? sections.first : sections[rnd.nextInt(sections.length)];
+  ///
+  /// 旧版的 4（听力题）已随发音功能一起删除，老配置里可能残留，在此过滤；
+  /// 过滤后为空时退回 1（中译阿选择题），避免调用方拿到无题型可用的空列表。
+  static int pickType(List<int> sections, Random rnd) {
+    final List<int> usable = sections.where((int type) => type != 4).toList(growable: false);
+    if(usable.isEmpty) return 1;
+    return usable.length == 1 ? usable.first : usable[rnd.nextInt(usable.length)];
+  }
 }

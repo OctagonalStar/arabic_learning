@@ -34,35 +34,28 @@ dependencies:
   path_provider: ^2.1.5 #no support [Web] UNacceptable
   provider: ^6.0.1
   file_picker: ^12.0.0-beta.5 #no completely support [Web] UNacceptable
-  flutter_tts: ^4.2.5
-  just_audio: ^0.10.5
-  just_audio_windows: ^0.2.2 #just_audio's windows addon
   flutter_launcher_icons: ^0.14.4
   shared_preferences: ^2.5.3
-  url_launcher: ^6.3.2
-  sherpa_onnx: ^1.12.14
+  # 小程序分支：离线 TTS 依赖 sherpa_onnx，其 Web 产物带 14.4MB wasm，
+  # Web 端本来就走 fake_sherpa_onnx，故移除。恢复需同时还原 tts.dart / app_data.dart 的条件导入。
+  # sherpa_onnx: ^1.12.14
   archive: ^4.0.7
-  dio: ^5.9.0
   fsrs: ^2.0.1
   idb_shim: ^2.6.7+1
   flutter_markdown_plus: ^1.0.5
-  webdav_client: ^1.2.2
   logging: ^1.3.0
   flutter_local_notifications: ^22.0.1
   workmanager: ^0.10.9
-  flutter_webrtc: ^1.5.2
+  # 小程序分支：以下依赖随功能移除而删除——
+  # flutter_tts / just_audio(+windows) 发音；dio / webdav_client 网络；url_launcher 外链；
+  # dynamic_color 动态取色；flutter_webrtc / qr_flutter / mobile_scanner 局域网联机；wakelock_plus 保持常亮。
   crypto: ^3.0.7
-  qr_flutter: ^4.1.0
-  mobile_scanner: ^7.2.0
-  wakelock_plus: ^1.5.1
-  dynamic_color: ^2.1.0 # Material You 动态取色（Android/Linux/macOS/Windows，Web 无实现）
   drift: ^2.32.0
   drift_flutter: ^0.3.1
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
-  dynamic_color_testing: ^1.0.0 # 测试用 mock（无该包时移除）
 
   # The "flutter_lints" package below contains a set of recommended lints to
   # encourage good coding practices. The lint set provided by the package is
@@ -72,6 +65,8 @@ dev_dependencies:
   flutter_lints: ^6.0.0
   change_app_package_name: ^1.1.0
   dart_pubspec_licenses: ^3.2.0
+  # Flutter Web → 微信小程序编译器（mp-flutter）。仅用 `dart run flutter_miniprogram`，不进 App 代码。
+  flutter_miniprogram: ^0.3.2
   drift_dev: ^2.32.0
   build_runner: ^2.15.0
 
@@ -89,10 +84,18 @@ flutter:
   # To add assets to your application, add an assets section, like this:
   assets:
     - CHANGELOG.md
-    - assets/fonts/zh/NotoSansSC-Medium.ttf
-    - assets/help/audio.md
+    # 小程序分支：NotoSansSC 中文字体 10MB，WebView 用系统字体即可，删除以减小首屏体积。
+    # 若需恢复，把下面这行加回来即可（Global.loadFont 已有 try/catch）。
+    # - assets/fonts/zh/NotoSansSC-Medium.ttf
     - assets/help/PrivacyPolicy.md
     - assets/help/TermsOfUse.md
+    # 小程序分支：内置词库（全部线上词库，共 17778 词）。源文件合计 5.86MB，压成 1.16MB gzip，
+    # 运行时用 archive 的 GZipDecoder 解开；importDictData 自动识别 JSONL 与旧版 JSON 对象。
+    - assets/words/gaodeng_syllabus.jsonl.gz
+    - assets/words/dagang_24.json.gz
+    - assets/words/xinbian_1.json.gz
+    - assets/words/xinbian_2.json.gz
+    - assets/words/LICENSE
   fonts:
     - family: Vazirmatn
       fonts:
@@ -117,3 +120,7 @@ flutter_launcher_icons:
   macos:
     generate: true
     image_path: "assets/icon/icon.png"
+# 临时：允许在 Flutter 3.47.7 上试 mp-flutter（上游白名单只有 3.41.9）
+dependency_overrides:
+  flutter_miniprogram:
+    path: /tmp/opencode/fm

@@ -20,10 +20,7 @@ void main() {
         font: 2,
         darkMode: true,
         themeMode: RegularConfig.themeModeDark,
-        dynamicColor: true,
-        hideAppDownloadButton: true,
       ),
-      audio: AudioConfig(audioSource: 2, playRate: 1.5, autoPlay: true),
       learning: LearningConfig(
         startDate: 10,
         lastDate: 20,
@@ -37,10 +34,6 @@ void main() {
         shuffleExternaly: true,
         modifyAllowed: false,
         preferSimilar: true,
-      ),
-      webSync: SyncConfig(
-        enabled: true,
-        account: SyncAccountConfig(uri: "https://dav", userName: "u", passWord: "p"),
       ),
     );
 
@@ -65,9 +58,7 @@ void main() {
       expect(rebuilt.lastTermVersion, 2);
       expect(rebuilt.debug.toMap(), const DebugConfig().toMap());
       expect(rebuilt.regular.toMap(), const RegularConfig().toMap());
-      expect(rebuilt.audio.toMap(), const AudioConfig().toMap());
       expect(rebuilt.learning.toMap(), const LearningConfig().toMap());
-      expect(rebuilt.webSync.toMap(), const SyncConfig().toMap());
     });
 
     test('copyWith 只覆盖指定字段', () {
@@ -80,19 +71,10 @@ void main() {
   });
 
   group('子配置缺省值', () {
-    test('DebugConfig/RegularConfig/AudioConfig/LearningConfig 接受 null', () {
+    test('DebugConfig/RegularConfig/LearningConfig 接受 null', () {
       expect(DebugConfig.buildFromMap(null).toMap(), const DebugConfig().toMap());
       expect(RegularConfig.buildFromMap(null).toMap(), const RegularConfig().toMap());
-      expect(AudioConfig.buildFromMap(null).toMap(), const AudioConfig().toMap());
       expect(LearningConfig.buildFromMap(null).toMap(), const LearningConfig().toMap());
-    });
-
-    test('SyncConfig/SyncAccountConfig 接受 null', () {
-      expect(SyncConfig.buildFromMap(null).toMap(), const SyncConfig().toMap());
-      expect(
-        SyncAccountConfig.buildFromMap(null).toMap(),
-        const SyncAccountConfig().toMap(),
-      );
     });
 
     test('QuizConfig buildFromMap(null) 抛异常（设计如此）', () {
@@ -106,10 +88,8 @@ void main() {
         "theme": 3,
         "font": 1,
         "darkMode": true,
-        "hideAppDownloadButton": false,
       });
       expect(rebuilt.themeMode, RegularConfig.themeModeDark);
-      expect(rebuilt.dynamicColor, isFalse);
       expect(rebuilt.theme, 3);
       expect(rebuilt.font, 1);
     });
@@ -121,35 +101,29 @@ void main() {
         "darkMode": false,
       });
       expect(rebuilt.themeMode, RegularConfig.themeModeLight);
-      expect(rebuilt.dynamicColor, isFalse);
     });
 
-    test('新安装 buildFromMap(null) 默认跟随系统且不启用动态取色', () {
+    test('新安装 buildFromMap(null) 默认跟随系统', () {
       final RegularConfig rebuilt = RegularConfig.buildFromMap(null);
       expect(rebuilt.themeMode, RegularConfig.themeModeSystem);
-      expect(rebuilt.dynamicColor, isFalse);
     });
 
     test('新字段显式存在时优先于 darkMode', () {
       final RegularConfig rebuilt = RegularConfig.buildFromMap(<String, dynamic>{
         "darkMode": true,
         "themeMode": RegularConfig.themeModeLight,
-        "dynamicColor": true,
       });
       expect(rebuilt.themeMode, RegularConfig.themeModeLight);
-      expect(rebuilt.dynamicColor, isTrue);
     });
 
     test('新字段往返一致', () {
       const RegularConfig regular = RegularConfig(
         theme: 5,
         themeMode: RegularConfig.themeModeLight,
-        dynamicColor: true,
       );
       final RegularConfig rebuilt = RegularConfig.buildFromMap(regular.toMap());
       expect(rebuilt.toMap(), regular.toMap());
       expect(rebuilt.themeMode, RegularConfig.themeModeLight);
-      expect(rebuilt.dynamicColor, isTrue);
     });
 
     test('copyWith(themeMode) 同步旧 darkMode 字段', () {
@@ -174,7 +148,6 @@ void main() {
       final Map<String, dynamic> map = const RegularConfig().toMap();
       expect(map.containsKey("darkMode"), isTrue);
       expect(map.containsKey("themeMode"), isTrue);
-      expect(map.containsKey("dynamicColor"), isTrue);
     });
   });
 

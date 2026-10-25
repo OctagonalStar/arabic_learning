@@ -17,8 +17,7 @@ import 'package:arabic_learning/services/plan_store.dart' show PlanStore;
 import 'package:arabic_learning/services/search.dart' show BKSearch;
 import 'package:arabic_learning/services/synonyms.dart' show SynonymStore;
 import 'package:arabic_learning/theme/app_theme.dart' show buildTheme;
-import 'package:arabic_learning/theme/theme_resolver.dart'
-    show ResolvedSchemes, ThemeResolver;
+import 'package:arabic_learning/theme/theme_resolver.dart' show ThemeResolver;
 import 'package:logging/logging.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
@@ -33,10 +32,6 @@ class Global with ChangeNotifier {
   String? zhFont;
   bool updateLogRequire = false; //是否需要显示更新日志
 
-  // 动态取色解析缓存：避免每次 build 重新请求原生插件。
-  ColorScheme? _dynamicLightScheme;
-  ColorScheme? _dynamicDarkScheme;
-  String? _dynamicSchemeKey;
 
   // 主题缓存：ThemeData 构建开销较大，配置未变时复用同一实例。
   ThemeData? _lightTheme;
@@ -67,23 +62,18 @@ class Global with ChangeNotifier {
 
   ThemeData _buildTheme(Brightness brightness) {
     final RegularConfig regular = AppData().config.regular;
-    final ColorScheme scheme;
-    if (regular.dynamicColor &&
-        !kIsWeb &&
-        _dynamicLightScheme != null &&
-        _dynamicDarkScheme != null) {
-      scheme =
-          brightness == Brightness.dark ? _dynamicDarkScheme! : _dynamicLightScheme!;
-    } else {
-      scheme = ThemeResolver.seedScheme(regular, brightness);
-    }
+    final ColorScheme scheme = ThemeResolver.seedScheme(regular, brightness);
     // 字体回退链随备用字体配置变化：
     // font==1 → 阿语 Vazirmatn；font==2 → 阿语 Vazirmatn + 中文 NotoSansSC。
     // `fontFamily` 仍按原逻辑只传 zhFont，不改变其判定与语义。
+    //
+    // Web / 小程序（kIsWeb）额外规则：CanvasKit 没有系统字体，阿语只能靠内置
+    // Vazirmatn（assets/fonts/ar）；引擎的在线回退字体 CDN 在小程序里也不可达。
+    // 因此默认档（font==0）也必须把 Vazirmatn 挂进回退链，否则阿语全是方框。
     final List<String>? fontFallback = switch (regular.font) {
       1 => const <String>[StaticsVar.arBackupFont],
       2 => const <String>[StaticsVar.arBackupFont, StaticsVar.zhBackupFont],
-      _ => null,
+      _ => kIsWeb ? const <String>[StaticsVar.arBackupFont] : null,
     };
     return buildTheme(
       scheme,
@@ -91,30 +81,6 @@ class Global with ChangeNotifier {
       fontFamilyFallback: fontFallback,
     );
   }
-
-  /// 按需解析并缓存动态取色方案；未启用或平台不支持时清空缓存回退种子色。
-  Future<void> _refreshDynamicScheme() async {
-    final RegularConfig regular = AppData().config.regular;
-    if (!regular.dynamicColor || kIsWeb) {
-      _dynamicLightScheme = null;
-      _dynamicDarkScheme = null;
-      _dynamicSchemeKey = null;
-      _invalidateThemeCache(); // 关闭动态取色：回退种子色需重建主题
-      return;
-    }
-    final String key = regular.theme.toString();
-    if (_dynamicSchemeKey == key &&
-        _dynamicLightScheme != null &&
-        _dynamicDarkScheme != null) {
-      return;
-    }
-    final ResolvedSchemes schemes = await ThemeResolver.resolveSchemes(regular);
-    _dynamicLightScheme = schemes.light;
-    _dynamicDarkScheme = schemes.dark;
-    _dynamicSchemeKey = key;
-    _invalidateThemeCache(); // 动态取色方案已解析：颜色变化需重建主题
-  }
-
 
   // 初始化 Future 记忆化：init() 内部会 notifyListeners() 触发重建，
   // 若重建时再次被调用会重复解析/写入配置，故只执行一次。
@@ -178,7 +144,7 @@ class Global with ChangeNotifier {
 
   /// 从存储重新加载词库/阅读数据并重建搜索索引。
   ///
-  /// 用于备份恢复/WebDAV 同步之后，避免继续使用恢复前的旧内存数据
+  /// 用于数据恢复（本地导入）之后，避免继续使用恢复前的旧内存数据
   /// （旧实现恢复后只重建了 Config）。正常启动不调用此方法，避免重复建树。
   Future<void> reloadStoredData() async {
     logger.info("重新加载本地数据");
@@ -286,11 +252,8 @@ class Global with ChangeNotifier {
 
   Future<void> refreshApp() async {
     logger.info("应用设置中");
-    // 本地 TTS 模型（sherpa_onnx）加载是同步的，放在这里会阻塞首帧；
-    // 改为在 services/tts.dart 首次合成语音时惰性加载。
     changeLoggerBehavior();
     updateTheme();
-    await _refreshDynamicScheme();
     notifyListeners();
     logger.info("应用设置完成");
   }

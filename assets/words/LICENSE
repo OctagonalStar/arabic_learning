@@ -1,0 +1,37 @@
+MIT License
+
+Copyright (c) 2026 OctagonalStar
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+---
+
+## 内置词库来源 / Bundled dictionaries
+
+`gaodeng_syllabus.jsonl.gz`（11840 词 / 315 课）
+- 来源：https://github.com/OctagonalStar/arabic_chinese_edu_words_dataset
+- 文件：高等学校阿拉伯语教学大纲词汇.jsonl
+- 许可：MIT（见上方）
+
+`dagang_24.json.gz`（3933 词 / 27 课）、`xinbian_1.json.gz`（802 词 / 22 课）、`xinbian_2.json.gz`（1203 词 / 16 课）
+- 来源：https://github.com/JYinherit/ArabicLearning 的 `词库/` 目录
+- 许可：AGPL-3.0（与本源代码同一许可）
+
+单词正文版权归原教材与词典编者所有，本项目仅作学习用途的离线分发；
+如权利人提出异议，删除对应文件即可（`AppData.builtinDicts` 中同步移除该条目）。
