@@ -37,6 +37,8 @@ dependencies:
   flutter_tts: ^4.2.5
   just_audio: ^0.10.5
   just_audio_windows: ^0.2.2 #just_audio's windows addon
+  just_audio_media_kit: ^2.1.0 #just_audio's linux addon（其它平台不启用）
+  media_kit_libs_linux: ^1.2.1 #just_audio_media_kit 依赖的 Linux mpv 库
   flutter_launcher_icons: ^0.14.4
   shared_preferences: ^2.5.3
   url_launcher: ^6.3.2

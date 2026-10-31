@@ -11,6 +11,7 @@ import 'package:arabic_learning/services/notifications.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:just_audio_media_kit/just_audio_media_kit.dart';
 import 'package:logging/logging.dart';
 import 'package:provider/provider.dart';
 import 'package:window_manager/window_manager.dart';
@@ -89,6 +90,12 @@ void main() async {
     });
     logger.info("窗口配置加载完成");
   }
+  // just_audio 官方没有 Linux 实现，这里用 media_kit(mpv) 补上播放后端；
+  // Windows 已由 just_audio_windows 处理，因此不开启 windows。
+  if (!kIsWeb && io.Platform.isLinux) {
+    JustAudioMediaKit.ensureInitialized(linux: true, windows: false);
+  }
+
   runApp(
     ChangeNotifierProvider(
       create: (context) => Global(),

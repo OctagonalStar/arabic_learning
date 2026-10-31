@@ -94,6 +94,7 @@ const allDependencies = <Package>[
   _jni_util,
   _json_annotation,
   _just_audio,
+  _just_audio_media_kit,
   _just_audio_platform_interface,
   _just_audio_web,
   _just_audio_windows,
@@ -107,6 +108,8 @@ const allDependencies = <Package>[
   _matcher,
   _material_color_utilities,
   _material_ui,
+  _media_kit,
+  _media_kit_libs_linux,
   _meta,
   _mime,
   _mobile_scanner,
@@ -140,6 +143,7 @@ const allDependencies = <Package>[
   _record_use,
   _retry,
   _rxdart,
+  _safe_local_storage,
   _safe_url_check,
   _screen_retriever,
   _screen_retriever_linux,
@@ -188,6 +192,8 @@ const allDependencies = <Package>[
   _test_core,
   _timezone,
   _typed_data,
+  _universal_platform,
+  _uri_parser,
   _url_launcher,
   _url_launcher_android,
   _url_launcher_ios,
@@ -232,6 +238,8 @@ const dependencies = <Package>[
   _flutter_tts,
   _just_audio,
   _just_audio_windows,
+  _just_audio_media_kit,
+  _media_kit_libs_linux,
   _flutter_launcher_icons,
   _shared_preferences,
   _url_launcher,
@@ -4717,6 +4725,44 @@ License, Version 2.0.
    limitations under the License.''',
   );
 
+/// just_audio_media_kit 2.1.0
+const _just_audio_media_kit = Package(
+    name: 'just_audio_media_kit',
+    description: 'package:media_kit bindings for just_audio to support Linux and Windows.',
+    repository: 'https://github.com/Pato05/just_audio_media_kit',
+    authors: [],
+    version: '2.1.0',
+    spdxIdentifiers: ['Unlicense'],
+    isMarkdown: false,
+    isSdk: false,
+    dependencies: [PackageRef('flutter'), PackageRef('logging'), PackageRef('just_audio_platform_interface'), PackageRef('media_kit'), PackageRef('universal_platform')],
+    devDependencies: [PackageRef('flutter_test'), PackageRef('flutter_lints')],
+    license: '''This is free and unencumbered software released into the public domain.
+
+Anyone is free to copy, modify, publish, use, compile, sell, or
+distribute this software, either in source code form or as a compiled
+binary, for any purpose, commercial or non-commercial, and by any
+means.
+
+In jurisdictions that recognize copyright laws, the author or authors
+of this software dedicate any and all copyright interest in the
+software to the public domain. We make this dedication for the benefit
+of the public at large and to the detriment of our heirs and
+successors. We intend this dedication to be an overt act of
+relinquishment in perpetuity of all present and future rights to this
+software under copyright law.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+IN NO EVENT SHALL THE AUTHORS BE LIABLE FOR ANY CLAIM, DAMAGES OR
+OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE,
+ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
+OTHER DEALINGS IN THE SOFTWARE.
+
+For more information, please refer to <https://unlicense.org>''',
+  );
+
 /// just_audio_platform_interface 4.6.0
 const _just_audio_platform_interface = Package(
     name: 'just_audio_platform_interface',
@@ -5399,6 +5445,78 @@ LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
 ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.''',
+  );
+
+/// media_kit 1.2.6
+const _media_kit = Package(
+    name: 'media_kit',
+    description: 'A cross-platform video player & audio player for Flutter & Dart. Performant, stable, feature-proof & modular.',
+    homepage: 'https://github.com/media-kit/media-kit',
+    repository: 'https://github.com/media-kit/media-kit',
+    authors: [],
+    version: '1.2.6',
+    spdxIdentifiers: ['MIT'],
+    isMarkdown: false,
+    isSdk: false,
+    dependencies: [PackageRef('collection'), PackageRef('http'), PackageRef('image'), PackageRef('meta'), PackageRef('path'), PackageRef('safe_local_storage'), PackageRef('synchronized'), PackageRef('universal_platform'), PackageRef('web'), PackageRef('uri_parser'), PackageRef('uuid')],
+    devDependencies: [PackageRef('test'), PackageRef('lints')],
+    license: '''MIT License
+
+Copyright (c) 2021 & onwards Hitesh Kumar Saini <saini123hitesh@gmail.com>
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.''',
+  );
+
+/// media_kit_libs_linux 1.2.1
+const _media_kit_libs_linux = Package(
+    name: 'media_kit_libs_linux',
+    description: 'GNU/Linux dependency package for package:media_kit. Necessary for initialization.',
+    homepage: 'https://github.com/media-kit/media-kit.git',
+    repository: 'https://github.com/media-kit/media-kit.git',
+    authors: [],
+    version: '1.2.1',
+    spdxIdentifiers: ['MIT'],
+    isMarkdown: false,
+    isSdk: false,
+    dependencies: [PackageRef('flutter')],
+    devDependencies: [PackageRef('flutter_test'), PackageRef('flutter_lints')],
+    license: '''MIT License
+
+Copyright (c) 2021 & onwards Hitesh Kumar Saini <saini123hitesh@gmail.com>
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.''',
   );
 
 /// meta 1.19.0
@@ -7075,6 +7193,42 @@ const _rxdart = Package(
    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
    See the License for the specific language governing permissions and
    limitations under the License.''',
+  );
+
+/// safe_local_storage 2.0.7
+const _safe_local_storage = Package(
+    name: 'safe_local_storage',
+    description: 'A safe caching library to read/write values on local storage.',
+    homepage: 'https://github.com/alexmercerind/safe_local_storage.git',
+    repository: 'https://github.com/alexmercerind/safe_local_storage.git',
+    authors: [],
+    version: '2.0.7',
+    spdxIdentifiers: ['MIT'],
+    isMarkdown: false,
+    isSdk: false,
+    dependencies: [PackageRef('path'), PackageRef('synchronized')],
+    devDependencies: [PackageRef('lints'), PackageRef('test'), PackageRef('collection')],
+    license: '''MIT License
+
+Copyright (c) 2022 Hitesh Kumar Saini <saini123hitesh@gmail.com>
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.''',
   );
 
 /// safe_url_check 1.1.2
@@ -40927,6 +41081,65 @@ THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.''',
   );
 
+/// universal_platform 1.1.0
+const _universal_platform = Package(
+    name: 'universal_platform',
+    description: 'Replacement for dart.io.Platform class which works on Web as well as Desktop and Mobile. Allows platform checks in your view/model layer easily.',
+    homepage: 'https://github.com/gskinnerTeam/flutter-universal-platform',
+    authors: [],
+    version: '1.1.0',
+    spdxIdentifiers: ['MIT'],
+    isMarkdown: false,
+    isSdk: false,
+    dependencies: [],
+    devDependencies: [],
+    license: '''MIT License
+
+Copyright (c) 2019 gskinner.com
+
+Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.''',
+  );
+
+/// uri_parser 3.0.2
+const _uri_parser = Package(
+    name: 'uri_parser',
+    description: 'A minimal & safe utility to parse URIs.',
+    homepage: 'https://github.com/alexmercerind/uri_parser',
+    repository: 'https://github.com/alexmercerind/uri_parser',
+    authors: [],
+    version: '3.0.2',
+    spdxIdentifiers: ['MIT'],
+    isMarkdown: false,
+    isSdk: false,
+    dependencies: [PackageRef('path')],
+    devDependencies: [PackageRef('lints'), PackageRef('test')],
+    license: '''MIT License
+
+Copyright (c) 2021 & onwards Hitesh Kumar Saini <saini123hitesh@gmail.com>
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.''',
+  );
+
 /// url_launcher 6.3.2
 const _url_launcher = Package(
     name: 'url_launcher',
@@ -42155,16 +42368,16 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.''',
   );
 
-/// arabic_learning 1.1.0+15
+/// arabic_learning 1.2.0+16
 const _arabic_learning = Package(
     name: 'arabic_learning',
     description: '一个用于记背阿拉伯语单词的学习软件。',
     authors: [],
-    version: '1.1.0+15',
+    version: '1.2.0+16',
     spdxIdentifiers: ['AGPL-3.0'],
     isMarkdown: false,
     isSdk: false,
-    dependencies: [PackageRef('flutter'), PackageRef('window_manager'), PackageRef('path_provider'), PackageRef('provider'), PackageRef('file_picker'), PackageRef('flutter_tts'), PackageRef('just_audio'), PackageRef('just_audio_windows'), PackageRef('flutter_launcher_icons'), PackageRef('shared_preferences'), PackageRef('url_launcher'), PackageRef('sherpa_onnx'), PackageRef('archive'), PackageRef('dio'), PackageRef('fsrs'), PackageRef('idb_shim'), PackageRef('flutter_markdown_plus'), PackageRef('webdav_client'), PackageRef('logging'), PackageRef('flutter_local_notifications'), PackageRef('workmanager'), PackageRef('flutter_webrtc'), PackageRef('crypto'), PackageRef('qr_flutter'), PackageRef('mobile_scanner'), PackageRef('wakelock_plus'), PackageRef('dynamic_color'), PackageRef('drift'), PackageRef('drift_flutter')],
+    dependencies: [PackageRef('flutter'), PackageRef('window_manager'), PackageRef('path_provider'), PackageRef('provider'), PackageRef('file_picker'), PackageRef('flutter_tts'), PackageRef('just_audio'), PackageRef('just_audio_windows'), PackageRef('just_audio_media_kit'), PackageRef('media_kit_libs_linux'), PackageRef('flutter_launcher_icons'), PackageRef('shared_preferences'), PackageRef('url_launcher'), PackageRef('sherpa_onnx'), PackageRef('archive'), PackageRef('dio'), PackageRef('fsrs'), PackageRef('idb_shim'), PackageRef('flutter_markdown_plus'), PackageRef('webdav_client'), PackageRef('logging'), PackageRef('flutter_local_notifications'), PackageRef('workmanager'), PackageRef('flutter_webrtc'), PackageRef('crypto'), PackageRef('qr_flutter'), PackageRef('mobile_scanner'), PackageRef('wakelock_plus'), PackageRef('dynamic_color'), PackageRef('drift'), PackageRef('drift_flutter')],
     devDependencies: [PackageRef('flutter_test'), PackageRef('dynamic_color_testing'), PackageRef('flutter_lints'), PackageRef('change_app_package_name'), PackageRef('dart_pubspec_licenses'), PackageRef('drift_dev'), PackageRef('build_runner')],
     license: '''GNU AFFERO GENERAL PUBLIC LICENSE
                        Version 3, 19 November 2007
