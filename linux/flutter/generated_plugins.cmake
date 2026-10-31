@@ -5,6 +5,7 @@
 list(APPEND FLUTTER_PLUGIN_LIST
   dynamic_color
   flutter_webrtc
+  media_kit_libs_linux
   screen_retriever_linux
   url_launcher_linux
   window_manager

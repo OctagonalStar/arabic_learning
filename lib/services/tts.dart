@@ -31,8 +31,8 @@ class TtsFailure implements Exception {
 /// 已经是 [TtsFailure] 的直接透传，只把技术细节写日志。
 TtsFailure _toTtsFailure(String message, Object error) {
   if (error is TtsFailure) return error;
-  _logger.warning("语音播放失败: $message", error);
-  return TtsFailure(message, error);
+  _logger.warning("语音播放失败: $message（${error.runtimeType}）", error);
+  return TtsFailure("$message（错误类型: ${error.runtimeType}）", error);
 }
 
 Future<void> playTextToSpeech(String text, {double? speed}) async {
@@ -105,9 +105,12 @@ Future<void> playTextToSpeech(String text, {double? speed}) async {
     if(AppData().vitsTTS == null) {
       throw const TtsFailure("本地语音模型还没有准备好。请先在 设置-音频 中下载模型。");
     }
+    late final io.File cacheFile;
+    late final Duration duration;
+    // 合成与播放分开报错：播放失败不代表模型有问题，不能让用户去重下模型。
     try {
       final basePath = await path_provider.getApplicationCacheDirectory();
-      final cacheFile = io.File("${basePath.path}/temp.wav");
+      cacheFile = io.File("${basePath.path}/temp.wav");
       if(cacheFile.existsSync()) cacheFile.deleteSync();
       final audio = AppData().vitsTTS!.generate(text: text, speed: speed);
       final ok = sherpa_onnx.writeWave(
@@ -115,20 +118,22 @@ Future<void> playTextToSpeech(String text, {double? speed}) async {
                           samples: audio.samples,
                           sampleRate: audio.sampleRate,
                         );
-      final Duration duration = Duration(milliseconds: (audio.samples.length / audio.sampleRate * 1000).round());
-      if(ok) {
-        await StaticsVar.player.setAudioSource(AudioSource.uri(Uri.file(cacheFile.path)));
-        StaticsVar.player.play();
-        await Future.delayed(duration);
-        if(cacheFile.existsSync()) cacheFile.deleteSync();
-      } else {
-        throw Exception("无法将音频写入文件");
-      }
+      if(!ok) throw Exception("无法将音频写入文件");
+      duration = Duration(milliseconds: (audio.samples.length / audio.sampleRate * 1000).round());
     } catch (e) {
       throw _toTtsFailure(
         "本地语音合成失败。可重试一次，仍失败请在 设置-音频 中重新下载模型。",
         e,
       );
+    }
+    try {
+      await StaticsVar.player.setAudioSource(AudioSource.uri(Uri.file(cacheFile.path)));
+      // play() 在播放结束/暂停时完成，和固定时长一起等，异常才能落在这个 try 里。
+      await Future.wait([StaticsVar.player.play(), Future.delayed(duration)]);
+    } catch (e) {
+      throw _toTtsFailure("音频播放失败，可能是本机没有可用的播放后端。", e);
+    } finally {
+      if(cacheFile.existsSync()) cacheFile.deleteSync();
     }
   }
 }
