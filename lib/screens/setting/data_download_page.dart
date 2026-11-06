@@ -4,6 +4,7 @@ import 'package:arabic_learning/widgets/feedback.dart' show LoadingIndicator;
 import 'package:arabic_learning/widgets/kit.dart' show Button, SettingItem;
 import 'package:arabic_learning/widgets/motion.dart' show CrossFadeSwitcher;
 import 'package:arabic_learning/widgets/overlays.dart' show alart, showSnackBar;
+import 'package:arabic_learning/core/statics.dart' show DictRepoInfo, StaticsVar;
 import 'package:arabic_learning/models/dict.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -12,25 +13,6 @@ import 'package:dio/dio.dart';
 import 'package:arabic_learning/services/global_state.dart';
 import 'package:arabic_learning/services/app_data.dart';
 import 'package:arabic_learning/services/http_client.dart';
-
-/// 线上词库来源：区块标题 + GitHub contents API 地址
-class _DictRepo {
-  final String title;
-  final String apiUrl;
-  const _DictRepo({required this.title, required this.apiUrl});
-}
-
-const List<_DictRepo> _dictRepos = [
-  _DictRepo(
-    title: "来自 Github @JYinherit 学长的词库 (在此表示感谢)",
-    apiUrl: "https://api.github.com/repos/JYinherit/Arabiclearning/contents/词库",
-  ),
-  _DictRepo(
-    title: "来自 Github @OctagonalStar",
-    apiUrl:
-        "https://api.github.com/repos/OctagonalStar/arabic_chinese_edu_words_dataset/contents/",
-  ),
-];
 
 class DownloadPage extends StatelessWidget {
   const DownloadPage({super.key});
@@ -63,14 +45,14 @@ class DownloadPage extends StatelessWidget {
 Future<List<Widget>> downloadList(BuildContext context) async {
   final List<Widget> sections = [];
   Dio dio = createDio();
-  for (final _DictRepo repo in _dictRepos) {
+  for (final DictRepoInfo repo in StaticsVar.dictRepos) {
     sections.add(await _buildRepoSection(context, dio, repo));
   }
   return sections;
 }
 
 /// 构建单个词库仓库的区块（含标题与文件列表），单个仓库失败不影响其他仓库
-Future<Widget> _buildRepoSection(BuildContext context, Dio dio, _DictRepo repo) async {
+Future<Widget> _buildRepoSection(BuildContext context, Dio dio, DictRepoInfo repo) async {
   try {
     Response githubResponse = await dio.getUri(Uri.parse(repo.apiUrl));
     if (githubResponse.statusCode != 200) {
