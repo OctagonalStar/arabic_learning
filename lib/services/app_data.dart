@@ -78,6 +78,9 @@ class AppData {
   late ReadingData readingData;
   sherpa_onnx.OfflineTts? vitsTTS;
 
+  /// [vitsTTS] 当前装载的模型 id，用于切换模型时判断是否需要重载。
+  String? _loadedTtsModelId;
+
   /// 启动阶段那次「后台 isolate 编码后回写词库」的进行中任务。
   Future<void>? _wordWriteInFlight;
 
@@ -113,7 +116,40 @@ class AppData {
   
   int get wordCount => wordData.words.length;
   bool get isFirstStart => storage.getString("settingData") == null;
-  bool get modelTTSDownloaded => io.File("${basePath.path}/${StaticsVar.modelPath}/ar_JO-kareem-medium.onnx").existsSync();
+
+  /// 配置里选中的 TTS 模型；配置为空或不在目录中时回退到默认模型。
+  String get preferredTtsModelId {
+    final String id = config.audio.preferredModelId;
+    for (final TtsModelInfo info in StaticsVar.ttsModels) {
+      if (info.id == id) return id;
+    }
+    return StaticsVar.defaultTtsModelId;
+  }
+
+  TtsModelInfo get preferredTtsModel => StaticsVar.ttsModel(preferredTtsModelId);
+
+  /// 指定 TTS 模型是否已解压（以模型文件存在为准）。
+  bool isTtsModelInstalled(String id) {
+    if (kIsWeb || !_basePathReady) return false;
+    for (final TtsModelInfo info in StaticsVar.ttsModels) {
+      if (info.id != id) continue;
+      return io.File("${basePath.path}/${StaticsVar.ttsModelDir(id)}/${info.modelFile}").existsSync();
+    }
+    return false;
+  }
+
+  /// 指定 ASR 模型是否已解压（以 encoder 文件存在为准）。
+  bool isAsrModelInstalled(String id) {
+    if (kIsWeb || !_basePathReady) return false;
+    for (final AsrModelInfo info in StaticsVar.asrModels) {
+      if (info.id != id) continue;
+      return io.File("${basePath.path}/${StaticsVar.asrModelDir(id)}/${info.encoderFile}").existsSync();
+    }
+    return false;
+  }
+
+  bool get modelTTSDownloaded => isTtsModelInstalled(preferredTtsModelId);
+  bool get asrModelDownloaded => isAsrModelInstalled(StaticsVar.defaultAsrModelId);
 
   Future<void> init() async {
     if(inited) return;
@@ -230,28 +266,60 @@ class AppData {
 
   // load TTS model if any
   Future<void> loadTTS(double playRate) async {
-    if(kIsWeb || vitsTTS != null || !modelTTSDownloaded) return;
-    logger.info("TTS: 加载本地TTS中");
+    if (kIsWeb) return;
+    final String id = preferredTtsModelId;
+    if (vitsTTS != null && _loadedTtsModelId == id) return;
+    if (!isTtsModelInstalled(id)) return;
+
+    resetTTS();
+    logger.info("TTS: 加载本地TTS中 ($id)");
     sherpa_onnx.initBindings();
-    final vits = sherpa_onnx.OfflineTtsVitsModelConfig(
-      model: "${basePath.path}/${StaticsVar.modelPath}/ar_JO-kareem-medium.onnx",
-      dataDir: "${basePath.path}/${StaticsVar.modelPath}/espeak-ng-data",
-      tokens: '${basePath.path}/${StaticsVar.modelPath}/tokens.txt',
-      lengthScale: 1 / playRate,
-    );
-    final modelConfig = sherpa_onnx.OfflineTtsModelConfig(
-      vits: vits,
-      numThreads: 2,
-      debug: false,
-      provider: 'cpu',
-    );
+    final TtsModelInfo info = StaticsVar.ttsModel(id);
+    final String dir = "${basePath.path}/${StaticsVar.ttsModelDir(id)}";
+
+    final sherpa_onnx.OfflineTtsModelConfig modelConfig;
+    switch (info.family) {
+      case TtsModelFamily.vits:
+        modelConfig = sherpa_onnx.OfflineTtsModelConfig(
+          vits: sherpa_onnx.OfflineTtsVitsModelConfig(
+            model: "$dir/${info.modelFile}",
+            tokens: '$dir/tokens.txt',
+            dataDir: dir,
+            lengthScale: 1 / playRate,
+          ),
+          numThreads: 2,
+          debug: false,
+          provider: 'cpu',
+        );
+      case TtsModelFamily.kokoro:
+        modelConfig = sherpa_onnx.OfflineTtsModelConfig(
+          kokoro: sherpa_onnx.OfflineTtsKokoroModelConfig(
+            model: "$dir/${info.modelFile}",
+            voices: "$dir/${info.voicesFile ?? ''}",
+            tokens: '$dir/tokens.txt',
+            dataDir: dir,
+            lengthScale: 1 / playRate,
+          ),
+          numThreads: 2,
+          debug: false,
+          provider: 'cpu',
+        );
+    }
     final config = sherpa_onnx.OfflineTtsConfig(
       model: modelConfig,
       maxNumSenetences: 1,
     );
 
     vitsTTS = sherpa_onnx.OfflineTts(config);
+    _loadedTtsModelId = id;
     logger.info("TTS: 本地TTS加载完成");
+  }
+
+  /// 释放已加载的本地 TTS（切换模型或删除模型前调用）。
+  void resetTTS() {
+    vitsTTS?.free();
+    vitsTTS = null;
+    _loadedTtsModelId = null;
   }
 
   /// Non-Format Data:

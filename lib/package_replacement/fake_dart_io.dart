@@ -27,6 +27,10 @@ class Directory {
 
   Directory(this.path);
 
+  bool existsSync() {return false;}
+
+  void deleteSync({bool recursive = false}) {}
+
   Future<void> create({required bool recursive}) async {}
 }
 

@@ -22,8 +22,8 @@ import 'package:arabic_learning/screens/setting/about_page.dart'
     show AboutPage;
 import 'package:arabic_learning/screens/setting/dict_manage_page.dart'
     show DictManagePage;
-import 'package:arabic_learning/screens/setting/model_download_page.dart'
-    show ModelDownload;
+import 'package:arabic_learning/screens/setting/model_management_page.dart'
+    show ModelManagementPage;
 import 'package:arabic_learning/screens/setting/questions_setting_page.dart'
     show QuestionsSettingPage;
 import 'package:arabic_learning/screens/setting/sync_page.dart'
@@ -344,7 +344,7 @@ class _SettingPage extends State<SettingPage> {
                     },
                   )
                 ),
-                if(!kIsWeb) SettingRedirctButton(title: "下载神经网络文本转语音模型", icon: Icons.model_training, target: ModelDownload())
+                SettingRedirctButton(title: "模型管理", icon: Icons.model_training, target: ModelManagementPage())
               ],
             ),
             if (!kIsWeb && io.Platform.isAndroid)
