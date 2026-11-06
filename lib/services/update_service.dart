@@ -83,10 +83,9 @@ class UpdateService extends ChangeNotifier {
   @visibleForTesting
   UpdateService.forTesting({
     Dio? dio,
-    Future<io.Directory> Function()? documentsDirectoryProvider,
+    this._documentsDirectoryProvider,
     Future<bool> Function(String path)? apkVerifier,
   }) : _injectedDio = dio,
-       _documentsDirectoryProvider = documentsDirectoryProvider,
        _injectedApkVerifier = apkVerifier;
 
   // ---------------------------------------------------------------------------

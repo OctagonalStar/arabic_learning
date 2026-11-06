@@ -426,28 +426,18 @@ class VocabularyLookupIndex {
   final _SimpleBKTree? _arTree;
 
   VocabularyLookupIndex._({
-    required List<WordItem> words,
-    required VocabularyOptimizer optimizer,
-    required List<String> arNorm,
-    required List<String> zh,
-    required Map<String, List<int>> zhTokenExact,
-    required Map<String, List<int>> zhUnigram,
-    required Map<String, List<int>> zhBigram,
-    required Map<int, List<int>> zhByLength,
-    required Map<String, List<int>> arExact,
-    required Map<String, List<int>> arChars,
-    required _SimpleBKTree? arTree,
-  })  : _words = words,
-        _optimizer = optimizer,
-        _arNorm = arNorm,
-        _zh = zh,
-        _zhTokenExact = zhTokenExact,
-        _zhUnigram = zhUnigram,
-        _zhBigram = zhBigram,
-        _zhByLength = zhByLength,
-        _arExact = arExact,
-        _arChars = arChars,
-        _arTree = arTree;
+    required this._words,
+    required this._optimizer,
+    required this._arNorm,
+    required this._zh,
+    required this._zhTokenExact,
+    required this._zhUnigram,
+    required this._zhBigram,
+    required this._zhByLength,
+    required this._arExact,
+    required this._arChars,
+    required this._arTree,
+  });
 
   factory VocabularyLookupIndex.build(List<WordItem> words, VocabularyOptimizer optimizer) {
     final List<String> arNorm = List<String>.generate(
