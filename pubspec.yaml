@@ -19,7 +19,7 @@ publish_to: 'none' # Remove this line if you wish to publish to pub.dev
 version: 1.2.0+16
 
 environment:
-  sdk: ^3.11.0
+  sdk: ^3.12.0
 
 # Dependencies specify other packages that your package needs in order to work.
 # To automatically upgrade your package dependencies to the latest versions
@@ -57,6 +57,7 @@ dependencies:
   qr_flutter: ^4.1.0
   mobile_scanner: ^7.2.0
   wakelock_plus: ^1.5.1
+  record: ^7.1.2
   dynamic_color: ^2.1.0 # Material You 动态取色（Android/Linux/macOS/Windows，Web 无实现）
   drift: ^2.32.0
   drift_flutter: ^0.3.1

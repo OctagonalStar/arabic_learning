@@ -326,17 +326,22 @@ class AudioConfig {
   /// 自动播放发音
   final bool autoPlay;
 
+  /// 首选的本地 TTS 模型 id；空串表示跟随 [StaticsVar.defaultTtsModelId]。
+  final String preferredModelId;
+
   const AudioConfig({
     this.audioSource = 0,
     this.playRate = 1.0,
-    this.autoPlay = false
+    this.autoPlay = false,
+    this.preferredModelId = ""
   });
 
   Map<String, dynamic> toMap(){
     return {
       "useBackupSource": audioSource,
       "playRate": playRate,
-      "autoPlay": autoPlay
+      "autoPlay": autoPlay,
+      "preferredModelId": preferredModelId
     };
   }
 
@@ -345,19 +350,22 @@ class AudioConfig {
     return AudioConfig(
       audioSource: setting["useBackupSource"],
       playRate: setting["playRate"],
-      autoPlay: setting["autoPlay"]??false
+      autoPlay: setting["autoPlay"]??false,
+      preferredModelId: setting["preferredModelId"] ?? ""
     );
   }
 
   AudioConfig copyWith({
     int? audioSource,
     double? playRate,
-    bool? autoPlay
+    bool? autoPlay,
+    String? preferredModelId
   }) {
     return AudioConfig(
       audioSource: audioSource ?? this.audioSource,
       playRate: playRate ?? this.playRate,
-      autoPlay: autoPlay ?? this.autoPlay
+      autoPlay: autoPlay ?? this.autoPlay,
+      preferredModelId: preferredModelId ?? this.preferredModelId
     );
   }
 }

@@ -4,7 +4,7 @@
 // 下载进度 / 下载完成 / 未知来源权限引导 / 错误重试。
 //
 // 设计要点：
-// - 复用 `model_download_page.dart` 的「按钮 + 原生 LinearProgressIndicator」
+// - 复用 `model_management_page.dart` 的「按钮 + 原生 LinearProgressIndicator」
 //   模式，状态由 `UpdateService`（变更通知单例）驱动；
 // - 用 `WidgetsBindingObserver` 在回到前台时对账：下载结果由 service 自行刷新，
 //   本页额外处理「用户去系统设置授予未知来源权限后返回」的自动重试；

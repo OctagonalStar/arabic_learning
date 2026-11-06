@@ -2,6 +2,7 @@ import 'package:arabic_learning/widgets/kit.dart' show TextContainer;
 import 'package:flutter/material.dart';
 import 'package:arabic_learning/oss_licenses.dart' as oss;
 import 'package:arabic_learning/core/license_storage.dart';
+import 'package:arabic_learning/core/statics.dart' show AsrModelInfo, StaticsVar, TtsModelInfo;
 
 class OpenSourceLicensePage extends StatelessWidget {
   const OpenSourceLicensePage({super.key});
@@ -38,6 +39,38 @@ class OpenSourceLicensePage extends StatelessWidget {
         license: LicenseVars.theNotoSansSCLicense
       )
     );
+
+    // 可下载的模型权重许可（不随 pubspec 依赖生成，需手动列出）。
+    for (final TtsModelInfo m in StaticsVar.ttsModels) {
+      licenses.add(
+        oss.Package(
+          name: "${m.title} · ${m.id}",
+          description: "TTS 模型（${m.sizeMB}MB）：${m.sourceUrl}",
+          authors: [m.sourceUrl],
+          isMarkdown: false,
+          isSdk: false,
+          dependencies: [],
+          devDependencies: [],
+          spdxIdentifiers: [m.license],
+          license: m.license == "Apache-2.0" ? LicenseVars.theApacheLicense : LicenseVars.theModelLICENSE,
+        )
+      );
+    }
+    for (final AsrModelInfo m in StaticsVar.asrModels) {
+      licenses.add(
+        oss.Package(
+          name: "${m.title} · ${m.id}",
+          description: "语音识别模型（${m.sizeMB}MB）：${m.sourceUrl}",
+          authors: [m.sourceUrl],
+          isMarkdown: false,
+          isSdk: false,
+          dependencies: [],
+          devDependencies: [],
+          spdxIdentifiers: [m.license],
+          license: m.license == "Apache-2.0" ? LicenseVars.theApacheLicense : LicenseVars.theModelLICENSE,
+        )
+      );
+    }
 
     for(oss.Package x in licenses) {
       widgets.add(

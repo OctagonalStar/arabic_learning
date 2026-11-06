@@ -14,6 +14,7 @@ import 'package:arabic_learning/core/statics.dart';
 import 'package:arabic_learning/models/config.dart' show Config;
 import 'package:arabic_learning/models/dict.dart' show ClassItem, DictData, SourceItem, WordItem;
 import 'package:arabic_learning/models/reading.dart' show ReadingData;
+import 'package:arabic_learning/models/recitation_text.dart' show RecitationTextData;
 import 'package:arabic_learning/models/synonym.dart' show SynonymData;
 import 'package:arabic_learning/services/favorites.dart';
 import 'package:arabic_learning/services/fsrs.dart';
@@ -76,7 +77,13 @@ class AppData {
   bool _basePathReady = false;
   late DictData wordData;
   late ReadingData readingData;
+
+  /// 课文（背诵）题库，与 `readingData` 同一套存储方式。
+  RecitationTextData recitationTextData = RecitationTextData();
   sherpa_onnx.OfflineTts? vitsTTS;
+
+  /// [vitsTTS] 当前装载的模型 id，用于切换模型时判断是否需要重载。
+  String? _loadedTtsModelId;
 
   /// 启动阶段那次「后台 isolate 编码后回写词库」的进行中任务。
   Future<void>? _wordWriteInFlight;
@@ -113,7 +120,40 @@ class AppData {
   
   int get wordCount => wordData.words.length;
   bool get isFirstStart => storage.getString("settingData") == null;
-  bool get modelTTSDownloaded => io.File("${basePath.path}/${StaticsVar.modelPath}/ar_JO-kareem-medium.onnx").existsSync();
+
+  /// 配置里选中的 TTS 模型；配置为空或不在目录中时回退到默认模型。
+  String get preferredTtsModelId {
+    final String id = config.audio.preferredModelId;
+    for (final TtsModelInfo info in StaticsVar.ttsModels) {
+      if (info.id == id) return id;
+    }
+    return StaticsVar.defaultTtsModelId;
+  }
+
+  TtsModelInfo get preferredTtsModel => StaticsVar.ttsModel(preferredTtsModelId);
+
+  /// 指定 TTS 模型是否已解压（以模型文件存在为准）。
+  bool isTtsModelInstalled(String id) {
+    if (kIsWeb || !_basePathReady) return false;
+    for (final TtsModelInfo info in StaticsVar.ttsModels) {
+      if (info.id != id) continue;
+      return io.File("${basePath.path}/${StaticsVar.ttsModelDir(id)}/${info.modelFile}").existsSync();
+    }
+    return false;
+  }
+
+  /// 指定 ASR 模型是否已解压（以 encoder 文件存在为准）。
+  bool isAsrModelInstalled(String id) {
+    if (kIsWeb || !_basePathReady) return false;
+    for (final AsrModelInfo info in StaticsVar.asrModels) {
+      if (info.id != id) continue;
+      return io.File("${basePath.path}/${StaticsVar.asrModelDir(id)}/${info.encoderFile}").existsSync();
+    }
+    return false;
+  }
+
+  bool get modelTTSDownloaded => isTtsModelInstalled(preferredTtsModelId);
+  bool get asrModelDownloaded => isAsrModelInstalled(StaticsVar.defaultAsrModelId);
 
   Future<void> init() async {
     if(inited) return;
@@ -166,10 +206,11 @@ class AppData {
     inited = true;
   }
 
-  /// 读取、解析并落地 `wordData` / `readingData`（非首次启动路径）。
+  /// 读取、解析并落地 `wordData` / `readingData` / `recitationTextData`
+  /// （非首次启动路径）。
   ///
-  /// 顺序依赖：解码（可在后台 isolate）→ 构造 [DictData] / [ReadingData]
-  /// （必须在主 isolate，自定义类不可跨 isolate）→ 索引重建。
+  /// 顺序依赖：解码（可在后台 isolate）→ 构造 [DictData] / [ReadingData] /
+  /// [RecitationTextData]（必须在主 isolate，自定义类不可跨 isolate）→ 索引重建。
   ///
   /// 失败语义与改造前逐条一致：
   /// - `wordData` 缺失/为空 → 记 severe 日志并降级为空词库（不抛）；
@@ -179,6 +220,8 @@ class AppData {
     final String? wordRaw = storage.getString("wordData");
     final String readingRaw =
         storage.getString("readingData") ?? "{\"units\": []}";
+    final String recitationTextRaw =
+        storage.getString("recitationTextData") ?? "{\"units\": []}";
 
     // 两个解码并发（原生端各占一个后台 isolate；Web 端是同步解码，立即返回）。
     // 用 `Future.wait` 而不是「先 await A 再 await B」：后者在 A 较慢而 B 已
@@ -190,6 +233,7 @@ class AppData {
           ? Future<Object?>.value(null)
           : decodeJsonOffMain(wordRaw),
       decodeJsonOffMain(readingRaw),
+      decodeJsonOffMain(recitationTextRaw),
     ]);
 
     final Object? wordMap = decoded[0];
@@ -201,6 +245,8 @@ class AppData {
       wordData = DictData.buildFromMap(wordMap as Map<String, dynamic>);
     }
     readingData = ReadingData.buildFromMap(decoded[1] as Map<String, dynamic>);
+    recitationTextData =
+        RecitationTextData.buildFromMap(decoded[2] as Map<String, dynamic>);
 
     // 存量阴阳性纠正：只有真的改动了才回写；回写不阻塞首帧（见 _scheduleWordDataPersist）。
     if(normalizeWordGenders()) _scheduleWordDataPersist();
@@ -220,6 +266,7 @@ class AppData {
       _wordWriteGeneration++;
       await storage.setString("wordData", jsonEncode({"Words": [], "Classes": {}}));
       await storage.setString("readingData", jsonEncode({"units": []}));
+      await storage.setString("recitationTextData", jsonEncode({"units": []}));
       await storage.setString("synonymData", jsonEncode(const SynonymData().toMap()));
       await storage.setString("favoriteData", jsonEncode(FavoriteStore().toMap()));
       await storage.setString("planData", jsonEncode(PlanStore.defaultData()));
@@ -230,28 +277,60 @@ class AppData {
 
   // load TTS model if any
   Future<void> loadTTS(double playRate) async {
-    if(kIsWeb || vitsTTS != null || !modelTTSDownloaded) return;
-    logger.info("TTS: 加载本地TTS中");
+    if (kIsWeb) return;
+    final String id = preferredTtsModelId;
+    if (vitsTTS != null && _loadedTtsModelId == id) return;
+    if (!isTtsModelInstalled(id)) return;
+
+    resetTTS();
+    logger.info("TTS: 加载本地TTS中 ($id)");
     sherpa_onnx.initBindings();
-    final vits = sherpa_onnx.OfflineTtsVitsModelConfig(
-      model: "${basePath.path}/${StaticsVar.modelPath}/ar_JO-kareem-medium.onnx",
-      dataDir: "${basePath.path}/${StaticsVar.modelPath}/espeak-ng-data",
-      tokens: '${basePath.path}/${StaticsVar.modelPath}/tokens.txt',
-      lengthScale: 1 / playRate,
-    );
-    final modelConfig = sherpa_onnx.OfflineTtsModelConfig(
-      vits: vits,
-      numThreads: 2,
-      debug: false,
-      provider: 'cpu',
-    );
+    final TtsModelInfo info = StaticsVar.ttsModel(id);
+    final String dir = "${basePath.path}/${StaticsVar.ttsModelDir(id)}";
+
+    final sherpa_onnx.OfflineTtsModelConfig modelConfig;
+    switch (info.family) {
+      case TtsModelFamily.vits:
+        modelConfig = sherpa_onnx.OfflineTtsModelConfig(
+          vits: sherpa_onnx.OfflineTtsVitsModelConfig(
+            model: "$dir/${info.modelFile}",
+            tokens: '$dir/tokens.txt',
+            dataDir: dir,
+            lengthScale: 1 / playRate,
+          ),
+          numThreads: 2,
+          debug: false,
+          provider: 'cpu',
+        );
+      case TtsModelFamily.kokoro:
+        modelConfig = sherpa_onnx.OfflineTtsModelConfig(
+          kokoro: sherpa_onnx.OfflineTtsKokoroModelConfig(
+            model: "$dir/${info.modelFile}",
+            voices: "$dir/${info.voicesFile ?? ''}",
+            tokens: '$dir/tokens.txt',
+            dataDir: dir,
+            lengthScale: 1 / playRate,
+          ),
+          numThreads: 2,
+          debug: false,
+          provider: 'cpu',
+        );
+    }
     final config = sherpa_onnx.OfflineTtsConfig(
       model: modelConfig,
       maxNumSenetences: 1,
     );
 
     vitsTTS = sherpa_onnx.OfflineTts(config);
+    _loadedTtsModelId = id;
     logger.info("TTS: 本地TTS加载完成");
+  }
+
+  /// 释放已加载的本地 TTS（切换模型或删除模型前调用）。
+  void resetTTS() {
+    vitsTTS?.free();
+    vitsTTS = null;
+    _loadedTtsModelId = null;
   }
 
   /// Non-Format Data:
@@ -743,5 +822,9 @@ class AppData {
 
   void saveReadingData(){
     storage.setString("readingData", jsonEncode(readingData.toMap()));
+  }
+
+  Future<void> saveRecitationTextData() async {
+    await storage.setString("recitationTextData", jsonEncode(recitationTextData.toMap()));
   }
 }

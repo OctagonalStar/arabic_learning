@@ -9,12 +9,176 @@ import 'package:just_audio/just_audio.dart';
 
 import 'package:arabic_learning/theme/tokens.dart' show AppMotion, AppRadius;
 
+/// 本地 TTS 模型的推理架构；决定 [loadTTS] 填哪个 sherpa-onnx 配置。
+enum TtsModelFamily { vits, kokoro }
+
+/// 可下载的 TTS 模型。`id` 同时是解压后的目录名与发布包名。
+@immutable
+class TtsModelInfo {
+  final String id;
+  final String title;
+  final String description;
+  final int sizeMB;
+  final String license;
+  final String sourceUrl;
+  final TtsModelFamily family;
+
+  /// 模型目录内的文件名（`tokens.txt` 统一）。
+  final String modelFile;
+  final String? voicesFile;
+
+  /// Nabra 只接受带变音符号的输入。
+  final bool requiresTashkeel;
+
+  const TtsModelInfo({
+    required this.id,
+    required this.title,
+    required this.description,
+    required this.sizeMB,
+    required this.license,
+    required this.sourceUrl,
+    required this.family,
+    required this.modelFile,
+    this.voicesFile,
+    this.requiresTashkeel = false,
+  });
+}
+
+/// 可下载的语音识别模型（背诵辅助用）。
+@immutable
+class AsrModelInfo {
+  final String id;
+  final String title;
+  final String description;
+  final int sizeMB;
+  final String license;
+  final String sourceUrl;
+  final String encoderFile;
+  final String decoderFile;
+  final String tokensFile;
+  final String language;
+
+  const AsrModelInfo({
+    required this.id,
+    required this.title,
+    required this.description,
+    required this.sizeMB,
+    required this.license,
+    required this.sourceUrl,
+    required this.encoderFile,
+    required this.decoderFile,
+    required this.tokensFile,
+    required this.language,
+  });
+}
+
+/// 线上词库来源：区块标题 + GitHub contents API 地址。
+@immutable
+class DictRepoInfo {
+  final String title;
+  final String apiUrl;
+  const DictRepoInfo({required this.title, required this.apiUrl});
+}
+
 @immutable
 class StaticsVar {
   static const String appName = 'Ar学';
   static const int appVersion = 102000;
   static const int termVersion = 5;
-  static const String modelPath = 'arabicLearning/tts/model/vits-piper-ar_JO-kareem-medium';
+
+  /// 模型发布包统一从该 release 的 `tts-models` / `asr-models` 标签下载，
+  /// 资源名即 `<id>.tar.bz2`。
+  static const String modelReleaseBase =
+      'https://github.com/k2-fsa/sherpa-onnx/releases/download';
+
+  static const String ttsRootDir = 'arabicLearning/tts';
+  static const String ttsModelRoot = '$ttsRootDir/model';
+  static const String asrModelRoot = 'arabicLearning/asr/model';
+
+  static String ttsModelDir(String id) => '$ttsModelRoot/$id';
+  static String asrModelDir(String id) => '$asrModelRoot/$id';
+  static String ttsArchiveUrl(String id) => '$modelReleaseBase/tts-models/$id.tar.bz2';
+  static String asrArchiveUrl(String id) => '$modelReleaseBase/asr-models/$id.tar.bz2';
+
+  static const String defaultTtsModelId = 'vits-piper-ar_JO-kareem-medium';
+  static const String defaultAsrModelId = 'sherpa-onnx-whisper-tiny';
+
+  /// 全部为可再分发许可（MIT / Apache-2.0）。
+  /// 注意 `vits-piper-ar_JO-SA_*` 是 CC-BY-NC-ND，不可加入。
+  static const List<TtsModelInfo> ttsModels = [
+    TtsModelInfo(
+      id: 'vits-piper-ar_JO-kareem-medium',
+      title: 'Kareem 中等质量',
+      description: '标准阿拉伯语男声，原始音色',
+      sizeMB: 64,
+      license: 'MIT',
+      sourceUrl: 'https://huggingface.co/rhasspy/piper-voices',
+      family: TtsModelFamily.vits,
+      modelFile: 'ar_JO-kareem-medium.onnx',
+    ),
+    TtsModelInfo(
+      id: 'vits-piper-ar_JO-kareem-medium-int8',
+      title: 'Kareem 中等质量 · 精简',
+      description: '同音色，int8 量化，体积约为原版三分之一',
+      sizeMB: 19,
+      license: 'MIT',
+      sourceUrl: 'https://huggingface.co/rhasspy/piper-voices',
+      family: TtsModelFamily.vits,
+      modelFile: 'ar_JO-kareem-medium.onnx',
+    ),
+    TtsModelInfo(
+      id: 'nabra-82m-arabic-int8',
+      title: 'Nabra 82M',
+      description: '更自然的阿拉伯语合成，需要课文自带变音符号',
+      sizeMB: 78,
+      license: 'Apache-2.0',
+      sourceUrl: 'https://huggingface.co/marwanelamami/nabra-82m-sherpa-onnx',
+      family: TtsModelFamily.kokoro,
+      modelFile: 'model.int8.onnx',
+      voicesFile: 'voices.bin',
+      requiresTashkeel: true,
+    ),
+  ];
+
+  static const List<AsrModelInfo> asrModels = [
+    AsrModelInfo(
+      id: 'sherpa-onnx-whisper-tiny',
+      title: 'Whisper Tiny',
+      description: '本地阿拉伯语识别，离线可用',
+      sizeMB: 111,
+      license: 'MIT',
+      sourceUrl: 'https://huggingface.co/csukuangfj/sherpa-onnx-whisper-tiny',
+      encoderFile: 'tiny-encoder.int8.onnx',
+      decoderFile: 'tiny-decoder.int8.onnx',
+      tokensFile: 'tiny-tokens.txt',
+      language: 'ar',
+    ),
+  ];
+
+  static const List<DictRepoInfo> dictRepos = [
+    DictRepoInfo(
+      title: "来自 Github @JYinherit 学长的词库 (在此表示感谢)",
+      apiUrl: "https://api.github.com/repos/JYinherit/Arabiclearning/contents/词库",
+    ),
+    DictRepoInfo(
+      title: "来自 Github @OctagonalStar",
+      apiUrl:
+          "https://api.github.com/repos/OctagonalStar/arabic_chinese_edu_words_dataset/contents/",
+    ),
+  ];
+
+  static TtsModelInfo ttsModel(String id) => ttsModels.firstWhere(
+        (TtsModelInfo m) => m.id == id,
+        orElse: () => ttsModels.firstWhere((TtsModelInfo m) => m.id == defaultTtsModelId),
+      );
+
+  static AsrModelInfo asrModel(String id) => asrModels.firstWhere(
+        (AsrModelInfo m) => m.id == id,
+        orElse: () => asrModels.first,
+      );
+
+  /// 兼容旧调用点：默认 TTS 模型目录。新代码请用 [ttsModelDir]。
+  static String get modelPath => ttsModelDir(defaultTtsModelId);
   static const Map<String, dynamic> tempConfig = {"SelectedClasses": []};
   static const Curve curve = AppMotion.standardCurve;
   static const String onlineDictOwner = 'JYinherit';

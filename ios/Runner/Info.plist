@@ -6,6 +6,8 @@
 	<true/>
 	<key>NSCameraUsageDescription</key>
 	<string>扫描二维码以加入局域网对战</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>录制背诵录音，在本地进行识别与评分</string>
 	<key>NSLocalNetworkUsageDescription</key>
 	<string>连接局域网内的对战房间或 WebDAV 服务器</string>
 	<key>CFBundleDevelopmentRegion</key>

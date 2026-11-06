@@ -7,6 +7,7 @@ list(APPEND FLUTTER_PLUGIN_LIST
   flutter_tts
   flutter_webrtc
   just_audio_windows
+  record_windows
   screen_retriever_windows
   url_launcher_windows
   window_manager
