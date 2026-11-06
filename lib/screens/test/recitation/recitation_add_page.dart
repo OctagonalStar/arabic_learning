@@ -81,7 +81,7 @@ class _RecitationAddPageState extends State<RecitationAddPage> {
             padding: const EdgeInsets.only(top: AppSpacing.xs),
             child: Text(
               _error!,
-              style: theme.textTheme.bodyMedium
+              style: theme.textTheme.bodyLarge
                   ?.copyWith(color: theme.colorScheme.error),
             ),
           ),
@@ -102,8 +102,9 @@ class _RecitationAddPageState extends State<RecitationAddPage> {
       children: [
         Text(
           "① 把提示词连同课文图片或阿语文本发给任意 AI\n② 把它返回的 JSON 粘回「粘贴 JSON」",
-          style: theme.textTheme.bodyMedium?.copyWith(
+          style: theme.textTheme.bodyLarge?.copyWith(
             color: theme.colorScheme.onSurfaceVariant,
+            height: 1.5,
           ),
         ),
         Padding(
@@ -164,7 +165,15 @@ class _RecitationAddPageState extends State<RecitationAddPage> {
         (MediaQuery.sizeOf(context).height * 0.2).clamp(140.0, 220.0);
     final double cardWidth = MediaQuery.sizeOf(context).width * 0.8;
     return Scaffold(
-      appBar: AppBar(title: Text(_paneTitle)),
+      appBar: AppBar(
+        title: Text(
+          _paneTitle,
+          style: theme.textTheme.headlineSmall?.copyWith(
+            color: theme.colorScheme.onSurface,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+      ),
       body: SafeArea(
         top: false,
         child: SingleChildScrollView(
@@ -181,7 +190,7 @@ class _RecitationAddPageState extends State<RecitationAddPage> {
                           style: theme.textTheme.headlineMedium),
                       subTitle: Text(
                           "把整理好的课文 JSON 直接粘贴导入",
-                          style: theme.textTheme.bodyMedium),
+                          style: theme.textTheme.bodyLarge),
                       widget: cardWidth,
                       height: cardHeight,
                       rt: () => setState(() {
@@ -195,7 +204,7 @@ class _RecitationAddPageState extends State<RecitationAddPage> {
                           style: theme.textTheme.headlineMedium),
                       subTitle: Text(
                           "复制整理提示词，发给任意聊天 AI 整理课文，再把返回的 JSON 粘回来",
-                          style: theme.textTheme.bodyMedium),
+                          style: theme.textTheme.bodyLarge),
                       widget: cardWidth,
                       height: cardHeight,
                       rt: () => setState(() => _pane = _Pane.prompt),

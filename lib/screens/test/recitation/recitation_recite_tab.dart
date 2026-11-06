@@ -1,28 +1,39 @@
-// 背诵 tab：课文固定（原文默认模糊），录音 → 识别评分 → 结果与历史。
-// 状态机：ready → recording → analyzing → result（可回 ready）。
-// 录音/评分逻辑全部在 services/recitation_*.dart，本页只做流程与展示。
+// 背诵 tab：两种模式。
+// 逐句：一句一张竖向卡片，卡片内单独录音评分（分数只留本会话，不写存储），
+//       出分后约 1.4 秒自动翻到下一句；最后一句停下。
+// 整篇：整段 reference 录音评分 + RecitationResultView + RecitationStore 历史。
+// 状态机：ready → recording → analyzing →（逐句回 ready / 整篇进 result）。
+// 录音与评分逻辑都在 services/recitation_*.dart，本页只做流程与展示。
 
 import 'dart:async' show Timer;
 import 'dart:ui' show ImageFilter;
 
+import 'package:arabic_learning/core/adaptive.dart' show AdaptiveScope;
+import 'package:arabic_learning/core/extensions.dart';
 import 'package:arabic_learning/models/recitation_text.dart';
 import 'package:arabic_learning/package_replacement/fake_dart_io.dart'
     if (dart.library.io) 'dart:io' as io;
+import 'package:arabic_learning/screens/setting/model_management_page.dart'
+    show ModelManagementPage;
+import 'package:arabic_learning/screens/test/recitation/recitation_progress_bar.dart'
+    show RecitationProgressBar;
+import 'package:arabic_learning/screens/test/recitation/recitation_result.dart'
+    show RecitationResultView;
 import 'package:arabic_learning/services/app_data.dart';
 import 'package:arabic_learning/services/global_state.dart';
 import 'package:arabic_learning/services/recitation_recorder.dart';
 import 'package:arabic_learning/services/recitation_scorer.dart';
 import 'package:arabic_learning/services/recitation_service.dart';
 import 'package:arabic_learning/services/recitation_store.dart';
-import 'package:arabic_learning/screens/setting/model_management_page.dart'
-    show ModelManagementPage;
-import 'package:arabic_learning/screens/test/recitation/recitation_result.dart'
-    show RecitationResultView;
-import 'package:arabic_learning/theme/tokens.dart' show AppRadius, AppSpacing;
-import 'package:arabic_learning/widgets/kit.dart' show Button, TextContainer;
+import 'package:arabic_learning/theme/tokens.dart'
+    show AppMotion, AppRadius, AppSpacing;
+import 'package:arabic_learning/widgets/kit.dart' show Button;
 import 'package:arabic_learning/widgets/overlays.dart' show showSnackBar;
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart' show RenderAbstractViewport;
 import 'package:provider/provider.dart';
+
+enum _Mode { sentence, whole }
 
 enum _Stage { ready, recording, analyzing, result }
 
@@ -36,20 +47,49 @@ class RecitationReciteTab extends StatefulWidget {
 
 class _RecitationReciteTabState extends State<RecitationReciteTab> {
   final RecitationRecorder _recorder = RecitationRecorder();
+  final PageController _pager = PageController();
+  final ScrollController _wholeScroll = ScrollController();
+  // 两个模式各自的「当前句」（从 1 开始），只驱动底部进度条重建。
+  final ValueNotifier<int> _current = ValueNotifier<int>(1);
+  final ValueNotifier<int> _wholeCurrent = ValueNotifier<int>(1);
+  final Set<int> _revealed = <int>{};
+  // 逐句成绩只保存在本会话内存里，按句索引映射，不落盘。
+  final Map<int, RecitationOutcome> _sentenceOutcomes =
+      <int, RecitationOutcome>{};
+  final GlobalKey _resultKey = GlobalKey();
+  late final List<GlobalKey> _sentenceKeys = <GlobalKey>[
+    for (int i = 0; i < widget.unit.sentences.length; i++) GlobalKey(),
+  ];
 
+  _Mode _mode = _Mode.sentence;
   _Stage _stage = _Stage.ready;
   bool _permissionDenied = false;
-  // 全局「显示原文」开关；false 时原文模糊，单句可单独临时显示。
+  // 全局「显示原文」开关（整篇）；逐句卡片各自有显隐按钮。
   bool _showOriginal = false;
-  final Set<int> _revealed = <int>{};
   int _seconds = 0;
-  Timer? _timer;
+  // 正在录音 / 分析的句子；整篇模式为 -1。
+  int _activeIndex = -1;
+  // 权限被拒后「重试」要重录的句子。
+  int _retryIndex = 0;
   String _status = '';
   RecitationOutcome? _outcome;
+  Timer? _timer;
+  Timer? _advance;
+
+  @override
+  void initState() {
+    super.initState();
+    _wholeScroll.addListener(_syncWholeIndex);
+  }
 
   @override
   void dispose() {
     _timer?.cancel();
+    _advance?.cancel();
+    _wholeScroll.dispose();
+    _pager.dispose();
+    _current.dispose();
+    _wholeCurrent.dispose();
     _recorder.dispose();
     super.dispose();
   }
@@ -62,34 +102,52 @@ class _RecitationReciteTabState extends State<RecitationReciteTab> {
     } catch (_) {}
   }
 
-  Future<void> _startRecitation() async {
+  String _clock(int seconds) =>
+      "${(seconds ~/ 60).toString().padLeft(2, '0')}:${(seconds % 60).toString().padLeft(2, '0')}";
+
+  // ---------------------------------------------------------------------------
+  // 录音流程
+  // ---------------------------------------------------------------------------
+
+  /// 检查麦克风权限；被拒时置位 [<_permissionDenied>]，由顶部提示给出重试入口。
+  Future<bool> _ensurePermission() async {
     final Global global = context.read<Global>();
     bool permitted;
     try {
       permitted = await _recorder.ensurePermission();
     } catch (e) {
       global.uiLogger.severe("录音权限检查失败: $e");
-      if (!mounted) return;
-      showSnackBar(context, "无法访问麦克风：$e");
-      return;
+      if (mounted) showSnackBar(context, "无法访问麦克风：$e");
+      return false;
     }
-    if (!mounted) return;
+    if (!mounted) return false;
     if (!permitted) {
       setState(() => _permissionDenied = true);
-      return;
+      return false;
     }
-    setState(() => _permissionDenied = false);
+    if (_permissionDenied) setState(() => _permissionDenied = false);
+    return true;
+  }
+
+  /// 开始录音。[index] 为句子索引，整篇模式传 -1。
+  Future<void> _startRecording(int index) async {
+    if (_stage != _Stage.ready) return;
+    final Global global = context.read<Global>();
+    _advance?.cancel();
+    _retryIndex = index;
+    if (!await _ensurePermission()) return;
+    if (!mounted) return;
     try {
       await _recorder.start();
     } catch (e) {
       global.uiLogger.severe("录音启动失败: $e");
-      if (!mounted) return;
-      showSnackBar(context, "录音启动失败：$e");
+      if (mounted) showSnackBar(context, "录音启动失败：$e");
       return;
     }
     if (!mounted) return;
     setState(() {
       _stage = _Stage.recording;
+      _activeIndex = index;
       _seconds = 0;
     });
     _timer = Timer.periodic(const Duration(seconds: 1), (_) {
@@ -97,7 +155,8 @@ class _RecitationReciteTabState extends State<RecitationReciteTab> {
     });
   }
 
-  Future<void> _stopAndScore() async {
+  /// 停止录音并评分。[index] 为句子索引，整篇模式传 -1。
+  Future<void> _stopAndScore(int index) async {
     final Global global = context.read<Global>();
     _timer?.cancel();
     final String wavPath;
@@ -114,19 +173,40 @@ class _RecitationReciteTabState extends State<RecitationReciteTab> {
       _stage = _Stage.analyzing;
       _status = '';
     });
+    final String reference = index >= 0
+        ? widget.unit.sentences[index].arabic
+        : widget.unit.reference;
     try {
       final RecitationOutcome outcome = await RecitationService().analyze(
-        reference: widget.unit.reference,
+        reference: reference,
         wavPath: wavPath,
         onStatus: (String status) {
           if (mounted) setState(() => _status = status);
         },
       );
       if (!mounted) return;
-      setState(() {
-        _outcome = outcome;
-        _stage = _Stage.result;
-      });
+      if (index >= 0) {
+        setState(() {
+          _sentenceOutcomes[index] = outcome;
+          _stage = _Stage.ready;
+        });
+        _scheduleAdvance(index, outcome);
+      } else {
+        setState(() {
+          _outcome = outcome;
+          _stage = _Stage.result;
+        });
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          final BuildContext? target = _resultKey.currentContext;
+          if (target == null) return;
+          Scrollable.ensureVisible(
+            target,
+            duration: AppMotion.medium,
+            curve: AppMotion.decelerateCurve,
+            alignment: 0.0,
+          );
+        });
+      }
     } catch (e) {
       _deleteWav(wavPath);
       global.uiLogger.severe("背诵评分失败: $e");
@@ -134,6 +214,21 @@ class _RecitationReciteTabState extends State<RecitationReciteTab> {
       showSnackBar(context, "评分失败：${e.toString()}");
       setState(() => _stage = _Stage.ready);
     }
+  }
+
+  /// 逐句出分后自动前进；没给分（门禁命中）或已是最后一句就停在原地。
+  void _scheduleAdvance(int index, RecitationOutcome outcome) {
+    _advance?.cancel();
+    _advance = null;
+    if (!outcome.scoreable || index + 1 >= widget.unit.sentences.length) return;
+    _advance = Timer(const Duration(milliseconds: 1400), () {
+      if (!mounted || !_pager.hasClients) return;
+      _pager.animateToPage(
+        index + 1,
+        duration: AppMotion.medium,
+        curve: AppMotion.decelerateCurve,
+      );
+    });
   }
 
   /// 取消录音：`record` 的 cancel 会丢弃已录文件。
@@ -145,6 +240,7 @@ class _RecitationReciteTabState extends State<RecitationReciteTab> {
     if (!mounted) return;
     setState(() {
       _stage = _Stage.ready;
+      _activeIndex = -1;
       _seconds = 0;
     });
   }
@@ -156,19 +252,644 @@ class _RecitationReciteTabState extends State<RecitationReciteTab> {
     });
   }
 
-  String _twoDigits(int n) => n.toString().padLeft(2, '0');
+  void _retryRecording() => _startRecording(_mode == _Mode.sentence ? _retryIndex : -1);
 
-  Widget _historySection() {
+  // ---------------------------------------------------------------------------
+  // 定位 / 进度同步
+  // ---------------------------------------------------------------------------
+
+  void _locatePage(int index) {
+    if (!_pager.hasClients) return;
+    _pager.animateToPage(
+      index - 1,
+      duration: AppMotion.quick,
+      curve: AppMotion.standardCurve,
+    );
+  }
+
+  void _locateWhole(int index) {
+    final BuildContext? target = _sentenceKeys[index - 1].currentContext;
+    if (target == null) return;
+    Scrollable.ensureVisible(
+      target,
+      duration: AppMotion.medium,
+      curve: AppMotion.decelerateCurve,
+      alignment: 0.0,
+    );
+  }
+
+  /// 整篇模式：把「当前句」定位到视口顶部的那一句，只在变化时写 notifier。
+  void _syncWholeIndex() {
+    if (_mode != _Mode.whole || !_wholeScroll.hasClients) return;
+    final double offset = _wholeScroll.offset;
+    int found = 1;
+    for (int i = 0; i < _sentenceKeys.length; i++) {
+      final BuildContext? cardContext = _sentenceKeys[i].currentContext;
+      final RenderObject? box = cardContext?.findRenderObject();
+      if (box == null || !box.attached) continue;
+      if (RenderAbstractViewport.of(box).getOffsetToReveal(box, 0.0).offset <=
+          offset + 1.0) {
+        found = i + 1;
+      } else {
+        break;
+      }
+    }
+    if (_wholeCurrent.value != found) _wholeCurrent.value = found;
+  }
+
+  // ---------------------------------------------------------------------------
+  // 展示
+  // ---------------------------------------------------------------------------
+
+  Widget _chip(ThemeData theme, String text, Color background, Color foreground) {
+    return Container(
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.xs,
+        vertical: 2.0,
+      ),
+      decoration: BoxDecoration(
+        color: background,
+        borderRadius: AppRadius.controlBorder,
+      ),
+      child: Text(
+        text,
+        style: theme.textTheme.labelLarge?.copyWith(color: foreground),
+      ),
+    );
+  }
+
+  Color _gradeColor(RecitationOutcome outcome) {
+    final ThemeData theme = Theme.of(context);
+    if (!outcome.scoreable) return theme.colorScheme.error;
+    final int score = outcome.score ?? 0;
+    if (score >= 85) return context.semanticColors.success;
+    if (score >= 70) return theme.colorScheme.primary;
+    if (score >= 55) return context.semanticColors.warning;
+    return theme.colorScheme.error;
+  }
+
+  /// 权限 / 模型未下载提示：错误色淡底 + 边框，与卡片区分开但同属一个色系。
+  Widget _gate(ThemeData theme, {required String text, required Widget action}) {
+    final ColorScheme scheme = theme.colorScheme;
+    return Padding(
+      padding: const EdgeInsets.only(top: AppSpacing.sm),
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.all(AppSpacing.sm),
+        decoration: BoxDecoration(
+          color: Color.alphaBlend(
+            scheme.error.withValues(alpha: 0.08),
+            scheme.surfaceContainerLow,
+          ),
+          borderRadius: AppRadius.controlBorder,
+          border: Border.all(color: scheme.error.withValues(alpha: 0.38)),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: <Widget>[
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: <Widget>[
+                Icon(Icons.error_outline, size: 20.0, color: scheme.error),
+                const SizedBox(width: AppSpacing.xs),
+                Expanded(
+                  child: Text(
+                    text,
+                    style: theme.textTheme.bodyLarge?.copyWith(height: 1.5),
+                  ),
+                ),
+              ],
+            ),
+            Padding(
+              padding: const EdgeInsets.only(top: AppSpacing.xs),
+              child: action,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _header(ThemeData theme, double width, bool modelReady) {
+    final ColorScheme scheme = theme.colorScheme;
+    final bool busy =
+        _stage == _Stage.recording || _stage == _Stage.analyzing;
+    return Padding(
+      padding: const EdgeInsets.only(top: AppSpacing.xs),
+      child: Center(
+        child: SizedBox(
+          width: width,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: <Widget>[
+              SegmentedButton<_Mode>(
+                showSelectedIcon: false,
+                segments: const <ButtonSegment<_Mode>>[
+                  ButtonSegment<_Mode>(
+                    value: _Mode.sentence,
+                    label: Text("逐句"),
+                    icon: Icon(Icons.view_agenda_outlined),
+                  ),
+                  ButtonSegment<_Mode>(
+                    value: _Mode.whole,
+                    label: Text("整篇"),
+                    icon: Icon(Icons.article_outlined),
+                  ),
+                ],
+                selected: <_Mode>{_mode},
+                // 录音 / 分析中切模式会丢掉进行中的录音，直接禁用。
+                onSelectionChanged: busy
+                    ? null
+                    : (Set<_Mode> selection) {
+                        _advance?.cancel();
+                        setState(() => _mode = selection.first);
+                        // 整篇的滚动位置切回来时可能已被重置，按实际布局重算当前句。
+                        if (selection.first == _Mode.whole) {
+                          WidgetsBinding.instance.addPostFrameCallback(
+                            (_) => _syncWholeIndex(),
+                          );
+                        }
+                      },
+              ),
+              const SizedBox(height: AppSpacing.sm),
+              if (_mode == _Mode.whole)
+                Row(
+                  children: <Widget>[
+                    Text("原文", style: theme.textTheme.titleLarge),
+                    const Spacer(),
+                    TextButton(
+                      onPressed: () => setState(() {
+                        _showOriginal = !_showOriginal;
+                        _revealed.clear();
+                      }),
+                      child: Text(_showOriginal ? "模糊原文" : "显示原文"),
+                    ),
+                  ],
+                )
+              else
+                Text(
+                  "每句单独录音，出分后自动进入下一句",
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    color: scheme.onSurfaceVariant,
+                  ),
+                ),
+              if (!modelReady)
+                _gate(
+                  theme,
+                  text: "语音识别模型未下载，无法进行背诵评分。请先在「模型管理」中下载。",
+                  action: Button(
+                    onPressed: () async {
+                      await Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (context) => ModelManagementPage(),
+                        ),
+                      );
+                      if (mounted) setState(() {});
+                    },
+                    child: const Text("前往模型管理"),
+                  ),
+                )
+              else if (_permissionDenied)
+                _gate(
+                  theme,
+                  text: "无法访问麦克风：请在系统设置中允许「Ar学」使用麦克风后重试。",
+                  action: Button(onPressed: _retryRecording, child: const Text("重试")),
+                ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _sentenceCard(int index, ThemeData theme, bool wide) {
+    final ColorScheme scheme = theme.colorScheme;
+    final RecitationSentence sentence = widget.unit.sentences[index];
+    final bool visible = _showOriginal || _revealed.contains(index);
+    final RecitationOutcome? outcome = _sentenceOutcomes[index];
+    final TextStyle arabicStyle =
+        (wide ? theme.textTheme.headlineMedium : theme.textTheme.headlineSmall)!;
+    final Widget body = Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: <Widget>[
+        Text(
+          sentence.arabic,
+          textDirection: TextDirection.rtl,
+          style: arabicStyle.copyWith(height: 1.7),
+        ),
+        if (sentence.translation.isNotEmpty)
+          Padding(
+            padding: const EdgeInsets.only(top: AppSpacing.sm),
+            child: Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(AppSpacing.sm),
+              decoration: BoxDecoration(
+                color: scheme.surfaceContainerHigh,
+                borderRadius: AppRadius.controlBorder,
+              ),
+              child: Text(
+                sentence.translation,
+                style: theme.textTheme.titleMedium?.copyWith(
+                  color: scheme.onSurfaceVariant,
+                  height: 1.5,
+                ),
+              ),
+            ),
+          ),
+      ],
+    );
+    return Card(
+      margin: EdgeInsets.zero,
+      elevation: 2.0,
+      surfaceTintColor: Colors.transparent,
+      shadowColor: scheme.shadow,
+      color: scheme.surfaceContainerLow,
+      clipBehavior: Clip.antiAlias,
+      shape: RoundedRectangleBorder(
+        borderRadius: AppRadius.cardBorder,
+        side: BorderSide(color: scheme.outlineVariant),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(AppSpacing.sm),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: <Widget>[
+            Row(
+              children: <Widget>[
+                _chip(
+                  theme,
+                  "第 ${index + 1} 句",
+                  scheme.surfaceContainerHighest,
+                  scheme.onSurfaceVariant,
+                ),
+                if (outcome != null) ...<Widget>[
+                  const SizedBox(width: AppSpacing.xs),
+                  _chip(
+                    theme,
+                    outcome.scoreable
+                        ? "${outcome.score} 分 · ${outcome.grade}"
+                        : "未评分",
+                    _gradeColor(outcome).withValues(alpha: 0.15),
+                    _gradeColor(outcome),
+                  ),
+                ],
+                const Spacer(),
+                IconButton(
+                  tooltip: visible ? "模糊原文" : "显示原文",
+                  onPressed: () => setState(() {
+                    if (!_revealed.remove(index)) _revealed.add(index);
+                  }),
+                  icon: Icon(
+                    visible
+                        ? Icons.visibility_off_outlined
+                        : Icons.visibility_outlined,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: AppSpacing.xs),
+            GestureDetector(
+              behavior: HitTestBehavior.opaque,
+              onTap: () => setState(() {
+                if (!_revealed.remove(index)) _revealed.add(index);
+              }),
+              child: visible
+                  ? body
+                  : ImageFiltered(
+                      imageFilter: ImageFilter.blur(sigmaX: 5, sigmaY: 5),
+                      child: Opacity(opacity: 0.9, child: body),
+                    ),
+            ),
+            if (_mode == _Mode.sentence) _sentenceControls(index, theme, outcome),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// 逐句卡片底部：录音按钮 / 录音中 / 分析中 / 本句成绩。
+  Widget _sentenceControls(int index, ThemeData theme, RecitationOutcome? outcome) {
+    final ColorScheme scheme = theme.colorScheme;
+    final bool active = _activeIndex == index;
+    final bool modelReady = AppData().asrModelDownloaded;
+    final List<Widget> content;
+    if (active && _stage == _Stage.recording) {
+      content = <Widget>[
+        Row(
+          children: <Widget>[
+            Icon(Icons.mic, color: scheme.error),
+            const SizedBox(width: AppSpacing.xs),
+            Text("录音中 ${_clock(_seconds)}",
+                style: theme.textTheme.titleMedium),
+          ],
+        ),
+        const SizedBox(height: AppSpacing.xs),
+        Row(
+          children: <Widget>[
+            Expanded(
+              child: Button(
+                onPressed: () => _stopAndScore(index),
+                child: const Text("停止并评分"),
+              ),
+            ),
+            const SizedBox(width: AppSpacing.sm),
+            Expanded(
+              child: Button(
+                onPressed: _cancelRecording,
+                backgroundColor: scheme.secondaryContainer,
+                child: const Text("取消"),
+              ),
+            ),
+          ],
+        ),
+      ];
+    } else if (active && _stage == _Stage.analyzing) {
+      content = <Widget>[
+        Row(
+          children: <Widget>[
+            const SizedBox(
+              width: 18.0,
+              height: 18.0,
+              child: CircularProgressIndicator(strokeWidth: 2.0),
+            ),
+            const SizedBox(width: AppSpacing.xs),
+            Expanded(
+              child: Text(
+                _status.isEmpty ? "正在分析录音…" : _status,
+                style: theme.textTheme.bodyLarge,
+              ),
+            ),
+          ],
+        ),
+      ];
+    } else {
+      content = <Widget>[
+        if (outcome != null) _outcomeDetail(theme, outcome),
+        SizedBox(
+          width: double.infinity,
+          child: Button(
+            icon: const Icon(Icons.mic_none),
+            onPressed:
+                modelReady && _stage == _Stage.ready ? () => _startRecording(index) : null,
+            child: Text(outcome == null ? "录这一句" : "重录这句"),
+          ),
+        ),
+      ];
+    }
+    return Padding(
+      padding: const EdgeInsets.only(top: AppSpacing.sm),
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.all(AppSpacing.sm),
+        // 控制区用最深一档容器色，和译文区 / 卡片本身分开。
+        decoration: BoxDecoration(
+          color: scheme.surfaceContainerHighest,
+          borderRadius: AppRadius.controlBorder,
+          border: Border.all(color: scheme.outlineVariant),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: content,
+        ),
+      ),
+    );
+  }
+
+  /// 本句成绩摘要：覆盖/顺序/多读 + 漏读词；门禁命中时只给结论。
+  Widget _outcomeDetail(ThemeData theme, RecitationOutcome outcome) {
+    final ColorScheme scheme = theme.colorScheme;
+    if (!outcome.scoreable) {
+      return Padding(
+        padding: const EdgeInsets.only(bottom: AppSpacing.xs),
+        child: Text(
+          outcome.summary,
+          style: theme.textTheme.bodyLarge?.copyWith(
+            color: scheme.error,
+            height: 1.5,
+          ),
+        ),
+      );
+    }
+    final List<String> missing = <String>[
+      for (final RecitationIssue issue in outcome.issues)
+        if (issue.type == RecitationIssueType.missing) issue.text,
+    ];
+    return Padding(
+      padding: const EdgeInsets.only(bottom: AppSpacing.xs),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: <Widget>[
+          Text(
+            "覆盖 ${(outcome.coverage * 100).round()}% · "
+            "顺序 ${(outcome.orderRate * 100).round()}% · "
+            "多读 ${(outcome.insertionRate * 100).round()}%",
+            style: theme.textTheme.bodyMedium?.copyWith(
+              color: scheme.onSurfaceVariant,
+            ),
+          ),
+          if (missing.isNotEmpty)
+            Padding(
+              padding: const EdgeInsets.only(top: AppSpacing.xxs),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: <Widget>[
+                  Text(
+                    "漏读",
+                    style: theme.textTheme.labelLarge?.copyWith(
+                      color: scheme.error,
+                    ),
+                  ),
+                  const SizedBox(width: AppSpacing.xs),
+                  Expanded(
+                    child: Text(
+                      missing.join(" · "),
+                      textDirection: TextDirection.rtl,
+                      style: theme.textTheme.bodyLarge?.copyWith(
+                        color: scheme.error,
+                        height: 1.5,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
+  Widget _sentencePager(ThemeData theme, bool wide, double width) {
+    final List<RecitationSentence> sentences = widget.unit.sentences;
+    return PageView.builder(
+      controller: _pager,
+      scrollDirection: Axis.vertical,
+      itemCount: sentences.length,
+      onPageChanged: (int index) {
+        // 用户自己翻页时中断待执行的自动前进（自动前进触发时定时器已置空）。
+        _advance?.cancel();
+        _advance = null;
+        _current.value = index + 1;
+      },
+      itemBuilder: (BuildContext context, int index) => Center(
+        child: SizedBox(
+          width: width,
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
+            // shortcut: 卡片自身可滚时内层会吃掉竖向滑动，翻句改用底部进度条 /
+            // 上下箭头；课文长到一屏放不下时再换成能透传手势的分页实现。
+            child: _sentenceCard(index, theme, wide),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _wholeList(ThemeData theme, bool wide, double width) {
+    final List<RecitationSentence> sentences = widget.unit.sentences;
+    return SingleChildScrollView(
+      controller: _wholeScroll,
+      padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
+      child: Center(
+        child: SizedBox(
+          width: width,
+          child: Column(
+            children: <Widget>[
+              for (int i = 0; i < sentences.length; i++)
+                Padding(
+                  key: _sentenceKeys[i],
+                  padding: const EdgeInsets.only(bottom: AppSpacing.xs),
+                  child: _sentenceCard(i, theme, wide),
+                ),
+              if (_stage == _Stage.result && _outcome != null)
+                Padding(
+                  key: _resultKey,
+                  padding: const EdgeInsets.only(top: AppSpacing.sm),
+                  child: _panel(
+                    theme,
+                    child: RecitationResultView(
+                      outcome: _outcome!,
+                      onRetry: _retry,
+                      onNewText: null,
+                    ),
+                  ),
+                ),
+              _historySection(theme),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _panel(ThemeData theme, {required Widget child}) {
+    final ColorScheme scheme = theme.colorScheme;
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(AppSpacing.sm),
+      decoration: BoxDecoration(
+        color: scheme.surfaceContainerLow,
+        borderRadius: AppRadius.cardBorder,
+        border: Border.all(color: scheme.outlineVariant),
+      ),
+      child: child,
+    );
+  }
+
+  Widget _wholeControls(ThemeData theme) {
+    final ColorScheme scheme = theme.colorScheme;
+    final bool modelReady = AppData().asrModelDownloaded;
+    if (_stage == _Stage.analyzing) {
+      return Padding(
+        padding: const EdgeInsets.symmetric(
+          horizontal: AppSpacing.sm,
+          vertical: AppSpacing.xs,
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: <Widget>[
+            const SizedBox(
+              width: 18.0,
+              height: 18.0,
+              child: CircularProgressIndicator(strokeWidth: 2.0),
+            ),
+            const SizedBox(width: AppSpacing.xs),
+            Flexible(
+              child: Text(
+                _status.isEmpty ? "正在分析录音…" : _status,
+                style: theme.textTheme.bodyLarge,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+    if (_stage == _Stage.recording) {
+      return Padding(
+        padding: const EdgeInsets.symmetric(
+          horizontal: AppSpacing.sm,
+          vertical: AppSpacing.xs,
+        ),
+        child: Column(
+          children: <Widget>[
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: <Widget>[
+                Icon(Icons.mic, color: scheme.error),
+                const SizedBox(width: AppSpacing.xs),
+                Text("录音中 ${_clock(_seconds)}",
+                    style: theme.textTheme.titleMedium),
+              ],
+            ),
+            const SizedBox(height: AppSpacing.xs),
+            Row(
+              children: <Widget>[
+                Expanded(
+                  child: Button(
+                    onPressed: () => _stopAndScore(-1),
+                    child: const Text("停止并评分"),
+                  ),
+                ),
+                const SizedBox(width: AppSpacing.sm),
+                Expanded(
+                  child: Button(
+                    onPressed: _cancelRecording,
+                    backgroundColor: scheme.secondaryContainer,
+                    child: const Text("取消"),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      );
+    }
+    return Padding(
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.sm,
+        vertical: AppSpacing.xs,
+      ),
+      child: SizedBox(
+        width: double.infinity,
+        child: Button(
+          icon: const Icon(Icons.mic_none),
+          onPressed: modelReady ? () => _startRecording(-1) : null,
+          child: Text(_outcome == null ? "开始背诵" : "再背一遍"),
+        ),
+      ),
+    );
+  }
+
+  Widget _historySection(ThemeData theme) {
     final List<RecitationRecord> records =
         RecitationStore().recordsFor(RecitationService.textHash(widget.unit.reference));
     if (records.isEmpty) return const SizedBox.shrink();
-    final ThemeData theme = Theme.of(context);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
+      children: <Widget>[
         Padding(
           padding: const EdgeInsets.only(top: AppSpacing.md, bottom: AppSpacing.xs),
-          child: Text("历史成绩", style: theme.textTheme.titleMedium),
+          child: Text("历史成绩", style: theme.textTheme.titleLarge),
         ),
         for (final RecitationRecord record in records.take(5))
           Container(
@@ -183,23 +904,24 @@ class _RecitationReciteTabState extends State<RecitationReciteTab> {
               borderRadius: AppRadius.controlBorder,
             ),
             child: Row(
-              children: [
+              children: <Widget>[
                 Expanded(
                   child: Text(
                     "${DateTime.fromMillisecondsSinceEpoch(record.timestamp).month}"
-                    "-${_twoDigits(DateTime.fromMillisecondsSinceEpoch(record.timestamp).day)}"
-                    " ${_twoDigits(DateTime.fromMillisecondsSinceEpoch(record.timestamp).hour)}"
-                    ":${_twoDigits(DateTime.fromMillisecondsSinceEpoch(record.timestamp).minute)}",
-                    style: theme.textTheme.bodySmall?.copyWith(
+                    "-${DateTime.fromMillisecondsSinceEpoch(record.timestamp).day.toString().padLeft(2, '0')}"
+                    " ${DateTime.fromMillisecondsSinceEpoch(record.timestamp).hour.toString().padLeft(2, '0')}"
+                    ":${DateTime.fromMillisecondsSinceEpoch(record.timestamp).minute.toString().padLeft(2, '0')}",
+                    style: theme.textTheme.bodyMedium?.copyWith(
                       color: theme.colorScheme.onSurfaceVariant,
                     ),
                   ),
                 ),
-                Text("${record.score} 分"),
+                Text("${record.score} 分",
+                    style: theme.textTheme.titleMedium),
                 const SizedBox(width: AppSpacing.sm),
                 Text(
                   "覆盖 ${(record.coverage * 100).round()}%",
-                  style: theme.textTheme.bodySmall?.copyWith(
+                  style: theme.textTheme.bodyMedium?.copyWith(
                     color: theme.colorScheme.onSurfaceVariant,
                   ),
                 ),
@@ -210,196 +932,48 @@ class _RecitationReciteTabState extends State<RecitationReciteTab> {
     );
   }
 
-  Widget _sentenceLine(int index, ThemeData theme) {
-    final RecitationSentence sentence = widget.unit.sentences[index];
-    final bool visible = _showOriginal || _revealed.contains(index);
-    final Widget text = Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          sentence.arabic,
-          textDirection: TextDirection.rtl,
-          style: theme.textTheme.titleLarge,
-        ),
-        if (sentence.translation.isNotEmpty)
-          Padding(
-            padding: const EdgeInsets.only(top: AppSpacing.xxs),
-            child: Text(
-              sentence.translation,
-              style: theme.textTheme.bodyMedium?.copyWith(
-                color: theme.colorScheme.onSurfaceVariant,
-              ),
-            ),
-          ),
-      ],
-    );
-    return GestureDetector(
-      onTap: () => setState(() {
-        _revealed.contains(index) ? _revealed.remove(index) : _revealed.add(index);
-      }),
-      child: Container(
-        width: double.infinity,
-        margin: const EdgeInsets.only(bottom: AppSpacing.xs),
-        padding: const EdgeInsets.all(AppSpacing.sm),
-        decoration: BoxDecoration(
-          color: theme.colorScheme.surfaceContainerHigh,
-          borderRadius: AppRadius.controlBorder,
-        ),
-        child: visible
-            ? text
-            : ImageFiltered(
-                imageFilter: ImageFilter.blur(sigmaX: 5, sigmaY: 5),
-                child: Opacity(opacity: 0.9, child: text),
-              ),
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     final ThemeData theme = Theme.of(context);
-    final double width = MediaQuery.sizeOf(context).width * 0.9;
+    final bool wide = AdaptiveScope.of(context).isWide;
+    final double width =
+        (MediaQuery.sizeOf(context).width * 0.9).clamp(0.0, 760.0);
+    final int count = widget.unit.sentences.length;
+    final bool modelReady = AppData().asrModelDownloaded;
     return SafeArea(
       top: false,
-      child: ListView(
-        padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
-        children: [
-          Center(
-            child: SizedBox(
-              width: width,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Text("原文", style: theme.textTheme.titleMedium),
-                      const Spacer(),
-                      TextButton(
-                        onPressed: () => setState(() {
-                          _showOriginal = !_showOriginal;
-                          _revealed.clear();
-                        }),
-                        child: Text(_showOriginal ? "模糊原文" : "显示原文"),
-                      ),
-                    ],
-                  ),
-                  // 点击单句可临时显示/重新模糊；全局开关控制全部。
-                  for (int i = 0; i < widget.unit.sentences.length; i++)
-                    _sentenceLine(i, theme),
-                  if (_stage != _Stage.result) ...[
-                    if (!AppData().asrModelDownloaded) ...[
-                      Padding(
-                        padding: const EdgeInsets.only(top: AppSpacing.sm),
-                        child: TextContainer(
-                          text: "语音识别模型未下载，无法进行背诵评分。请先在「模型管理」中下载。",
-                          style: theme.textTheme.bodyMedium?.copyWith(
-                            color: theme.colorScheme.error,
-                          ),
-                        ),
-                      ),
-                      Button(
-                        onPressed: () async {
-                          await Navigator.of(context).push(
-                            MaterialPageRoute(
-                              builder: (context) => ModelManagementPage(),
-                            ),
-                          );
-                          if (mounted) setState(() {});
-                        },
-                        child: const Text("前往模型管理"),
-                      ),
-                    ] else if (_permissionDenied) ...[
-                      Padding(
-                        padding: const EdgeInsets.only(top: AppSpacing.sm),
-                        child: TextContainer(
-                          text: "无法访问麦克风：请在系统设置中允许「Ar学」使用麦克风后重试。",
-                          style: theme.textTheme.bodyMedium?.copyWith(
-                            color: theme.colorScheme.error,
-                          ),
-                        ),
-                      ),
-                      Button(
-                        onPressed: _startRecitation,
-                        child: const Text("重试"),
-                      ),
-                    ] else
-                      Padding(
-                        padding: const EdgeInsets.only(top: AppSpacing.sm),
-                        child: Button(
-                          onPressed: _startRecitation,
-                          child: const Text("开始背诵"),
-                        ),
-                      ),
-                  ],
-                  if (_stage == _Stage.recording) ...[
-                    Padding(
-                      padding: const EdgeInsets.only(top: AppSpacing.sm),
-                      child: Center(
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            const Icon(Icons.mic, color: Colors.red),
-                            const SizedBox(width: AppSpacing.xs),
-                            Text(
-                              "录音中 ${_twoDigits(_seconds ~/ 60)}:${_twoDigits(_seconds % 60)}",
-                              style: theme.textTheme.titleMedium,
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                    Padding(
-                      padding: const EdgeInsets.only(top: AppSpacing.sm),
-                      child: Row(
-                        children: [
-                          Expanded(
-                            child: Button(
-                              onPressed: _stopAndScore,
-                              child: const Text("停止并评分"),
-                            ),
-                          ),
-                          const SizedBox(width: AppSpacing.sm),
-                          Expanded(
-                            child: Button(
-                              onPressed: _cancelRecording,
-                              backgroundColor: theme.colorScheme.secondaryContainer,
-                              child: const Text("取消"),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                  if (_stage == _Stage.analyzing)
-                    Padding(
-                      padding: const EdgeInsets.only(top: AppSpacing.md),
-                      child: Center(
-                        child: Column(
-                          children: [
-                            const CircularProgressIndicator(),
-                            Padding(
-                              padding: const EdgeInsets.only(top: AppSpacing.sm),
-                              child: Text(
-                                _status.isEmpty ? "正在分析录音…" : _status,
-                                style: theme.textTheme.bodyMedium,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  if (_stage == _Stage.result && _outcome != null)
-                    RecitationResultView(
-                      outcome: _outcome!,
-                      onRetry: _retry,
-                      onNewText: null,
-                    ),
-                  if (_stage != _Stage.recording && _stage != _Stage.analyzing)
-                    _historySection(),
-                ],
+      // 底部安全区交给进度条自己的 SafeArea，条底色才能铺到手势区。
+      bottom: false,
+      child: Column(
+        children: <Widget>[
+          _header(theme, width, modelReady),
+          Expanded(
+            child: _mode == _Mode.sentence
+                ? _sentencePager(theme, wide, width)
+                : _wholeList(theme, wide, width),
+          ),
+          if (_mode == _Mode.whole && _stage != _Stage.result)
+            _wholeControls(theme),
+          if (_mode == _Mode.sentence)
+            ValueListenableBuilder<int>(
+              valueListenable: _current,
+              builder: (BuildContext context, int value, Widget? child) =>
+                  RecitationProgressBar(
+                current: value,
+                count: count,
+                onLocate: _locatePage,
+              ),
+            )
+          else
+            ValueListenableBuilder<int>(
+              valueListenable: _wholeCurrent,
+              builder: (BuildContext context, int value, Widget? child) =>
+                  RecitationProgressBar(
+                current: value,
+                count: count,
+                onLocate: _locateWhole,
               ),
             ),
-          ),
         ],
       ),
     );

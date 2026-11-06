@@ -30,14 +30,24 @@ class RecitationResultView extends StatelessWidget {
     required this.onNewText,
   });
 
-  Widget _metricRow(String label, String value) {
+  Widget _metricRow(ThemeData theme, String label, String value) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: AppSpacing.xxs),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text(label),
-          Text(value, style: const TextStyle(fontWeight: FontWeight.bold)),
+        children: <Widget>[
+          Text(
+            label,
+            style: theme.textTheme.bodyLarge?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant,
+            ),
+          ),
+          Text(
+            value,
+            style: theme.textTheme.bodyLarge?.copyWith(
+              fontWeight: FontWeight.w600,
+            ),
+          ),
         ],
       ),
     );
@@ -54,6 +64,10 @@ class RecitationResultView extends StatelessWidget {
           TextContainer(
             text: outcome.summary,
             textAlign: TextAlign.center,
+            style: theme.textTheme.bodyLarge?.copyWith(
+              color: theme.colorScheme.error,
+              height: 1.5,
+            ),
           ),
           Row(
             children: [
@@ -104,23 +118,42 @@ class RecitationResultView extends StatelessWidget {
         ),
         Padding(
           padding: const EdgeInsets.only(top: AppSpacing.xxs),
-          child: Center(child: Text(outcome.summary, style: theme.textTheme.bodyMedium)),
+          child: Center(
+            child: Text(
+              outcome.summary,
+              style: theme.textTheme.bodyLarge?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+            ),
+          ),
         ),
         Padding(
           padding: const EdgeInsets.only(top: AppSpacing.sm),
-          child: Column(
-            children: [
-              _metricRow("覆盖率", "${(outcome.coverage * 100).round()}%"),
-              _metricRow("顺序", "${(outcome.orderRate * 100).round()}%"),
-              _metricRow("多读", "${(outcome.insertionRate * 100).round()}%"),
-              _metricRow("时长", "${outcome.durationRatio.toStringAsFixed(2)}×"),
-            ],
+          child: Container(
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(
+              horizontal: AppSpacing.sm,
+              vertical: AppSpacing.xs,
+            ),
+            decoration: BoxDecoration(
+              color: theme.colorScheme.surfaceContainerHigh,
+              borderRadius: AppRadius.controlBorder,
+              border: Border.all(color: theme.colorScheme.outlineVariant),
+            ),
+            child: Column(
+              children: <Widget>[
+                _metricRow(theme, "覆盖率", "${(outcome.coverage * 100).round()}%"),
+                _metricRow(theme, "顺序", "${(outcome.orderRate * 100).round()}%"),
+                _metricRow(theme, "多读", "${(outcome.insertionRate * 100).round()}%"),
+                _metricRow(theme, "时长", "${outcome.durationRatio.toStringAsFixed(2)}×"),
+              ],
+            ),
           ),
         ),
         if (grouped.isNotEmpty) ...[
           Padding(
-            padding: const EdgeInsets.only(top: AppSpacing.sm),
-            child: Text("可改进之处", style: theme.textTheme.titleMedium),
+            padding: const EdgeInsets.only(top: AppSpacing.md),
+            child: Text("可改进之处", style: theme.textTheme.titleLarge),
           ),
           for (final MapEntry<RecitationIssueType, List<RecitationIssue>> group
               in grouped.entries)
@@ -131,30 +164,36 @@ class RecitationResultView extends StatelessWidget {
                 children: [
                   Text(
                     _issueTitles[group.key] ?? group.key.name,
-                    style: theme.textTheme.titleSmall?.copyWith(
+                    style: theme.textTheme.titleMedium?.copyWith(
                       color: theme.colorScheme.primary,
-                      fontWeight: FontWeight.bold,
+                      fontWeight: FontWeight.w600,
                     ),
                   ),
                   for (final RecitationIssue issue in group.value)
                     Container(
                       width: double.infinity,
                       margin: const EdgeInsets.only(top: AppSpacing.xxs),
-                      padding: const EdgeInsets.all(AppSpacing.xs),
+                      padding: const EdgeInsets.all(AppSpacing.sm),
                       decoration: BoxDecoration(
-                        color: theme.colorScheme.surfaceContainerHigh,
+                        color: theme.colorScheme.surfaceContainerHighest,
                         borderRadius: AppRadius.controlBorder,
+                        border: Border.all(
+                          color: theme.colorScheme.outlineVariant,
+                        ),
                       ),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(issue.text,
-                              style: theme.textTheme.bodyLarge,
+                              style: theme.textTheme.headlineSmall,
                               textDirection: TextDirection.rtl),
-                          Text(issue.detail,
-                              style: theme.textTheme.bodySmall?.copyWith(
-                                color: theme.colorScheme.onSurfaceVariant,
-                              )),
+                          Padding(
+                            padding: const EdgeInsets.only(top: AppSpacing.xxs),
+                            child: Text(issue.detail,
+                                style: theme.textTheme.bodyMedium?.copyWith(
+                                  color: theme.colorScheme.onSurfaceVariant,
+                                )),
+                          ),
                         ],
                       ),
                     ),

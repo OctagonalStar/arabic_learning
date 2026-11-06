@@ -11,13 +11,29 @@ class RecitationDetailPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final ThemeData theme = Theme.of(context);
+    final ColorScheme scheme = theme.colorScheme;
     return DefaultTabController(
       length: 2,
       child: Scaffold(
         appBar: AppBar(
-          title: Text(unit.title, maxLines: 1, overflow: TextOverflow.ellipsis),
-          bottom: const TabBar(
-            tabs: <Widget>[Tab(text: "学习"), Tab(text: "背诵")],
+          title: Text(
+            unit.title,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: theme.textTheme.headlineSmall?.copyWith(
+              color: scheme.onSurface,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          bottom: TabBar(
+            labelStyle: theme.textTheme.titleMedium?.copyWith(
+              fontWeight: FontWeight.w600,
+            ),
+            unselectedLabelStyle: theme.textTheme.titleMedium?.copyWith(
+              color: scheme.onSurfaceVariant,
+            ),
+            tabs: const <Widget>[Tab(text: "学习"), Tab(text: "背诵")],
           ),
         ),
         body: TabBarView(

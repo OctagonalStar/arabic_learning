@@ -54,11 +54,18 @@ class _RecitationListPageState extends State<RecitationListPage> {
   @override
   Widget build(BuildContext context) {
     final ThemeData theme = Theme.of(context);
-    final double width = MediaQuery.sizeOf(context).width * 0.9;
+    final double width =
+        (MediaQuery.sizeOf(context).width * 0.9).clamp(0.0, 760.0);
     final List<RecitationTextUnit> units = AppData().recitationTextData.units;
     return Scaffold(
       appBar: AppBar(
-        title: const Text("课文背诵"),
+        title: Text(
+          "课文背诵",
+          style: theme.textTheme.headlineSmall?.copyWith(
+            color: theme.colorScheme.onSurface,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
         actions: [
           IconButton(onPressed: _openAdd, icon: const Icon(Icons.add)),
         ],
@@ -70,7 +77,10 @@ class _RecitationListPageState extends State<RecitationListPage> {
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Text("还没有课文，先导入一篇吧", style: theme.textTheme.bodyMedium),
+                    Text("还没有课文，先导入一篇吧",
+                        style: theme.textTheme.bodyLarge?.copyWith(
+                          color: theme.colorScheme.onSurfaceVariant,
+                        )),
                     Padding(
                       padding: const EdgeInsets.only(top: AppSpacing.md),
                       child: Button(
@@ -137,9 +147,16 @@ class _UnitCard extends StatelessWidget {
         records.isEmpty ? null : records.last.score;
     return Card(
       margin: const EdgeInsets.symmetric(vertical: AppSpacing.xs),
-      shape: RoundedRectangleBorder(borderRadius: AppRadius.controlBorder),
+      elevation: 2.0,
+      surfaceTintColor: Colors.transparent,
+      shadowColor: scheme.shadow,
+      color: scheme.surfaceContainerLow,
+      shape: RoundedRectangleBorder(
+        borderRadius: AppRadius.cardBorder,
+        side: BorderSide(color: scheme.outlineVariant),
+      ),
       child: InkWell(
-        borderRadius: AppRadius.controlBorder,
+        borderRadius: AppRadius.cardBorder,
         onTap: onOpen,
         onLongPress: onDelete,
         child: Padding(
@@ -155,8 +172,10 @@ class _UnitCard extends StatelessWidget {
                 ),
                 child: Text(
                   "${unit.difficulty}",
-                  style: theme.textTheme.titleMedium
-                      ?.copyWith(color: _difficultyColor(context)),
+                  style: theme.textTheme.titleLarge?.copyWith(
+                    color: _difficultyColor(context),
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
               ),
               const SizedBox(width: AppSpacing.sm),
@@ -168,21 +187,23 @@ class _UnitCard extends StatelessWidget {
                       unit.title,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: theme.textTheme.titleMedium,
+                      style: theme.textTheme.headlineSmall?.copyWith(
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
                     Padding(
                       padding: const EdgeInsets.only(top: AppSpacing.xxs),
                       child: Text(
                         "${unit.sentences.length} 句 · ${unit.wordCount} 词"
                         "${lastScore == null ? "" : " · 最近 $lastScore"}",
-                        style: theme.textTheme.bodySmall?.copyWith(
+                        style: theme.textTheme.bodyMedium?.copyWith(
                           color: scheme.onSurfaceVariant,
                         ),
                       ),
                     ),
                     if (unit.tags.isNotEmpty)
                       Padding(
-                        padding: const EdgeInsets.only(top: AppSpacing.xxs),
+                        padding: const EdgeInsets.only(top: AppSpacing.xs),
                         child: Wrap(
                           spacing: AppSpacing.xxs,
                           runSpacing: AppSpacing.xxs,
@@ -197,7 +218,7 @@ class _UnitCard extends StatelessWidget {
                                 ),
                                 child: Text(
                                   tag,
-                                  style: theme.textTheme.labelSmall?.copyWith(
+                                  style: theme.textTheme.labelMedium?.copyWith(
                                     color: scheme.onSecondaryContainer,
                                   ),
                                 ),
