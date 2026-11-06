@@ -10,7 +10,7 @@ import 'package:arabic_learning/services/global_state.dart';
 import 'package:arabic_learning/screens/test/listening_test_page.dart' show ForeListeningSettingPage;
 import 'package:arabic_learning/screens/test/local_pk_page.dart' show LocalPKSelectPage;
 import 'package:arabic_learning/screens/test/reading_test_page.dart' show ReadingTestPage;
-import 'package:arabic_learning/screens/test/recitation/recitation_page.dart' show RecitationPage;
+import 'package:arabic_learning/screens/test/recitation/recitation_list_page.dart' show RecitationListPage;
 class TestPage extends StatelessWidget {
   const TestPage({super.key});
   @override
@@ -84,11 +84,11 @@ class TestPage extends StatelessWidget {
                 icon: Icon(Icons.record_voice_over, size: 36.0),
                 size: Size(width * 0.8, fullHeight),
                 onPressed: () {
-                  context.read<Global>().uiLogger.info("跳转: TestPage => RecitationPage");
+                  context.read<Global>().uiLogger.info("跳转: TestPage => RecitationListPage");
                   Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (context) => RecitationPage()
+                      builder: (context) => RecitationListPage()
                     )
                   );
                 },

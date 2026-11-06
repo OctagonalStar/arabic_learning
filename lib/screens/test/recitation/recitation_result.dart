@@ -17,11 +17,11 @@ const Map<RecitationIssueType, String> _issueTitles = <RecitationIssueType, Stri
   RecitationIssueType.unclear: '没听清',
 };
 
-/// 结果视图。[onRetry] 保留原文重录，[onNewText] 清空换一段。
+/// 结果视图。[onRetry] 保留原文重录，[onNewText] 为空时不显示「换一段」。
 class RecitationResultView extends StatelessWidget {
   final RecitationOutcome outcome;
   final VoidCallback onRetry;
-  final VoidCallback onNewText;
+  final VoidCallback? onNewText;
 
   const RecitationResultView({
     super.key,
@@ -60,14 +60,16 @@ class RecitationResultView extends StatelessWidget {
               Expanded(
                 child: Button(onPressed: onRetry, child: const Text("再录一次")),
               ),
-              const SizedBox(width: AppSpacing.sm),
-              Expanded(
-                child: Button(
-                  onPressed: onNewText,
-                  backgroundColor: theme.colorScheme.secondaryContainer,
-                  child: const Text("换一段"),
+              if (onNewText != null) ...[
+                const SizedBox(width: AppSpacing.sm),
+                Expanded(
+                  child: Button(
+                    onPressed: onNewText,
+                    backgroundColor: theme.colorScheme.secondaryContainer,
+                    child: const Text("换一段"),
+                  ),
                 ),
-              ),
+              ],
             ],
           ),
         ],
@@ -167,14 +169,16 @@ class RecitationResultView extends StatelessWidget {
               Expanded(
                 child: Button(onPressed: onRetry, child: const Text("再录一次")),
               ),
-              const SizedBox(width: AppSpacing.sm),
-              Expanded(
-                child: Button(
-                  onPressed: onNewText,
-                  backgroundColor: theme.colorScheme.secondaryContainer,
-                  child: const Text("换一段"),
+              if (onNewText != null) ...[
+                const SizedBox(width: AppSpacing.sm),
+                Expanded(
+                  child: Button(
+                    onPressed: onNewText,
+                    backgroundColor: theme.colorScheme.secondaryContainer,
+                    child: const Text("换一段"),
+                  ),
                 ),
-              ),
+              ],
             ],
           ),
         ),
