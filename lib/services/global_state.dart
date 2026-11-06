@@ -8,6 +8,7 @@ import 'package:arabic_learning/core/statics.dart';
 import 'package:arabic_learning/models/config.dart' show Config, LearningConfig, RegularConfig;
 import 'package:arabic_learning/models/dict.dart' show DictData;
 import 'package:arabic_learning/models/reading.dart' show ReadingData;
+import 'package:arabic_learning/models/recitation_text.dart' show RecitationTextData;
 import 'package:arabic_learning/services/app_data.dart' show AppData;
 import 'package:arabic_learning/services/favorites.dart' show FavoriteStore;
 import 'package:arabic_learning/services/fsrs.dart' show FSRS;
@@ -199,6 +200,13 @@ class Global with ChangeNotifier {
       final String? readingRaw = AppData().storage.getString("readingData");
       if (readingRaw != null && readingRaw.isNotEmpty) {
         AppData().readingData = ReadingData.buildFromMap(jsonDecode(readingRaw));
+      }
+
+      final String? recitationTextRaw =
+          AppData().storage.getString("recitationTextData");
+      if (recitationTextRaw != null && recitationTextRaw.isNotEmpty) {
+        AppData().recitationTextData =
+            RecitationTextData.buildFromMap(jsonDecode(recitationTextRaw));
       }
 
       SynonymStore().reload();

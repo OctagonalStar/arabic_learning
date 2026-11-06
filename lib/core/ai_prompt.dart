@@ -1,4 +1,4 @@
-// AI 阅读题生成提示词与主题/题型标签常量（原 lib/vars/statics_var.dart 拆分）。
+// AI 阅读题 / 课文整理提示词与主题/题型标签常量（原 lib/vars/statics_var.dart 拆分）。
 
 import 'package:flutter/foundation.dart' show immutable;
 
@@ -103,3 +103,37 @@ class AIPrompt {
   ];
   static const String readingFillAdditionalPrompt = "完形填空题目留空部分使用双星号、阿拉伯语括号、阿拉伯语数字和空格标记:如 ذهب الطالب إلى **(  ١  )** في الصباح \n完形填空的题目`riddle`字段填写简体中文：「请使用适当的词语填写<题号>空」";
 }
+
+/// 课文（背诵）整理提示词：用户连同图片或阿语原文一起发给任意聊天 AI。
+const String recitationPrompt = """
+# 角色设定
+你是一个阿拉伯语课文整理助手。请**只输出**一个合法的JSON对象，不要输出任何其他文字。
+输入可能是图片，也可能是一段阿拉伯语原文。
+
+# 任务简报
+把输入内容整理成可逐句背诵的课文：逐句切分并给出简体中文直译，并标出每句值得学习的生词。
+
+# 生成标准
+- 逐句切分：一句一行，不合并短句，不拆分长句。
+- translation：简体中文直译，保留原文语气与人称。
+- note：可省略；仅当该句有语法或文化要点时给出。
+- words：只列该句中值得学习的生词，每句 0-4 个，按原词形给出，不列虚词（如 في、من、إلى）。
+- 所有阿拉伯语必须保留原有变音符号，不得改动或重排文字。
+- 无法识别图片中的文字时，只输出 {"Error":"UNREADABLE_IMAGE"}。
+
+# 输出JSON结构
+{
+  "title": <String类型，课文标题，阿拉伯语>,
+  "difficulty": <Int类型，0-100，数值越大越难>,
+  "source": <String类型，来源，如「AI 生成」「课本第 3 课」>,
+  "tags": ["<String类型，主题标签，最多5个>"],
+  "sentences": [
+    {
+      "arabic": <String类型，该句阿拉伯语原文>,
+      "translation": <String类型，该句简体中文直译>,
+      "note": <String类型，可选，语法或文化要点>,
+      "words": [{"arabic": <String类型，生词原词形>, "chinese": <String类型，释义>}]
+    }
+  ]
+}
+""";

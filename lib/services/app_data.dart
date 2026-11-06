@@ -14,6 +14,7 @@ import 'package:arabic_learning/core/statics.dart';
 import 'package:arabic_learning/models/config.dart' show Config;
 import 'package:arabic_learning/models/dict.dart' show ClassItem, DictData, SourceItem, WordItem;
 import 'package:arabic_learning/models/reading.dart' show ReadingData;
+import 'package:arabic_learning/models/recitation_text.dart' show RecitationTextData;
 import 'package:arabic_learning/models/synonym.dart' show SynonymData;
 import 'package:arabic_learning/services/favorites.dart';
 import 'package:arabic_learning/services/fsrs.dart';
@@ -76,6 +77,9 @@ class AppData {
   bool _basePathReady = false;
   late DictData wordData;
   late ReadingData readingData;
+
+  /// 课文（背诵）题库，与 `readingData` 同一套存储方式。
+  RecitationTextData recitationTextData = RecitationTextData();
   sherpa_onnx.OfflineTts? vitsTTS;
 
   /// [vitsTTS] 当前装载的模型 id，用于切换模型时判断是否需要重载。
@@ -202,10 +206,11 @@ class AppData {
     inited = true;
   }
 
-  /// 读取、解析并落地 `wordData` / `readingData`（非首次启动路径）。
+  /// 读取、解析并落地 `wordData` / `readingData` / `recitationTextData`
+  /// （非首次启动路径）。
   ///
-  /// 顺序依赖：解码（可在后台 isolate）→ 构造 [DictData] / [ReadingData]
-  /// （必须在主 isolate，自定义类不可跨 isolate）→ 索引重建。
+  /// 顺序依赖：解码（可在后台 isolate）→ 构造 [DictData] / [ReadingData] /
+  /// [RecitationTextData]（必须在主 isolate，自定义类不可跨 isolate）→ 索引重建。
   ///
   /// 失败语义与改造前逐条一致：
   /// - `wordData` 缺失/为空 → 记 severe 日志并降级为空词库（不抛）；
@@ -215,6 +220,8 @@ class AppData {
     final String? wordRaw = storage.getString("wordData");
     final String readingRaw =
         storage.getString("readingData") ?? "{\"units\": []}";
+    final String recitationTextRaw =
+        storage.getString("recitationTextData") ?? "{\"units\": []}";
 
     // 两个解码并发（原生端各占一个后台 isolate；Web 端是同步解码，立即返回）。
     // 用 `Future.wait` 而不是「先 await A 再 await B」：后者在 A 较慢而 B 已
@@ -226,6 +233,7 @@ class AppData {
           ? Future<Object?>.value(null)
           : decodeJsonOffMain(wordRaw),
       decodeJsonOffMain(readingRaw),
+      decodeJsonOffMain(recitationTextRaw),
     ]);
 
     final Object? wordMap = decoded[0];
@@ -237,6 +245,8 @@ class AppData {
       wordData = DictData.buildFromMap(wordMap as Map<String, dynamic>);
     }
     readingData = ReadingData.buildFromMap(decoded[1] as Map<String, dynamic>);
+    recitationTextData =
+        RecitationTextData.buildFromMap(decoded[2] as Map<String, dynamic>);
 
     // 存量阴阳性纠正：只有真的改动了才回写；回写不阻塞首帧（见 _scheduleWordDataPersist）。
     if(normalizeWordGenders()) _scheduleWordDataPersist();
@@ -256,6 +266,7 @@ class AppData {
       _wordWriteGeneration++;
       await storage.setString("wordData", jsonEncode({"Words": [], "Classes": {}}));
       await storage.setString("readingData", jsonEncode({"units": []}));
+      await storage.setString("recitationTextData", jsonEncode({"units": []}));
       await storage.setString("synonymData", jsonEncode(const SynonymData().toMap()));
       await storage.setString("favoriteData", jsonEncode(FavoriteStore().toMap()));
       await storage.setString("planData", jsonEncode(PlanStore.defaultData()));
@@ -811,5 +822,9 @@ class AppData {
 
   void saveReadingData(){
     storage.setString("readingData", jsonEncode(readingData.toMap()));
+  }
+
+  Future<void> saveRecitationTextData() async {
+    await storage.setString("recitationTextData", jsonEncode(recitationTextData.toMap()));
   }
 }

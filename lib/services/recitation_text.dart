@@ -71,6 +71,47 @@ List<String> tokenize(String text) {
   return normalized.split(' ');
 }
 
+/// 前附词（连写前缀）：从长到短，避免 `وال` 先被 `و` 吃掉。
+const List<String> _proclitics = <String>[
+  'وال', 'بال', 'كال', 'فال', 'لل', 'ال', 'و', 'ف', 'ب', 'ك', 'ل',
+];
+
+/// 后附代词与复数/双数词尾（均已按 [normalizeArabic] 折叠，故 ة 写作 ه）。
+const List<String> _suffixes = <String>[
+  'ها', 'هم', 'هن', 'كما', 'كم', 'نا', 'ه', 'ك', 'ي', 'ات', 'ون', 'ين', 'ان',
+];
+
+/// 查词用的候选词形：原形 → 去前附词 → 去后缀 → 前后都去。
+///
+/// 只做机械剥离，不判断剥离后的词是否成立；调用方按查词结果决定取舍。
+List<String> lookupStems(String raw) {
+  final String word = normalizeArabic(raw);
+  if (word.isEmpty) return const <String>[];
+  final Set<String> out = <String>{word};
+  void add(String w) {
+    if (w.length >= 2) out.add(w);
+  }
+
+  final List<String> prefixes = <String>[];
+  for (final String p in _proclitics) {
+    if (word.length > p.length + 1 && word.startsWith(p)) prefixes.add(word.substring(p.length));
+  }
+  final List<String> suffixes = <String>[];
+  for (final String s in _suffixes) {
+    if (word.length > s.length + 1 && word.endsWith(s)) {
+      suffixes.add(word.substring(0, word.length - s.length));
+    }
+  }
+  prefixes.forEach(add);
+  suffixes.forEach(add);
+  for (final String p in prefixes) {
+    for (final String s in _suffixes) {
+      if (p.length > s.length + 1 && p.endsWith(s)) add(p.substring(0, p.length - s.length));
+    }
+  }
+  return out.toList();
+}
+
 /// 正常背诵这段文本大约需要多少秒。
 ///
 /// 按字母权重累加：每个字母 1，长元音（ا و ي）与 shadda 额外加长。
