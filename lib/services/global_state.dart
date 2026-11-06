@@ -14,6 +14,7 @@ import 'package:arabic_learning/services/fsrs.dart' show FSRS;
 import 'package:arabic_learning/services/memberships.dart' show WordMembershipIndex;
 import 'package:arabic_learning/services/plan_scheduler.dart' show planBlocksStreak;
 import 'package:arabic_learning/services/plan_store.dart' show PlanStore;
+import 'package:arabic_learning/services/recitation_store.dart' show RecitationStore;
 import 'package:arabic_learning/services/search.dart' show BKSearch;
 import 'package:arabic_learning/services/synonyms.dart' show SynonymStore;
 import 'package:arabic_learning/theme/app_theme.dart' show buildTheme;
@@ -202,6 +203,7 @@ class Global with ChangeNotifier {
 
       SynonymStore().reload();
       FavoriteStore().reload();
+      RecitationStore().reload();
       // 备份恢复后需按新数据重建配置（补齐既有缺口）。
       // SQLite 后端在 recovery 阶段已把 fsrsData 灌回库，这里 reload 只是再对齐一次内存副本。
       await FSRS().initAsync(reload: true);

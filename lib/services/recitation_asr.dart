@@ -1,0 +1,163 @@
+// 本地 sherpa-onnx Whisper 识别封装（背诵辅助用）。
+// Web 与模型缺失时返回空列表，由调用方提示下载模型。
+
+import 'dart:typed_data';
+
+import 'package:arabic_learning/core/statics.dart';
+import 'package:arabic_learning/package_replacement/fake_dart_io.dart'
+    if (dart.library.io) 'dart:io' as io;
+import 'package:arabic_learning/package_replacement/fake_sherpa_onnx.dart'
+    if (dart.library.io) 'package:sherpa_onnx/sherpa_onnx.dart' as sherpa_onnx;
+import 'package:arabic_learning/services/app_data.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:logging/logging.dart';
+
+/// 识别出的一个词及其在音频中的起止时间（秒）。
+class AsrWord {
+  final String text;
+  final double start;
+  final double end;
+
+  const AsrWord({required this.text, required this.start, required this.end});
+}
+
+/// sherpa 的分词标记：空格、▁（sentencepiece）、Ġ（Whisper BPE）。
+const String _boundaryChars = ' \u2581\u0120';
+
+final Logger _logger = Logger('RecitationAsr');
+
+class RecitationAsr {
+  /// 识别一段 16k 单声道音频。
+  ///
+  /// 每次调用创建并释放 recognizer（Whisper tiny 常驻内存不值得），
+  /// Web 或模型未下载时返回空列表。
+  Future<List<AsrWord>> transcribe(
+    Float32List samples, {
+    int sampleRate = 16000,
+  }) async {
+    if (kIsWeb || samples.isEmpty) return const <AsrWord>[];
+
+    final AsrModelInfo info =
+        StaticsVar.asrModel(StaticsVar.defaultAsrModelId);
+    final String dir =
+        '${AppData().basePath.path}/${StaticsVar.asrModelDir(info.id)}';
+    final io.File encoder = io.File('$dir/${info.encoderFile}');
+    final io.File decoder = io.File('$dir/${info.decoderFile}');
+    final io.File tokens = io.File('$dir/${info.tokensFile}');
+    if (!encoder.existsSync() ||
+        !decoder.existsSync() ||
+        !tokens.existsSync()) {
+      _logger.info('识别模型未下载: $dir');
+      return const <AsrWord>[];
+    }
+
+    sherpa_onnx.initBindings();
+    final sherpa_onnx.OfflineRecognizerConfig config =
+        sherpa_onnx.OfflineRecognizerConfig(
+      model: sherpa_onnx.OfflineModelConfig(
+        whisper: sherpa_onnx.OfflineWhisperModelConfig(
+          encoder: encoder.path,
+          decoder: decoder.path,
+          language: info.language,
+          task: 'transcribe',
+          enableTokenTimestamps: true,
+        ),
+        tokens: tokens.path,
+        numThreads: 2,
+        debug: false,
+        provider: 'cpu',
+      ),
+    );
+
+    sherpa_onnx.OfflineRecognizer? recognizer;
+    sherpa_onnx.OfflineStream? stream;
+    try {
+      recognizer = sherpa_onnx.OfflineRecognizer(config);
+      stream = recognizer.createStream();
+      stream.acceptWaveform(samples: samples, sampleRate: sampleRate);
+      recognizer.decode(stream);
+      final sherpa_onnx.OfflineRecognizerResult result =
+          recognizer.getResult(stream);
+      return _wordsFrom(
+        result.tokens,
+        result.timestamps,
+        result.text,
+        samples.length / sampleRate,
+      );
+    } finally {
+      stream?.free();
+      recognizer?.free();
+    }
+  }
+}
+
+/// 把 token 序列合并成词。
+///
+/// token 以空格 / ▁ / Ġ 开头表示新词；若模型直接给出整词 token（无标记），
+/// 则一个 token 当一个词。时间戳是 token 起点，词末用下一个词起点近似。
+List<AsrWord> _wordsFrom(
+  List<String> tokens,
+  List<double> timestamps,
+  String fallbackText,
+  double durationSeconds,
+) {
+  final List<({String text, double start})> pieces =
+      <({String text, double start})>[];
+  final bool marked = tokens.any(
+    (String t) => t.isNotEmpty && _boundaryChars.contains(t[0]),
+  );
+
+  double timestampAt(int i) {
+    if (timestamps.isEmpty) {
+      return tokens.isEmpty ? 0 : durationSeconds * i / tokens.length;
+    }
+    return timestamps[i < timestamps.length ? i : timestamps.length - 1];
+  }
+
+  if (marked) {
+    final StringBuffer buffer = StringBuffer();
+    double start = 0;
+    for (int i = 0; i < tokens.length; i++) {
+      final String piece =
+          tokens[i].replaceFirst(RegExp(r'^[ \u2581\u0120]+'), '');
+      if (piece.trim().isEmpty) continue;
+      final double ts = timestampAt(i);
+      if (_boundaryChars.contains(tokens[i][0]) && buffer.isNotEmpty) {
+        pieces.add((text: buffer.toString(), start: start));
+        buffer.clear();
+      }
+      if (buffer.isEmpty) start = ts;
+      buffer.write(piece);
+    }
+    if (buffer.isNotEmpty) pieces.add((text: buffer.toString(), start: start));
+  } else {
+    for (int i = 0; i < tokens.length; i++) {
+      final double ts = timestampAt(i);
+      for (final String part in tokens[i].trim().split(RegExp(r'\s+'))) {
+        if (part.isNotEmpty) pieces.add((text: part, start: ts));
+      }
+    }
+  }
+
+  if (pieces.isEmpty) {
+    // 没有 token 时退回纯文本：均匀铺满整段时间，只用于覆盖率对齐。
+    final List<String> words = fallbackText.trim().split(RegExp(r'\s+'));
+    final List<String> kept = words.where((String w) => w.isNotEmpty).toList();
+    return List<AsrWord>.generate(kept.length, (int i) {
+      final double start = durationSeconds * i / kept.length;
+      return AsrWord(
+        text: kept[i],
+        start: start,
+        end: durationSeconds * (i + 1) / kept.length,
+      );
+    });
+  }
+
+  return List<AsrWord>.generate(pieces.length, (int i) {
+    return AsrWord(
+      text: pieces[i].text.trim(),
+      start: pieces[i].start,
+      end: i + 1 < pieces.length ? pieces[i + 1].start : durationSeconds,
+    );
+  });
+}
