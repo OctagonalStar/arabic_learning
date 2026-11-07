@@ -319,6 +319,22 @@ class _RecitationReciteTabState extends State<RecitationReciteTab>
     );
   }
 
+  /// 「统一显示中文」页内开关：选中即全部译文可见，仅本次会话有效。
+  /// 标签压到两个字并靠 tooltip 说全，放进进度条 / 标题行都不会挤爆窄屏。
+  Widget _translationToggle() {
+    return Tooltip(
+      message: "统一显示中文",
+      child: FilterChip(
+        label: const Text("中文"),
+        selected: _showAllTranslations,
+        visualDensity: VisualDensity.compact,
+        materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+        onSelected: (bool value) =>
+            setState(() => _showAllTranslations = value),
+      ),
+    );
+  }
+
   Color _gradeColor(RecitationOutcome outcome) {
     final ThemeData theme = Theme.of(context);
     if (!outcome.scoreable) return theme.colorScheme.error;
@@ -380,23 +396,13 @@ class _RecitationReciteTabState extends State<RecitationReciteTab>
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: <Widget>[
-              // 页内开关：只解除译文模糊，原文仍按各自的显隐状态；不写存储。
-              Align(
-                alignment: AlignmentDirectional.centerStart,
-                child: FilterChip(
-                  label: const Text("统一显示中文"),
-                  selected: _showAllTranslations,
-                  visualDensity: VisualDensity.compact,
-                  materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                  onSelected: (bool value) =>
-                      setState(() => _showAllTranslations = value),
-                ),
-              ),
               if (_whole)
                 Row(
                   children: <Widget>[
                     Text("原文", style: theme.textTheme.titleLarge),
                     const Spacer(),
+                    _translationToggle(),
+                    const SizedBox(width: AppSpacing.xs),
                     TextButton(
                       onPressed: () => setState(() {
                         _showOriginal = !_showOriginal;
@@ -1064,7 +1070,7 @@ class _RecitationReciteTabState extends State<RecitationReciteTab>
                 : _sentencePager(theme, wide, width),
           ),
           if (_whole && _stage != _Stage.result) _wholeControls(theme),
-          // 整篇没有翻句需求，不显示进度条。
+          // 整篇没有翻句需求，不显示进度条；「统一显示中文」放在逐句的进度条里。
           if (!_whole)
             ValueListenableBuilder<int>(
               valueListenable: _current,
@@ -1073,6 +1079,7 @@ class _RecitationReciteTabState extends State<RecitationReciteTab>
                     current: value,
                     count: count,
                     onLocate: _locatePage,
+                    trailing: _translationToggle(),
                   ),
             ),
         ],

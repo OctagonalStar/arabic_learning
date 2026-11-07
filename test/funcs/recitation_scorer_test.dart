@@ -97,6 +97,31 @@ void main() {
     );
   });
 
+  test('同位置词数相同：读音完全不同也判错读，不算漏读', () {
+    final List<String> tokens = tokenize(_reference);
+    final String heardWord = tokenize('مدرسة').single;
+    final RecitationOutcome outcome = _score(
+      words: _words(<String>[tokens[0], tokens[1], 'مدرسة', tokens[3]]),
+    );
+
+    expect(outcome.marks[2], RecitationTokenMark.misread);
+    expect(outcome.heard[2], heardWord);
+    for (int i = 0; i < tokens.length; i++) {
+      if (i != 2) expect(outcome.marks[i], RecitationTokenMark.matched);
+    }
+    expect(
+      outcome.issues.any(
+        (RecitationIssue i) => i.type == RecitationIssueType.missing,
+      ),
+      isFalse,
+    );
+    expect(outcome.insertionRate, 0);
+    final RecitationIssue misread = outcome.issues.firstWhere(
+      (RecitationIssue i) => i.type == RecitationIssueType.misread,
+    );
+    expect(misread.text, '${tokens[2]} → $heardWord');
+  });
+
   test('连续错读合成一条提示，最多 3 对', () {
     final List<String> tokens = tokenize(_reference);
     final RecitationOutcome outcome = _score(

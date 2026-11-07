@@ -1,5 +1,6 @@
-// 课文详情底部固定进度条：「第 N 句 / 共 M 句」+ 可拖动定位。
-// 「学习 / 逐句 / 整篇」三个 tab 共用；[onLocate] 由各自映射到翻页或滚动。
+// 课文详情底部固定进度条：「第 N 句」+ 可拖动定位（无附加控件时还显示总句数与百分比）。
+// 「学习 / 逐句」共用（整篇不显示）；[onLocate] 由各自映射到翻页，
+// 「逐句」通过 [trailing] 在条内放「统一显示中文」开关。
 
 import 'package:arabic_learning/theme/tokens.dart' show AppSpacing;
 import 'package:flutter/material.dart';
@@ -14,11 +15,15 @@ class RecitationProgressBar extends StatefulWidget {
   /// 定位到第 [index] 句（从 1 开始）。
   final ValueChanged<int> onLocate;
 
+  /// 右侧附加控件（如「统一显示中文」开关）。有值时不再显示百分比，避免窄屏溢出。
+  final Widget? trailing;
+
   const RecitationProgressBar({
     super.key,
     required this.current,
     required this.count,
     required this.onLocate,
+    this.trailing,
   });
 
   @override
@@ -75,19 +80,24 @@ class _RecitationProgressBarState extends State<RecitationProgressBar> {
                       fontWeight: FontWeight.w600,
                     ),
                   ),
-                  Text(
-                    " / 共 $count 句",
-                    style: theme.textTheme.bodyMedium?.copyWith(
-                      color: scheme.onSurfaceVariant,
+                  // 有附加控件时省掉总句数与百分比，320 宽的手机也放得下。
+                  if (widget.trailing == null)
+                    Text(
+                      " / 共 $count 句",
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        color: scheme.onSurfaceVariant,
+                      ),
                     ),
-                  ),
                   const Spacer(),
-                  Text(
-                    "${(shown / count * 100).round()}%",
-                    style: theme.textTheme.bodyMedium?.copyWith(
-                      color: scheme.onSurfaceVariant,
+                  if (widget.trailing != null)
+                    widget.trailing!
+                  else
+                    Text(
+                      "${(shown / count * 100).round()}%",
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        color: scheme.onSurfaceVariant,
+                      ),
                     ),
-                  ),
                 ],
               ),
               if (count > 1)

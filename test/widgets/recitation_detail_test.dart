@@ -4,6 +4,7 @@
 import 'package:arabic_learning/models/recitation_text.dart';
 import 'package:arabic_learning/screens/test/recitation/recitation_detail_page.dart';
 import 'package:arabic_learning/screens/test/recitation/recitation_progress_bar.dart';
+import 'package:arabic_learning/screens/test/recitation/recitation_recite_tab.dart';
 import 'package:arabic_learning/services/app_data.dart';
 import 'package:arabic_learning/services/global_state.dart';
 import 'package:flutter/material.dart';
@@ -109,6 +110,14 @@ void main() {
     expect(find.text('录这一句'), findsOneWidget);
     expect(find.text('前往模型管理'), findsOneWidget);
     expect(_barCurrent(tester), 1);
+    // 「统一显示中文」开关在底部进度条里。
+    expect(
+      find.descendant(
+        of: find.byType(RecitationProgressBar),
+        matching: find.byTooltip('统一显示中文'),
+      ),
+      findsOneWidget,
+    );
 
     await tester.tap(find.byTooltip('下一句'));
     await tester.pumpAndSettle();
@@ -120,8 +129,9 @@ void main() {
     expect(find.text('显示原文'), findsOneWidget);
     expect(find.text('开始背诵'), findsOneWidget);
     expect(find.text('录这一句'), findsNothing);
-    // 整篇不做逐句定位，不再显示底部进度条。
+    // 整篇不做逐句定位，不再显示底部进度条；开关移到「原文」标题行。
     expect(find.byType(RecitationProgressBar), findsNothing);
+    expect(find.byTooltip('统一显示中文'), findsOneWidget);
 
     // 整篇有自己的一套滚动位置，「逐句」仍停在原句。
     await tester.tap(find.text('逐句'));
@@ -130,26 +140,53 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('逐句：统一显示中文只解除译文模糊', (WidgetTester tester) async {
-    await _pump(tester);
-    await tester.tap(find.text('逐句'));
+  testWidgets('逐句：320 宽进度条里的统一显示中文只解除译文模糊', (WidgetTester tester) async {
+    // 直接挂逐句 tab：320 宽是底部进度条最挤的情况，同时避开「学习」页。
+    tester.view.physicalSize = const Size(320, 700);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    await tester.pumpWidget(
+      ChangeNotifierProvider<Global>(
+        create: (BuildContext context) => Global(),
+        child: MaterialApp(
+          home: Scaffold(
+            body: RecitationReciteTab(
+              unit: _unit(),
+              mode: RecitationReciteMode.sentence,
+            ),
+          ),
+        ),
+      ),
+    );
     await tester.pumpAndSettle();
+    expect(tester.takeException(), isNull);
 
-    // 页内只有一个「统一显示中文」开关。
-    expect(find.text('统一显示中文'), findsOneWidget);
+    // 开关压在底部进度条里，320 宽也不溢出。
+    final Finder toggle = find.byTooltip('统一显示中文');
+    expect(toggle, findsOneWidget);
+    expect(
+      find.descendant(
+        of: find.byType(RecitationProgressBar),
+        matching: toggle,
+      ),
+      findsOneWidget,
+    );
+
     final int blurred = _blurCount(tester);
     expect(blurred, greaterThan(0));
 
-    await tester.tap(find.text('统一显示中文'));
+    await tester.tap(toggle);
     await tester.pumpAndSettle();
     // 译文全部解除模糊，原文仍然保持模糊。
     final int zhShown = _blurCount(tester);
     expect(zhShown, lessThan(blurred));
     expect(zhShown, greaterThan(0));
 
-    await tester.tap(find.text('统一显示中文'));
+    await tester.tap(toggle);
     await tester.pumpAndSettle();
     expect(_blurCount(tester), blurred);
+    expect(tester.takeException(), isNull);
   });
 
   testWidgets('学习与逐句共用当前句位置', (WidgetTester tester) async {

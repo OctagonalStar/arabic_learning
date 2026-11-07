@@ -412,7 +412,8 @@ double _orderRate(List<String> ref, List<String> asr, int lcsLength) {
 
 /// 在一个空隙内做相似度对齐，返回确定配对的 (参考词, ASR 词) 下标对。
 ///
-/// 只允许相似度 > 0 的配对，目标是配对数最多；未配对的两侧分别保持漏读/多读。
+/// 两侧词数相同时按位置逐个配对（读音再不同也算错读）；数量不同时才按
+/// 相似度配对，未配对的两侧分别保持漏读/多读。
 List<({int refIndex, int asrIndex})> _pairGap(
   List<String> ref,
   int refFrom,
@@ -424,6 +425,12 @@ List<({int refIndex, int asrIndex})> _pairGap(
   final int n = refTo - refFrom;
   final int m = asrTo - asrFrom;
   if (n == 0 || m == 0) return const <({int refIndex, int asrIndex})>[];
+  // 同位置一一对应：如原文 ABC、转录 ADC，B 判错读而不是漏读。
+  if (n == m) {
+    return <({int refIndex, int asrIndex})>[
+      for (int i = 0; i < n; i++) (refIndex: refFrom + i, asrIndex: asrFrom + i),
+    ];
+  }
 
   final List<List<bool>> similar = List<List<bool>>.generate(
     n,
