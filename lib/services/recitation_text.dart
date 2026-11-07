@@ -71,14 +71,64 @@ List<String> tokenize(String text) {
   return normalized.split(' ');
 }
 
+/// 与 [tokenize] 逐项一一对应的原文区间（UTF-16 下标，含词内变音符号）。
+/// 用于在原句上按词着色；区间之间的空格/标点不属于任何词。
+List<({int start, int end})> tokenSpanOf(String text) {
+  final List<({int start, int end})> spans = <({int start, int end})>[];
+  int start = -1;
+  int end = -1;
+  for (int i = 0; i < text.length; i++) {
+    final int code = text.codeUnitAt(i);
+    final int folded = _fold(code);
+    if (folded != 0 || _isMark(code)) {
+      if (start < 0) {
+        // 词首的孤立变音符号不属于任何词。
+        if (folded == 0) continue;
+        start = i;
+      }
+      end = i + 1;
+      continue;
+    }
+    // 空格、标点、数字、拉丁字母：词边界。
+    if (start >= 0) {
+      spans.add((start: start, end: end));
+      start = -1;
+    }
+  }
+  if (start >= 0) spans.add((start: start, end: end));
+  return spans;
+}
+
 /// 前附词（连写前缀）：从长到短，避免 `وال` 先被 `و` 吃掉。
 const List<String> _proclitics = <String>[
-  'وال', 'بال', 'كال', 'فال', 'لل', 'ال', 'و', 'ف', 'ب', 'ك', 'ل',
+  'وال',
+  'بال',
+  'كال',
+  'فال',
+  'لل',
+  'ال',
+  'و',
+  'ف',
+  'ب',
+  'ك',
+  'ل',
 ];
 
 /// 后附代词与复数/双数词尾（均已按 [normalizeArabic] 折叠，故 ة 写作 ه）。
 const List<String> _suffixes = <String>[
-  'ها', 'هم', 'هن', 'كما', 'كم', 'نا', 'ه', 'ك', 'ي', 'ات', 'ون', 'ين', 'ان',
+  'ها',
+  'هم',
+  'هن',
+  'كما',
+  'كم',
+  'نا',
+  'ه',
+  'ك',
+  'ي',
+  'ات',
+  'ون',
+  'ين',
+  'ان',
 ];
 
 /// 查词用的候选词形：原形 → 去前附词 → 去后缀 → 前后都去。
@@ -94,7 +144,9 @@ List<String> lookupStems(String raw) {
 
   final List<String> prefixes = <String>[];
   for (final String p in _proclitics) {
-    if (word.length > p.length + 1 && word.startsWith(p)) prefixes.add(word.substring(p.length));
+    if (word.length > p.length + 1 && word.startsWith(p)) {
+      prefixes.add(word.substring(p.length));
+    }
   }
   final List<String> suffixes = <String>[];
   for (final String s in _suffixes) {
@@ -106,7 +158,9 @@ List<String> lookupStems(String raw) {
   suffixes.forEach(add);
   for (final String p in prefixes) {
     for (final String s in _suffixes) {
-      if (p.length > s.length + 1 && p.endsWith(s)) add(p.substring(0, p.length - s.length));
+      if (p.length > s.length + 1 && p.endsWith(s)) {
+        add(p.substring(0, p.length - s.length));
+      }
     }
   }
   return out.toList();

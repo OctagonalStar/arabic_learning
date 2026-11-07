@@ -6,6 +6,7 @@ import 'dart:typed_data';
 import 'package:sherpa_onnx/sherpa_onnx.dart' as sherpa_onnx;
 import 'package:arabic_learning/services/app_data.dart';
 import 'package:arabic_learning/services/model_manager.dart';
+import 'package:arabic_learning/services/speech_worker.dart';
 import 'package:arabic_learning/services/web_asr_globals.dart';
 import 'package:arabic_learning/services/web_model_store.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
@@ -56,8 +57,9 @@ class RecitationAsr {
       return const <AsrWord>[];
     }
 
-    await sherpa_onnx.initBindingsAsync();
     if (kIsWeb) {
+      // Web 没有 dart:isolate：wasm 绑定与模型挂载都只能在这个线程完成。
+      await sherpa_onnx.initBindingsAsync();
       await exposeSherpaOnnxAsrGlobals();
       await WebModelStore.mount(
         id,
@@ -110,22 +112,42 @@ class RecitationAsr {
     sherpa_onnx.OfflineStream? stream;
     final Stopwatch watch = Stopwatch()..start();
     try {
-      recognizer = sherpa_onnx.OfflineRecognizer(config);
-      stream = recognizer.createStream();
-      stream.acceptWaveform(samples: samples, sampleRate: sampleRate);
-      recognizer.decode(stream);
-      final sherpa_onnx.OfflineRecognizerResult result =
-          recognizer.getResult(stream);
+      late final List<String> tokens;
+      late final List<double> timestamps;
+      late final String text;
+      if (kIsWeb) {
+        // Web 无 dart:isolate，识别只能在主线程跑。
+        recognizer = sherpa_onnx.OfflineRecognizer(config);
+        stream = recognizer.createStream();
+        stream.acceptWaveform(samples: samples, sampleRate: sampleRate);
+        recognizer.decode(stream);
+        final sherpa_onnx.OfflineRecognizerResult result =
+            recognizer.getResult(stream);
+        tokens = result.tokens;
+        timestamps = result.timestamps;
+        text = result.text;
+      } else {
+        // 原生端：Whisper 解码要几秒，放到常驻后台 isolate，避免冻结界面。
+        final ({List<String> tokens, List<double> timestamps, String text})
+            result = await SpeechWorker.transcribe(
+          samples: samples,
+          sampleRate: sampleRate,
+          config: config,
+        );
+        tokens = result.tokens;
+        timestamps = result.timestamps;
+        text = result.text;
+      }
       final List<AsrWord> words = _wordsFrom(
-        result.tokens,
-        result.timestamps,
-        result.text,
+        tokens,
+        timestamps,
+        text,
         samples.length / sampleRate,
       );
       _logger.info(
-          '识别完成: ${watch.elapsedMilliseconds}ms, tokens=${result.tokens.length}, '
-          'timestamps=${result.timestamps.length}, words=${words.length}, '
-          'text="${result.text.trim()}"');
+          '识别完成: ${watch.elapsedMilliseconds}ms, tokens=${tokens.length}, '
+          'timestamps=${timestamps.length}, words=${words.length}, '
+          'text="${text.trim()}"');
       return words;
     } catch (e, s) {
       _logger.severe('识别失败: 模型=${AppData().preferredAsrModelId}', e, s);

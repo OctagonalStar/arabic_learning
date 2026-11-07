@@ -45,6 +45,47 @@ void main() {
     });
   });
 
+  group('tokenSpanOf', () {
+    const List<String> inputs = <String>[
+      'بِسْمِ اللَّهِ الرَّحْمَٰنِ',
+      'مـــحمد  ， كتاب',
+      '  بسم، الله  ',
+      'قال: «لا»',
+      'السلام عليكم\n\nكيف حالك',
+      'بسم   الله',
+      '',
+      'ًٌ',
+      'abc ١٢٣',
+    ];
+
+    test('长度与 tokenize 一致', () {
+      for (final String text in inputs) {
+        expect(tokenSpanOf(text).length, tokenize(text).length, reason: text);
+      }
+    });
+
+    test('区间映射回原文，保留变音符号、排除标点', () {
+      const String text = 'بِسْمِ اللَّهِ، الرَّحْمَٰنِ';
+      final List<String> spans = <String>[
+        for (final ({int start, int end}) span in tokenSpanOf(text))
+          text.substring(span.start, span.end),
+      ];
+
+      expect(spans, <String>['بِسْمِ', 'اللَّهِ', 'الرَّحْمَٰنِ']);
+      expect(spans.any((String s) => s.contains('،')), isFalse);
+    });
+
+    test('tatweel 与多余空白', () {
+      const String text = '  مـــحمد   كتاب  ';
+      final List<String> spans = <String>[
+        for (final ({int start, int end}) span in tokenSpanOf(text))
+          text.substring(span.start, span.end),
+      ];
+
+      expect(spans, <String>['مـــحمد', 'كتاب']);
+    });
+  });
+
   group('estimateSeconds', () {
     test('长元音与 shadda 增加权重', () {
       expect(estimateSeconds('باب'), greaterThan(estimateSeconds('ببب')));

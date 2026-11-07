@@ -18,30 +18,55 @@ import 'package:flutter/services.dart' show HapticFeedback;
 
 class RecitationStudyTab extends StatefulWidget {
   final RecitationTextUnit unit;
-  const RecitationStudyTab({super.key, required this.unit});
+  // 当前句（从 1 开始），由详情页持有，和「逐句」tab 共用；本页只读写不释放。
+  final ValueNotifier<int> position;
+  const RecitationStudyTab({
+    super.key,
+    required this.unit,
+    required this.position,
+  });
 
   @override
   State<RecitationStudyTab> createState() => _RecitationStudyTabState();
 }
 
 class _RecitationStudyTabState extends State<RecitationStudyTab> {
-  final PageController _pager = PageController();
-  final ValueNotifier<int> _current = ValueNotifier<int>(1);
+  late final PageController _pager;
+
+  @override
+  void initState() {
+    super.initState();
+    // 从共用位置恢复页码，切 tab 回来直接停在同一句。
+    final int max = widget.unit.sentences.isEmpty
+        ? 0
+        : widget.unit.sentences.length - 1;
+    _pager = PageController(
+      initialPage: (widget.position.value - 1).clamp(0, max),
+    );
+    widget.position.addListener(_syncFromPosition);
+  }
 
   @override
   void dispose() {
+    widget.position.removeListener(_syncFromPosition);
     _pager.dispose();
-    _current.dispose();
     super.dispose();
   }
 
-  void _locate(int index) {
-    if (!_pager.hasClients) return;
+  /// 共用位置变了（来自另一个 tab 或进度条）才翻页；自身翻页已同步过，不重复动画。
+  void _syncFromPosition() {
+    if (!mounted || !_pager.hasClients) return;
+    final int target = widget.position.value - 1;
+    if ((_pager.page ?? 0).round() == target) return;
     _pager.animateToPage(
-      index - 1,
+      target,
       duration: AppMotion.quick,
       curve: AppMotion.standardCurve,
     );
+  }
+
+  void _locate(int index) {
+    widget.position.value = index;
   }
 
   Future<void> _showWordSheet(BuildContext context, String raw) async {
@@ -175,6 +200,8 @@ class _RecitationStudyTabState extends State<RecitationStudyTab> {
     final double width =
         (MediaQuery.sizeOf(context).width * 0.9).clamp(0.0, 760.0);
     final List<RecitationSentence> sentences = widget.unit.sentences;
+    // 若本页在切 tab 期间只是被挂起而非销毁，重新显示的这一帧补齐共用位置。
+    WidgetsBinding.instance.addPostFrameCallback((_) => _syncFromPosition());
     return SafeArea(
       top: false,
       // 底部安全区交给进度条自己的 SafeArea，条底色才能铺到手势区。
@@ -186,7 +213,7 @@ class _RecitationStudyTabState extends State<RecitationStudyTab> {
               controller: _pager,
               scrollDirection: Axis.vertical,
               itemCount: sentences.length,
-              onPageChanged: (int index) => _current.value = index + 1,
+              onPageChanged: (int index) => widget.position.value = index + 1,
               itemBuilder: (BuildContext context, int index) => Center(
                 child: SizedBox(
                   width: width,
@@ -204,7 +231,7 @@ class _RecitationStudyTabState extends State<RecitationStudyTab> {
             ),
           ),
           ValueListenableBuilder<int>(
-            valueListenable: _current,
+            valueListenable: widget.position,
             builder: (BuildContext context, int value, Widget? child) =>
                 RecitationProgressBar(
               current: value,

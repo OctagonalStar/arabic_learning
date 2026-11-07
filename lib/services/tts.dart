@@ -1,10 +1,13 @@
 // 文本转语音服务（原 lib/funcs/utili.dart 拆分）。
 // playTextToSpeech 支持系统 TTS / 在线 TTS / sherpa-onnx 本地 VITS 三种音源。
 
+import 'dart:typed_data';
+
 import 'package:arabic_learning/core/statics.dart';
 import 'package:arabic_learning/core/wav.dart';
 import 'package:arabic_learning/services/app_data.dart';
 import 'package:arabic_learning/services/blob_url.dart';
+import 'package:arabic_learning/services/speech_worker.dart';
 import 'package:arabic_learning/services/web_audio.dart';
 import 'package:arabic_learning/services/http_client.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
@@ -107,7 +110,8 @@ Future<void> playTextToSpeech(String text, {double? speed}) async {
   } else if (AppData().config.audio.audioSource == 2) {
     // 惰性加载：模型加载是同步的（ONNX 初始化），放在启动流程里会阻塞首帧，
     // 因此推迟到第一次真正需要合成语音时再做，之后的调用直接命中已加载实例。
-    if(AppData().vitsTTS == null) {
+    // 原生端的实例在后台 isolate，主 isolate 只能看 ttsLoaded 标记。
+    if (kIsWeb ? AppData().vitsTTS == null : !AppData().ttsLoaded) {
       try {
         await AppData().loadTTS(AppData().config.audio.playRate);
       } catch (e) {
@@ -117,7 +121,9 @@ Future<void> playTextToSpeech(String text, {double? speed}) async {
         );
       }
     }
-    if(AppData().vitsTTS == null) {
+    // 模型未安装时 loadTTS 会静默返回：主 isolate 靠 ttsLoaded 判断（原生端
+    // 没有 vitsTTS 实例），否则会掉到「合成失败」的泛化提示里。
+    if (kIsWeb ? AppData().vitsTTS == null : !AppData().ttsLoaded) {
       throw const TtsFailure("本地语音模型还没有准备好。请先在 设置-音频 中下载模型。");
     }
     late final Duration duration;
@@ -134,16 +140,27 @@ Future<void> playTextToSpeech(String text, {double? speed}) async {
     } else {
       // 合成与播放分开报错：播放失败不代表模型有问题，不能让用户去重下模型。
       try {
-        final audio = AppData().vitsTTS!.generate(text: text, speed: speed);
+        final Float32List samples;
+        final int sampleRate;
+        if (kIsWeb) {
+          final sherpa_onnx.GeneratedAudio audio =
+              AppData().vitsTTS!.generate(text: text, speed: speed);
+          samples = audio.samples;
+          sampleRate = audio.sampleRate;
+        } else {
+          // 原生端：合成在后台 isolate 跑，UI 线程只做落盘。
+          final ({Float32List samples, int sampleRate}) audio =
+              await SpeechWorker.synthesize(text: text, speed: speed);
+          samples = audio.samples;
+          sampleRate = audio.sampleRate;
+        }
         duration = Duration(
-            milliseconds:
-                (audio.samples.length / audio.sampleRate * 1000).round());
+            milliseconds: (samples.length / sampleRate * 1000).round());
         if (kIsWeb) {
           // 轮换两个槽位：上一段可能还在播，只回收再往前的那一段。
           final String? spare = _spareWebUrl;
           _spareWebUrl = _cacheWebUrl;
-          _cacheWebUrl =
-              createBlobUrl(encodeWav16(audio.samples, audio.sampleRate));
+          _cacheWebUrl = createBlobUrl(encodeWav16(samples, sampleRate));
           if (spare != null) revokeBlobUrl(spare);
           source = Uri.parse(_cacheWebUrl!);
         } else {
@@ -152,8 +169,8 @@ Future<void> playTextToSpeech(String text, {double? speed}) async {
           if (cacheFile.existsSync()) cacheFile.deleteSync();
           final ok = sherpa_onnx.writeWave(
             filename: cacheFile.path,
-            samples: audio.samples,
-            sampleRate: audio.sampleRate,
+            samples: samples,
+            sampleRate: sampleRate,
           );
           if (!ok) throw Exception("无法将音频写入文件");
           _cacheFile = cacheFile;

@@ -1,13 +1,28 @@
 // 课文详情页：AppBar 标题为课文标题，TabBar 切换「学习 / 逐句 / 整篇」。
+// 「学习」与「逐句」共用同一个当前句位置（切 tab 后停在同一句），「整篇」自成一套滚动状态。
 
 import 'package:arabic_learning/models/recitation_text.dart';
 import 'package:arabic_learning/screens/test/recitation/recitation_recite_tab.dart';
 import 'package:arabic_learning/screens/test/recitation/recitation_study_tab.dart';
 import 'package:flutter/material.dart';
 
-class RecitationDetailPage extends StatelessWidget {
+class RecitationDetailPage extends StatefulWidget {
   final RecitationTextUnit unit;
   const RecitationDetailPage({super.key, required this.unit});
+
+  @override
+  State<RecitationDetailPage> createState() => _RecitationDetailPageState();
+}
+
+class _RecitationDetailPageState extends State<RecitationDetailPage> {
+  // 由本页持有，学习 / 逐句两个 tab 共用；整篇不接这个 notifier。
+  final ValueNotifier<int> _position = ValueNotifier<int>(1);
+
+  @override
+  void dispose() {
+    _position.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -18,7 +33,7 @@ class RecitationDetailPage extends StatelessWidget {
       child: Scaffold(
         appBar: AppBar(
           title: Text(
-            unit.title,
+            widget.unit.title,
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
             style: theme.textTheme.headlineSmall?.copyWith(
@@ -42,13 +57,14 @@ class RecitationDetailPage extends StatelessWidget {
         ),
         body: TabBarView(
           children: <Widget>[
-            RecitationStudyTab(unit: unit),
+            RecitationStudyTab(unit: widget.unit, position: _position),
             RecitationReciteTab(
-              unit: unit,
+              unit: widget.unit,
               mode: RecitationReciteMode.sentence,
+              position: _position,
             ),
             RecitationReciteTab(
-              unit: unit,
+              unit: widget.unit,
               mode: RecitationReciteMode.whole,
             ),
           ],

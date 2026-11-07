@@ -2,6 +2,7 @@
 // 逐句：一句一张竖向卡片，卡片内单独录音评分（分数只留本会话，不写存储），出分后停在原句。
 // 整篇：整段 reference 录音评分 + RecitationResultView + RecitationStore 历史。
 // 状态机：ready → recording → analyzing →（逐句回 ready / 整篇进 result）。
+// 原文与译文各自模糊/显隐；出分后原文按词着色（漏读红 / 错读黄），逐句卡片下方显示识别文本。
 // 录音与评分逻辑都在 services/recitation_*.dart，本页只做流程与展示。
 
 import 'dart:async' show Timer;
@@ -24,12 +25,13 @@ import 'package:arabic_learning/services/recitation_recorder.dart';
 import 'package:arabic_learning/services/recitation_scorer.dart';
 import 'package:arabic_learning/services/recitation_service.dart';
 import 'package:arabic_learning/services/recitation_store.dart';
+import 'package:arabic_learning/services/recitation_text.dart'
+    show tokenize, tokenSpanOf;
 import 'package:arabic_learning/theme/tokens.dart'
     show AppMotion, AppRadius, AppSpacing;
 import 'package:arabic_learning/widgets/kit.dart' show Button;
 import 'package:arabic_learning/widgets/overlays.dart' show showSnackBar;
 import 'package:flutter/material.dart';
-import 'package:flutter/rendering.dart' show RenderAbstractViewport;
 import 'package:provider/provider.dart';
 
 /// 背诵页的两种形态；每个 tab 只承担一种。
@@ -40,10 +42,13 @@ enum _Stage { ready, recording, analyzing, result }
 class RecitationReciteTab extends StatefulWidget {
   final RecitationTextUnit unit;
   final RecitationReciteMode mode;
+  // 传入时与「学习」tab 共用当前句位置；整篇模式不传，用自己的内部状态。
+  final ValueNotifier<int>? position;
   const RecitationReciteTab({
     super.key,
     required this.unit,
     required this.mode,
+    this.position,
   });
 
   @override
@@ -53,18 +58,20 @@ class RecitationReciteTab extends StatefulWidget {
 class _RecitationReciteTabState extends State<RecitationReciteTab>
     with AutomaticKeepAliveClientMixin {
   final RecitationRecorder _recorder = RecitationRecorder();
-  final PageController _pager = PageController();
+  late final PageController _pager;
   final ScrollController _wholeScroll = ScrollController();
   // 本页唯一的「当前句」（从 1 开始），只驱动底部进度条重建。
-  final ValueNotifier<int> _current = ValueNotifier<int>(1);
+  final ValueNotifier<int> _ownCurrent = ValueNotifier<int>(1);
+  // 供给了共用位置就直接用它，否则退回本页自有 notifier。
+  ValueNotifier<int> get _current => widget.position ?? _ownCurrent;
   final Set<int> _revealed = <int>{};
+  // 译文显隐独立于原文；_showAllTranslations 为页内开关，仅本次会话有效。
+  final Set<int> _revealedZh = <int>{};
+  bool _showAllTranslations = false;
   // 逐句成绩只保存在本会话内存里，按句索引映射，不落盘。
   final Map<int, RecitationOutcome> _sentenceOutcomes =
       <int, RecitationOutcome>{};
   final GlobalKey _resultKey = GlobalKey();
-  late final List<GlobalKey> _sentenceKeys = <GlobalKey>[
-    for (int i = 0; i < widget.unit.sentences.length; i++) GlobalKey(),
-  ];
 
   _Stage _stage = _Stage.ready;
   bool _permissionDenied = false;
@@ -88,17 +95,39 @@ class _RecitationReciteTabState extends State<RecitationReciteTab>
   @override
   void initState() {
     super.initState();
-    _wholeScroll.addListener(_syncWholeIndex);
+    // 从共用位置恢复页码，切 tab 回来直接停在同一句。
+    final int max = widget.unit.sentences.isEmpty
+        ? 0
+        : widget.unit.sentences.length - 1;
+    _pager = PageController(
+      initialPage: ((widget.position?.value ?? 1) - 1).clamp(0, max),
+    );
+    // 只有共用位置时才监听；整篇模式保持独立。
+    widget.position?.addListener(_syncFromPosition);
   }
 
   @override
   void dispose() {
     _timer?.cancel();
+    widget.position?.removeListener(_syncFromPosition);
     _wholeScroll.dispose();
     _pager.dispose();
-    _current.dispose();
+    _ownCurrent.dispose();
     _recorder.dispose();
     super.dispose();
+  }
+
+  /// 共用位置变了（来自「学习」tab 或进度条）才翻页；自身翻页已同步过，不重复动画。
+  void _syncFromPosition() {
+    final ValueNotifier<int>? shared = widget.position;
+    if (shared == null || !mounted || !_pager.hasClients) return;
+    final int target = shared.value - 1;
+    if ((_pager.page ?? 0).round() == target) return;
+    _pager.animateToPage(
+      target,
+      duration: AppMotion.quick,
+      curve: AppMotion.standardCurve,
+    );
   }
 
   /// 录音失败/评分失败时清理临时 WAV。
@@ -180,6 +209,12 @@ class _RecitationReciteTabState extends State<RecitationReciteTab>
     setState(() {
       _stage = _Stage.analyzing;
       _status = '';
+      // 录完就先露出原文：评分出分后直接看到逐词标色，不再回模糊。
+      if (index >= 0) {
+        _revealed.add(index);
+      } else {
+        _showOriginal = true;
+      }
     });
     final String reference = index >= 0
         ? widget.unit.sentences[index].arabic
@@ -263,36 +298,6 @@ class _RecitationReciteTabState extends State<RecitationReciteTab>
     );
   }
 
-  void _locateWhole(int index) {
-    final BuildContext? target = _sentenceKeys[index - 1].currentContext;
-    if (target == null) return;
-    Scrollable.ensureVisible(
-      target,
-      duration: AppMotion.medium,
-      curve: AppMotion.decelerateCurve,
-      alignment: 0.0,
-    );
-  }
-
-  /// 整篇模式：把「当前句」定位到视口顶部的那一句，只在变化时写 notifier。
-  void _syncWholeIndex() {
-    if (!_wholeScroll.hasClients) return;
-    final double offset = _wholeScroll.offset;
-    int found = 1;
-    for (int i = 0; i < _sentenceKeys.length; i++) {
-      final BuildContext? cardContext = _sentenceKeys[i].currentContext;
-      final RenderObject? box = cardContext?.findRenderObject();
-      if (box == null || !box.attached) continue;
-      if (RenderAbstractViewport.of(box).getOffsetToReveal(box, 0.0).offset <=
-          offset + 1.0) {
-        found = i + 1;
-      } else {
-        break;
-      }
-    }
-    if (_current.value != found) _current.value = found;
-  }
-
   // ---------------------------------------------------------------------------
   // 展示
   // ---------------------------------------------------------------------------
@@ -310,6 +315,22 @@ class _RecitationReciteTabState extends State<RecitationReciteTab>
       child: Text(
         text,
         style: theme.textTheme.labelLarge?.copyWith(color: foreground),
+      ),
+    );
+  }
+
+  /// 「统一显示中文」页内开关：选中即全部译文可见，仅本次会话有效。
+  /// 标签压到两个字并靠 tooltip 说全，放进进度条 / 标题行都不会挤爆窄屏。
+  Widget _translationToggle() {
+    return Tooltip(
+      message: "统一显示中文",
+      child: FilterChip(
+        label: const Text("中文"),
+        selected: _showAllTranslations,
+        visualDensity: VisualDensity.compact,
+        materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+        onSelected: (bool value) =>
+            setState(() => _showAllTranslations = value),
       ),
     );
   }
@@ -380,6 +401,8 @@ class _RecitationReciteTabState extends State<RecitationReciteTab>
                   children: <Widget>[
                     Text("原文", style: theme.textTheme.titleLarge),
                     const Spacer(),
+                    _translationToggle(),
+                    const SizedBox(width: AppSpacing.xs),
                     TextButton(
                       onPressed: () => setState(() {
                         _showOriginal = !_showOriginal;
@@ -418,42 +441,163 @@ class _RecitationReciteTabState extends State<RecitationReciteTab>
     );
   }
 
-  Widget _sentenceCard(int index, ThemeData theme, bool wide) {
+  /// 点原文 / 眼睛按钮都只切换本句原文的显隐。
+  void _toggleArabic(int index) => setState(() {
+        if (!_revealed.remove(index)) _revealed.add(index);
+      });
+
+  /// 译文显隐；「统一显示中文」打开时不再有单句遮挡，点击无效。
+  void _toggleTranslation(int index) {
+    if (_showAllTranslations) return;
+    setState(() {
+      if (!_revealedZh.remove(index)) _revealedZh.add(index);
+    });
+  }
+
+  /// 只模糊需要遮掩的那一部分，两块各自成像，布局不受影响。
+  Widget _blurUnless(bool visible, Widget child) => visible
+      ? child
+      : ImageFiltered(
+          imageFilter: ImageFilter.blur(sigmaX: 5, sigmaY: 5),
+          child: Opacity(opacity: 0.9, child: child),
+        );
+
+  /// 本句的逐词标记。逐句结果本身就对应本句 token；整篇结果按句 token 数切片。
+  /// 分词数与结果对不上（门禁命中、文本被改过）时返回 null，退回纯文本。
+  List<RecitationTokenMark>? _marksFor(int index, RecitationOutcome? outcome) {
+    if (outcome == null || outcome.marks.isEmpty) return null;
+    final List<RecitationSentence> sentences = widget.unit.sentences;
+    if (!_whole) {
+      final int count = tokenize(sentences[index].arabic).length;
+      return count == outcome.marks.length ? outcome.marks : null;
+    }
+    if (tokenize(widget.unit.reference).length != outcome.marks.length) {
+      return null;
+    }
+    int start = 0;
+    for (int i = 0; i < index; i++) {
+      start += tokenize(sentences[i].arabic).length;
+    }
+    final int count = tokenize(sentences[index].arabic).length;
+    if (count == 0 || start + count > outcome.marks.length) return null;
+    return outcome.marks.sublist(start, start + count);
+  }
+
+  /// 原文按词着色：漏读红、错读黄，词间空格与标点保持普通样式。
+  Widget _arabicText(
+    ThemeData theme,
+    String text,
+    TextStyle style,
+    List<RecitationTokenMark>? marks,
+  ) {
+    final List<({int start, int end})> spans = tokenSpanOf(text);
+    if (marks == null || marks.length != spans.length) {
+      return Text(
+        text,
+        textDirection: TextDirection.rtl,
+        style: style.copyWith(height: 1.7),
+      );
+    }
+    final Color warning = context.semanticColors.warning;
+    final List<InlineSpan> parts = <InlineSpan>[];
+    int cursor = 0;
+    for (int i = 0; i < spans.length; i++) {
+      final ({int start, int end}) span = spans[i];
+      if (span.start > cursor) {
+        parts.add(TextSpan(text: text.substring(cursor, span.start)));
+      }
+      final Color? markColor = switch (marks[i]) {
+        RecitationTokenMark.missing => theme.colorScheme.error,
+        RecitationTokenMark.misread => warning,
+        RecitationTokenMark.matched => null,
+      };
+      parts.add(TextSpan(
+        text: text.substring(span.start, span.end),
+        style: markColor == null
+            ? null
+            : TextStyle(
+                color: markColor,
+                backgroundColor: markColor.withValues(alpha: 0.15),
+              ),
+      ));
+      cursor = span.end;
+    }
+    if (cursor < text.length) {
+      parts.add(TextSpan(text: text.substring(cursor)));
+    }
+    return Text.rich(
+      TextSpan(children: parts),
+      textDirection: TextDirection.rtl,
+      style: style.copyWith(height: 1.7),
+    );
+  }
+
+  Widget _sentenceBody(
+    int index,
+    ThemeData theme,
+    bool wide,
+    RecitationOutcome? outcome,
+  ) {
     final ColorScheme scheme = theme.colorScheme;
     final RecitationSentence sentence = widget.unit.sentences[index];
-    final bool visible = _showOriginal || _revealed.contains(index);
-    final RecitationOutcome? outcome = _sentenceOutcomes[index];
     final TextStyle arabicStyle =
         (wide ? theme.textTheme.headlineMedium : theme.textTheme.headlineSmall)!;
-    final Widget body = Column(
+    final bool arabicVisible = _showOriginal || _revealed.contains(index);
+    final bool translationVisible =
+        _showAllTranslations || _revealedZh.contains(index);
+    return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: <Widget>[
-        Text(
-          sentence.arabic,
-          textDirection: TextDirection.rtl,
-          style: arabicStyle.copyWith(height: 1.7),
+        GestureDetector(
+          behavior: HitTestBehavior.opaque,
+          onTap: () => _toggleArabic(index),
+          child: _blurUnless(
+            arabicVisible,
+            _arabicText(
+              theme,
+              sentence.arabic,
+              arabicStyle,
+              _marksFor(index, _whole ? _outcome : outcome),
+            ),
+          ),
         ),
         if (sentence.translation.isNotEmpty)
           Padding(
             padding: const EdgeInsets.only(top: AppSpacing.sm),
-            child: Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(AppSpacing.sm),
-              decoration: BoxDecoration(
-                color: scheme.surfaceContainerHigh,
-                borderRadius: AppRadius.controlBorder,
-              ),
-              child: Text(
-                sentence.translation,
-                style: theme.textTheme.titleMedium?.copyWith(
-                  color: scheme.onSurfaceVariant,
-                  height: 1.5,
+            child: GestureDetector(
+              behavior: HitTestBehavior.opaque,
+              onTap: () => _toggleTranslation(index),
+              child: _blurUnless(
+                translationVisible,
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(AppSpacing.sm),
+                  decoration: BoxDecoration(
+                    color: scheme.surfaceContainerHigh,
+                    borderRadius: AppRadius.controlBorder,
+                  ),
+                  child: Text(
+                    sentence.translation,
+                    style: theme.textTheme.titleMedium?.copyWith(
+                      color: scheme.onSurfaceVariant,
+                      height: 1.5,
+                    ),
+                  ),
                 ),
               ),
             ),
           ),
       ],
     );
+  }
+
+  Widget _sentenceCard(int index, ThemeData theme, bool wide) {
+    final ColorScheme scheme = theme.colorScheme;
+    final RecitationSentence sentence = widget.unit.sentences[index];
+    final bool arabicVisible = _showOriginal || _revealed.contains(index);
+    final bool translationVisible =
+        _showAllTranslations || _revealedZh.contains(index);
+    final RecitationOutcome? outcome = _sentenceOutcomes[index];
     return Card(
       margin: EdgeInsets.zero,
       elevation: 2.0,
@@ -491,31 +635,28 @@ class _RecitationReciteTabState extends State<RecitationReciteTab>
                 ],
                 const Spacer(),
                 IconButton(
-                  tooltip: visible ? "模糊原文" : "显示原文",
-                  onPressed: () => setState(() {
-                    if (!_revealed.remove(index)) _revealed.add(index);
-                  }),
+                  tooltip: arabicVisible ? "模糊原文" : "显示原文",
+                  onPressed: () => _toggleArabic(index),
                   icon: Icon(
-                    visible
+                    arabicVisible
                         ? Icons.visibility_off_outlined
                         : Icons.visibility_outlined,
                   ),
                 ),
+                if (sentence.translation.isNotEmpty && !_showAllTranslations)
+                  IconButton(
+                    tooltip: translationVisible ? "模糊译文" : "显示译文",
+                    onPressed: () => _toggleTranslation(index),
+                    icon: Icon(
+                      translationVisible
+                          ? Icons.subtitles_off_outlined
+                          : Icons.subtitles_outlined,
+                    ),
+                  ),
               ],
             ),
             const SizedBox(height: AppSpacing.xs),
-            GestureDetector(
-              behavior: HitTestBehavior.opaque,
-              onTap: () => setState(() {
-                if (!_revealed.remove(index)) _revealed.add(index);
-              }),
-              child: visible
-                  ? body
-                  : ImageFiltered(
-                      imageFilter: ImageFilter.blur(sigmaX: 5, sigmaY: 5),
-                      child: Opacity(opacity: 0.9, child: body),
-                    ),
-            ),
+            _sentenceBody(index, theme, wide, outcome),
             if (!_whole) _sentenceControls(index, theme, outcome),
           ],
         ),
@@ -581,6 +722,27 @@ class _RecitationReciteTabState extends State<RecitationReciteTab>
     } else {
       content = <Widget>[
         if (outcome != null) _outcomeDetail(theme, outcome),
+        if (outcome != null && outcome.transcript.isNotEmpty)
+          Padding(
+            padding: const EdgeInsets.only(bottom: AppSpacing.xs),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: <Widget>[
+                Text(
+                  "识别文本",
+                  style: theme.textTheme.labelLarge?.copyWith(
+                    color: scheme.onSurfaceVariant,
+                  ),
+                ),
+                const SizedBox(height: AppSpacing.xxs),
+                Text(
+                  outcome.transcript,
+                  textDirection: TextDirection.rtl,
+                  style: theme.textTheme.bodyLarge?.copyWith(height: 1.5),
+                ),
+              ],
+            ),
+          ),
         SizedBox(
           width: double.infinity,
           child: Button(
@@ -611,7 +773,8 @@ class _RecitationReciteTabState extends State<RecitationReciteTab>
     );
   }
 
-  /// 本句成绩摘要：覆盖/顺序/多读 + 漏读词；门禁命中时只给结论。
+  /// 本句成绩摘要：覆盖/顺序/多读；门禁命中时只给结论。
+  /// 漏读不再单列文字，原文里已经逐词标红。
   Widget _outcomeDetail(ThemeData theme, RecitationOutcome outcome) {
     final ColorScheme scheme = theme.colorScheme;
     if (!outcome.scoreable) {
@@ -626,50 +789,15 @@ class _RecitationReciteTabState extends State<RecitationReciteTab>
         ),
       );
     }
-    final List<String> missing = <String>[
-      for (final RecitationIssue issue in outcome.issues)
-        if (issue.type == RecitationIssueType.missing) issue.text,
-    ];
     return Padding(
       padding: const EdgeInsets.only(bottom: AppSpacing.xs),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: <Widget>[
-          Text(
-            "覆盖 ${(outcome.coverage * 100).round()}% · "
-            "顺序 ${(outcome.orderRate * 100).round()}% · "
-            "多读 ${(outcome.insertionRate * 100).round()}%",
-            style: theme.textTheme.bodyMedium?.copyWith(
-              color: scheme.onSurfaceVariant,
-            ),
-          ),
-          if (missing.isNotEmpty)
-            Padding(
-              padding: const EdgeInsets.only(top: AppSpacing.xxs),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: <Widget>[
-                  Text(
-                    "漏读",
-                    style: theme.textTheme.labelLarge?.copyWith(
-                      color: scheme.error,
-                    ),
-                  ),
-                  const SizedBox(width: AppSpacing.xs),
-                  Expanded(
-                    child: Text(
-                      missing.join(" · "),
-                      textDirection: TextDirection.rtl,
-                      style: theme.textTheme.bodyLarge?.copyWith(
-                        color: scheme.error,
-                        height: 1.5,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-        ],
+      child: Text(
+        "覆盖 ${(outcome.coverage * 100).round()}% · "
+        "顺序 ${(outcome.orderRate * 100).round()}% · "
+        "多读 ${(outcome.insertionRate * 100).round()}%",
+        style: theme.textTheme.bodyMedium?.copyWith(
+          color: scheme.onSurfaceVariant,
+        ),
       ),
     );
   }
@@ -707,7 +835,6 @@ class _RecitationReciteTabState extends State<RecitationReciteTab>
             children: <Widget>[
               for (int i = 0; i < sentences.length; i++)
                 Padding(
-                  key: _sentenceKeys[i],
                   padding: const EdgeInsets.only(bottom: AppSpacing.xs),
                   child: _sentenceCard(i, theme, wide),
                 ),
@@ -892,6 +1019,10 @@ class _RecitationReciteTabState extends State<RecitationReciteTab>
         (MediaQuery.sizeOf(context).width * 0.9).clamp(0.0, 760.0);
     final int count = widget.unit.sentences.length;
     final bool modelReady = AppData().asrModelDownloaded;
+    // KeepAlive 挂起期间监听可能因 pager 无 clients 而跳过，回到前台的第一帧补齐位置。
+    if (!_whole) {
+      WidgetsBinding.instance.addPostFrameCallback((_) => _syncFromPosition());
+    }
     return SafeArea(
       top: false,
       // 底部安全区交给进度条自己的 SafeArea，条底色才能铺到手势区。
@@ -905,15 +1036,18 @@ class _RecitationReciteTabState extends State<RecitationReciteTab>
                 : _sentencePager(theme, wide, width),
           ),
           if (_whole && _stage != _Stage.result) _wholeControls(theme),
-          ValueListenableBuilder<int>(
-            valueListenable: _current,
-            builder: (BuildContext context, int value, Widget? child) =>
-                RecitationProgressBar(
-              current: value,
-              count: count,
-              onLocate: _whole ? _locateWhole : _locatePage,
+          // 整篇没有翻句需求，不显示进度条；「统一显示中文」放在逐句的进度条里。
+          if (!_whole)
+            ValueListenableBuilder<int>(
+              valueListenable: _current,
+              builder: (BuildContext context, int value, Widget? child) =>
+                  RecitationProgressBar(
+                    current: value,
+                    count: count,
+                    onLocate: _locatePage,
+                    trailing: _translationToggle(),
+                  ),
             ),
-          ),
         ],
       ),
     );

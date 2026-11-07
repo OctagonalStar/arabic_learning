@@ -3,7 +3,7 @@
 import 'dart:typed_data';
 
 import 'package:archive/archive.dart';
-import 'package:flutter/foundation.dart' show compute, kIsWeb;
+import 'package:flutter/foundation.dart' show VoidCallback, compute, kIsWeb;
 
 import 'package:arabic_learning/core/statics.dart';
 import 'package:arabic_learning/services/app_data.dart';
@@ -79,9 +79,13 @@ class ModelManager {
       : AppData().isTtsModelInstalled(id) || AppData().isAsrModelInstalled(id);
 
   /// 下载并解压模型（发布包 `<id>.tar.bz2`）。未知 id 抛 [ArgumentError]。
+  ///
+  /// [onExtracting] 在下载结束后、解压开始前调用，界面可据此把下载进度条
+  /// 切换成不确定进度的「解压中」提示（解压阶段拿不到字节进度）。
   static Future<void> install(
     String id, {
     void Function(int received, int total)? onProgress,
+    VoidCallback? onExtracting,
   }) async {
     final bool isTts = _findTts(id) != null;
     if (!isTts && _findAsr(id) == null) throw ArgumentError('未知模型：$id');
@@ -129,6 +133,7 @@ class ModelManager {
       );
       final int archiveBytes = io.File(archivePath).lengthSync();
       _logger.info('模型下载完成: id=$id, ${watch.elapsedMilliseconds}ms, $archiveBytes 字节');
+      onExtracting?.call();
       await compute(extractTarBz2, (archivePath, '$base/$extractRoot'));
       _logger.info('模型解压完成: id=$id, 总耗时=${watch.elapsedMilliseconds}ms');
     } catch (e, s) {
@@ -163,46 +168,25 @@ class ModelManager {
   /// 从本地 tar.bz2 安装模型包，返回解压出的顶层目录名。
   ///
   /// 包内必须只有一个顶层目录，目录名不限；类型按目录内文件名判断。
+  /// 解包与落盘都在后台 isolate 里完成，避免大包阻塞界面。
   static Future<String> importArchive(String archivePath) async {
     if (kIsWeb) throw UnsupportedError('Web 端请使用 importArchiveBytes');
     final io.File file = io.File(archivePath);
     if (!file.existsSync()) throw Exception('模型包不存在：$archivePath');
     _logger.info('模型导入开始: $archivePath, ${file.lengthSync()} 字节');
 
-    final Archive tar = TarDecoder().decodeBytes(
-      BZip2Decoder().decodeBytes(await file.readAsBytes()),
+    final Stopwatch watch = Stopwatch()..start();
+    // 路径在界面 isolate 先算好，isolate 里不碰 AppData 等单例。
+    final String topDir = await compute(
+      _importArchiveInIsolate,
+      (
+        archivePath,
+        AppData().basePath.path,
+        StaticsVar.ttsModelRoot,
+        StaticsVar.asrModelRoot,
+      ),
     );
-    final Set<String> topDirs = <String>{};
-    for (final ArchiveFile entry in tar.files) {
-      final String name = entry.name.replaceAll('\\', '/');
-      final int slash = name.indexOf('/');
-      final String top = slash == -1 ? name : name.substring(0, slash);
-      if (top.isNotEmpty) topDirs.add(top);
-    }
-    if (topDirs.length != 1) {
-      _logger.warning('模型导入失败: 顶层目录数=${topDirs.length} ($topDirs)');
-      throw Exception('不支持的模型包');
-    }
-
-    final String topDir = topDirs.first;
-    final List<String> names = <String>[
-      for (final ArchiveFile entry in tar.files)
-        if (entry.name.replaceAll('\\', '/').startsWith('$topDir/'))
-          entry.name.replaceAll('\\', '/').split('/').last,
-    ];
-    final bool? isTts = classifyNames(names);
-    if (isTts == null) {
-      _logger.warning('模型导入失败: 无法识别目录结构 $topDir');
-      throw Exception('无法识别的模型包结构，请查看模型管理页的说明');
-    }
-
-    final String base = AppData().basePath.path;
-    final String extractRoot =
-        isTts ? StaticsVar.ttsModelRoot : StaticsVar.asrModelRoot;
-    await delete(topDir); // 不覆盖已有安装
-    await io.Directory('$base/$extractRoot').create(recursive: true);
-    await compute(extractTarBz2, (archivePath, '$base/$extractRoot'));
-    _logger.info('模型导入完成: id=$topDir -> $base/$extractRoot');
+    _logger.info('模型导入完成: id=$topDir, 耗时=${watch.elapsedMilliseconds}ms');
     return topDir;
   }
 
@@ -394,4 +378,69 @@ class ModelManager {
     }
     return null;
   }
+}
+
+/// 在后台 isolate 里解包并落盘，返回解压出的顶层目录名。
+///
+/// 参数用 record 传，避免 isolate 里再读 AppData / StaticsVar 单例。
+/// 只用异步文件 API：Web 的 fake_dart_io 没有 *Sync 版本（该分支 Web 不会执行，
+/// 但代码仍要参与 Web 编译）。
+/// shortcut: 整个包一次性读进内存（模型包通常几十到几百 MB），
+/// 支持更大的包时需要改成分块流式解压。
+@pragma('vm:entry-point')
+Future<String> _importArchiveInIsolate(
+  (String archivePath, String base, String ttsRoot, String asrRoot) args,
+) async {
+  final List<int> bytes = await io.File(args.$1).readAsBytes();
+  final Archive tar = TarDecoder().decodeBytes(
+    BZip2Decoder().decodeBytes(bytes),
+  );
+
+  final Set<String> topDirs = <String>{};
+  for (final ArchiveFile entry in tar.files) {
+    final String name = entry.name.replaceAll('\\', '/');
+    final int slash = name.indexOf('/');
+    final String top = slash == -1 ? name : name.substring(0, slash);
+    if (top.isNotEmpty) topDirs.add(top);
+  }
+  if (topDirs.length != 1) throw Exception('不支持的模型包');
+
+  final String topDir = topDirs.first;
+  final Set<String> topNames = <String>{};
+  for (final ArchiveFile entry in tar.files) {
+    final String name = entry.name.replaceAll('\\', '/');
+    if (!name.startsWith('$topDir/')) continue;
+    final String rel = name.substring(topDir.length + 1);
+    if (rel.isEmpty) continue;
+    final int slash = rel.indexOf('/');
+    topNames.add(slash == -1 ? rel : rel.substring(0, slash));
+  }
+  final bool? isTts = ModelManager.classifyNames(topNames.toList());
+  if (isTts == null) {
+    throw Exception('无法识别的模型包结构，请查看模型管理页的说明');
+  }
+
+  final String root = '${args.$2}/${isTts ? args.$3 : args.$4}';
+  final String target = '$root/$topDir';
+  final io.Directory targetDir = io.Directory(target);
+  if (targetDir.existsSync()) targetDir.deleteSync(recursive: true); // 不覆盖已有安装
+  await io.Directory(root).create(recursive: true);
+
+  for (final ArchiveFile entry in tar.files) {
+    final String name = entry.name.replaceAll('\\', '/');
+    if (!name.startsWith('$topDir/')) continue;
+    final String rel = name.substring(topDir.length + 1);
+    if (rel.isEmpty) continue;
+    // tar 内固定是 '/'，落盘要换成本平台的分隔符。
+    final String path =
+        '$target/${rel.split('/').join(io.Platform.pathSeparator)}';
+    if (entry.isFile) {
+      final io.File file = io.File(path);
+      await file.create(recursive: true);
+      await file.writeAsBytes(entry.content as List<int>);
+    } else {
+      await io.Directory(path).create(recursive: true);
+    }
+  }
+  return topDir;
 }
