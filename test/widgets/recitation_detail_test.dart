@@ -1,5 +1,5 @@
 // 课文详情页的翻句交互回归：竖向翻卡、底部进度条定位、短屏用上下箭头翻句，
-// 以及背诵页「逐句 / 整篇」切换与模型未下载门禁。
+// 以及「学习 / 逐句 / 整篇」三个 tab 的独立状态与模型未下载门禁。
 
 import 'package:arabic_learning/models/recitation_text.dart';
 import 'package:arabic_learning/screens/test/recitation/recitation_detail_page.dart';
@@ -96,35 +96,48 @@ void main() {
     expect(_barCurrent(tester), 1);
   });
 
-  testWidgets('背诵页：逐句 / 整篇切换与模型门禁', (WidgetTester tester) async {
+  testWidgets('逐句 / 整篇：各自独立翻页与模型门禁', (WidgetTester tester) async {
     await _pump(tester);
-    await tester.tap(find.text('背诵'));
+    await tester.tap(find.text('逐句'));
     await tester.pumpAndSettle();
     expect(tester.takeException(), isNull);
 
     // 逐句：每句一张卡片，各有录音入口；模型未下载时给出模型管理入口。
     expect(find.text('录这一句'), findsOneWidget);
     expect(find.text('前往模型管理'), findsOneWidget);
+    expect(_barCurrent(tester), 1);
+
+    await tester.tap(find.byTooltip('下一句'));
+    await tester.pumpAndSettle();
+    expect(_barCurrent(tester), 2);
 
     await tester.tap(find.text('整篇'));
     await tester.pumpAndSettle();
     expect(tester.takeException(), isNull);
     expect(find.text('显示原文'), findsOneWidget);
     expect(find.text('开始背诵'), findsOneWidget);
+    expect(find.text('录这一句'), findsNothing);
+    expect(_barCurrent(tester), 1);
 
     // 整篇滚动后底部进度条跟随当前句。
     await tester.drag(
-      find.byType(SingleChildScrollView).last,
+      find.byType(SingleChildScrollView).hitTestable(),
       const Offset(0, -500),
     );
     await tester.pumpAndSettle();
     expect(_barCurrent(tester), greaterThan(1));
     expect(tester.takeException(), isNull);
+
+    // 两个背诵 tab 各自保留翻页位置。
+    await tester.tap(find.text('逐句'));
+    await tester.pumpAndSettle();
+    expect(_barCurrent(tester), 2);
+    expect(tester.takeException(), isNull);
   });
 
   testWidgets('背诵页宽屏不溢出', (WidgetTester tester) async {
     await _pump(tester, size: const Size(1100, 900));
-    await tester.tap(find.text('背诵'));
+    await tester.tap(find.text('逐句'));
     await tester.pumpAndSettle();
     expect(tester.takeException(), isNull);
   });

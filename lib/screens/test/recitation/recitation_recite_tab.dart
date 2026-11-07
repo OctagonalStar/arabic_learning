@@ -1,6 +1,5 @@
-// 背诵 tab：两种模式。
-// 逐句：一句一张竖向卡片，卡片内单独录音评分（分数只留本会话，不写存储），
-//       出分后约 1.4 秒自动翻到下一句；最后一句停下。
+// 背诵 tab（按 [RecitationReciteMode] 分「逐句 / 整篇」两个独立页面，各自持有录音与滚动状态）。
+// 逐句：一句一张竖向卡片，卡片内单独录音评分（分数只留本会话，不写存储），出分后停在原句。
 // 整篇：整段 reference 录音评分 + RecitationResultView + RecitationStore 历史。
 // 状态机：ready → recording → analyzing →（逐句回 ready / 整篇进 result）。
 // 录音与评分逻辑都在 services/recitation_*.dart，本页只做流程与展示。
@@ -33,25 +32,31 @@ import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart' show RenderAbstractViewport;
 import 'package:provider/provider.dart';
 
-enum _Mode { sentence, whole }
+/// 背诵页的两种形态；每个 tab 只承担一种。
+enum RecitationReciteMode { sentence, whole }
 
 enum _Stage { ready, recording, analyzing, result }
 
 class RecitationReciteTab extends StatefulWidget {
   final RecitationTextUnit unit;
-  const RecitationReciteTab({super.key, required this.unit});
+  final RecitationReciteMode mode;
+  const RecitationReciteTab({
+    super.key,
+    required this.unit,
+    required this.mode,
+  });
 
   @override
   State<RecitationReciteTab> createState() => _RecitationReciteTabState();
 }
 
-class _RecitationReciteTabState extends State<RecitationReciteTab> {
+class _RecitationReciteTabState extends State<RecitationReciteTab>
+    with AutomaticKeepAliveClientMixin {
   final RecitationRecorder _recorder = RecitationRecorder();
   final PageController _pager = PageController();
   final ScrollController _wholeScroll = ScrollController();
-  // 两个模式各自的「当前句」（从 1 开始），只驱动底部进度条重建。
+  // 本页唯一的「当前句」（从 1 开始），只驱动底部进度条重建。
   final ValueNotifier<int> _current = ValueNotifier<int>(1);
-  final ValueNotifier<int> _wholeCurrent = ValueNotifier<int>(1);
   final Set<int> _revealed = <int>{};
   // 逐句成绩只保存在本会话内存里，按句索引映射，不落盘。
   final Map<int, RecitationOutcome> _sentenceOutcomes =
@@ -61,10 +66,9 @@ class _RecitationReciteTabState extends State<RecitationReciteTab> {
     for (int i = 0; i < widget.unit.sentences.length; i++) GlobalKey(),
   ];
 
-  _Mode _mode = _Mode.sentence;
   _Stage _stage = _Stage.ready;
   bool _permissionDenied = false;
-  // 全局「显示原文」开关（整篇）；逐句卡片各自有显隐按钮。
+  // 整篇的「显示原文」开关；逐句卡片各自有显隐按钮。
   bool _showOriginal = false;
   int _seconds = 0;
   // 正在录音 / 分析的句子；整篇模式为 -1。
@@ -74,7 +78,12 @@ class _RecitationReciteTabState extends State<RecitationReciteTab> {
   String _status = '';
   RecitationOutcome? _outcome;
   Timer? _timer;
-  Timer? _advance;
+
+  bool get _whole => widget.mode == RecitationReciteMode.whole;
+
+  /// 切 tab 后保留本页的页码 / 成绩 / 结果。
+  @override
+  bool get wantKeepAlive => true;
 
   @override
   void initState() {
@@ -85,11 +94,9 @@ class _RecitationReciteTabState extends State<RecitationReciteTab> {
   @override
   void dispose() {
     _timer?.cancel();
-    _advance?.cancel();
     _wholeScroll.dispose();
     _pager.dispose();
     _current.dispose();
-    _wholeCurrent.dispose();
     _recorder.dispose();
     super.dispose();
   }
@@ -133,7 +140,6 @@ class _RecitationReciteTabState extends State<RecitationReciteTab> {
   Future<void> _startRecording(int index) async {
     if (_stage != _Stage.ready) return;
     final Global global = context.read<Global>();
-    _advance?.cancel();
     _retryIndex = index;
     if (!await _ensurePermission()) return;
     if (!mounted) return;
@@ -196,7 +202,6 @@ class _RecitationReciteTabState extends State<RecitationReciteTab> {
           _sentenceOutcomes[index] = outcome;
           _stage = _Stage.ready;
         });
-        _scheduleAdvance(index, outcome);
       } else {
         setState(() {
           _outcome = outcome;
@@ -222,21 +227,6 @@ class _RecitationReciteTabState extends State<RecitationReciteTab> {
     }
   }
 
-  /// 逐句出分后自动前进；没给分（门禁命中）或已是最后一句就停在原地。
-  void _scheduleAdvance(int index, RecitationOutcome outcome) {
-    _advance?.cancel();
-    _advance = null;
-    if (!outcome.scoreable || index + 1 >= widget.unit.sentences.length) return;
-    _advance = Timer(const Duration(milliseconds: 1400), () {
-      if (!mounted || !_pager.hasClients) return;
-      _pager.animateToPage(
-        index + 1,
-        duration: AppMotion.medium,
-        curve: AppMotion.decelerateCurve,
-      );
-    });
-  }
-
   /// 取消录音：`record` 的 cancel 会丢弃已录文件。
   Future<void> _cancelRecording() async {
     _timer?.cancel();
@@ -258,7 +248,7 @@ class _RecitationReciteTabState extends State<RecitationReciteTab> {
     });
   }
 
-  void _retryRecording() => _startRecording(_mode == _Mode.sentence ? _retryIndex : -1);
+  void _retryRecording() => _startRecording(_whole ? -1 : _retryIndex);
 
   // ---------------------------------------------------------------------------
   // 定位 / 进度同步
@@ -286,7 +276,7 @@ class _RecitationReciteTabState extends State<RecitationReciteTab> {
 
   /// 整篇模式：把「当前句」定位到视口顶部的那一句，只在变化时写 notifier。
   void _syncWholeIndex() {
-    if (_mode != _Mode.whole || !_wholeScroll.hasClients) return;
+    if (!_wholeScroll.hasClients) return;
     final double offset = _wholeScroll.offset;
     int found = 1;
     for (int i = 0; i < _sentenceKeys.length; i++) {
@@ -300,7 +290,7 @@ class _RecitationReciteTabState extends State<RecitationReciteTab> {
         break;
       }
     }
-    if (_wholeCurrent.value != found) _wholeCurrent.value = found;
+    if (_current.value != found) _current.value = found;
   }
 
   // ---------------------------------------------------------------------------
@@ -377,9 +367,6 @@ class _RecitationReciteTabState extends State<RecitationReciteTab> {
   }
 
   Widget _header(ThemeData theme, double width, bool modelReady) {
-    final ColorScheme scheme = theme.colorScheme;
-    final bool busy =
-        _stage == _Stage.recording || _stage == _Stage.analyzing;
     return Padding(
       padding: const EdgeInsets.only(top: AppSpacing.xs),
       child: Center(
@@ -388,37 +375,7 @@ class _RecitationReciteTabState extends State<RecitationReciteTab> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: <Widget>[
-              SegmentedButton<_Mode>(
-                showSelectedIcon: false,
-                segments: const <ButtonSegment<_Mode>>[
-                  ButtonSegment<_Mode>(
-                    value: _Mode.sentence,
-                    label: Text("逐句"),
-                    icon: Icon(Icons.view_agenda_outlined),
-                  ),
-                  ButtonSegment<_Mode>(
-                    value: _Mode.whole,
-                    label: Text("整篇"),
-                    icon: Icon(Icons.article_outlined),
-                  ),
-                ],
-                selected: <_Mode>{_mode},
-                // 录音 / 分析中切模式会丢掉进行中的录音，直接禁用。
-                onSelectionChanged: busy
-                    ? null
-                    : (Set<_Mode> selection) {
-                        _advance?.cancel();
-                        setState(() => _mode = selection.first);
-                        // 整篇的滚动位置切回来时可能已被重置，按实际布局重算当前句。
-                        if (selection.first == _Mode.whole) {
-                          WidgetsBinding.instance.addPostFrameCallback(
-                            (_) => _syncWholeIndex(),
-                          );
-                        }
-                      },
-              ),
-              const SizedBox(height: AppSpacing.sm),
-              if (_mode == _Mode.whole)
+              if (_whole)
                 Row(
                   children: <Widget>[
                     Text("原文", style: theme.textTheme.titleLarge),
@@ -431,13 +388,6 @@ class _RecitationReciteTabState extends State<RecitationReciteTab> {
                       child: Text(_showOriginal ? "模糊原文" : "显示原文"),
                     ),
                   ],
-                )
-              else
-                Text(
-                  "每句单独录音，出分后自动进入下一句",
-                  style: theme.textTheme.bodyMedium?.copyWith(
-                    color: scheme.onSurfaceVariant,
-                  ),
                 ),
               if (!modelReady)
                 _gate(
@@ -566,7 +516,7 @@ class _RecitationReciteTabState extends State<RecitationReciteTab> {
                       child: Opacity(opacity: 0.9, child: body),
                     ),
             ),
-            if (_mode == _Mode.sentence) _sentenceControls(index, theme, outcome),
+            if (!_whole) _sentenceControls(index, theme, outcome),
           ],
         ),
       ),
@@ -730,12 +680,7 @@ class _RecitationReciteTabState extends State<RecitationReciteTab> {
       controller: _pager,
       scrollDirection: Axis.vertical,
       itemCount: sentences.length,
-      onPageChanged: (int index) {
-        // 用户自己翻页时中断待执行的自动前进（自动前进触发时定时器已置空）。
-        _advance?.cancel();
-        _advance = null;
-        _current.value = index + 1;
-      },
+      onPageChanged: (int index) => _current.value = index + 1,
       itemBuilder: (BuildContext context, int index) => Center(
         child: SizedBox(
           width: width,
@@ -940,6 +885,7 @@ class _RecitationReciteTabState extends State<RecitationReciteTab> {
 
   @override
   Widget build(BuildContext context) {
+    super.build(context);
     final ThemeData theme = Theme.of(context);
     final bool wide = AdaptiveScope.of(context).isWide;
     final double width =
@@ -954,32 +900,20 @@ class _RecitationReciteTabState extends State<RecitationReciteTab> {
         children: <Widget>[
           _header(theme, width, modelReady),
           Expanded(
-            child: _mode == _Mode.sentence
-                ? _sentencePager(theme, wide, width)
-                : _wholeList(theme, wide, width),
+            child: _whole
+                ? _wholeList(theme, wide, width)
+                : _sentencePager(theme, wide, width),
           ),
-          if (_mode == _Mode.whole && _stage != _Stage.result)
-            _wholeControls(theme),
-          if (_mode == _Mode.sentence)
-            ValueListenableBuilder<int>(
-              valueListenable: _current,
-              builder: (BuildContext context, int value, Widget? child) =>
-                  RecitationProgressBar(
-                current: value,
-                count: count,
-                onLocate: _locatePage,
-              ),
-            )
-          else
-            ValueListenableBuilder<int>(
-              valueListenable: _wholeCurrent,
-              builder: (BuildContext context, int value, Widget? child) =>
-                  RecitationProgressBar(
-                current: value,
-                count: count,
-                onLocate: _locateWhole,
-              ),
+          if (_whole && _stage != _Stage.result) _wholeControls(theme),
+          ValueListenableBuilder<int>(
+            valueListenable: _current,
+            builder: (BuildContext context, int value, Widget? child) =>
+                RecitationProgressBar(
+              current: value,
+              count: count,
+              onLocate: _whole ? _locateWhole : _locatePage,
             ),
+          ),
         ],
       ),
     );
