@@ -283,10 +283,16 @@ class AppData {
     if (!isTtsModelInstalled(id)) return;
 
     resetTTS();
-    logger.info("TTS: 加载本地TTS中 ($id)");
-    sherpa_onnx.initBindings();
     final TtsModelInfo info = StaticsVar.ttsModel(id);
     final String dir = "${basePath.path}/${StaticsVar.ttsModelDir(id)}";
+    // sherpa 要求 dataDir 指向 espeak-ng-data 目录本身（校验 <dataDir>/phontab）；
+    // 少数模型把音素表直接放在模型目录，故按实际结构回退。
+    final String dataDir = io.Directory('$dir/espeak-ng-data').existsSync()
+        ? '$dir/espeak-ng-data'
+        : dir;
+    logger.info(
+        "TTS: 加载本地TTS中 ($id, ${info.family.name}, dir=$dir, dataDir=$dataDir)");
+    sherpa_onnx.initBindings();
 
     final sherpa_onnx.OfflineTtsModelConfig modelConfig;
     switch (info.family) {
@@ -295,7 +301,7 @@ class AppData {
           vits: sherpa_onnx.OfflineTtsVitsModelConfig(
             model: "$dir/${info.modelFile}",
             tokens: '$dir/tokens.txt',
-            dataDir: dir,
+            dataDir: dataDir,
             lengthScale: 1 / playRate,
           ),
           numThreads: 2,
@@ -308,7 +314,7 @@ class AppData {
             model: "$dir/${info.modelFile}",
             voices: "$dir/${info.voicesFile ?? ''}",
             tokens: '$dir/tokens.txt',
-            dataDir: dir,
+            dataDir: dataDir,
             lengthScale: 1 / playRate,
           ),
           numThreads: 2,
@@ -321,9 +327,14 @@ class AppData {
       maxNumSenetences: 1,
     );
 
-    vitsTTS = sherpa_onnx.OfflineTts(config);
+    try {
+      vitsTTS = sherpa_onnx.OfflineTts(config);
+    } catch (e, s) {
+      logger.severe("TTS: 本地模型加载失败 ($id, dir=$dir)", e, s);
+      rethrow;
+    }
     _loadedTtsModelId = id;
-    logger.info("TTS: 本地TTS加载完成");
+    logger.info("TTS: 本地TTS加载完成 ($id)");
   }
 
   /// 释放已加载的本地 TTS（切换模型或删除模型前调用）。
