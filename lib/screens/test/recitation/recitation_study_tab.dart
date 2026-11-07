@@ -427,7 +427,13 @@ class _TappableSentence extends StatelessWidget {
                   : null,
               child: Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 2.0),
-                child: Text(token, style: style),
+                // 每个词单独成一个 Text，必须各自声明 RTL：默认按 LTR 断行时，
+                // 词尾问号/逗号这类中性符号会被排到词的前面，看着像提前一个词。
+                child: Text(
+                  token,
+                  style: style,
+                  textDirection: TextDirection.rtl,
+                ),
               ),
             ),
       ],

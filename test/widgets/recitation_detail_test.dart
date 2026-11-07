@@ -86,6 +86,13 @@ void main() {
     expect(_barCurrent(tester), 1);
   });
 
+  testWidgets('学习页阿语按 RTL 逐词排版', (WidgetTester tester) async {
+    await _pump(tester);
+    // 每个词是独立 Text，未声明 RTL 时词尾标点会被排到词前，看着像提前一个词。
+    final Text token = tester.widget<Text>(find.text('السَّلَامُ'));
+    expect(token.textDirection, TextDirection.rtl);
+  });
+
   testWidgets('短屏卡片溢出时用箭头翻句，且不溢出', (WidgetTester tester) async {
     await _pump(tester, size: const Size(480, 420));
     expect(tester.takeException(), isNull);
