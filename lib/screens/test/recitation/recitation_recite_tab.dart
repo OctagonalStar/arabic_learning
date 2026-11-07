@@ -773,7 +773,8 @@ class _RecitationReciteTabState extends State<RecitationReciteTab>
     );
   }
 
-  /// 本句成绩摘要：覆盖/顺序/多读 + 漏读词；门禁命中时只给结论。
+  /// 本句成绩摘要：覆盖/顺序/多读；门禁命中时只给结论。
+  /// 漏读不再单列文字，原文里已经逐词标红。
   Widget _outcomeDetail(ThemeData theme, RecitationOutcome outcome) {
     final ColorScheme scheme = theme.colorScheme;
     if (!outcome.scoreable) {
@@ -788,50 +789,15 @@ class _RecitationReciteTabState extends State<RecitationReciteTab>
         ),
       );
     }
-    final List<String> missing = <String>[
-      for (final RecitationIssue issue in outcome.issues)
-        if (issue.type == RecitationIssueType.missing) issue.text,
-    ];
     return Padding(
       padding: const EdgeInsets.only(bottom: AppSpacing.xs),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: <Widget>[
-          Text(
-            "覆盖 ${(outcome.coverage * 100).round()}% · "
-            "顺序 ${(outcome.orderRate * 100).round()}% · "
-            "多读 ${(outcome.insertionRate * 100).round()}%",
-            style: theme.textTheme.bodyMedium?.copyWith(
-              color: scheme.onSurfaceVariant,
-            ),
-          ),
-          if (missing.isNotEmpty)
-            Padding(
-              padding: const EdgeInsets.only(top: AppSpacing.xxs),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: <Widget>[
-                  Text(
-                    "漏读",
-                    style: theme.textTheme.labelLarge?.copyWith(
-                      color: scheme.error,
-                    ),
-                  ),
-                  const SizedBox(width: AppSpacing.xs),
-                  Expanded(
-                    child: Text(
-                      missing.join(" · "),
-                      textDirection: TextDirection.rtl,
-                      style: theme.textTheme.bodyLarge?.copyWith(
-                        color: scheme.error,
-                        height: 1.5,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-        ],
+      child: Text(
+        "覆盖 ${(outcome.coverage * 100).round()}% · "
+        "顺序 ${(outcome.orderRate * 100).round()}% · "
+        "多读 ${(outcome.insertionRate * 100).round()}%",
+        style: theme.textTheme.bodyMedium?.copyWith(
+          color: scheme.onSurfaceVariant,
+        ),
       ),
     );
   }
