@@ -2,7 +2,7 @@ import 'package:arabic_learning/core/adaptive.dart' show AdaptiveTabBody;
 import 'package:arabic_learning/theme/typography.dart';
 import 'package:arabic_learning/widgets/kit.dart' show Button;
 import 'package:arabic_learning/widgets/shared.dart' show ButtonLabel;
-import 'package:flutter/foundation.dart' show clampDouble, kIsWeb;
+import 'package:flutter/foundation.dart' show clampDouble;
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -77,24 +77,21 @@ class TestPage extends StatelessWidget {
               },
               child: ButtonLabel(child: Text('自主听写', style: withoutColor(Theme.of(context).textTheme.headlineLarge!))),
             ),
-            // 课文背诵依赖本地录音与 ASR 模型，Web 端不启用。
-            if (!kIsWeb) ...[
-              SizedBox(height: gap),
-              Button(
-                icon: Icon(Icons.record_voice_over, size: 36.0),
-                size: Size(width * 0.8, fullHeight),
-                onPressed: () {
-                  context.read<Global>().uiLogger.info("跳转: TestPage => RecitationListPage");
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => RecitationListPage()
-                    )
-                  );
-                },
-                child: ButtonLabel(child: Text('课文背诵', style: withoutColor(Theme.of(context).textTheme.headlineLarge!))),
-              ),
-            ],
+            SizedBox(height: gap),
+            Button(
+              icon: Icon(Icons.record_voice_over, size: 36.0),
+              size: Size(width * 0.8, fullHeight),
+              onPressed: () {
+                context.read<Global>().uiLogger.info("跳转: TestPage => RecitationListPage");
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => RecitationListPage()
+                  )
+                );
+              },
+              child: ButtonLabel(child: Text('课文背诵', style: withoutColor(Theme.of(context).textTheme.headlineLarge!))),
+            ),
           ],
         );
       },

@@ -13,8 +13,8 @@ class RecitationRecorder {
   final AudioRecorder _recorder = AudioRecorder();
   String? _path;
 
-  /// `record` 覆盖原生五端；Web 端不启用本地评分。
-  static bool get supported => !kIsWeb;
+  /// `record` 覆盖原生六端；Web 端录音交给浏览器，评分也在本地 wasm 里做。
+  static bool get supported => true;
 
   Future<bool> ensurePermission() async {
     if (!supported) return false;
@@ -25,8 +25,10 @@ class RecitationRecorder {
 
   Future<void> start() async {
     if (!supported) throw UnsupportedError('当前平台不支持录音');
-    final dir = await path_provider.getTemporaryDirectory();
-    final String path = '${dir.path}/recitation.wav';
+    // Web 的 record 实现忽略 path，stop() 返回 blob URL。
+    final String path = kIsWeb
+        ? 'recitation.wav'
+        : '${(await path_provider.getTemporaryDirectory()).path}/recitation.wav';
     await _recorder.start(
       const RecordConfig(
         encoder: AudioEncoder.wav,

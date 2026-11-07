@@ -1,9 +1,10 @@
 // 背诵分析入口：解码 → 能量分析 → 切段 → 逐段识别 → 评分 → 存档。
-// Web 端不启用（由调用方挡住），这里直接抛错避免半途失败。
+// Web 上录音是 blob URL，其余流程与原生一致。
 
 import 'dart:convert';
 import 'dart:typed_data';
 
+import 'package:arabic_learning/services/http_client.dart';
 import 'package:arabic_learning/package_replacement/fake_dart_io.dart'
     if (dart.library.io) 'dart:io' as io;
 import 'package:arabic_learning/services/recitation_asr.dart';
@@ -12,6 +13,7 @@ import 'package:arabic_learning/services/recitation_scorer.dart';
 import 'package:arabic_learning/services/recitation_store.dart';
 import 'package:arabic_learning/services/recitation_text.dart';
 import 'package:crypto/crypto.dart';
+import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:logging/logging.dart';
 
@@ -28,11 +30,19 @@ class RecitationService {
     required String wavPath,
     void Function(String status)? onStatus,
   }) async {
-    if (kIsWeb) throw UnsupportedError('网页端暂不支持本地录音评分');
-
     final Stopwatch watch = Stopwatch()..start();
     onStatus?.call('正在分析录音…');
-    final Uint8List bytes = (await io.File(wavPath).readAsBytes()) as Uint8List;
+    final Uint8List bytes;
+    if (kIsWeb) {
+      // Web 的 stop() 给的是 blob URL，没有可读文件。
+      final Response<List<int>> response = await createDio().getUri<List<int>>(
+        Uri.parse(wavPath),
+        options: Options(responseType: ResponseType.bytes),
+      );
+      bytes = Uint8List.fromList(response.data ?? const <int>[]);
+    } else {
+      bytes = await io.File(wavPath).readAsBytes();
+    }
     final Float32List samples = decodeWav16(bytes);
     final SpeechAnalysis speech = analysis(samples);
     final List<({Float32List samples, double start})> segments =

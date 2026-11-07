@@ -3,10 +3,10 @@
 
 import 'dart:typed_data';
 
-import 'package:arabic_learning/package_replacement/fake_sherpa_onnx.dart'
-    if (dart.library.io) 'package:sherpa_onnx/sherpa_onnx.dart' as sherpa_onnx;
+import 'package:sherpa_onnx/sherpa_onnx.dart' as sherpa_onnx;
 import 'package:arabic_learning/services/app_data.dart';
 import 'package:arabic_learning/services/model_manager.dart';
+import 'package:arabic_learning/services/web_model_store.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:logging/logging.dart';
 
@@ -28,22 +28,42 @@ class RecitationAsr {
   /// 识别一段 16k 单声道音频。
   ///
   /// 每次调用创建并释放 recognizer（Whisper tiny 常驻内存不值得），
-  /// Web 或模型未下载时返回空列表。
+  /// 模型未下载时返回空列表。
   Future<List<AsrWord>> transcribe(
     Float32List samples, {
     int sampleRate = 16000,
   }) async {
-    if (kIsWeb || samples.isEmpty) return const <AsrWord>[];
+    if (samples.isEmpty) return const <AsrWord>[];
 
-    final String dir =
-        '${AppData().basePath.path}/${AppData().preferredAsrModelDir}';
-    final AsrModelFiles? files = ModelManager.resolveAsr(dir);
+    final String id = AppData().preferredAsrModelId;
+    final AsrModelFiles? files;
+    final String dir;
+    if (kIsWeb) {
+      final WebModelMeta? meta = WebModelStore.metaOf(id);
+      if (meta == null) {
+        _logger.info('识别模型未下载: $id');
+        return const <AsrWord>[];
+      }
+      dir = 'models/$id';
+      files = ModelManager.resolveAsrNames(meta.names);
+    } else {
+      dir = '${AppData().basePath.path}/${AppData().preferredAsrModelDir}';
+      files = ModelManager.resolveAsr(dir);
+    }
     if (files == null) {
       _logger.info('识别模型未下载: $dir');
       return const <AsrWord>[];
     }
 
-    sherpa_onnx.initBindings();
+    await sherpa_onnx.initBindingsAsync();
+    if (kIsWeb) {
+      await WebModelStore.mount(
+        id,
+        files: files.nemoCtc
+            ? <String>[files.model, files.tokens]
+            : <String>[files.encoder!, files.decoder!, files.tokens],
+      );
+    }
     final String family = files.nemoCtc ? 'NeMo CTC' : 'Whisper';
     _logger.info(
         '识别模型: 家族=$family, model=${files.model}, '

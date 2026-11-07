@@ -2,20 +2,26 @@
 // playTextToSpeech 支持系统 TTS / 在线 TTS / sherpa-onnx 本地 VITS 三种音源。
 
 import 'package:arabic_learning/core/statics.dart';
+import 'package:arabic_learning/core/wav.dart';
 import 'package:arabic_learning/services/app_data.dart';
+import 'package:arabic_learning/services/blob_url.dart';
 import 'package:arabic_learning/services/http_client.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter_tts/flutter_tts.dart';
 import 'package:just_audio/just_audio.dart';
 import 'package:logging/logging.dart';
 import 'package:path_provider/path_provider.dart' as path_provider;
 import 'package:arabic_learning/package_replacement/fake_dart_io.dart' if (dart.library.io) 'dart:io' as io;
-import 'package:arabic_learning/package_replacement/fake_sherpa_onnx.dart' if (dart.library.io) 'package:sherpa_onnx/sherpa_onnx.dart' as sherpa_onnx;
+import 'package:sherpa_onnx/sherpa_onnx.dart' as sherpa_onnx;
 
 final Logger _logger = Logger("TTS");
 
 /// 上次本地合成的缓存：文本、语速与模型都没变时直接复用音频，不重复推理。
 String? _cacheKey;
 io.File? _cacheFile;
+
+/// Web 没有文件系统，缓存是常驻的 blob URL。
+String? _cacheWebUrl;
 Duration _cacheDuration = Duration.zero;
 
 /// 语音播放失败。
@@ -110,32 +116,45 @@ Future<void> playTextToSpeech(String text, {double? speed}) async {
     if(AppData().vitsTTS == null) {
       throw const TtsFailure("本地语音模型还没有准备好。请先在 设置-音频 中下载模型。");
     }
-    late final io.File cacheFile;
     late final Duration duration;
+    late final Uri source;
     final String cacheKey = "$text|$speed|${AppData().preferredTtsModelId}";
     final bool hit = _cacheKey == cacheKey &&
-        _cacheFile != null &&
-        _cacheFile!.existsSync();
+        (kIsWeb
+            ? _cacheWebUrl != null
+            : _cacheFile != null && _cacheFile!.existsSync());
     if (hit) {
-      cacheFile = _cacheFile!;
       duration = _cacheDuration;
+      source = kIsWeb ? Uri.parse(_cacheWebUrl!) : Uri.file(_cacheFile!.path);
       _logger.info("本地语音命中缓存: ${text.length} 字");
     } else {
       // 合成与播放分开报错：播放失败不代表模型有问题，不能让用户去重下模型。
       try {
-        final basePath = await path_provider.getApplicationCacheDirectory();
-        cacheFile = io.File("${basePath.path}/tts_cache.wav");
-        if(cacheFile.existsSync()) cacheFile.deleteSync();
         final audio = AppData().vitsTTS!.generate(text: text, speed: speed);
-        final ok = sherpa_onnx.writeWave(
-                            filename: cacheFile.path,
-                            samples: audio.samples,
-                            sampleRate: audio.sampleRate,
-                          );
-        if(!ok) throw Exception("无法将音频写入文件");
-        duration = Duration(milliseconds: (audio.samples.length / audio.sampleRate * 1000).round());
+        duration = Duration(
+            milliseconds:
+                (audio.samples.length / audio.sampleRate * 1000).round());
+        if (kIsWeb) {
+          // Blob 常驻内存，换缓存时先释放旧的。
+          final String? old = _cacheWebUrl;
+          if (old != null) revokeBlobUrl(old);
+          _cacheWebUrl =
+              createBlobUrl(encodeWav16(audio.samples, audio.sampleRate));
+          source = Uri.parse(_cacheWebUrl!);
+        } else {
+          final basePath = await path_provider.getApplicationCacheDirectory();
+          final io.File cacheFile = io.File("${basePath.path}/tts_cache.wav");
+          if (cacheFile.existsSync()) cacheFile.deleteSync();
+          final ok = sherpa_onnx.writeWave(
+            filename: cacheFile.path,
+            samples: audio.samples,
+            sampleRate: audio.sampleRate,
+          );
+          if (!ok) throw Exception("无法将音频写入文件");
+          _cacheFile = cacheFile;
+          source = Uri.file(cacheFile.path);
+        }
         _cacheKey = cacheKey;
-        _cacheFile = cacheFile;
         _cacheDuration = duration;
       } catch (e) {
         throw _toTtsFailure(
@@ -145,7 +164,7 @@ Future<void> playTextToSpeech(String text, {double? speed}) async {
       }
     }
     try {
-      await StaticsVar.player.setAudioSource(AudioSource.uri(Uri.file(cacheFile.path)));
+      await StaticsVar.player.setAudioSource(AudioSource.uri(source));
       // play() 在播放结束/暂停时完成，和固定时长一起等，异常才能落在这个 try 里。
       await Future.wait([StaticsVar.player.play(), Future.delayed(duration)]);
     } catch (e) {
