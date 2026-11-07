@@ -1,9 +1,10 @@
-// 本地 sherpa-onnx Whisper 识别封装（背诵辅助用）。
+// 本地 sherpa-onnx 语音识别封装（背诵辅助用）。
 // Web 与模型缺失时返回空列表，由调用方提示下载模型。
 
 import 'dart:typed_data';
 
 import 'package:sherpa_onnx/sherpa_onnx.dart' as sherpa_onnx;
+import 'package:arabic_learning/core/statics.dart';
 import 'package:arabic_learning/services/app_data.dart';
 import 'package:arabic_learning/services/model_manager.dart';
 import 'package:arabic_learning/services/speech_worker.dart';
@@ -47,7 +48,10 @@ class RecitationAsr {
         return const <AsrWord>[];
       }
       dir = 'models/$id';
-      files = ModelManager.resolveAsrNames(meta.names);
+      files = ModelManager.resolveAsrNames(
+        meta.names,
+        family: ModelManager.familyOf(id),
+      );
     } else {
       dir = '${AppData().basePath.path}/${AppData().preferredAsrModelDir}';
       files = ModelManager.resolveAsr(dir);
@@ -63,46 +67,69 @@ class RecitationAsr {
       await exposeSherpaOnnxAsrGlobals();
       await WebModelStore.mount(
         id,
-        files: files.nemoCtc
-            ? <String>[files.model, files.tokens]
-            : <String>[files.encoder!, files.decoder!, files.tokens],
+        files: files.family == AsrFamily.whisper
+            ? <String>[files.encoder!, files.decoder!, files.tokens]
+            : <String>[files.model, files.tokens],
       );
     }
-    final String family = files.nemoCtc ? 'NeMo CTC' : 'Whisper';
+    final String family = switch (files.family) {
+      AsrFamily.whisper => 'Whisper',
+      AsrFamily.nemoCtc => 'NeMo CTC',
+      AsrFamily.dolphin => 'Dolphin CTC',
+      AsrFamily.omnilingual => 'Omnilingual CTC',
+    };
     _logger.info(
         '识别模型: 家族=$family, model=${files.model}, '
         'encoder=${files.encoder ?? '-'}, decoder=${files.decoder ?? '-'}, '
         'tokens=${files.tokens}');
-    final sherpa_onnx.OfflineModelConfig modelConfig;
-    if (files.nemoCtc) {
-      modelConfig = sherpa_onnx.OfflineModelConfig(
-        nemoCtc: sherpa_onnx.OfflineNemoEncDecCtcModelConfig(
-          model: '$dir/${files.model}',
+    final sherpa_onnx.OfflineModelConfig modelConfig = switch (files.family) {
+      AsrFamily.nemoCtc => sherpa_onnx.OfflineModelConfig(
+          nemoCtc: sherpa_onnx.OfflineNemoEncDecCtcModelConfig(
+            model: '$dir/${files.model}',
+          ),
+          tokens: '$dir/${files.tokens}',
+          // wasm 是单线程构建，多线程参数只会刷警告。
+          numThreads: kIsWeb ? 1 : 2,
+          debug: false,
+          provider: 'cpu',
         ),
-        tokens: '$dir/${files.tokens}',
-        // wasm 是单线程构建，多线程参数只会刷警告。
-        numThreads: kIsWeb ? 1 : 2,
-        debug: false,
-        provider: 'cpu',
-      );
-    } else {
-      modelConfig = sherpa_onnx.OfflineModelConfig(
-        whisper: sherpa_onnx.OfflineWhisperModelConfig(
-          encoder: '$dir/${files.encoder}',
-          decoder: '$dir/${files.decoder}',
-          language: 'ar',
-          task: 'transcribe',
-          // 发布包的 tiny-*.onnx 未导出 cross-attention，开启只会刷警告且时间戳恒空；
-          // 词级时间由 _wordsFrom 均匀回退，评分不依赖精确时间。
-          enableTokenTimestamps: false,
+      AsrFamily.dolphin => sherpa_onnx.OfflineModelConfig(
+          dolphin: sherpa_onnx.OfflineDolphinModelConfig(
+            model: '$dir/${files.model}',
+          ),
+          tokens: '$dir/${files.tokens}',
+          // wasm 是单线程构建，多线程参数只会刷警告。
+          numThreads: kIsWeb ? 1 : 2,
+          debug: false,
+          provider: 'cpu',
         ),
-        tokens: '$dir/${files.tokens}',
-        // wasm 是单线程构建，多线程参数只会刷警告。
-        numThreads: kIsWeb ? 1 : 2,
-        debug: false,
-        provider: 'cpu',
-      );
-    }
+      AsrFamily.omnilingual => sherpa_onnx.OfflineModelConfig(
+          omnilingual: sherpa_onnx.OfflineOmnilingualAsrCtcModelConfig(
+            model: '$dir/${files.model}',
+          ),
+          tokens: '$dir/${files.tokens}',
+          // wasm 是单线程构建，多线程参数只会刷警告。
+          numThreads: kIsWeb ? 1 : 2,
+          debug: false,
+          provider: 'cpu',
+        ),
+      AsrFamily.whisper => sherpa_onnx.OfflineModelConfig(
+          whisper: sherpa_onnx.OfflineWhisperModelConfig(
+            encoder: '$dir/${files.encoder}',
+            decoder: '$dir/${files.decoder}',
+            language: 'ar',
+            task: 'transcribe',
+            // 发布包的 tiny-*.onnx 未导出 cross-attention，开启只会刷警告且时间戳恒空；
+            // 词级时间由 _wordsFrom 均匀回退，评分不依赖精确时间。
+            enableTokenTimestamps: false,
+          ),
+          tokens: '$dir/${files.tokens}',
+          // wasm 是单线程构建，多线程参数只会刷警告。
+          numThreads: kIsWeb ? 1 : 2,
+          debug: false,
+          provider: 'cpu',
+        ),
+    };
     final sherpa_onnx.OfflineRecognizerConfig config =
         sherpa_onnx.OfflineRecognizerConfig(model: modelConfig);
     _logger.info(

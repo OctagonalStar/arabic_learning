@@ -36,20 +36,23 @@ class TtsModelFiles {
 
 /// [ModelManager.resolveAsr] 的解析结果（文件名均相对于模型目录）。
 class AsrModelFiles {
-  /// true 表示 NeMo CTC（单文件）；false 表示 Whisper（encoder + decoder）。
-  final bool nemoCtc;
+  /// 模型家族；决定 sherpa 用哪种 CTC 配置加载。
+  final AsrFamily family;
   final String model;
   final String? encoder;
   final String? decoder;
   final String tokens;
 
   const AsrModelFiles({
-    required this.nemoCtc,
+    required this.family,
     required this.model,
     required this.encoder,
     required this.decoder,
     required this.tokens,
   });
+
+  /// 兼容旧调用点：是否为 NeMo CTC 家族。
+  bool get nemoCtc => family == AsrFamily.nemoCtc;
 }
 
 /// Web 端直连 GitHub 下载失败（浏览器被 CORS 拦截或网络不可达）。
@@ -306,7 +309,10 @@ class ModelManager {
       );
 
   /// 由目录内顶层文件名解析 ASR 模型文件；不是可识别的 ASR 结构时返回 null。
-  static AsrModelFiles? resolveAsrNames(List<String> names) {
+  ///
+  /// [family] 用于区分单文件 CTC 家族（NeMo / Dolphin / Omnilingual）；
+  /// 不传时按旧行为推断：双 onnx 视为 Whisper，单 model*.onnx 视为 NeMo CTC。
+  static AsrModelFiles? resolveAsrNames(List<String> names, {AsrFamily? family}) {
     final List<String> onnx = names
         .where((String n) => n.endsWith('.onnx'))
         .toList()
@@ -315,7 +321,7 @@ class ModelManager {
     final String? decoder = _first(onnx.where((String n) => n.contains('decoder')));
     if (encoder != null && decoder != null) {
       return AsrModelFiles(
-        nemoCtc: false,
+        family: family ?? AsrFamily.whisper,
         model: encoder,
         encoder: encoder,
         decoder: decoder,
@@ -326,7 +332,7 @@ class ModelManager {
         onnx.where((String n) => n.startsWith('model')).toList();
     if (models.isEmpty) return null;
     return AsrModelFiles(
-      nemoCtc: true,
+      family: family ?? AsrFamily.nemoCtc,
       model: models.contains('model.int8.onnx')
           ? 'model.int8.onnx'
           : models.first,
@@ -336,9 +342,21 @@ class ModelManager {
     );
   }
 
+  /// 内置模型 id 对应的家族；导入的模型返回 null。
+  static AsrFamily? familyOf(String id) {
+    for (final AsrModelInfo info in StaticsVar.asrModels) {
+      if (info.id == id) return info.family;
+    }
+    return null;
+  }
+
   /// 解析目录内的 ASR 模型文件；目录不是可识别的 ASR 结构时返回 null。
-  static AsrModelFiles? resolveAsr(String dirPath) =>
-      resolveAsrNames(_baseNames(dirPath));
+  ///
+  /// 内置模型按目录名取家族，导入的模型走 [resolveAsrNames] 的默认推断。
+  static AsrModelFiles? resolveAsr(String dirPath) {
+    final String id = dirPath.replaceAll('\\', '/').split('/').last;
+    return resolveAsrNames(_baseNames(dirPath), family: familyOf(id));
+  }
 
   static List<String> _baseNames(String dirPath) {
     if (!io.Directory(dirPath).existsSync()) return const <String>[];
