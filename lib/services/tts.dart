@@ -167,12 +167,9 @@ Future<void> playTextToSpeech(String text, {double? speed}) async {
           final basePath = await path_provider.getApplicationCacheDirectory();
           final io.File cacheFile = io.File("${basePath.path}/tts_cache.wav");
           if (cacheFile.existsSync()) cacheFile.deleteSync();
-          final ok = sherpa_onnx.writeWave(
-            filename: cacheFile.path,
-            samples: samples,
-            sampleRate: sampleRate,
-          );
-          if (!ok) throw Exception("无法将音频写入文件");
+          // 纯 Dart 编码落盘：sherpa_onnx.writeWave 要求主 isolate 先
+          // initBindings()，而绑定只在后台 worker 里初始化。
+          await cacheFile.writeAsBytes(encodeWav16(samples, sampleRate));
           _cacheFile = cacheFile;
           source = Uri.file(cacheFile.path);
         }
