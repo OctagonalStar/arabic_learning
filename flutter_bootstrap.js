@@ -68,7 +68,7 @@ setTimeout(function () {
 updateHint('正在加载中…');
 _flutter.loader.load({
     serviceWorkerSettings: {
-        serviceWorkerVersion: "4215623735" /* Flutter's service worker is deprecated and will be removed in a future Flutter release. */,
+        serviceWorkerVersion: "500739660" /* Flutter's service worker is deprecated and will be removed in a future Flutter release. */,
     },
     onEntrypointLoaded: async function (engineInitializer) {
         updateHint('正在启动引擎…');
