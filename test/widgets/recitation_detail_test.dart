@@ -1,5 +1,5 @@
 // 课文详情页的翻句交互回归：竖向翻卡、底部进度条定位、短屏用上下箭头翻句，
-// 以及「学习 / 逐句 / 整篇」三个 tab 的独立状态与模型未下载门禁。
+// 「学习 / 逐句」共用同一份当前句位置、「整篇」独立，以及模型未下载门禁。
 
 import 'package:arabic_learning/models/recitation_text.dart';
 import 'package:arabic_learning/screens/test/recitation/recitation_detail_page.dart';
@@ -128,10 +128,33 @@ void main() {
     expect(_barCurrent(tester), greaterThan(1));
     expect(tester.takeException(), isNull);
 
-    // 两个背诵 tab 各自保留翻页位置。
+    // 整篇有自己的一套滚动位置，「逐句」仍停在原句。
     await tester.tap(find.text('逐句'));
     await tester.pumpAndSettle();
     expect(_barCurrent(tester), 2);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('学习与逐句共用当前句位置', (WidgetTester tester) async {
+    await _pump(tester);
+
+    await tester.drag(find.byType(PageView).first, const Offset(0, -600));
+    await tester.pumpAndSettle();
+    expect(_barCurrent(tester), 2);
+
+    // 切到逐句：应从第 2 句开始，而不是重置为第 1 句。
+    await tester.tap(find.text('逐句'));
+    await tester.pumpAndSettle();
+    expect(_barCurrent(tester), 2);
+
+    await tester.tap(find.byTooltip('下一句'));
+    await tester.pumpAndSettle();
+    expect(_barCurrent(tester), 3);
+
+    // 回到学习：停在逐句推进到的第 3 句。
+    await tester.tap(find.text('学习'));
+    await tester.pumpAndSettle();
+    expect(_barCurrent(tester), 3);
     expect(tester.takeException(), isNull);
   });
 

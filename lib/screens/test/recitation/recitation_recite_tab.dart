@@ -40,10 +40,13 @@ enum _Stage { ready, recording, analyzing, result }
 class RecitationReciteTab extends StatefulWidget {
   final RecitationTextUnit unit;
   final RecitationReciteMode mode;
+  // 传入时与「学习」tab 共用当前句位置；整篇模式不传，用自己的内部状态。
+  final ValueNotifier<int>? position;
   const RecitationReciteTab({
     super.key,
     required this.unit,
     required this.mode,
+    this.position,
   });
 
   @override
@@ -53,10 +56,12 @@ class RecitationReciteTab extends StatefulWidget {
 class _RecitationReciteTabState extends State<RecitationReciteTab>
     with AutomaticKeepAliveClientMixin {
   final RecitationRecorder _recorder = RecitationRecorder();
-  final PageController _pager = PageController();
+  late final PageController _pager;
   final ScrollController _wholeScroll = ScrollController();
   // 本页唯一的「当前句」（从 1 开始），只驱动底部进度条重建。
-  final ValueNotifier<int> _current = ValueNotifier<int>(1);
+  final ValueNotifier<int> _ownCurrent = ValueNotifier<int>(1);
+  // 供给了共用位置就直接用它，否则退回本页自有 notifier。
+  ValueNotifier<int> get _current => widget.position ?? _ownCurrent;
   final Set<int> _revealed = <int>{};
   // 逐句成绩只保存在本会话内存里，按句索引映射，不落盘。
   final Map<int, RecitationOutcome> _sentenceOutcomes =
@@ -88,17 +93,40 @@ class _RecitationReciteTabState extends State<RecitationReciteTab>
   @override
   void initState() {
     super.initState();
+    // 从共用位置恢复页码，切 tab 回来直接停在同一句。
+    final int max = widget.unit.sentences.isEmpty
+        ? 0
+        : widget.unit.sentences.length - 1;
+    _pager = PageController(
+      initialPage: ((widget.position?.value ?? 1) - 1).clamp(0, max),
+    );
     _wholeScroll.addListener(_syncWholeIndex);
+    // 只有共用位置时才监听；整篇模式保持独立。
+    widget.position?.addListener(_syncFromPosition);
   }
 
   @override
   void dispose() {
     _timer?.cancel();
+    widget.position?.removeListener(_syncFromPosition);
     _wholeScroll.dispose();
     _pager.dispose();
-    _current.dispose();
+    _ownCurrent.dispose();
     _recorder.dispose();
     super.dispose();
+  }
+
+  /// 共用位置变了（来自「学习」tab 或进度条）才翻页；自身翻页已同步过，不重复动画。
+  void _syncFromPosition() {
+    final ValueNotifier<int>? shared = widget.position;
+    if (shared == null || !mounted || !_pager.hasClients) return;
+    final int target = shared.value - 1;
+    if ((_pager.page ?? 0).round() == target) return;
+    _pager.animateToPage(
+      target,
+      duration: AppMotion.quick,
+      curve: AppMotion.standardCurve,
+    );
   }
 
   /// 录音失败/评分失败时清理临时 WAV。
@@ -892,6 +920,10 @@ class _RecitationReciteTabState extends State<RecitationReciteTab>
         (MediaQuery.sizeOf(context).width * 0.9).clamp(0.0, 760.0);
     final int count = widget.unit.sentences.length;
     final bool modelReady = AppData().asrModelDownloaded;
+    // KeepAlive 挂起期间监听可能因 pager 无 clients 而跳过，回到前台的第一帧补齐位置。
+    if (!_whole) {
+      WidgetsBinding.instance.addPostFrameCallback((_) => _syncFromPosition());
+    }
     return SafeArea(
       top: false,
       // 底部安全区交给进度条自己的 SafeArea，条底色才能铺到手势区。

@@ -31,10 +31,17 @@ class ModelManagementPage extends StatefulWidget {
 class _ModelManagementPageState extends State<ModelManagementPage> {
   /// 正在下载的模型 id；null 表示当前没有下载任务（同时只允许一个）。
   String? _downloadingId;
+
+  /// 正在解压安装的模型 id；下载结束后界面从下载进度切到解压提示。
+  String? _installingId;
+
+  /// 是否正在解压导入本地模型包。
+  bool _importing = false;
   int _received = 0;
   int _total = 1;
 
-  bool get _busy => _downloadingId != null;
+  bool get _busy =>
+      _downloadingId != null || _installingId != null || _importing;
 
   /// 首选模型变更 / 删除首选模型后重建本地 TTS，保证下次播报使用新音色。
   Future<void> _reloadTts() async {
@@ -85,6 +92,14 @@ class _ModelManagementPageState extends State<ModelManagementPage> {
             _total = total;
           });
         },
+        // 下载完成后切到解压提示：解压阶段没有字节进度，只能给不确定动画。
+        onExtracting: () {
+          if (!mounted) return;
+          setState(() {
+            _downloadingId = null;
+            _installingId = id;
+          });
+        },
       );
       global.uiLogger.info("模型下载完成: $id");
       if (!mounted) return;
@@ -98,7 +113,12 @@ class _ModelManagementPageState extends State<ModelManagementPage> {
         showSnackBar(context, "下载失败：${e.toString()}");
       }
     } finally {
-      if (mounted) setState(() => _downloadingId = null);
+      if (mounted) {
+        setState(() {
+          _downloadingId = null;
+          _installingId = null;
+        });
+      }
     }
   }
 
@@ -181,6 +201,7 @@ class _ModelManagementPageState extends State<ModelManagementPage> {
   }
 
   Future<void> _importArchive() async {
+    if (_busy) return;
     final Global global = context.read<Global>();
     PlatformFile? result;
     try {
@@ -194,6 +215,8 @@ class _ModelManagementPageState extends State<ModelManagementPage> {
       return;
     }
     if (result == null) return;
+    if (!mounted) return;
+    setState(() => _importing = true);
     try {
       final String id;
       if (kIsWeb) {
@@ -211,6 +234,8 @@ class _ModelManagementPageState extends State<ModelManagementPage> {
       global.uiLogger.severe("模型包导入失败: $e");
       if (!mounted) return;
       showSnackBar(context, e.toString().replaceFirst(RegExp(r'^Exception:\s*'), ''));
+    } finally {
+      if (mounted) setState(() => _importing = false);
     }
   }
 
@@ -222,6 +247,7 @@ class _ModelManagementPageState extends State<ModelManagementPage> {
     required String stateText,
     required Color stateColor,
     required bool downloading,
+    required bool installing,
     required String sourceUrl,
     required List<Widget> actions,
   }) {
@@ -271,12 +297,15 @@ class _ModelManagementPageState extends State<ModelManagementPage> {
               ),
             ),
           ),
-          if (downloading) ...[
+          if (downloading || installing) ...[
             Padding(
               padding: const EdgeInsets.only(top: AppSpacing.xs),
               child: LinearProgressIndicator(
-                value: _total > 0
-                    ? (_received / _total).clamp(0.0, 1.0)
+                // 解压阶段拿不到字节进度，用不确定动画表示仍在进行。
+                value: downloading
+                    ? (_total > 0
+                        ? (_received / _total).clamp(0.0, 1.0)
+                        : null)
                     : null,
                 borderRadius: AppRadius.controlBorder,
               ),
@@ -284,9 +313,11 @@ class _ModelManagementPageState extends State<ModelManagementPage> {
             Padding(
               padding: const EdgeInsets.only(top: AppSpacing.xxs),
               child: Text(
-                "已下载 ${(_received / 1048576).toStringAsFixed(1)} / "
-                "${(_total / 1048576).toStringAsFixed(1)} MB"
-                "${_total > 0 ? "（${(_received * 100) ~/ _total}%）" : ""}",
+                downloading
+                    ? "已下载 ${(_received / 1048576).toStringAsFixed(1)} / "
+                        "${(_total / 1048576).toStringAsFixed(1)} MB"
+                        "${_total > 0 ? "（${(_received * 100) ~/ _total}%）" : ""}"
+                    : "正在解压并安装…",
                 style: theme.textTheme.bodySmall?.copyWith(
                   color: theme.colorScheme.onSurfaceVariant,
                 ),
@@ -335,6 +366,7 @@ class _ModelManagementPageState extends State<ModelManagementPage> {
               ? scheme.primary
               : semantic.disabled,
       downloading: _downloadingId == model.id,
+      installing: _installingId == model.id,
       sourceUrl: model.sourceUrl,
       actions: [
         if (installed && !preferred)
@@ -380,6 +412,7 @@ class _ModelManagementPageState extends State<ModelManagementPage> {
               ? scheme.primary
               : semantic.disabled,
       downloading: _downloadingId == model.id,
+      installing: _installingId == model.id,
       sourceUrl: model.sourceUrl,
       actions: [
         if (installed && !preferred)
@@ -570,6 +603,28 @@ class _ModelManagementPageState extends State<ModelManagementPage> {
                         ),
                       ),
                       const SizedBox(height: AppSpacing.sm),
+                      if (_importing)
+                        Padding(
+                          padding: const EdgeInsets.only(bottom: AppSpacing.xs),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const LinearProgressIndicator(),
+                              const SizedBox(height: AppSpacing.xxs),
+                              Text(
+                                "正在解压并导入模型包…",
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .bodySmall
+                                    ?.copyWith(
+                                      color: Theme.of(context)
+                                          .colorScheme
+                                          .onSurfaceVariant,
+                                    ),
+                              ),
+                            ],
+                          ),
+                        ),
                       Button(
                         onPressed: _busy ? null : _importArchive,
                         child: const Text("导入模型包"),

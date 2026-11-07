@@ -23,6 +23,7 @@ import 'package:arabic_learning/services/model_manager.dart';
 import 'package:arabic_learning/services/plan_store.dart';
 import 'package:arabic_learning/services/push_session.dart';
 import 'package:arabic_learning/services/search.dart';
+import 'package:arabic_learning/services/speech_worker.dart';
 import 'package:arabic_learning/services/synonyms.dart';
 import 'package:arabic_learning/services/web_model_store.dart';
 import 'package:arabic_learning/package_replacement/storage.dart';
@@ -86,6 +87,12 @@ class AppData {
 
   /// [vitsTTS] 当前装载的模型 id，用于切换模型时判断是否需要重载。
   String? _loadedTtsModelId;
+
+  /// 本地 TTS 是否已就绪。原生端的模型在后台 isolate 里，主 isolate 没有
+  /// [vitsTTS] 实例，调用方必须用这个 getter 判断（Web 仍可判 vitsTTS）。
+  /// 后台 worker 崩溃后返回 false，下次播放会重新加载（并重新拉起 worker）。
+  bool get ttsLoaded =>
+      _loadedTtsModelId != null && (kIsWeb || SpeechWorker.alive);
 
   /// 启动阶段那次「后台 isolate 编码后回写词库」的进行中任务。
   Future<void>? _wordWriteInFlight;
@@ -330,7 +337,7 @@ class AppData {
   // load TTS model if any
   Future<void> loadTTS(double playRate) async {
     final String id = preferredTtsModelId;
-    if (vitsTTS != null && _loadedTtsModelId == id) return;
+    if (_loadedTtsModelId == id && (kIsWeb || SpeechWorker.alive)) return;
     if (!isTtsModelInstalled(id)) return;
 
     resetTTS();
@@ -366,9 +373,8 @@ class AppData {
         ],
         espeakData: files.hasEspeakData,
       );
-    } else {
-      sherpa_onnx.initBindings();
     }
+    // 原生端不在主 isolate 初始化绑定：模型加载与推理都搬到了后台 isolate。
 
     final sherpa_onnx.OfflineTtsModelConfig modelConfig;
     switch (files.kind) {
@@ -404,7 +410,13 @@ class AppData {
     );
 
     try {
-      vitsTTS = sherpa_onnx.OfflineTts(config);
+      if (kIsWeb) {
+        vitsTTS = sherpa_onnx.OfflineTts(config);
+      } else {
+        // 原生端：模型常驻后台 isolate（推理同样在那边），主线程只记状态。
+        // key 含语速：lengthScale 已烘进配置，语速变了要重新建实例。
+        await SpeechWorker.loadTts(config, key: '$id|$playRate');
+      }
     } catch (e, s) {
       logger.severe("TTS: 本地模型加载失败 ($id, dir=$dir)", e, s);
       rethrow;
@@ -415,9 +427,10 @@ class AppData {
 
   /// 释放已加载的本地 TTS（切换模型或删除模型前调用）。
   void resetTTS() {
-    vitsTTS?.free();
+    vitsTTS?.free(); // 原生端为 null（模型在后台 isolate）
     vitsTTS = null;
     _loadedTtsModelId = null;
+    if (!kIsWeb) SpeechWorker.resetTts();
   }
 
   /// Non-Format Data:
