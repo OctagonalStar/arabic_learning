@@ -19,6 +19,7 @@ import 'package:arabic_learning/models/synonym.dart' show SynonymData;
 import 'package:arabic_learning/services/favorites.dart';
 import 'package:arabic_learning/services/fsrs.dart';
 import 'package:arabic_learning/services/memberships.dart';
+import 'package:arabic_learning/services/model_manager.dart';
 import 'package:arabic_learning/services/plan_store.dart';
 import 'package:arabic_learning/services/push_session.dart';
 import 'package:arabic_learning/services/search.dart';
@@ -121,39 +122,75 @@ class AppData {
   int get wordCount => wordData.words.length;
   bool get isFirstStart => storage.getString("settingData") == null;
 
-  /// 配置里选中的 TTS 模型；配置为空或不在目录中时回退到默认模型。
+  /// 配置里选中的 TTS 模型 id；空串回退到默认模型。
+  ///
+  /// 非空 id 不要求内置：导入的模型同样按 id 当目录名使用。
   String get preferredTtsModelId {
     final String id = config.audio.preferredModelId;
-    for (final TtsModelInfo info in StaticsVar.ttsModels) {
-      if (info.id == id) return id;
-    }
-    return StaticsVar.defaultTtsModelId;
+    return id.isEmpty ? StaticsVar.defaultTtsModelId : id;
   }
 
-  TtsModelInfo get preferredTtsModel => StaticsVar.ttsModel(preferredTtsModelId);
+  /// 配置里选中的 ASR 模型 id；空串回退到默认模型。
+  String get preferredAsrModelId {
+    final String id = config.audio.preferredAsrModelId;
+    return id.isEmpty ? StaticsVar.defaultAsrModelId : id;
+  }
 
-  /// 指定 TTS 模型是否已解压（以模型文件存在为准）。
+  /// 首选 ASR 模型目录（内置与导入的 id 一律按目录名处理）。
+  String get preferredAsrModelDir => StaticsVar.asrModelDir(preferredAsrModelId);
+
+  /// 指定 TTS 模型是否已解压（按目录内容识别，内置与导入一视同仁）。
   bool isTtsModelInstalled(String id) {
     if (kIsWeb || !_basePathReady) return false;
-    for (final TtsModelInfo info in StaticsVar.ttsModels) {
-      if (info.id != id) continue;
-      return io.File("${basePath.path}/${StaticsVar.ttsModelDir(id)}/${info.modelFile}").existsSync();
-    }
-    return false;
+    return ModelManager.resolveTts(
+          "${basePath.path}/${StaticsVar.ttsModelDir(id)}",
+        ) !=
+        null;
   }
 
-  /// 指定 ASR 模型是否已解压（以 encoder 文件存在为准）。
+  /// 指定 ASR 模型是否已解压（按目录内容识别，内置与导入一视同仁）。
   bool isAsrModelInstalled(String id) {
     if (kIsWeb || !_basePathReady) return false;
-    for (final AsrModelInfo info in StaticsVar.asrModels) {
-      if (info.id != id) continue;
-      return io.File("${basePath.path}/${StaticsVar.asrModelDir(id)}/${info.encoderFile}").existsSync();
-    }
-    return false;
+    return ModelManager.resolveAsr(
+          "${basePath.path}/${StaticsVar.asrModelDir(id)}",
+        ) !=
+        null;
   }
 
   bool get modelTTSDownloaded => isTtsModelInstalled(preferredTtsModelId);
-  bool get asrModelDownloaded => isAsrModelInstalled(StaticsVar.defaultAsrModelId);
+  bool get asrModelDownloaded => isAsrModelInstalled(preferredAsrModelId);
+
+  /// 模型根目录下可识别、且不属于内置目录的 TTS 子目录名。
+  List<String> get importedTtsIds => _importedIds(
+        StaticsVar.ttsModelRoot,
+        StaticsVar.ttsModels.map((TtsModelInfo m) => m.id).toSet(),
+        ModelManager.resolveTts,
+      );
+
+  /// 模型根目录下可识别、且不属于内置目录的 ASR 子目录名。
+  List<String> get importedAsrIds => _importedIds(
+        StaticsVar.asrModelRoot,
+        StaticsVar.asrModels.map((AsrModelInfo m) => m.id).toSet(),
+        ModelManager.resolveAsr,
+      );
+
+  List<String> _importedIds(
+    String root,
+    Set<String> builtIn,
+    Object? Function(String dirPath) resolve,
+  ) {
+    if (kIsWeb || !_basePathReady) return const <String>[];
+    final String rootPath = "${basePath.path}/$root";
+    if (!io.Directory(rootPath).existsSync()) return const <String>[];
+    final List<String> ids = <String>[];
+    for (final io.FileSystemEntity entity in io.Directory(rootPath).listSync()) {
+      final String id = entity.path.replaceAll('\\', '/').split('/').last;
+      if (builtIn.contains(id)) continue;
+      if (resolve("$rootPath/$id") != null) ids.add(id);
+    }
+    ids.sort();
+    return ids;
+  }
 
   Future<void> init() async {
     if(inited) return;
@@ -283,24 +320,21 @@ class AppData {
     if (!isTtsModelInstalled(id)) return;
 
     resetTTS();
-    final TtsModelInfo info = StaticsVar.ttsModel(id);
     final String dir = "${basePath.path}/${StaticsVar.ttsModelDir(id)}";
-    // sherpa 要求 dataDir 指向 espeak-ng-data 目录本身（校验 <dataDir>/phontab）；
-    // 少数模型把音素表直接放在模型目录，故按实际结构回退。
-    final String dataDir = io.Directory('$dir/espeak-ng-data').existsSync()
-        ? '$dir/espeak-ng-data'
-        : dir;
+    final TtsModelFiles? files = ModelManager.resolveTts(dir);
+    if (files == null) return;
+    final String dataDir = files.dataDir ?? dir;
     logger.info(
-        "TTS: 加载本地TTS中 ($id, ${info.family.name}, dir=$dir, dataDir=$dataDir)");
+        "TTS: 加载本地TTS中 ($id, ${files.kind.name}, dir=$dir, dataDir=$dataDir)");
     sherpa_onnx.initBindings();
 
     final sherpa_onnx.OfflineTtsModelConfig modelConfig;
-    switch (info.family) {
-      case TtsModelFamily.vits:
+    switch (files.kind) {
+      case TtsModelKind.vits:
         modelConfig = sherpa_onnx.OfflineTtsModelConfig(
           vits: sherpa_onnx.OfflineTtsVitsModelConfig(
-            model: "$dir/${info.modelFile}",
-            tokens: '$dir/tokens.txt',
+            model: "$dir/${files.model}",
+            tokens: '$dir/${files.tokens}',
             dataDir: dataDir,
             lengthScale: 1 / playRate,
           ),
@@ -308,12 +342,12 @@ class AppData {
           debug: false,
           provider: 'cpu',
         );
-      case TtsModelFamily.kokoro:
+      case TtsModelKind.kokoro:
         modelConfig = sherpa_onnx.OfflineTtsModelConfig(
           kokoro: sherpa_onnx.OfflineTtsKokoroModelConfig(
-            model: "$dir/${info.modelFile}",
-            voices: "$dir/${info.voicesFile ?? ''}",
-            tokens: '$dir/tokens.txt',
+            model: "$dir/${files.model}",
+            voices: "$dir/${files.voices}",
+            tokens: '$dir/${files.tokens}',
             dataDir: dataDir,
             lengthScale: 1 / playRate,
           ),

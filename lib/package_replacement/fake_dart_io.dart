@@ -22,6 +22,16 @@ class File {
   void delete() {}
 }
 
+class FileSystemEntity {
+  String get path => "";
+}
+
+class FileSystemException implements Exception {
+  FileSystemException([this.message = ""]);
+
+  final String message;
+}
+
 class Directory {
   String path;
 
@@ -32,6 +42,8 @@ class Directory {
   void deleteSync({bool recursive = false}) {}
 
   Future<void> create({required bool recursive}) async {}
+
+  List<FileSystemEntity> listSync() => <FileSystemEntity>[];
 }
 
 class Platform{

@@ -86,9 +86,16 @@ class OfflineWhisperModelConfig {
   final bool enableTokenTimestamps;
 }
 
+class OfflineNemoEncDecCtcModelConfig {
+  const OfflineNemoEncDecCtcModelConfig({this.model = ''});
+
+  final String model;
+}
+
 class OfflineModelConfig {
   const OfflineModelConfig({
     this.whisper = const OfflineWhisperModelConfig(),
+    this.nemoCtc = const OfflineNemoEncDecCtcModelConfig(),
     required this.tokens,
     this.numThreads = 1,
     this.debug = false,
@@ -96,6 +103,7 @@ class OfflineModelConfig {
   });
 
   final OfflineWhisperModelConfig whisper;
+  final OfflineNemoEncDecCtcModelConfig nemoCtc;
   final String tokens;
   final int numThreads;
   final bool debug;
