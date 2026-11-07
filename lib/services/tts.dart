@@ -5,6 +5,7 @@ import 'package:arabic_learning/core/statics.dart';
 import 'package:arabic_learning/core/wav.dart';
 import 'package:arabic_learning/services/app_data.dart';
 import 'package:arabic_learning/services/blob_url.dart';
+import 'package:arabic_learning/services/web_audio.dart';
 import 'package:arabic_learning/services/http_client.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter_tts/flutter_tts.dart';
@@ -22,6 +23,9 @@ io.File? _cacheFile;
 
 /// Web 没有文件系统，缓存是常驻的 blob URL。
 String? _cacheWebUrl;
+
+/// 上一段 blob URL，等下一次换缓存时再释放（播放期间不能删）。
+String? _spareWebUrl;
 Duration _cacheDuration = Duration.zero;
 
 /// 语音播放失败。
@@ -135,11 +139,12 @@ Future<void> playTextToSpeech(String text, {double? speed}) async {
             milliseconds:
                 (audio.samples.length / audio.sampleRate * 1000).round());
         if (kIsWeb) {
-          // Blob 常驻内存，换缓存时先释放旧的。
-          final String? old = _cacheWebUrl;
-          if (old != null) revokeBlobUrl(old);
+          // 轮换两个槽位：上一段可能还在播，只回收再往前的那一段。
+          final String? spare = _spareWebUrl;
+          _spareWebUrl = _cacheWebUrl;
           _cacheWebUrl =
               createBlobUrl(encodeWav16(audio.samples, audio.sampleRate));
+          if (spare != null) revokeBlobUrl(spare);
           source = Uri.parse(_cacheWebUrl!);
         } else {
           final basePath = await path_provider.getApplicationCacheDirectory();
@@ -164,9 +169,15 @@ Future<void> playTextToSpeech(String text, {double? speed}) async {
       }
     }
     try {
-      await StaticsVar.player.setAudioSource(AudioSource.uri(source));
-      // play() 在播放结束/暂停时完成，和固定时长一起等，异常才能落在这个 try 里。
-      await Future.wait([StaticsVar.player.play(), Future.delayed(duration)]);
+      if (kIsWeb) {
+        // Web 上 just_audio 换源会残留旧音频，这里用一次性 <audio> 元素。
+        _logger.info("Web 本地语音播放: ${text.length} 字, ${duration.inMilliseconds}ms");
+        await playWavBlobUrl(source.toString(), duration);
+      } else {
+        await StaticsVar.player.setAudioSource(AudioSource.uri(source));
+        // play() 在播放结束/暂停时完成，和固定时长一起等，异常才能落在这个 try 里。
+        await Future.wait([StaticsVar.player.play(), Future.delayed(duration)]);
+      }
     } catch (e) {
       throw _toTtsFailure("音频播放失败，可能是本机没有可用的播放后端。", e);
     }
