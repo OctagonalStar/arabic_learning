@@ -139,9 +139,17 @@ class AppData {
   }
 
   /// 配置里选中的 ASR 模型 id；空串回退到默认模型。
+  ///
+  /// 旧配置里已下架/已删除的 id 同样回退到默认模型，避免静默出空结果。
   String get preferredAsrModelId {
     final String id = config.audio.preferredAsrModelId;
-    return id.isEmpty ? StaticsVar.defaultAsrModelId : id;
+    if (id.isEmpty) return StaticsVar.defaultAsrModelId;
+    final bool builtIn =
+        StaticsVar.asrModels.any((AsrModelInfo m) => m.id == id);
+    if (!builtIn && !isAsrModelInstalled(id)) {
+      return StaticsVar.defaultAsrModelId;
+    }
+    return id;
   }
 
   /// 首选 ASR 模型目录（内置与导入的 id 一律按目录名处理）。

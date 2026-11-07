@@ -569,6 +569,21 @@ class _ModelManagementPageState extends State<ModelManagementPage> {
                 for (final AsrModelInfo model in StaticsVar.asrModels)
                   _asrRow(model),
                 _importedSection(isTts: false),
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(
+                    AppSpacing.sm,
+                    AppSpacing.xs,
+                    AppSpacing.sm,
+                    AppSpacing.sm,
+                  ),
+                  child: Text(
+                    "追求更高精度可自行把 NVIDIA NeMo 阿语模型（CC-BY-4.0，约 132MB，FLEURS WER ≈12.3%）转为 ONNX，"
+                    "再用上面的「导入模型」加载；原版不是 ONNX，转换与许可署名需自行处理。",
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+                        ),
+                  ),
+                ),
               ],
             ),
             SettingItem(
@@ -592,7 +607,8 @@ class _ModelManagementPageState extends State<ModelManagementPage> {
                         "voices.bin + tokens.txt（可选 espeak-ng-data/）\n"
                         "• ASR Whisper：*encoder*.onnx + *decoder*.onnx + "
                         "*tokens*.txt\n"
-                        "• ASR NeMo CTC：model.onnx 或 model.int8.onnx + tokens.txt",
+                        "• ASR CTC（NeMo / Dolphin / Omnilingual）："
+                        "model.onnx 或 model.int8.onnx + tokens.txt",
                         style: Theme.of(context).textTheme.bodySmall,
                       ),
                       const SizedBox(height: AppSpacing.xs),

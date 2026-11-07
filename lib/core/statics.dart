@@ -44,6 +44,9 @@ class TtsModelInfo {
   });
 }
 
+/// ASR 模型家族：决定 sherpa 的模型配置与分词表用法。
+enum AsrFamily { whisper, nemoCtc, dolphin, omnilingual }
+
 /// 可下载的语音识别模型（背诵辅助用）。
 @immutable
 class AsrModelInfo {
@@ -53,10 +56,8 @@ class AsrModelInfo {
   final int sizeMB;
   final String license;
   final String sourceUrl;
-  final String encoderFile;
-  final String decoderFile;
-  final String tokensFile;
   final String language;
+  final AsrFamily family;
 
   const AsrModelInfo({
     required this.id,
@@ -65,10 +66,8 @@ class AsrModelInfo {
     required this.sizeMB,
     required this.license,
     required this.sourceUrl,
-    required this.encoderFile,
-    required this.decoderFile,
-    required this.tokensFile,
     required this.language,
+    required this.family,
   });
 }
 
@@ -84,7 +83,7 @@ class DictRepoInfo {
 class StaticsVar {
   static const String appName = 'Ar学';
   static const int appVersion = 102000;
-  static const int termVersion = 5;
+  static const int termVersion = 6;
 
   /// 模型发布包统一从该 release 的 `tts-models` / `asr-models` 标签下载，
   /// 资源名即 `<id>.tar.bz2`。
@@ -101,7 +100,8 @@ class StaticsVar {
   static String asrArchiveUrl(String id) => '$modelReleaseBase/asr-models/$id.tar.bz2';
 
   static const String defaultTtsModelId = 'vits-piper-ar_JO-kareem-medium';
-  static const String defaultAsrModelId = 'sherpa-onnx-whisper-tiny';
+  static const String defaultAsrModelId =
+      'sherpa-onnx-omnilingual-asr-1600-languages-300M-ctc-v2-int8-2026-02-05';
 
   /// 全部为可再分发许可（MIT / Apache-2.0）。
   /// 注意 `vits-piper-ar_JO-SA_*` 是 CC-BY-NC-ND，不可加入。
@@ -142,16 +142,24 @@ class StaticsVar {
 
   static const List<AsrModelInfo> asrModels = [
     AsrModelInfo(
-      id: 'sherpa-onnx-whisper-tiny',
-      title: 'Whisper Tiny',
-      description: '本地阿拉伯语识别，离线可用',
-      sizeMB: 111,
-      license: 'MIT',
-      sourceUrl: 'https://huggingface.co/csukuangfj/sherpa-onnx-whisper-tiny',
-      encoderFile: 'tiny-encoder.int8.onnx',
-      decoderFile: 'tiny-decoder.int8.onnx',
-      tokensFile: 'tiny-tokens.txt',
+      id: 'sherpa-onnx-omnilingual-asr-1600-languages-300M-ctc-v2-int8-2026-02-05',
+      title: 'Omnilingual 300M v2',
+      description: '阿拉伯语 WER ≈26.7%（FLEURS ar_eg，≤10s 片段）。多语 CTC，字符级较准；体积大、偏慢，输出无标点与变音符号。',
+      sizeMB: 366,
+      license: 'Apache-2.0',
+      sourceUrl: 'https://github.com/k2-fsa/sherpa-onnx/releases/tag/asr-models',
       language: 'ar',
+      family: AsrFamily.omnilingual,
+    ),
+    AsrModelInfo(
+      id: 'sherpa-onnx-dolphin-small-ctc-multi-lang-int8-2025-04-02',
+      title: 'Dolphin Small',
+      description: '阿拉伯语 WER ≈27.9%（同条件）。速度最快，约为 Whisper tiny 的 3 倍；输出无标点，长段建议先切分。',
+      sizeMB: 250,
+      license: 'Apache-2.0',
+      sourceUrl: 'https://github.com/k2-fsa/sherpa-onnx/releases/tag/asr-models',
+      language: 'ar',
+      family: AsrFamily.dolphin,
     ),
   ];
 
