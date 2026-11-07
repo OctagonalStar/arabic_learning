@@ -15,6 +15,7 @@ const Map<RecitationIssueType, String> _issueTitles = <RecitationIssueType, Stri
   RecitationIssueType.tooFast: '偏快',
   RecitationIssueType.tooSlow: '偏慢',
   RecitationIssueType.unclear: '没听清',
+  RecitationIssueType.misread: '错读',
 };
 
 /// 结果视图。[onRetry] 保留原文重录，[onNewText] 为空时不显示「换一段」。

@@ -37,6 +37,9 @@ int _barCurrent(WidgetTester tester) => tester
     .widget<RecitationProgressBar>(find.byType(RecitationProgressBar))
     .current;
 
+int _blurCount(WidgetTester tester) =>
+    find.byType(ImageFiltered).evaluate().length;
+
 Future<void> _pump(
   WidgetTester tester, {
   Size size = const Size(400, 700),
@@ -117,22 +120,36 @@ void main() {
     expect(find.text('显示原文'), findsOneWidget);
     expect(find.text('开始背诵'), findsOneWidget);
     expect(find.text('录这一句'), findsNothing);
-    expect(_barCurrent(tester), 1);
-
-    // 整篇滚动后底部进度条跟随当前句。
-    await tester.drag(
-      find.byType(SingleChildScrollView).hitTestable(),
-      const Offset(0, -500),
-    );
-    await tester.pumpAndSettle();
-    expect(_barCurrent(tester), greaterThan(1));
-    expect(tester.takeException(), isNull);
+    // 整篇不做逐句定位，不再显示底部进度条。
+    expect(find.byType(RecitationProgressBar), findsNothing);
 
     // 整篇有自己的一套滚动位置，「逐句」仍停在原句。
     await tester.tap(find.text('逐句'));
     await tester.pumpAndSettle();
     expect(_barCurrent(tester), 2);
     expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('逐句：统一显示中文只解除译文模糊', (WidgetTester tester) async {
+    await _pump(tester);
+    await tester.tap(find.text('逐句'));
+    await tester.pumpAndSettle();
+
+    // 页内只有一个「统一显示中文」开关。
+    expect(find.text('统一显示中文'), findsOneWidget);
+    final int blurred = _blurCount(tester);
+    expect(blurred, greaterThan(0));
+
+    await tester.tap(find.text('统一显示中文'));
+    await tester.pumpAndSettle();
+    // 译文全部解除模糊，原文仍然保持模糊。
+    final int zhShown = _blurCount(tester);
+    expect(zhShown, lessThan(blurred));
+    expect(zhShown, greaterThan(0));
+
+    await tester.tap(find.text('统一显示中文'));
+    await tester.pumpAndSettle();
+    expect(_blurCount(tester), blurred);
   });
 
   testWidgets('学习与逐句共用当前句位置', (WidgetTester tester) async {
