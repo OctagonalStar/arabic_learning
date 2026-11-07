@@ -13,6 +13,11 @@ import 'package:arabic_learning/package_replacement/fake_sherpa_onnx.dart' if (d
 
 final Logger _logger = Logger("TTS");
 
+/// 上次本地合成的缓存：文本、语速与模型都没变时直接复用音频，不重复推理。
+String? _cacheKey;
+io.File? _cacheFile;
+Duration _cacheDuration = Duration.zero;
+
 /// 语音播放失败。
 ///
 /// [message] 是给用户看的一句话（可直接放进对话框），
@@ -107,24 +112,37 @@ Future<void> playTextToSpeech(String text, {double? speed}) async {
     }
     late final io.File cacheFile;
     late final Duration duration;
-    // 合成与播放分开报错：播放失败不代表模型有问题，不能让用户去重下模型。
-    try {
-      final basePath = await path_provider.getApplicationCacheDirectory();
-      cacheFile = io.File("${basePath.path}/temp.wav");
-      if(cacheFile.existsSync()) cacheFile.deleteSync();
-      final audio = AppData().vitsTTS!.generate(text: text, speed: speed);
-      final ok = sherpa_onnx.writeWave(
-                          filename: cacheFile.path,
-                          samples: audio.samples,
-                          sampleRate: audio.sampleRate,
-                        );
-      if(!ok) throw Exception("无法将音频写入文件");
-      duration = Duration(milliseconds: (audio.samples.length / audio.sampleRate * 1000).round());
-    } catch (e) {
-      throw _toTtsFailure(
-        "本地语音合成失败。可重试一次，仍失败请在 设置-音频 中重新下载模型。",
-        e,
-      );
+    final String cacheKey = "$text|$speed|${AppData().preferredTtsModelId}";
+    final bool hit = _cacheKey == cacheKey &&
+        _cacheFile != null &&
+        _cacheFile!.existsSync();
+    if (hit) {
+      cacheFile = _cacheFile!;
+      duration = _cacheDuration;
+      _logger.info("本地语音命中缓存: ${text.length} 字");
+    } else {
+      // 合成与播放分开报错：播放失败不代表模型有问题，不能让用户去重下模型。
+      try {
+        final basePath = await path_provider.getApplicationCacheDirectory();
+        cacheFile = io.File("${basePath.path}/tts_cache.wav");
+        if(cacheFile.existsSync()) cacheFile.deleteSync();
+        final audio = AppData().vitsTTS!.generate(text: text, speed: speed);
+        final ok = sherpa_onnx.writeWave(
+                            filename: cacheFile.path,
+                            samples: audio.samples,
+                            sampleRate: audio.sampleRate,
+                          );
+        if(!ok) throw Exception("无法将音频写入文件");
+        duration = Duration(milliseconds: (audio.samples.length / audio.sampleRate * 1000).round());
+        _cacheKey = cacheKey;
+        _cacheFile = cacheFile;
+        _cacheDuration = duration;
+      } catch (e) {
+        throw _toTtsFailure(
+          "本地语音合成失败。可重试一次，仍失败请在 设置-音频 中重新下载模型。",
+          e,
+        );
+      }
     }
     try {
       await StaticsVar.player.setAudioSource(AudioSource.uri(Uri.file(cacheFile.path)));
@@ -132,8 +150,6 @@ Future<void> playTextToSpeech(String text, {double? speed}) async {
       await Future.wait([StaticsVar.player.play(), Future.delayed(duration)]);
     } catch (e) {
       throw _toTtsFailure("音频播放失败，可能是本机没有可用的播放后端。", e);
-    } finally {
-      if(cacheFile.existsSync()) cacheFile.deleteSync();
     }
   }
 }
