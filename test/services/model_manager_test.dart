@@ -38,7 +38,7 @@ void main() {
       expect(files.model, 'ar_JO-kareem-medium.onnx');
       expect(files.voices, isNull);
       expect(files.tokens, 'tokens.txt');
-      expect(files.dataDir, dir.path);
+      expect(files.hasEspeakData, isFalse);
     });
 
     test('Kokoro：model.int8.onnx + voices.bin，优先 int8', () {
@@ -54,7 +54,7 @@ void main() {
       expect(files!.kind, TtsModelKind.kokoro);
       expect(files.model, 'model.int8.onnx');
       expect(files.voices, 'voices.bin');
-      expect(files.dataDir, '${dir.path}/espeak-ng-data');
+      expect(files.hasEspeakData, isTrue);
     });
 
     test('不是 TTS 目录时返回 null', () {
@@ -64,8 +64,7 @@ void main() {
     });
   });
 
-  group('resolveAsr', () {
-    test('Whisper：encoder + decoder + tiny-tokens', () {
+  group('resolveAsr', () {    test('Whisper：encoder + decoder + tiny-tokens', () {
       final Directory dir = dirWith('whisper-pack', <String>[
         'tiny-encoder.int8.onnx',
         'tiny-decoder.int8.onnx',
@@ -98,6 +97,56 @@ void main() {
     test('不是 ASR 目录时返回 null', () {
       final Directory dir = dirWith('tts-only', <String>['tokens.txt']);
       expect(ModelManager.resolveAsr(dir.path), isNull);
+    });
+  });
+
+  group('Web 端按顶层文件名解析', () {
+    test('resolveTtsNames 识别 VITS / Kokoro 并带上 espeak 标记', () {
+      final TtsModelFiles? vits = ModelManager.resolveTtsNames(
+        <String>['model.onnx', 'model.onnx.json', 'tokens.txt', 'espeak-ng-data'],
+        hasEspeakData: true,
+      );
+      expect(vits?.kind, TtsModelKind.vits);
+      expect(vits?.model, 'model.onnx');
+      expect(vits?.hasEspeakData, isTrue);
+
+      final TtsModelFiles? kokoro = ModelManager.resolveTtsNames(
+        <String>['model.int8.onnx', 'voices.bin', 'tokens.txt'],
+        hasEspeakData: false,
+      );
+      expect(kokoro?.kind, TtsModelKind.kokoro);
+      expect(kokoro?.voices, 'voices.bin');
+      expect(kokoro?.hasEspeakData, isFalse);
+
+      expect(
+        ModelManager.resolveTtsNames(<String>['tokens.txt'], hasEspeakData: false),
+        isNull,
+      );
+    });
+
+    test('resolveAsrNames 识别 Whisper / NeMo', () {
+      final AsrModelFiles? whisper = ModelManager.resolveAsrNames(
+        <String>['tiny-encoder.onnx', 'tiny-decoder.onnx', 'tiny-tokens.txt'],
+      );
+      expect(whisper?.nemoCtc, isFalse);
+      expect(whisper?.tokens, 'tiny-tokens.txt');
+
+      final AsrModelFiles? nemo = ModelManager.resolveAsrNames(
+        <String>['model.onnx', 'tokens.txt'],
+      );
+      expect(nemo?.nemoCtc, isTrue);
+      expect(ModelManager.resolveAsrNames(<String>['tokens.txt']), isNull);
+    });
+
+    test('classifyNames 仍能区分 TTS / ASR', () {
+      expect(ModelManager.classifyNames(<String>['voices.bin']), isTrue);
+      expect(
+        ModelManager.classifyNames(
+          <String>['encoder.onnx', 'decoder.onnx'],
+        ),
+        isFalse,
+      );
+      expect(ModelManager.classifyNames(<String>['tokens.txt']), isNull);
     });
   });
 }

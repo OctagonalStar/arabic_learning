@@ -17,7 +17,7 @@ import 'package:arabic_learning/services/model_manager.dart';
 import 'package:arabic_learning/theme/tokens.dart'
     show AppRadius, AppSemanticColors, AppSpacing;
 import 'package:arabic_learning/widgets/kit.dart'
-    show Button, SettingItem, TextContainer;
+    show Button, SettingItem;
 import 'package:arabic_learning/widgets/overlays.dart' show alart, showSnackBar;
 
 class ModelManagementPage extends StatefulWidget {
@@ -67,7 +67,7 @@ class _ModelManagementPageState extends State<ModelManagementPage> {
   }
 
   Future<void> _download(String id) async {
-    if (kIsWeb || _busy) return;
+    if (_busy) return;
     final Global global = context.read<Global>();
     setState(() {
       _downloadingId = id;
@@ -149,9 +149,16 @@ class _ModelManagementPageState extends State<ModelManagementPage> {
       showSnackBar(context, "无法打开文件选择器：$e");
       return;
     }
-    if (result == null || result.path == null) return;
+    if (result == null) return;
     try {
-      final String id = await ModelManager.importArchive(result.path!);
+      final String id;
+      if (kIsWeb) {
+        id = await ModelManager.importArchiveBytes(await result.readAsBytes());
+      } else {
+        final String? path = result.path;
+        if (path == null) return;
+        id = await ModelManager.importArchive(path);
+      }
       global.uiLogger.info("模型包导入成功: $id");
       if (!mounted) return;
       setState(() {});
@@ -224,7 +231,9 @@ class _ModelManagementPageState extends State<ModelManagementPage> {
             Padding(
               padding: const EdgeInsets.only(top: AppSpacing.xs),
               child: LinearProgressIndicator(
-                value: _total > 0 ? _received / _total : null,
+                value: _total > 0
+                    ? (_received / _total).clamp(0.0, 1.0)
+                    : null,
                 borderRadius: AppRadius.controlBorder,
               ),
             ),
@@ -291,13 +300,13 @@ class _ModelManagementPageState extends State<ModelManagementPage> {
           ),
         if (!installed)
           TextButton(
-            onPressed: (kIsWeb || _busy) ? null : () => _download(model.id),
+            onPressed: _busy ? null : () => _download(model.id),
             child: const Text("下载"),
           ),
         if (installed)
           TextButton(
             style: TextButton.styleFrom(foregroundColor: scheme.error),
-            onPressed: (kIsWeb || _busy)
+            onPressed: _busy
                 ? null
                 : () => _delete(
                       model.id,
@@ -336,13 +345,13 @@ class _ModelManagementPageState extends State<ModelManagementPage> {
           ),
         if (!installed)
           TextButton(
-            onPressed: (kIsWeb || _busy) ? null : () => _download(model.id),
+            onPressed: _busy ? null : () => _download(model.id),
             child: const Text("下载"),
           ),
         if (installed)
           TextButton(
             style: TextButton.styleFrom(foregroundColor: scheme.error),
-            onPressed: (kIsWeb || _busy)
+            onPressed: _busy
                 ? null
                 : () => _delete(
                       model.id,
@@ -394,7 +403,7 @@ class _ModelManagementPageState extends State<ModelManagementPage> {
             ),
           TextButton(
             style: TextButton.styleFrom(foregroundColor: scheme.error),
-            onPressed: (kIsWeb || _busy)
+            onPressed: _busy
                 ? null
                 : () => _delete(id, isTts: isTts, isPreferred: preferred),
             child: const Text("删除"),
@@ -436,10 +445,34 @@ class _ModelManagementPageState extends State<ModelManagementPage> {
             if (kIsWeb)
               Padding(
                 padding: const EdgeInsets.all(AppSpacing.sm),
-                child: TextContainer(
-                  text: "Web 端不支持本地神经网络模型，下载与导入不可用。",
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: Theme.of(context).colorScheme.error,
+                child: Container(
+                  padding: const EdgeInsets.all(AppSpacing.sm),
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).colorScheme.errorContainer,
+                    borderRadius: AppRadius.cardBorder,
+                  ),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Icon(
+                        Icons.warning_amber_rounded,
+                        color: Theme.of(context).colorScheme.onErrorContainer,
+                      ),
+                      const SizedBox(width: AppSpacing.xs),
+                      Expanded(
+                        child: Text(
+                          "模型保存在浏览器的 IndexedDB 中，单个模型通常有几十到上百 MB。"
+                          "清除站点数据会一并删除已下载的模型；首次加载与合成都比较慢，"
+                          "移动浏览器在内存不足时可能失败。",
+                          style:
+                              Theme.of(context).textTheme.bodySmall?.copyWith(
+                                    color: Theme.of(context)
+                                        .colorScheme
+                                        .onErrorContainer,
+                                  ),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ),
@@ -492,7 +525,7 @@ class _ModelManagementPageState extends State<ModelManagementPage> {
                       ),
                       const SizedBox(height: AppSpacing.sm),
                       Button(
-                        onPressed: (kIsWeb || _busy) ? null : _importArchive,
+                        onPressed: _busy ? null : _importArchive,
                         child: const Text("导入模型包"),
                       ),
                     ],

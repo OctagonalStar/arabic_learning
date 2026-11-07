@@ -1,6 +1,8 @@
 // 下载与解压工具（原 lib/funcs/utili.dart 拆分）。
 // downloadFile 统一下载；extractTarBz2 供后台 isolate 解压 tar.bz2 模型包使用。
 
+import 'dart:typed_data';
+
 import 'package:archive/archive.dart';
 import 'package:dio/dio.dart';
 import 'package:arabic_learning/services/http_client.dart';
@@ -20,6 +22,22 @@ Future<void> downloadFile(String url, String savePath, {ProgressCallback? onDown
     savePath,
     onReceiveProgress: onDownloading?? (count, total){},
   );
+}
+
+/// 把下载内容读进内存（Web 没有文件系统，模型包只能先落内存）。
+Future<Uint8List> downloadBytes(String url, {ProgressCallback? onDownloading}) async {
+  final response = await createDio().getUri<List<int>>(
+    Uri.parse(url),
+    options: Options(
+      responseType: ResponseType.bytes,
+      followRedirects: true,
+      validateStatus: (status) => status != null && status < 400,
+    ),
+    onReceiveProgress: onDownloading,
+  );
+  final List<int>? data = response.data;
+  if (data is Uint8List) return data;
+  return Uint8List.fromList(data ?? const <int>[]);
 }
 
 @pragma('vm:entry-point') 

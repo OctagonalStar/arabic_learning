@@ -24,9 +24,10 @@ import 'package:arabic_learning/services/plan_store.dart';
 import 'package:arabic_learning/services/push_session.dart';
 import 'package:arabic_learning/services/search.dart';
 import 'package:arabic_learning/services/synonyms.dart';
+import 'package:arabic_learning/services/web_model_store.dart';
 import 'package:arabic_learning/package_replacement/storage.dart';
 import 'package:arabic_learning/package_replacement/fake_dart_io.dart' if (dart.library.io) 'dart:io' as io;
-import 'package:arabic_learning/package_replacement/fake_sherpa_onnx.dart' if (dart.library.io) 'package:sherpa_onnx/sherpa_onnx.dart' as sherpa_onnx;
+import 'package:sherpa_onnx/sherpa_onnx.dart' as sherpa_onnx;
 
 /// 词库导入结果摘要
 class DictImportResult {
@@ -139,18 +140,20 @@ class AppData {
   /// 首选 ASR 模型目录（内置与导入的 id 一律按目录名处理）。
   String get preferredAsrModelDir => StaticsVar.asrModelDir(preferredAsrModelId);
 
-  /// 指定 TTS 模型是否已解压（按目录内容识别，内置与导入一视同仁）。
+  /// 指定 TTS 模型是否已安装（按目录内容识别，内置与导入一视同仁）。
   bool isTtsModelInstalled(String id) {
-    if (kIsWeb || !_basePathReady) return false;
+    if (kIsWeb) return WebModelStore.typeOf(id) == 'tts';
+    if (!_basePathReady) return false;
     return ModelManager.resolveTts(
           "${basePath.path}/${StaticsVar.ttsModelDir(id)}",
         ) !=
         null;
   }
 
-  /// 指定 ASR 模型是否已解压（按目录内容识别，内置与导入一视同仁）。
+  /// 指定 ASR 模型是否已安装（按目录内容识别，内置与导入一视同仁）。
   bool isAsrModelInstalled(String id) {
-    if (kIsWeb || !_basePathReady) return false;
+    if (kIsWeb) return WebModelStore.typeOf(id) == 'asr';
+    if (!_basePathReady) return false;
     return ModelManager.resolveAsr(
           "${basePath.path}/${StaticsVar.asrModelDir(id)}",
         ) !=
@@ -160,26 +163,35 @@ class AppData {
   bool get modelTTSDownloaded => isTtsModelInstalled(preferredTtsModelId);
   bool get asrModelDownloaded => isAsrModelInstalled(preferredAsrModelId);
 
-  /// 模型根目录下可识别、且不属于内置目录的 TTS 子目录名。
+  /// 已安装、且不属于内置目录的 TTS 模型 id。
   List<String> get importedTtsIds => _importedIds(
         StaticsVar.ttsModelRoot,
         StaticsVar.ttsModels.map((TtsModelInfo m) => m.id).toSet(),
         ModelManager.resolveTts,
+        'tts',
       );
 
-  /// 模型根目录下可识别、且不属于内置目录的 ASR 子目录名。
+  /// 已安装、且不属于内置目录的 ASR 模型 id。
   List<String> get importedAsrIds => _importedIds(
         StaticsVar.asrModelRoot,
         StaticsVar.asrModels.map((AsrModelInfo m) => m.id).toSet(),
         ModelManager.resolveAsr,
+        'asr',
       );
 
   List<String> _importedIds(
     String root,
     Set<String> builtIn,
     Object? Function(String dirPath) resolve,
+    String type,
   ) {
-    if (kIsWeb || !_basePathReady) return const <String>[];
+    if (kIsWeb) {
+      return WebModelStore.installedIds()
+          .where((String id) =>
+              !builtIn.contains(id) && WebModelStore.typeOf(id) == type)
+          .toList();
+    }
+    if (!_basePathReady) return const <String>[];
     final String rootPath = "${basePath.path}/$root";
     if (!io.Directory(rootPath).existsSync()) return const <String>[];
     final List<String> ids = <String>[];
@@ -201,6 +213,9 @@ class AppData {
       basePath = (await path_provider.getApplicationDocumentsDirectory()) as io.Directory;
       _basePathReady = true;
     }
+
+    // 模型元数据在浏览器 IndexedDB；读进内存后安装判断才能同步完成。
+    if (kIsWeb) await WebModelStore.loadIndex();
 
     // 存储打开后立刻启动 FSRS 的「SQLite 打开 + 旧数据迁移」，但**不等待**：
     // 它只依赖 storage 已就绪（读旧 fsrsData / pushSessionData 做首启迁移），
@@ -314,19 +329,48 @@ class AppData {
 
   // load TTS model if any
   Future<void> loadTTS(double playRate) async {
-    if (kIsWeb) return;
     final String id = preferredTtsModelId;
     if (vitsTTS != null && _loadedTtsModelId == id) return;
     if (!isTtsModelInstalled(id)) return;
 
     resetTTS();
-    final String dir = "${basePath.path}/${StaticsVar.ttsModelDir(id)}";
-    final TtsModelFiles? files = ModelManager.resolveTts(dir);
+    final TtsModelFiles? files;
+    final String dir;
+    if (kIsWeb) {
+      final WebModelMeta? meta = WebModelStore.metaOf(id);
+      if (meta == null) return;
+      files = ModelManager.resolveTtsNames(
+        meta.names,
+        hasEspeakData: meta.hasEspeakData,
+      );
+      dir = 'models/$id';
+    } else {
+      dir = "${basePath.path}/${StaticsVar.ttsModelDir(id)}";
+      files = ModelManager.resolveTts(dir);
+    }
     if (files == null) return;
-    final String dataDir = files.dataDir ?? dir;
+    // Web 的 wasm 只认 MEMFS 内的路径；VITS 需要 espeak 数据目录，Kokoro 不需要。
+    final String dataDir = kIsWeb
+        ? (files.kind == TtsModelKind.vits && files.hasEspeakData
+            ? '$dir/espeak-ng-data'
+            : '')
+        : (files.hasEspeakData ? '$dir/espeak-ng-data' : dir);
     logger.info(
         "TTS: 加载本地TTS中 ($id, ${files.kind.name}, dir=$dir, dataDir=$dataDir)");
-    sherpa_onnx.initBindings();
+    if (kIsWeb) {
+      await sherpa_onnx.initBindingsAsync();
+      await WebModelStore.mount(
+        id,
+        files: <String>[
+          files.model,
+          files.tokens,
+          if (files.voices != null) files.voices!,
+        ],
+        espeakData: files.hasEspeakData,
+      );
+    } else {
+      sherpa_onnx.initBindings();
+    }
 
     final sherpa_onnx.OfflineTtsModelConfig modelConfig;
     switch (files.kind) {
