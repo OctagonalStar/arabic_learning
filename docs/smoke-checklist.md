@@ -116,8 +116,8 @@
 - [ ] 下载 Kareem int8 并设为首选（预期：行内进度可见；完成后状态为「使用中」，本地 TTS 改用新模型朗读）。
 - [ ] 删除当前首选模型（预期：先确认；删除后首选回落到默认项，朗读不崩溃并提示重新下载）。
 - [ ] 导入非模型 tar.bz2（预期：提示「不支持的模型包」，不残留目录）。
-- [ ] Web 端打开模型管理（预期：顶部有 IndexedDB/内存/清站点数据的警告；下载、导入、删除、设首选均可用）。
-- [ ] Web 端下载 Kareem int8（预期：进度条推进；完成后状态为「已下载」，刷新页面后仍为已下载）。
+- [ ] Web 端打开模型管理（预期：顶部有 IndexedDB/内存/清站点数据与 CORS 的警告；导入、删除、设首选均可用）。
+- [ ] Web 端下载 Kareem int8（预期：浏览器放行 CORS 时进度条推进，完成后状态为「已下载」且刷新后仍为已下载；被拦截时弹窗给出 GitHub 地址，复制后手动下载该 .tar.bz2，再用「导入模型」载入成功）。
 - [ ] Web 端朗读依赖该模型的文本（预期：能听到语音；再次朗读同一文本不再重新加载/合成）。
 - [ ] Web 端清除站点数据后重开（预期：模型回到未下载，应用不崩溃）。
 
@@ -215,6 +215,6 @@
 以下位置最容易回归，每次必须优先执行并重点观察：
 
 - 存储备份键：`usedKeys` 决定哪些顶层键会进入 WebDAV 备份与本地导出。新增任何顶层存储键后，若未同步加入 `usedKeys`，该键会在备份与导出中被静默丢弃。恢复数据后必须确认调用 `Global.conveySetting()` 重建 `Config`，否则界面会继续使用恢复前的旧内存配置。
-- Web 构建：Web 端使用 idb_shim IndexedDB（回退 shared_preferences），并依赖 `lib/package_replacement/` 下的 `fake_*.dart` 垫片。`sherpa_onnx` 等原生库必须保持在条件导入之后，`AppData.basePath` 在 Web 上不可读取。任何新增原生依赖都需补垫片或运行时 `kIsWeb` 守卫，否则 Web 构建会失败或运行时报错。
+- Web 构建：Web 端使用 idb_shim IndexedDB（回退 shared_preferences），并依赖 `lib/package_replacement/` 下的 `fake_*.dart` 垫片。`sherpa_onnx` 现已直接依赖（1.13.8 自带 Web 实现，Web 侧需 `initBindingsAsync()`），`AppData.basePath` 在 Web 上不可读取。任何新增原生依赖都需补垫片或运行时 `kIsWeb` 守卫，否则 Web 构建会失败或运行时报错。
 - 横屏溢出：主页四个 Tab、设置页、词汇总览、学习与测试页面在平板横屏或桌面小窗口下最易出现 overflow。桌面端 `window_manager` 可自由缩放，务必拖拽到极端尺寸验证。
 - 深色对比度：强制深色与跟随系统切换后，检查文字、图标、卡片、选项在 11 种主题色下的对比度与可读性，尤其注意彩蛋主题色的深色表现。

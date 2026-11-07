@@ -52,8 +52,26 @@ class AsrModelFiles {
   });
 }
 
+/// Web 端直连 GitHub 下载失败（浏览器被 CORS 拦截或网络不可达）。
+///
+/// [url] 是模型发布包地址，供界面提示用户手动下载后走「导入模型」。
+class WebDownloadFailure implements Exception {
+  const WebDownloadFailure(this.url);
+
+  final String url;
+
+  @override
+  String toString() => '浏览器无法直接下载模型，请手动下载：$url';
+}
+
 class ModelManager {
   const ModelManager._();
+
+  /// 内置模型发布包地址；Web 端下载失败时展示给用户手动下载。
+  static String archiveUrlOf(String id) =>
+      StaticsVar.asrModels.any((AsrModelInfo m) => m.id == id)
+          ? StaticsVar.asrArchiveUrl(id)
+          : StaticsVar.ttsArchiveUrl(id);
 
   /// 指定模型是否已安装。
   static bool isInstalled(String id) => kIsWeb
@@ -72,8 +90,14 @@ class ModelManager {
 
     if (kIsWeb) {
       _logger.info('Web 模型下载开始: id=$id, url=$url');
-      final Uint8List bytes =
-          await downloadBytes(url, onDownloading: onProgress);
+      final Uint8List bytes;
+      try {
+        bytes = await downloadBytes(url, onDownloading: onProgress);
+      } catch (e) {
+        // GitHub Release 资产不带 CORS 头，普通浏览器读不到响应体。
+        _logger.warning('Web 模型下载失败: id=$id, url=$url, $e');
+        throw WebDownloadFailure(url);
+      }
       final ({String topDir, List<String> topNames, Map<String, Uint8List> files})
           archive = _decodeArchive(bytes);
       final bool? type = classifyNames(archive.topNames);

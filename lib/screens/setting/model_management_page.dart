@@ -5,6 +5,7 @@
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart' show Clipboard, ClipboardData;
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -91,10 +92,53 @@ class _ModelManagementPageState extends State<ModelManagementPage> {
     } catch (e) {
       global.uiLogger.severe("模型下载失败: $e");
       if (!mounted) return;
-      showSnackBar(context, "下载失败：${e.toString()}");
+      if (e is WebDownloadFailure) {
+        _showManualDownload(e.url);
+      } else {
+        showSnackBar(context, "下载失败：${e.toString()}");
+      }
     } finally {
       if (mounted) setState(() => _downloadingId = null);
     }
+  }
+
+  /// Web 端直连被 CORS 拦截时，给出模型包地址让用户自行下载后导入。
+  void _showManualDownload(String url) {
+    showDialog(
+      context: context,
+      builder: (BuildContext ctx) => AlertDialog(
+        title: const Text("下载被浏览器拦截"),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              "浏览器不允许网页直接下载 GitHub 上的模型包。"
+              "请复制下面的链接自行下载，再回到本页用「导入模型」选择该 .tar.bz2 文件。",
+            ),
+            const SizedBox(height: AppSpacing.xs),
+            SelectableText(
+              url,
+              style: Theme.of(ctx).textTheme.bodySmall,
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Clipboard.setData(ClipboardData(text: url));
+              Navigator.of(ctx).pop();
+              showSnackBar(context, "链接已复制");
+            },
+            child: const Text("复制链接"),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(),
+            child: const Text("关闭"),
+          ),
+        ],
+      ),
+    );
   }
 
   /// 删除确认弹窗；确认后真正执行 [_confirmDelete]。
@@ -463,7 +507,9 @@ class _ModelManagementPageState extends State<ModelManagementPage> {
                         child: Text(
                           "模型保存在浏览器的 IndexedDB 中，单个模型通常有几十到上百 MB。"
                           "清除站点数据会一并删除已下载的模型；首次加载与合成都比较慢，"
-                          "移动浏览器在内存不足时可能失败。",
+                          "移动浏览器在内存不足时可能失败。受浏览器 CORS 限制，"
+                          "网页内下载可能失败；失败时按提示复制链接自行下载，"
+                          "再用「导入模型」选择本地文件。",
                           style:
                               Theme.of(context).textTheme.bodySmall?.copyWith(
                                     color: Theme.of(context)
