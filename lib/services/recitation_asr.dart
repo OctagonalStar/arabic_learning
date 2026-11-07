@@ -6,6 +6,7 @@ import 'dart:typed_data';
 import 'package:sherpa_onnx/sherpa_onnx.dart' as sherpa_onnx;
 import 'package:arabic_learning/services/app_data.dart';
 import 'package:arabic_learning/services/model_manager.dart';
+import 'package:arabic_learning/services/web_asr_globals.dart';
 import 'package:arabic_learning/services/web_model_store.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:logging/logging.dart';
@@ -57,6 +58,7 @@ class RecitationAsr {
 
     await sherpa_onnx.initBindingsAsync();
     if (kIsWeb) {
+      exposeSherpaOnnxAsrGlobals();
       await WebModelStore.mount(
         id,
         files: files.nemoCtc
@@ -76,7 +78,8 @@ class RecitationAsr {
           model: '$dir/${files.model}',
         ),
         tokens: '$dir/${files.tokens}',
-        numThreads: 2,
+        // wasm 是单线程构建，多线程参数只会刷警告。
+        numThreads: kIsWeb ? 1 : 2,
         debug: false,
         provider: 'cpu',
       );
@@ -92,7 +95,8 @@ class RecitationAsr {
           enableTokenTimestamps: false,
         ),
         tokens: '$dir/${files.tokens}',
-        numThreads: 2,
+        // wasm 是单线程构建，多线程参数只会刷警告。
+        numThreads: kIsWeb ? 1 : 2,
         debug: false,
         provider: 'cpu',
       );
