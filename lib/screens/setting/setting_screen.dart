@@ -244,7 +244,7 @@ class _SettingPage extends State<SettingPage> {
                     SettingRow(
                       leading: "选择文本转语音接口",
                       icon: Icons.api,
-                      note: "默认使用系统自带的文本转语音接口，但有些厂商可能没有阿拉伯语支持\n若使用\"神经网络合成语音\"你必须使用APP端并下载模型。",
+                      note: "默认使用系统自带的文本转语音接口，但有些厂商可能没有阿拉伯语支持\n若使用\"神经网络合成语音\"，需先在\"模型管理\"下载或导入模型。",
                       end: SizedBox()
                     ),
                     DropdownButton(
@@ -282,12 +282,12 @@ class _SettingPage extends State<SettingPage> {
                         ),
                         DropdownMenuItem(
                           value: 2,
-                          enabled: !kIsWeb && AppData().modelTTSDownloaded ? true : false,
+                          enabled: AppData().modelTTSDownloaded,
                           child: Text(
                             "神经网络合成语音",
                             overflow: TextOverflow.ellipsis,
                             style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                              color: !kIsWeb && AppData().modelTTSDownloaded ? null : context.semanticColors.disabled,
+                              color: AppData().modelTTSDownloaded ? null : context.semanticColors.disabled,
                             ),
                           ),
                         ),

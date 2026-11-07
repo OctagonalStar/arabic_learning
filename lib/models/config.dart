@@ -329,11 +329,15 @@ class AudioConfig {
   /// 首选的本地 TTS 模型 id；空串表示跟随 [StaticsVar.defaultTtsModelId]。
   final String preferredModelId;
 
+  /// 首选的本地 ASR 模型 id；空串表示跟随 [StaticsVar.defaultAsrModelId]。
+  final String preferredAsrModelId;
+
   const AudioConfig({
     this.audioSource = 0,
     this.playRate = 1.0,
     this.autoPlay = false,
-    this.preferredModelId = ""
+    this.preferredModelId = "",
+    this.preferredAsrModelId = ""
   });
 
   Map<String, dynamic> toMap(){
@@ -341,7 +345,8 @@ class AudioConfig {
       "useBackupSource": audioSource,
       "playRate": playRate,
       "autoPlay": autoPlay,
-      "preferredModelId": preferredModelId
+      "preferredModelId": preferredModelId,
+      "preferredAsrModelId": preferredAsrModelId
     };
   }
 
@@ -351,7 +356,8 @@ class AudioConfig {
       audioSource: setting["useBackupSource"],
       playRate: setting["playRate"],
       autoPlay: setting["autoPlay"]??false,
-      preferredModelId: setting["preferredModelId"] ?? ""
+      preferredModelId: setting["preferredModelId"] ?? "",
+      preferredAsrModelId: setting["preferredAsrModelId"] ?? ""
     );
   }
 
@@ -359,13 +365,15 @@ class AudioConfig {
     int? audioSource,
     double? playRate,
     bool? autoPlay,
-    String? preferredModelId
+    String? preferredModelId,
+    String? preferredAsrModelId
   }) {
     return AudioConfig(
       audioSource: audioSource ?? this.audioSource,
       playRate: playRate ?? this.playRate,
       autoPlay: autoPlay ?? this.autoPlay,
-      preferredModelId: preferredModelId ?? this.preferredModelId
+      preferredModelId: preferredModelId ?? this.preferredModelId,
+      preferredAsrModelId: preferredAsrModelId ?? this.preferredAsrModelId
     );
   }
 }

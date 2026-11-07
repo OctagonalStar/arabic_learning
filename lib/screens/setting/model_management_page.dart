@@ -5,6 +5,7 @@
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart' show Clipboard, ClipboardData;
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -17,7 +18,7 @@ import 'package:arabic_learning/services/model_manager.dart';
 import 'package:arabic_learning/theme/tokens.dart'
     show AppRadius, AppSemanticColors, AppSpacing;
 import 'package:arabic_learning/widgets/kit.dart'
-    show Button, SettingItem, TextContainer;
+    show Button, SettingItem;
 import 'package:arabic_learning/widgets/overlays.dart' show alart, showSnackBar;
 
 class ModelManagementPage extends StatefulWidget {
@@ -36,27 +37,38 @@ class _ModelManagementPageState extends State<ModelManagementPage> {
   bool get _busy => _downloadingId != null;
 
   /// 首选模型变更 / 删除首选模型后重建本地 TTS，保证下次播报使用新音色。
-  Future<void> _reloadTtsFor(String id) async {
+  Future<void> _reloadTts() async {
     AppData().resetTTS();
     if (AppData().config.audio.audioSource == 2) {
       await AppData().loadTTS(AppData().config.audio.playRate);
     }
   }
 
-  Future<void> _setPreferred(TtsModelInfo model) async {
+  Future<void> _setPreferred(String id) async {
     final Global global = context.read<Global>();
-    global.uiLogger.info("设为首选TTS模型: ${model.id}");
+    global.uiLogger.info("设为首选TTS模型: $id");
     await global.patchConfig(
       (Config config) => config.copyWith(
-        audio: config.audio.copyWith(preferredModelId: model.id),
+        audio: config.audio.copyWith(preferredModelId: id),
       ),
     );
-    await _reloadTtsFor(model.id);
+    await _reloadTts();
+    if (mounted) setState(() {});
+  }
+
+  Future<void> _setPreferredAsr(String id) async {
+    final Global global = context.read<Global>();
+    global.uiLogger.info("设为首选ASR模型: $id");
+    await global.patchConfig(
+      (Config config) => config.copyWith(
+        audio: config.audio.copyWith(preferredAsrModelId: id),
+      ),
+    );
     if (mounted) setState(() {});
   }
 
   Future<void> _download(String id) async {
-    if (kIsWeb || _busy) return;
+    if (_busy) return;
     final Global global = context.read<Global>();
     setState(() {
       _downloadingId = id;
@@ -80,34 +92,84 @@ class _ModelManagementPageState extends State<ModelManagementPage> {
     } catch (e) {
       global.uiLogger.severe("模型下载失败: $e");
       if (!mounted) return;
-      showSnackBar(context, "下载失败：${e.toString()}");
+      if (e is WebDownloadFailure) {
+        _showManualDownload(e.url);
+      } else {
+        showSnackBar(context, "下载失败：${e.toString()}");
+      }
     } finally {
       if (mounted) setState(() => _downloadingId = null);
     }
   }
 
-  /// 删除确认弹窗；确认后真正执行 [_confirmDelete]。
-  void _delete(String id, {required bool isPreferred}) {
-    alart(
-      context,
-      isPreferred ? "该模型正在使用中，删除后将回退为默认模型。确定删除吗？" : "删除后需重新下载才能继续使用。确定删除吗？",
-      destructive: true,
-      onConfirmed: () => _confirmDelete(id),
+  /// Web 端直连被 CORS 拦截时，给出模型包地址让用户自行下载后导入。
+  void _showManualDownload(String url) {
+    showDialog(
+      context: context,
+      builder: (BuildContext ctx) => AlertDialog(
+        title: const Text("下载被浏览器拦截"),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              "浏览器不允许网页直接下载 GitHub 上的模型包。"
+              "请复制下面的链接自行下载，再回到本页用「导入模型」选择该 .tar.bz2 文件。",
+            ),
+            const SizedBox(height: AppSpacing.xs),
+            SelectableText(
+              url,
+              style: Theme.of(ctx).textTheme.bodySmall,
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Clipboard.setData(ClipboardData(text: url));
+              Navigator.of(ctx).pop();
+              showSnackBar(context, "链接已复制");
+            },
+            child: const Text("复制链接"),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(),
+            child: const Text("关闭"),
+          ),
+        ],
+      ),
     );
   }
 
-  Future<void> _confirmDelete(String id) async {
+  /// 删除确认弹窗；确认后真正执行 [_confirmDelete]。
+  void _delete(String id, {required bool isTts, required bool isPreferred}) {
+    alart(
+      context,
+      isPreferred ? "该模型正在使用中，删除后将回退为默认模型。确定删除吗？" : "删除后需重新下载或导入才能继续使用。确定删除吗？",
+      destructive: true,
+      onConfirmed: () => _confirmDelete(id, isTts: isTts),
+    );
+  }
+
+  Future<void> _confirmDelete(String id, {required bool isTts}) async {
     final Global global = context.read<Global>();
-    final bool isTts = StaticsVar.ttsModels.any((TtsModelInfo m) => m.id == id);
     try {
-      if (isTts && AppData().preferredTtsModelId == id) {
+      if (isTts) {
+        if (AppData().preferredTtsModelId == id) {
+          await global.patchConfig(
+            (Config config) => config.copyWith(
+              audio: config.audio.copyWith(preferredModelId: ""),
+            ),
+          );
+        }
+        await _reloadTts();
+      } else if (AppData().preferredAsrModelId == id) {
         await global.patchConfig(
           (Config config) => config.copyWith(
-            audio: config.audio.copyWith(preferredModelId: ""),
+            audio: config.audio.copyWith(preferredAsrModelId: ""),
           ),
         );
       }
-      await _reloadTtsFor(id);
       await ModelManager.delete(id);
       global.uiLogger.info("模型已删除: $id");
       if (mounted) setState(() {});
@@ -131,11 +193,19 @@ class _ModelManagementPageState extends State<ModelManagementPage> {
       showSnackBar(context, "无法打开文件选择器：$e");
       return;
     }
-    if (result == null || result.path == null) return;
+    if (result == null) return;
     try {
-      final String id = await ModelManager.importArchive(result.path!);
+      final String id;
+      if (kIsWeb) {
+        id = await ModelManager.importArchiveBytes(await result.readAsBytes());
+      } else {
+        final String? path = result.path;
+        if (path == null) return;
+        id = await ModelManager.importArchive(path);
+      }
       global.uiLogger.info("模型包导入成功: $id");
       if (!mounted) return;
+      setState(() {});
       showSnackBar(context, "已导入 $id");
     } catch (e) {
       global.uiLogger.severe("模型包导入失败: $e");
@@ -205,7 +275,9 @@ class _ModelManagementPageState extends State<ModelManagementPage> {
             Padding(
               padding: const EdgeInsets.only(top: AppSpacing.xs),
               child: LinearProgressIndicator(
-                value: _total > 0 ? _received / _total : null,
+                value: _total > 0
+                    ? (_received / _total).clamp(0.0, 1.0)
+                    : null,
                 borderRadius: AppRadius.controlBorder,
               ),
             ),
@@ -267,20 +339,24 @@ class _ModelManagementPageState extends State<ModelManagementPage> {
       actions: [
         if (installed && !preferred)
           TextButton(
-            onPressed: _busy ? null : () => _setPreferred(model),
+            onPressed: _busy ? null : () => _setPreferred(model.id),
             child: const Text("设为首选"),
           ),
         if (!installed)
           TextButton(
-            onPressed: (kIsWeb || _busy) ? null : () => _download(model.id),
+            onPressed: _busy ? null : () => _download(model.id),
             child: const Text("下载"),
           ),
         if (installed)
           TextButton(
             style: TextButton.styleFrom(foregroundColor: scheme.error),
-            onPressed: (kIsWeb || _busy)
+            onPressed: _busy
                 ? null
-                : () => _delete(model.id, isPreferred: preferred),
+                : () => _delete(
+                      model.id,
+                      isTts: true,
+                      isPreferred: preferred,
+                    ),
             child: const Text("删除"),
           ),
       ],
@@ -291,27 +367,113 @@ class _ModelManagementPageState extends State<ModelManagementPage> {
     final AppSemanticColors semantic =
         Theme.of(context).extension<AppSemanticColors>()!;
     final ColorScheme scheme = Theme.of(context).colorScheme;
-    final bool installed = ModelManager.isInstalled(model.id);
+    final bool installed = AppData().isAsrModelInstalled(model.id);
+    final bool preferred = AppData().preferredAsrModelId == model.id;
     return _modelRow(
       title: model.title,
       description: model.description,
       meta: "${model.sizeMB} MB · ${model.license}",
-      stateText: installed ? "已下载" : "未下载",
-      stateColor: installed ? scheme.primary : semantic.disabled,
+      stateText: preferred ? "使用中" : (installed ? "已下载" : "未下载"),
+      stateColor: preferred
+          ? semantic.success
+          : installed
+              ? scheme.primary
+              : semantic.disabled,
       downloading: _downloadingId == model.id,
       sourceUrl: model.sourceUrl,
       actions: [
+        if (installed && !preferred)
+          TextButton(
+            onPressed: _busy ? null : () => _setPreferredAsr(model.id),
+            child: const Text("设为首选"),
+          ),
         if (!installed)
           TextButton(
-            onPressed: (kIsWeb || _busy) ? null : () => _download(model.id),
+            onPressed: _busy ? null : () => _download(model.id),
             child: const Text("下载"),
           ),
         if (installed)
           TextButton(
             style: TextButton.styleFrom(foregroundColor: scheme.error),
-            onPressed: (kIsWeb || _busy) ? null : () => _delete(model.id, isPreferred: false),
+            onPressed: _busy
+                ? null
+                : () => _delete(
+                      model.id,
+                      isTts: false,
+                      isPreferred: preferred,
+                    ),
             child: const Text("删除"),
           ),
+      ],
+    );
+  }
+
+  /// 导入的模型：目录名 + 设为首选 / 删除。
+  Widget _importedRow(String id, {required bool isTts}) {
+    final ThemeData theme = Theme.of(context);
+    final ColorScheme scheme = theme.colorScheme;
+    final bool preferred = isTts
+        ? AppData().preferredTtsModelId == id
+        : AppData().preferredAsrModelId == id;
+    return Padding(
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.sm,
+        vertical: AppSpacing.xs,
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(id, style: theme.textTheme.titleSmall),
+                Text(
+                  preferred ? "使用中" : "已导入",
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: preferred
+                        ? theme.extension<AppSemanticColors>()!.success
+                        : scheme.onSurfaceVariant,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          if (!preferred)
+            TextButton(
+              onPressed: _busy
+                  ? null
+                  : () => isTts ? _setPreferred(id) : _setPreferredAsr(id),
+              child: const Text("设为首选"),
+            ),
+          TextButton(
+            style: TextButton.styleFrom(foregroundColor: scheme.error),
+            onPressed: _busy
+                ? null
+                : () => _delete(id, isTts: isTts, isPreferred: preferred),
+            child: const Text("删除"),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _importedSection({required bool isTts}) {
+    final List<String> ids =
+        isTts ? AppData().importedTtsIds : AppData().importedAsrIds;
+    if (ids.isEmpty) return const SizedBox.shrink();
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.fromLTRB(
+            AppSpacing.sm,
+            AppSpacing.sm,
+            AppSpacing.sm,
+            AppSpacing.xxs,
+          ),
+          child: Text("已导入", style: Theme.of(context).textTheme.labelLarge),
+        ),
+        for (final String id in ids) _importedRow(id, isTts: isTts),
       ],
     );
   }
@@ -327,10 +489,36 @@ class _ModelManagementPageState extends State<ModelManagementPage> {
             if (kIsWeb)
               Padding(
                 padding: const EdgeInsets.all(AppSpacing.sm),
-                child: TextContainer(
-                  text: "Web 端不支持本地神经网络模型，下载与导入不可用。",
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: Theme.of(context).colorScheme.error,
+                child: Container(
+                  padding: const EdgeInsets.all(AppSpacing.sm),
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).colorScheme.errorContainer,
+                    borderRadius: AppRadius.cardBorder,
+                  ),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Icon(
+                        Icons.warning_amber_rounded,
+                        color: Theme.of(context).colorScheme.onErrorContainer,
+                      ),
+                      const SizedBox(width: AppSpacing.xs),
+                      Expanded(
+                        child: Text(
+                          "模型保存在浏览器的 IndexedDB 中，单个模型通常有几十到上百 MB。"
+                          "清除站点数据会一并删除已下载的模型；首次加载与合成都比较慢，"
+                          "移动浏览器在内存不足时可能失败。受浏览器 CORS 限制，"
+                          "网页内下载可能失败；失败时按提示复制链接自行下载，"
+                          "再用「导入模型」选择本地文件。",
+                          style:
+                              Theme.of(context).textTheme.bodySmall?.copyWith(
+                                    color: Theme.of(context)
+                                        .colorScheme
+                                        .onErrorContainer,
+                                  ),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ),
@@ -339,6 +527,7 @@ class _ModelManagementPageState extends State<ModelManagementPage> {
               children: [
                 for (final TtsModelInfo model in StaticsVar.ttsModels)
                   _ttsRow(model),
+                _importedSection(isTts: true),
               ],
             ),
             SettingItem(
@@ -346,6 +535,7 @@ class _ModelManagementPageState extends State<ModelManagementPage> {
               children: [
                 for (final AsrModelInfo model in StaticsVar.asrModels)
                   _asrRow(model),
+                _importedSection(isTts: false),
               ],
             ),
             SettingItem(
@@ -353,9 +543,38 @@ class _ModelManagementPageState extends State<ModelManagementPage> {
               children: [
                 Padding(
                   padding: const EdgeInsets.all(AppSpacing.sm),
-                  child: Button(
-                    onPressed: (kIsWeb || _busy) ? null : _importArchive,
-                    child: const Text("导入模型包"),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        "模型包（.tar.bz2）要求",
+                        style: Theme.of(context).textTheme.titleSmall,
+                      ),
+                      const SizedBox(height: AppSpacing.xxs),
+                      Text(
+                        "• 只有一个顶层目录，目录名随意\n"
+                        "• TTS VITS：*.onnx + 同名 *.onnx.json + tokens.txt"
+                        "（可选 espeak-ng-data/）\n"
+                        "• TTS Kokoro：model.onnx 或 model.int8.onnx + "
+                        "voices.bin + tokens.txt（可选 espeak-ng-data/）\n"
+                        "• ASR Whisper：*encoder*.onnx + *decoder*.onnx + "
+                        "*tokens*.txt\n"
+                        "• ASR NeMo CTC：model.onnx 或 model.int8.onnx + tokens.txt",
+                        style: Theme.of(context).textTheme.bodySmall,
+                      ),
+                      const SizedBox(height: AppSpacing.xs),
+                      Text(
+                        "导入的模型来自你自己提供的文件，其来源与许可由你自行确认。",
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+                        ),
+                      ),
+                      const SizedBox(height: AppSpacing.sm),
+                      Button(
+                        onPressed: _busy ? null : _importArchive,
+                        child: const Text("导入模型包"),
+                      ),
+                    ],
                   ),
                 ),
               ],

@@ -18,8 +18,10 @@ const double minSpeechRatio = 0.2;
 /// 短于该时长不做判定。
 const double minAudioSeconds = 2;
 
-const double _lowCoverage = 0.35;
-const double _lowAlignmentCoverage = 0.5;
+/// 单个词重复到该次数、且占全部识别词的比例超过 [_loopShare] 时，
+/// 视为 Whisper 的重复幻觉而不是人声。
+const int _loopMinRepeats = 4;
+const double _loopShare = 0.3;
 
 enum RecitationIssueType { missing, extra, order, pause, tooFast, tooSlow, unclear }
 
@@ -78,11 +80,6 @@ RecitationOutcome score({
   final ({int length, List<bool> refMatched, List<bool> asrMatched}) lcs =
       _lcs(refTokens, asrTokens);
   final double coverage = refTokens.isEmpty ? 0 : lcs.length / refTokens.length;
-  final int timedWords =
-      words.where((AsrWord w) => w.end > w.start).length;
-  final double alignmentCoverage = refTokens.isEmpty
-      ? 0
-      : math.min(1, timedWords / refTokens.length);
   final double insertionRate =
       asrTokens.isEmpty ? 0 : (asrTokens.length - lcs.length) / asrTokens.length;
   final double orderRate = _orderRate(refTokens, asrTokens, lcs.length);
@@ -114,9 +111,10 @@ RecitationOutcome score({
     return gate('录音过长，未能完整识别，请分段重录');
   }
   if (analysis.speechRatio < minSpeechRatio) return gate(unclearSummary);
-  if (coverage < _lowCoverage && alignmentCoverage < _lowAlignmentCoverage) {
-    return gate(unclearSummary);
-  }
+  // 识别包没有导出时间戳，对齐覆盖率只能靠合成时间，已无判别力；
+  // 改为「一个词都没命中」与「重复幻觉」两道门禁。
+  if (asrTokens.isNotEmpty && coverage == 0) return gate(unclearSummary);
+  if (coverage < 0.5 && _looksLikeLoop(asrTokens)) return gate(unclearSummary);
 
   final double durationCompliance =
       (1 - (durationRatio - 1).abs() / 0.5).clamp(0.0, 1.0);
@@ -212,6 +210,19 @@ RecitationOutcome score({
     issues: issues,
     summary: '覆盖 ${(coverage * 100).round()}%，用时 ${audioSeconds.toStringAsFixed(1)} 秒',
   );
+}
+
+/// Whisper 在听不清时常退化成同一个词反复输出，按最大重复词判定。
+bool _looksLikeLoop(List<String> tokens) {
+  if (tokens.length < _loopMinRepeats) return false;
+  final Map<String, int> counts = <String, int>{};
+  int max = 0;
+  for (final String token in tokens) {
+    final int next = (counts[token] ?? 0) + 1;
+    counts[token] = next;
+    if (next > max) max = next;
+  }
+  return max >= _loopMinRepeats && max / tokens.length >= _loopShare;
 }
 
 /// 内容命中里有多少保持了课文顺序（1 = 完全按顺序）。

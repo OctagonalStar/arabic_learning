@@ -54,4 +54,31 @@ void main() {
       expect(config.audioSource, 2);
     });
   });
+
+  group('AudioConfig.preferredAsrModelId', () {
+    test('toMap / buildFromMap 往返保留', () {
+      const AudioConfig config =
+          AudioConfig(preferredAsrModelId: 'my-imported-asr');
+      expect(config.toMap()['preferredAsrModelId'], 'my-imported-asr');
+      expect(
+        AudioConfig.buildFromMap(config.toMap()).preferredAsrModelId,
+        'my-imported-asr',
+      );
+      expect(
+        config.copyWith(preferredAsrModelId: '').preferredAsrModelId,
+        isEmpty,
+      );
+    });
+
+    test('缺少该键的旧配置解析为空串', () {
+      final AudioConfig config = AudioConfig.buildFromMap(<String, dynamic>{
+        'useBackupSource': 2,
+        'playRate': 1.0,
+        'autoPlay': false,
+        'preferredModelId': 'nabra-82m-arabic-int8',
+      });
+      expect(config.preferredAsrModelId, isEmpty);
+      expect(config.preferredModelId, 'nabra-82m-arabic-int8');
+    });
+  });
 }

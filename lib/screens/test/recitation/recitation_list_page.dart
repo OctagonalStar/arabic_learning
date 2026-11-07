@@ -6,6 +6,7 @@ import 'package:arabic_learning/models/recitation_text.dart';
 import 'package:arabic_learning/screens/test/recitation/recitation_add_page.dart';
 import 'package:arabic_learning/screens/test/recitation/recitation_detail_page.dart';
 import 'package:arabic_learning/services/app_data.dart';
+import 'package:arabic_learning/services/global_state.dart';
 import 'package:arabic_learning/services/recitation_service.dart';
 import 'package:arabic_learning/services/recitation_store.dart';
 import 'package:arabic_learning/theme/tokens.dart' show AppRadius, AppSpacing, AppSemanticColors;
@@ -13,6 +14,7 @@ import 'package:arabic_learning/widgets/kit.dart' show Button;
 import 'package:arabic_learning/widgets/motion.dart' show StaggeredEntrance;
 import 'package:arabic_learning/widgets/overlays.dart' show alart;
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
 class RecitationListPage extends StatefulWidget {
   const RecitationListPage({super.key});
@@ -39,6 +41,7 @@ class _RecitationListPageState extends State<RecitationListPage> {
   }
 
   void _deleteUnit(RecitationTextUnit unit) {
+    final Global global = context.read<Global>();
     alart(
       context,
       "确定删除「${unit.title}」吗？历史成绩会保留。",
@@ -46,6 +49,7 @@ class _RecitationListPageState extends State<RecitationListPage> {
       onConfirmed: () async {
         AppData().recitationTextData.units.remove(unit);
         await AppData().saveRecitationTextData();
+        global.uiLogger.info("删除背诵课文: ${unit.title}");
         if (mounted) setState(() {});
       },
     );

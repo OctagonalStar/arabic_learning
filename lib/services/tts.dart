@@ -2,16 +2,31 @@
 // playTextToSpeech 支持系统 TTS / 在线 TTS / sherpa-onnx 本地 VITS 三种音源。
 
 import 'package:arabic_learning/core/statics.dart';
+import 'package:arabic_learning/core/wav.dart';
 import 'package:arabic_learning/services/app_data.dart';
+import 'package:arabic_learning/services/blob_url.dart';
+import 'package:arabic_learning/services/web_audio.dart';
 import 'package:arabic_learning/services/http_client.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter_tts/flutter_tts.dart';
 import 'package:just_audio/just_audio.dart';
 import 'package:logging/logging.dart';
 import 'package:path_provider/path_provider.dart' as path_provider;
 import 'package:arabic_learning/package_replacement/fake_dart_io.dart' if (dart.library.io) 'dart:io' as io;
-import 'package:arabic_learning/package_replacement/fake_sherpa_onnx.dart' if (dart.library.io) 'package:sherpa_onnx/sherpa_onnx.dart' as sherpa_onnx;
+import 'package:sherpa_onnx/sherpa_onnx.dart' as sherpa_onnx;
 
 final Logger _logger = Logger("TTS");
+
+/// 上次本地合成的缓存：文本、语速与模型都没变时直接复用音频，不重复推理。
+String? _cacheKey;
+io.File? _cacheFile;
+
+/// Web 没有文件系统，缓存是常驻的 blob URL。
+String? _cacheWebUrl;
+
+/// 上一段 blob URL，等下一次换缓存时再释放（播放期间不能删）。
+String? _spareWebUrl;
+Duration _cacheDuration = Duration.zero;
 
 /// 语音播放失败。
 ///
@@ -105,35 +120,66 @@ Future<void> playTextToSpeech(String text, {double? speed}) async {
     if(AppData().vitsTTS == null) {
       throw const TtsFailure("本地语音模型还没有准备好。请先在 设置-音频 中下载模型。");
     }
-    late final io.File cacheFile;
     late final Duration duration;
-    // 合成与播放分开报错：播放失败不代表模型有问题，不能让用户去重下模型。
-    try {
-      final basePath = await path_provider.getApplicationCacheDirectory();
-      cacheFile = io.File("${basePath.path}/temp.wav");
-      if(cacheFile.existsSync()) cacheFile.deleteSync();
-      final audio = AppData().vitsTTS!.generate(text: text, speed: speed);
-      final ok = sherpa_onnx.writeWave(
-                          filename: cacheFile.path,
-                          samples: audio.samples,
-                          sampleRate: audio.sampleRate,
-                        );
-      if(!ok) throw Exception("无法将音频写入文件");
-      duration = Duration(milliseconds: (audio.samples.length / audio.sampleRate * 1000).round());
-    } catch (e) {
-      throw _toTtsFailure(
-        "本地语音合成失败。可重试一次，仍失败请在 设置-音频 中重新下载模型。",
-        e,
-      );
+    late final Uri source;
+    final String cacheKey = "$text|$speed|${AppData().preferredTtsModelId}";
+    final bool hit = _cacheKey == cacheKey &&
+        (kIsWeb
+            ? _cacheWebUrl != null
+            : _cacheFile != null && _cacheFile!.existsSync());
+    if (hit) {
+      duration = _cacheDuration;
+      source = kIsWeb ? Uri.parse(_cacheWebUrl!) : Uri.file(_cacheFile!.path);
+      _logger.info("本地语音命中缓存: ${text.length} 字");
+    } else {
+      // 合成与播放分开报错：播放失败不代表模型有问题，不能让用户去重下模型。
+      try {
+        final audio = AppData().vitsTTS!.generate(text: text, speed: speed);
+        duration = Duration(
+            milliseconds:
+                (audio.samples.length / audio.sampleRate * 1000).round());
+        if (kIsWeb) {
+          // 轮换两个槽位：上一段可能还在播，只回收再往前的那一段。
+          final String? spare = _spareWebUrl;
+          _spareWebUrl = _cacheWebUrl;
+          _cacheWebUrl =
+              createBlobUrl(encodeWav16(audio.samples, audio.sampleRate));
+          if (spare != null) revokeBlobUrl(spare);
+          source = Uri.parse(_cacheWebUrl!);
+        } else {
+          final basePath = await path_provider.getApplicationCacheDirectory();
+          final io.File cacheFile = io.File("${basePath.path}/tts_cache.wav");
+          if (cacheFile.existsSync()) cacheFile.deleteSync();
+          final ok = sherpa_onnx.writeWave(
+            filename: cacheFile.path,
+            samples: audio.samples,
+            sampleRate: audio.sampleRate,
+          );
+          if (!ok) throw Exception("无法将音频写入文件");
+          _cacheFile = cacheFile;
+          source = Uri.file(cacheFile.path);
+        }
+        _cacheKey = cacheKey;
+        _cacheDuration = duration;
+      } catch (e) {
+        throw _toTtsFailure(
+          "本地语音合成失败。可重试一次，仍失败请在 设置-音频 中重新下载模型。",
+          e,
+        );
+      }
     }
     try {
-      await StaticsVar.player.setAudioSource(AudioSource.uri(Uri.file(cacheFile.path)));
-      // play() 在播放结束/暂停时完成，和固定时长一起等，异常才能落在这个 try 里。
-      await Future.wait([StaticsVar.player.play(), Future.delayed(duration)]);
+      if (kIsWeb) {
+        // Web 上 just_audio 换源会残留旧音频，这里用一次性 <audio> 元素。
+        _logger.info("Web 本地语音播放: ${text.length} 字, ${duration.inMilliseconds}ms");
+        await playWavBlobUrl(source.toString(), duration);
+      } else {
+        await StaticsVar.player.setAudioSource(AudioSource.uri(source));
+        // play() 在播放结束/暂停时完成，和固定时长一起等，异常才能落在这个 try 里。
+        await Future.wait([StaticsVar.player.play(), Future.delayed(duration)]);
+      }
     } catch (e) {
       throw _toTtsFailure("音频播放失败，可能是本机没有可用的播放后端。", e);
-    } finally {
-      if(cacheFile.existsSync()) cacheFile.deleteSync();
     }
   }
 }

@@ -1,5 +1,5 @@
 // 课文详情底部固定进度条：「第 N 句 / 共 M 句」+ 可拖动定位。
-// 「学习 / 背诵」两个 tab 共用；[onLocate] 由各自映射到翻页或滚动。
+// 「学习 / 逐句 / 整篇」三个 tab 共用；[onLocate] 由各自映射到翻页或滚动。
 
 import 'package:arabic_learning/theme/tokens.dart' show AppSpacing;
 import 'package:flutter/material.dart';

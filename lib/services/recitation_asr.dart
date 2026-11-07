@@ -3,12 +3,11 @@
 
 import 'dart:typed_data';
 
-import 'package:arabic_learning/core/statics.dart';
-import 'package:arabic_learning/package_replacement/fake_dart_io.dart'
-    if (dart.library.io) 'dart:io' as io;
-import 'package:arabic_learning/package_replacement/fake_sherpa_onnx.dart'
-    if (dart.library.io) 'package:sherpa_onnx/sherpa_onnx.dart' as sherpa_onnx;
+import 'package:sherpa_onnx/sherpa_onnx.dart' as sherpa_onnx;
 import 'package:arabic_learning/services/app_data.dart';
+import 'package:arabic_learning/services/model_manager.dart';
+import 'package:arabic_learning/services/web_asr_globals.dart';
+import 'package:arabic_learning/services/web_model_store.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:logging/logging.dart';
 
@@ -30,47 +29,86 @@ class RecitationAsr {
   /// 识别一段 16k 单声道音频。
   ///
   /// 每次调用创建并释放 recognizer（Whisper tiny 常驻内存不值得），
-  /// Web 或模型未下载时返回空列表。
+  /// 模型未下载时返回空列表。
   Future<List<AsrWord>> transcribe(
     Float32List samples, {
     int sampleRate = 16000,
   }) async {
-    if (kIsWeb || samples.isEmpty) return const <AsrWord>[];
+    if (samples.isEmpty) return const <AsrWord>[];
 
-    final AsrModelInfo info =
-        StaticsVar.asrModel(StaticsVar.defaultAsrModelId);
-    final String dir =
-        '${AppData().basePath.path}/${StaticsVar.asrModelDir(info.id)}';
-    final io.File encoder = io.File('$dir/${info.encoderFile}');
-    final io.File decoder = io.File('$dir/${info.decoderFile}');
-    final io.File tokens = io.File('$dir/${info.tokensFile}');
-    if (!encoder.existsSync() ||
-        !decoder.existsSync() ||
-        !tokens.existsSync()) {
+    final String id = AppData().preferredAsrModelId;
+    final AsrModelFiles? files;
+    final String dir;
+    if (kIsWeb) {
+      final WebModelMeta? meta = WebModelStore.metaOf(id);
+      if (meta == null) {
+        _logger.info('识别模型未下载: $id');
+        return const <AsrWord>[];
+      }
+      dir = 'models/$id';
+      files = ModelManager.resolveAsrNames(meta.names);
+    } else {
+      dir = '${AppData().basePath.path}/${AppData().preferredAsrModelDir}';
+      files = ModelManager.resolveAsr(dir);
+    }
+    if (files == null) {
       _logger.info('识别模型未下载: $dir');
       return const <AsrWord>[];
     }
 
-    sherpa_onnx.initBindings();
-    final sherpa_onnx.OfflineRecognizerConfig config =
-        sherpa_onnx.OfflineRecognizerConfig(
-      model: sherpa_onnx.OfflineModelConfig(
-        whisper: sherpa_onnx.OfflineWhisperModelConfig(
-          encoder: encoder.path,
-          decoder: decoder.path,
-          language: info.language,
-          task: 'transcribe',
-          enableTokenTimestamps: true,
+    await sherpa_onnx.initBindingsAsync();
+    if (kIsWeb) {
+      await exposeSherpaOnnxAsrGlobals();
+      await WebModelStore.mount(
+        id,
+        files: files.nemoCtc
+            ? <String>[files.model, files.tokens]
+            : <String>[files.encoder!, files.decoder!, files.tokens],
+      );
+    }
+    final String family = files.nemoCtc ? 'NeMo CTC' : 'Whisper';
+    _logger.info(
+        '识别模型: 家族=$family, model=${files.model}, '
+        'encoder=${files.encoder ?? '-'}, decoder=${files.decoder ?? '-'}, '
+        'tokens=${files.tokens}');
+    final sherpa_onnx.OfflineModelConfig modelConfig;
+    if (files.nemoCtc) {
+      modelConfig = sherpa_onnx.OfflineModelConfig(
+        nemoCtc: sherpa_onnx.OfflineNemoEncDecCtcModelConfig(
+          model: '$dir/${files.model}',
         ),
-        tokens: tokens.path,
-        numThreads: 2,
+        tokens: '$dir/${files.tokens}',
+        // wasm 是单线程构建，多线程参数只会刷警告。
+        numThreads: kIsWeb ? 1 : 2,
         debug: false,
         provider: 'cpu',
-      ),
-    );
+      );
+    } else {
+      modelConfig = sherpa_onnx.OfflineModelConfig(
+        whisper: sherpa_onnx.OfflineWhisperModelConfig(
+          encoder: '$dir/${files.encoder}',
+          decoder: '$dir/${files.decoder}',
+          language: 'ar',
+          task: 'transcribe',
+          // 发布包的 tiny-*.onnx 未导出 cross-attention，开启只会刷警告且时间戳恒空；
+          // 词级时间由 _wordsFrom 均匀回退，评分不依赖精确时间。
+          enableTokenTimestamps: false,
+        ),
+        tokens: '$dir/${files.tokens}',
+        // wasm 是单线程构建，多线程参数只会刷警告。
+        numThreads: kIsWeb ? 1 : 2,
+        debug: false,
+        provider: 'cpu',
+      );
+    }
+    final sherpa_onnx.OfflineRecognizerConfig config =
+        sherpa_onnx.OfflineRecognizerConfig(model: modelConfig);
+    _logger.info(
+        '识别开始: 模型=${AppData().preferredAsrModelId}, 采样=${samples.length}, 时长=${(samples.length / sampleRate).toStringAsFixed(2)}s');
 
     sherpa_onnx.OfflineRecognizer? recognizer;
     sherpa_onnx.OfflineStream? stream;
+    final Stopwatch watch = Stopwatch()..start();
     try {
       recognizer = sherpa_onnx.OfflineRecognizer(config);
       stream = recognizer.createStream();
@@ -78,12 +116,20 @@ class RecitationAsr {
       recognizer.decode(stream);
       final sherpa_onnx.OfflineRecognizerResult result =
           recognizer.getResult(stream);
-      return _wordsFrom(
+      final List<AsrWord> words = _wordsFrom(
         result.tokens,
         result.timestamps,
         result.text,
         samples.length / sampleRate,
       );
+      _logger.info(
+          '识别完成: ${watch.elapsedMilliseconds}ms, tokens=${result.tokens.length}, '
+          'timestamps=${result.timestamps.length}, words=${words.length}, '
+          'text="${result.text.trim()}"');
+      return words;
+    } catch (e, s) {
+      _logger.severe('识别失败: 模型=${AppData().preferredAsrModelId}', e, s);
+      rethrow;
     } finally {
       stream?.free();
       recognizer?.free();
