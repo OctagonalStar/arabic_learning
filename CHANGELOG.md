@@ -22,6 +22,7 @@
 - 修复本地神经网络语音回归：`dataDir` 需指向模型目录下的 `espeak-ng-data`，此前误传模型根目录导致 `phontab` 校验失败
 - 关闭 Whisper 识别的时间戳请求（发布包未导出 cross-attention，开启只会刷警告且时间戳恒为空），词级时间改用均匀回退
 - 朗读、录音、识别、打分与模型下载/导入/删除补齐日志，便于定位问题
+- 修复网页端识别报「OfflineRecognizer not found」：上游 wrapper 用 class 声明且被间接 eval 注入，类不会留在全局对象上，改为重新注入并把类显式挂到 `globalThis`；网页端朗读改用独立 `<audio>` 元素，避免换句时仍播上一条或旧 blob 被提前释放
 
 ### Changed
 

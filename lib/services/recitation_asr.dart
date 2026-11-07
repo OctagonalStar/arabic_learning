@@ -58,7 +58,7 @@ class RecitationAsr {
 
     await sherpa_onnx.initBindingsAsync();
     if (kIsWeb) {
-      exposeSherpaOnnxAsrGlobals();
+      await exposeSherpaOnnxAsrGlobals();
       await WebModelStore.mount(
         id,
         files: files.nemoCtc
