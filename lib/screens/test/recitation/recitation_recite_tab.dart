@@ -85,6 +85,10 @@ class _RecitationReciteTabState extends State<RecitationReciteTab>
   String _status = '';
   RecitationOutcome? _outcome;
   Timer? _timer;
+  // 开始录音的墙钟时间：读秒按它算，不靠 tick 累加。
+  DateTime? _startedAt;
+  // 启动流程是异步的，用同步标志挡住连点。
+  bool _starting = false;
 
   bool get _whole => widget.mode == RecitationReciteMode.whole;
 
@@ -167,29 +171,41 @@ class _RecitationReciteTabState extends State<RecitationReciteTab>
 
   /// 开始录音。[index] 为句子索引，整篇模式传 -1。
   Future<void> _startRecording(int index) async {
-    if (_stage != _Stage.ready) return;
-    final Global global = context.read<Global>();
-    _retryIndex = index;
-    if (!await _ensurePermission()) return;
-    if (!mounted) return;
+    // 启动是异步的，用同步标志挡住连点：重复 start 会各起一个计时器，读秒翻倍。
+    if (_stage != _Stage.ready || _starting) return;
+    _starting = true;
     try {
-      await _recorder.start();
-    } catch (e) {
-      global.uiLogger.severe("录音启动失败: $e");
-      if (mounted) showSnackBar(context, "录音启动失败：$e");
-      return;
+      final Global global = context.read<Global>();
+      _retryIndex = index;
+      if (!await _ensurePermission()) return;
+      if (!mounted) return;
+      try {
+        await _recorder.start();
+      } catch (e) {
+        global.uiLogger.severe("录音启动失败: $e");
+        if (mounted) showSnackBar(context, "录音启动失败：$e");
+        return;
+      }
+      if (!mounted) return;
+      global.uiLogger.info(
+          "录音开始: ${index >= 0 ? "第 ${index + 1} 句" : "整篇"} (${widget.unit.title})");
+      setState(() {
+        _stage = _Stage.recording;
+        _activeIndex = index;
+        _seconds = 0;
+      });
+      _startedAt = DateTime.now();
+      _timer?.cancel();
+      // 读秒按开始时间算而不是 tick 累加：回调抖动或重复都不会跳秒。
+      _timer = Timer.periodic(const Duration(seconds: 1), (_) {
+        final DateTime? started = _startedAt;
+        if (!mounted || started == null) return;
+        final int elapsed = DateTime.now().difference(started).inSeconds;
+        if (elapsed != _seconds) setState(() => _seconds = elapsed);
+      });
+    } finally {
+      _starting = false;
     }
-    if (!mounted) return;
-    global.uiLogger.info(
-        "录音开始: ${index >= 0 ? "第 ${index + 1} 句" : "整篇"} (${widget.unit.title})");
-    setState(() {
-      _stage = _Stage.recording;
-      _activeIndex = index;
-      _seconds = 0;
-    });
-    _timer = Timer.periodic(const Duration(seconds: 1), (_) {
-      if (mounted) setState(() => _seconds++);
-    });
   }
 
   /// 停止录音并评分。[index] 为句子索引，整篇模式传 -1。
