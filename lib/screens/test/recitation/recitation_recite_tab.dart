@@ -145,6 +145,8 @@ class _RecitationReciteTabState extends State<RecitationReciteTab> {
       return;
     }
     if (!mounted) return;
+    global.uiLogger.info(
+        "录音开始: ${index >= 0 ? "第 ${index + 1} 句" : "整篇"} (${widget.unit.title})");
     setState(() {
       _stage = _Stage.recording;
       _activeIndex = index;
@@ -185,6 +187,10 @@ class _RecitationReciteTabState extends State<RecitationReciteTab> {
         },
       );
       if (!mounted) return;
+      global.uiLogger.info(
+          "评分完成: ${index >= 0 ? "第 ${index + 1} 句" : "整篇"}, "
+          "scoreable=${outcome.scoreable}, score=${outcome.score}, "
+          "coverage=${outcome.coverage.toStringAsFixed(3)}");
       if (index >= 0) {
         setState(() {
           _sentenceOutcomes[index] = outcome;

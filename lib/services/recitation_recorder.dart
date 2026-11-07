@@ -4,7 +4,10 @@ import 'package:arabic_learning/services/recitation_audio.dart'
     show recitationSampleRate;
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:path_provider/path_provider.dart' as path_provider;
+import 'package:logging/logging.dart';
 import 'package:record/record.dart';
+
+final Logger _logger = Logger('RecitationRecorder');
 
 class RecitationRecorder {
   final AudioRecorder _recorder = AudioRecorder();
@@ -15,7 +18,9 @@ class RecitationRecorder {
 
   Future<bool> ensurePermission() async {
     if (!supported) return false;
-    return _recorder.hasPermission();
+    final bool granted = await _recorder.hasPermission();
+    _logger.info('麦克风权限: ${granted ? "已授权" : "被拒绝"}');
+    return granted;
   }
 
   Future<void> start() async {
@@ -33,6 +38,7 @@ class RecitationRecorder {
       path: path,
     );
     _path = path;
+    _logger.info('录音开始: $path');
   }
 
   /// 停止录音，返回 WAV 文件路径。
@@ -41,10 +47,12 @@ class RecitationRecorder {
     final String? path = stopped ?? _path;
     _path = null;
     if (path == null) throw StateError('没有正在进行的录音');
+    _logger.info('录音结束: $path');
     return path;
   }
 
   Future<void> cancel() async {
+    _logger.info('录音取消');
     _path = null;
     if (!supported) return;
     await _recorder.cancel();

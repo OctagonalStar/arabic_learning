@@ -60,7 +60,9 @@ class RecitationAsr {
           decoder: decoder.path,
           language: info.language,
           task: 'transcribe',
-          enableTokenTimestamps: true,
+          // 发布包的 tiny-*.onnx 未导出 cross-attention，开启只会刷警告且时间戳恒空；
+          // 词级时间由 _wordsFrom 均匀回退，评分不依赖精确时间。
+          enableTokenTimestamps: false,
         ),
         tokens: tokens.path,
         numThreads: 2,
@@ -68,9 +70,12 @@ class RecitationAsr {
         provider: 'cpu',
       ),
     );
+    _logger.info(
+        '识别开始: 模型=${info.id}, 采样=${samples.length}, 时长=${(samples.length / sampleRate).toStringAsFixed(2)}s');
 
     sherpa_onnx.OfflineRecognizer? recognizer;
     sherpa_onnx.OfflineStream? stream;
+    final Stopwatch watch = Stopwatch()..start();
     try {
       recognizer = sherpa_onnx.OfflineRecognizer(config);
       stream = recognizer.createStream();
@@ -78,12 +83,20 @@ class RecitationAsr {
       recognizer.decode(stream);
       final sherpa_onnx.OfflineRecognizerResult result =
           recognizer.getResult(stream);
-      return _wordsFrom(
+      final List<AsrWord> words = _wordsFrom(
         result.tokens,
         result.timestamps,
         result.text,
         samples.length / sampleRate,
       );
+      _logger.info(
+          '识别完成: ${watch.elapsedMilliseconds}ms, tokens=${result.tokens.length}, '
+          'timestamps=${result.timestamps.length}, words=${words.length}, '
+          'text="${result.text.trim()}"');
+      return words;
+    } catch (e, s) {
+      _logger.severe('识别失败: 模型=${info.id}', e, s);
+      rethrow;
     } finally {
       stream?.free();
       recognizer?.free();
