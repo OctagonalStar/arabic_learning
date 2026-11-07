@@ -349,12 +349,10 @@ class AppData {
       files = ModelManager.resolveTts(dir);
     }
     if (files == null) return;
-    // Web 的 wasm 只认 MEMFS 内的路径；VITS 需要 espeak 数据目录，Kokoro 不需要。
-    final String dataDir = kIsWeb
-        ? (files.kind == TtsModelKind.vits && files.hasEspeakData
-            ? '$dir/espeak-ng-data'
-            : '')
-        : (files.hasEspeakData ? '$dir/espeak-ng-data' : dir);
+    // VITS 与 Kokoro 都由 espeak-ng 做文本转音素；Web 的 wasm 1.13.8 内置
+    // espeak-ng，dataDir 必须指向 espeak-ng-data 目录（Kokoro 也要求非空）。
+    final String dataDir =
+        files.hasEspeakData ? '$dir/espeak-ng-data' : dir;
     logger.info(
         "TTS: 加载本地TTS中 ($id, ${files.kind.name}, dir=$dir, dataDir=$dataDir)");
     if (kIsWeb) {
@@ -382,7 +380,7 @@ class AppData {
             dataDir: dataDir,
             lengthScale: 1 / playRate,
           ),
-          numThreads: 2,
+          numThreads: kIsWeb ? 1 : 2,
           debug: false,
           provider: 'cpu',
         );
@@ -395,7 +393,7 @@ class AppData {
             dataDir: dataDir,
             lengthScale: 1 / playRate,
           ),
-          numThreads: 2,
+          numThreads: kIsWeb ? 1 : 2,
           debug: false,
           provider: 'cpu',
         );
