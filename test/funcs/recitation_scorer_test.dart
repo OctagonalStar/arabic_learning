@@ -73,7 +73,7 @@ void main() {
     );
   });
 
-  test('覆盖率与对齐覆盖率同时偏低 -> 不给分', () {
+  test('一个词都没命中 -> 不给分', () {
     final RecitationOutcome outcome = _score(
       reference: 'بسم الله الرحمن الرحيم رب العالمين',
       words: _words(<String>['خطأ', 'كلام']),
@@ -83,6 +83,14 @@ void main() {
     expect(outcome.grade, isNull);
     expect(outcome.summary, '没听清，请靠近麦克风重录');
     expect(outcome.issues.single.type, RecitationIssueType.unclear);
+  });
+
+  test('识别结果退化成同一个词反复 -> 不给分', () {
+    final RecitationOutcome outcome =
+        _score(words: _words(List<String>.filled(10, 'ألغاء')));
+    expect(outcome.scoreable, isFalse);
+    expect(outcome.score, isNull);
+    expect(outcome.summary, unclearSummary);
   });
 
   test('录音短于 2 秒 -> 不给分', () {
