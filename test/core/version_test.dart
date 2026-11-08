@@ -152,6 +152,68 @@ void main() {
     });
   });
 
+  group('parseReleaseVersion', () {
+    test('解析正式版与预发布后缀', () {
+      expect(
+        parseReleaseVersion('1.2.0'),
+        (core: 102000, stage: versionStageRelease, ordinal: 0),
+      );
+      expect(
+        parseReleaseVersion('v1.2.1-alpha.37'),
+        (core: 102001, stage: versionStageAlpha, ordinal: 37),
+      );
+      expect(
+        parseReleaseVersion('1.2.1-rc.2'),
+        (core: 102001, stage: versionStageRc, ordinal: 2),
+      );
+      expect(
+        parseReleaseVersion('v1.2.1-beta'),
+        (core: 102001, stage: versionStageBeta, ordinal: 0),
+      );
+    });
+
+    test('忽略 +build 后缀', () {
+      expect(
+        parseReleaseVersion('v1.2.1-alpha.3+45'),
+        (core: 102001, stage: versionStageAlpha, ordinal: 3),
+      );
+    });
+
+    test('未知后缀与非版本输入返回 null', () {
+      expect(parseReleaseVersion('1.2.1-foo.1'), isNull);
+      expect(parseReleaseVersion('1.2.x'), isNull);
+      expect(parseReleaseVersion(''), isNull);
+      expect(parseReleaseVersion('latest'), isNull);
+    });
+  });
+
+  group('isNewerRelease', () {
+    test('正式版 > rc > beta > alpha（同 core）', () {
+      final ReleaseVersion release = parseReleaseVersion('1.2.1')!;
+      final ReleaseVersion rc = parseReleaseVersion('1.2.1-rc.1')!;
+      final ReleaseVersion beta = parseReleaseVersion('1.2.1-beta.9')!;
+      final ReleaseVersion alpha = parseReleaseVersion('1.2.1-alpha.99')!;
+      expect(isNewerRelease(release, rc), isTrue);
+      expect(isNewerRelease(rc, beta), isTrue);
+      expect(isNewerRelease(beta, alpha), isTrue);
+      expect(isNewerRelease(alpha, release), isFalse);
+    });
+
+    test('同阶段按序号比较', () {
+      final ReleaseVersion a37 = parseReleaseVersion('1.2.1-alpha.37')!;
+      final ReleaseVersion a36 = parseReleaseVersion('1.2.1-alpha.36')!;
+      expect(isNewerRelease(a37, a36), isTrue);
+      expect(isNewerRelease(a36, a37), isFalse);
+      expect(isNewerRelease(a37, a37), isFalse);
+    });
+
+    test('core 优先于阶段', () {
+      final ReleaseVersion alpha = parseReleaseVersion('1.2.1-alpha.1')!;
+      final ReleaseVersion release = parseReleaseVersion('1.2.0')!;
+      expect(isNewerRelease(alpha, release), isTrue);
+    });
+  });
+
   group('版本漂移守卫（pubspec.yaml vs StaticsVar.appVersion）', () {
     test('pubspec 版本号与 StaticsVar.appVersion 同步', () {
       final String pubspec = File('pubspec.yaml').readAsStringSync();

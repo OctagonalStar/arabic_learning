@@ -65,6 +65,67 @@ String? parseReleaseRedirectTag(String location) {
   return tag.isEmpty ? null : tag;
 }
 
+/// 预发布阶段排序：alpha < beta < rc < 正式版。
+typedef ReleaseVersion = ({int core, int stage, int ordinal});
+const int versionStageAlpha = 0;
+const int versionStageBeta = 1;
+const int versionStageRc = 2;
+const int versionStageRelease = 3;
+
+/// 解析完整版本（含预发布后缀）为 [ReleaseVersion]。
+///
+/// 宽容解析：允许前导 `v`/`V`，忽略 `+build`。`"1.2.0"` 为正式版；
+/// `"v1.2.1-alpha.37"` / `"1.2.1-rc.2"` 为对应阶段；缺省序号按 0 计
+/// （`"1.2.1-beta"`）。core 非法或未知后缀（如 `-foo.1`）返回 `null`。
+ReleaseVersion? parseReleaseVersion(String tag) {
+  String value = tag.trim();
+  if (value.isEmpty) return null;
+  if (value.startsWith('v') || value.startsWith('V')) {
+    value = value.substring(1);
+  }
+  final int plusIndex = value.indexOf('+');
+  if (plusIndex != -1) value = value.substring(0, plusIndex);
+
+  String core = value;
+  String suffix = '';
+  final int dashIndex = value.indexOf('-');
+  if (dashIndex != -1) {
+    core = value.substring(0, dashIndex);
+    suffix = value.substring(dashIndex + 1);
+  }
+
+  final int? coreVersion = _tryParse(core);
+  if (coreVersion == null) return null;
+
+  if (suffix.isEmpty) {
+    return (core: coreVersion, stage: versionStageRelease, ordinal: 0);
+  }
+
+  final List<String> parts = suffix.split('.');
+  const Map<String, int> stages = <String, int>{
+    'alpha': versionStageAlpha,
+    'beta': versionStageBeta,
+    'rc': versionStageRc,
+  };
+  final int? stage = stages[parts.first.trim().toLowerCase()];
+  if (stage == null) return null;
+
+  int ordinal = 0;
+  if (parts.length > 1) {
+    final int? parsed = int.tryParse(parts[1].trim());
+    if (parsed == null || parsed < 0) return null;
+    ordinal = parsed;
+  }
+  return (core: coreVersion, stage: stage, ordinal: ordinal);
+}
+
+/// [candidate] 是否比 [current] 更新：依次比较 core、stage、ordinal。
+bool isNewerRelease(ReleaseVersion candidate, ReleaseVersion current) {
+  if (candidate.core != current.core) return candidate.core > current.core;
+  if (candidate.stage != current.stage) return candidate.stage > current.stage;
+  return candidate.ordinal > current.ordinal;
+}
+
 /// 内部宽容解析：失败返回 `null`（用于区分合法的 `0` 与非法输入）。
 int? _tryParse(String version) {
   String value = version.trim();
