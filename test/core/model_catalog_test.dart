@@ -6,8 +6,8 @@ void main() {
   group('模型目录', () {
     test('TTS / ASR 模型 id 全局唯一', () {
       final List<String> ids = <String>[
-        ...StaticsVar.ttsModels.map((final TtsModelInfo m) => m.id),
-        ...StaticsVar.asrModels.map((final AsrModelInfo m) => m.id),
+        ...StaticsVar.ttsModels.map((TtsModelInfo m) => m.id),
+        ...StaticsVar.asrModels.map((AsrModelInfo m) => m.id),
       ];
       expect(ids.toSet().length, ids.length);
     });

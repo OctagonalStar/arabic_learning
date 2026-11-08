@@ -19,7 +19,7 @@ publish_to: 'none' # Remove this line if you wish to publish to pub.dev
 version: 1.2.0+16
 
 environment:
-  sdk: ^3.12.0
+  sdk: ^3.13.0
 
 # Dependencies specify other packages that your package needs in order to work.
 # To automatically upgrade your package dependencies to the latest versions
@@ -30,19 +30,20 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-  window_manager: ^0.5.1 #no support [android,iOS,Web] acceptable 
-  path_provider: ^2.1.5 #no support [Web] UNacceptable
+  window_manager: ^0.6.0
+  path_provider: ^2.1.5
   provider: ^6.0.1
-  file_picker: ^12.0.0-beta.5 #no completely support [Web] UNacceptable
+  file_picker: ^13.3.2
   flutter_tts: ^4.2.5
   just_audio: ^0.10.5
-  just_audio_windows: ^0.2.2 #just_audio's windows addon
-  just_audio_media_kit: ^2.1.0 #just_audio's linux addon（其它平台不启用）
-  media_kit_libs_linux: ^1.2.1 #just_audio_media_kit 依赖的 Linux mpv 库
+  just_audio_windows: ^0.2.2
+  just_audio_media_kit: ^2.1.0
+  media_kit_libs_linux: ^1.2.1
   flutter_launcher_icons: ^0.14.4
   shared_preferences: ^2.5.3
   url_launcher: ^6.3.2
-  sherpa_onnx: ^1.12.14
+  # 2.x 删除了 espeak-ng，而阿语 piper/kokoro 模型没有 lexicon，升级后只会产出空音频
+  sherpa_onnx: ^1.13.8
   archive: ^4.0.7
   dio: ^5.9.0
   fsrs: ^2.0.1
@@ -50,7 +51,7 @@ dependencies:
   flutter_markdown_plus: ^1.0.5
   webdav_client: ^1.2.2
   logging: ^1.3.0
-  flutter_local_notifications: ^22.0.1
+  flutter_local_notifications: ^23.0.0
   workmanager: ^0.10.9
   flutter_webrtc: ^1.5.2
   crypto: ^3.0.7
@@ -58,7 +59,7 @@ dependencies:
   mobile_scanner: ^7.2.0
   wakelock_plus: ^1.5.1
   record: ^7.1.2
-  dynamic_color: ^2.1.0 # Material You 动态取色（Android/Linux/macOS/Windows，Web 无实现）
+  dynamic_color: ^2.1.0
   drift: ^2.32.0
   drift_flutter: ^0.3.1
 
