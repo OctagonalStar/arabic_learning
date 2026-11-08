@@ -4,7 +4,6 @@ import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import 'package:arabic_learning/package_replacement/fake_dart_io.dart' if (dart.library.io) 'dart:io' as io;
-import 'package:arabic_learning/core/statics.dart' show StaticsVar;
 import 'package:arabic_learning/core/version.dart' show versionIntToString;
 
 import 'package:arabic_learning/widgets/kit.dart' show Button, SettingItem, SettingRedirctButton, SettingRow;
@@ -374,9 +373,32 @@ class _SettingPage extends State<SettingPage> {
                       ),
                     ),
                     SettingRow(
+                      leading: "接收预发布",
+                      icon: Icons.science_outlined,
+                      note: "开启后检查 GitHub 上的 alpha / rc 预发布版本（开发版）",
+                      end: Switch(
+                        value: appData.config.regular.updateChannel ==
+                            RegularConfig.updateChannelDev,
+                        onChanged: (value) {
+                          context.read<Global>().uiLogger.info(
+                            "更新频道设置: $value",
+                          );
+                          context.read<Global>().patchConfig(
+                            (Config config) => config.copyWith(
+                              regular: config.regular.copyWith(
+                                updateChannel: value
+                                    ? RegularConfig.updateChannelDev
+                                    : RegularConfig.updateChannelStable,
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+                    SettingRow(
                       leading: "当前版本",
                       icon: Icons.info_outline,
-                      end: Text(versionIntToString(StaticsVar.appVersion)),
+                      end: Text(UpdateService().currentVersionLabel),
                     ),
                     const _CheckUpdateRow(),
                     if (appData.config.regular.skippedVersion != 0)

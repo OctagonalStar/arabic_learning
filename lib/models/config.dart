@@ -209,6 +209,9 @@ class RegularConfig {
   /// 已跳过的版本号（int 编码，见 `core/version.dart`），为 0 表示不跳过任何版本。
   final int skippedVersion;
 
+  /// 更新频道：0 正式版，1 开发版预发布（alpha / rc）。
+  final int updateChannel;
+
   /// 是否使用 DoH（DNS over HTTPS）解析域名；Web 端无自定义 DNS 能力，忽略此设置。
   final bool useDoh;
 
@@ -221,6 +224,12 @@ class RegularConfig {
   /// [themeMode] 取值：强制深色。
   static const int themeModeDark = 2;
 
+  /// [updateChannel] 取值：正式版。
+  static const int updateChannelStable = 0;
+
+  /// [updateChannel] 取值：开发版预发布。
+  static const int updateChannelDev = 1;
+
   const RegularConfig({
     this.theme = 9,
     this.font = 0,
@@ -230,6 +239,7 @@ class RegularConfig {
     this.hideAppDownloadButton = false,
     this.autoCheckUpdate = true,
     this.skippedVersion = 0,
+    this.updateChannel = updateChannelStable,
     this.useDoh = false
   });
 
@@ -243,6 +253,7 @@ class RegularConfig {
       "hideAppDownloadButton": hideAppDownloadButton,
       "autoCheckUpdate": autoCheckUpdate,
       "skippedVersion": skippedVersion,
+      "updateChannel": updateChannel,
       "useDoh": useDoh,
     };
   }
@@ -270,6 +281,7 @@ class RegularConfig {
       hideAppDownloadButton: setting["hideAppDownloadButton"] ?? false,
       autoCheckUpdate: setting["autoCheckUpdate"] ?? true,
       skippedVersion: setting["skippedVersion"] ?? 0,
+      updateChannel: setting["updateChannel"] ?? updateChannelStable,
       useDoh: setting["useDoh"] ?? false
     );
   }
@@ -283,6 +295,7 @@ class RegularConfig {
     bool? hideAppDownloadButton,
     bool? autoCheckUpdate,
     int? skippedVersion,
+    int? updateChannel,
     bool? useDoh,
   }) {
     final int nextThemeMode = themeMode ?? this.themeMode;
@@ -305,6 +318,7 @@ class RegularConfig {
       hideAppDownloadButton: hideAppDownloadButton ?? this.hideAppDownloadButton,
       autoCheckUpdate: autoCheckUpdate ?? this.autoCheckUpdate,
       skippedVersion: skippedVersion ?? this.skippedVersion,
+      updateChannel: updateChannel ?? this.updateChannel,
       useDoh: useDoh ?? this.useDoh,
     );
   }

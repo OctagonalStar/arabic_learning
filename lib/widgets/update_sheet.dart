@@ -16,7 +16,6 @@ import 'package:arabic_learning/screens/setting/update_page.dart'
         UpdatePage,
         describeUpdateError,
         displayUpdateVersionLabel,
-        formatUpdateVersionInt,
         updateProjectUrl;
 import 'package:arabic_learning/services/update_service.dart';
 import 'package:arabic_learning/theme/tokens.dart'
@@ -338,7 +337,7 @@ class _UpdateAvailableSheetState extends State<UpdateAvailableSheet> {
   Widget _versionCompare(BuildContext context) {
     final ColorScheme scheme = Theme.of(context).colorScheme;
     final TextTheme text = Theme.of(context).textTheme;
-    final String current = formatUpdateVersionInt(_service.currentVersionInt);
+    final String current = _service.currentVersionLabel;
     final String latest = displayUpdateVersionLabel(
       _service.latestVersionLabel,
     );

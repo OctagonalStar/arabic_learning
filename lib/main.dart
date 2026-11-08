@@ -2,6 +2,7 @@
 // 仅负责日志、屏幕方向、Android 后台任务、桌面窗口与 runApp；
 // 应用外壳 MyApp / MyHomePage 位于 lib/app.dart。
 
+
 import 'package:arabic_learning/app.dart' show MyApp;
 import 'package:arabic_learning/core/adaptive.dart' show shouldLockPortrait;
 import 'package:arabic_learning/core/statics.dart' show StaticsVar;
@@ -58,36 +59,34 @@ void main() async {
   
 
   if (StaticsVar.isDesktop) {
-    await windowManager.ensureInitialized();
     logger.info("检测到当前为桌面端，正在加载窗口配置");
-    // 初始尺寸按屏幕区域收敛：不超过屏幕 90%，且不小于最小窗口尺寸，
-    // 避免在小屏上把窗口开到屏幕外。macOS/Windows 的 engine 可能上报
-    // 无效的 Display 尺寸，此时退回原默认值（center 仍由 window_manager 校正位置）。
-    const Size defaultSize = Size(1300, 800);
-    const Size minSize = Size(480, 420);
-    final primaryView = WidgetsBinding.instance.platformDispatcher.views.first;
-    final double screenDpr = primaryView.display.devicePixelRatio;
-    final Size screenSize = primaryView.display.size / screenDpr;
-    final Size size = (screenDpr > 0 && screenSize.width > 0 && screenSize.height > 0)
-        ? Size(
-            clampDouble(screenSize.width * 0.9, minSize.width, defaultSize.width),
-            clampDouble(screenSize.height * 0.9, minSize.height, defaultSize.height),
-          )
-        : defaultSize;
-    WindowOptions windowOptions = WindowOptions(
-      size: size,
-      center: true,
-      backgroundColor: Colors.transparent,
-      skipTaskbar: false,
-      titleBarStyle: TitleBarStyle.normal,
-      title: StaticsVar.appName,
-      // 允许矮横屏窗口（如 480x420），不再强制较高的最小高度。
-      minimumSize: minSize,
-    );
-    windowManager.waitUntilReadyToShow(windowOptions, () async {
-      await windowManager.show();
-      await windowManager.focus();
-    });
+    final Window? window = WindowManager.instance.getCurrent();
+    if (window != null) {
+      // 初始尺寸按屏幕区域收敛：不超过屏幕 90%，且不小于最小窗口尺寸，
+      // 避免在小屏上把窗口开到屏幕外。macOS/Windows 的 engine 可能上报
+      // 无效的 Display 尺寸，此时退回原默认值。
+      const Size defaultSize = Size(1300, 800);
+      const Size minSize = Size(480, 420);
+      final primaryView =
+          WidgetsBinding.instance.platformDispatcher.views.first;
+      final double screenDpr = primaryView.display.devicePixelRatio;
+      final Size screenSize = primaryView.display.size / screenDpr;
+      final Size size = (screenDpr > 0 && screenSize.width > 0 && screenSize.height > 0)
+          ? Size(
+              clampDouble(screenSize.width * 0.9, minSize.width, defaultSize.width),
+              clampDouble(screenSize.height * 0.9, minSize.height, defaultSize.height),
+            )
+          : defaultSize;
+      window
+        ..setSize(size.toNative(), false)
+        // 允许矮横屏窗口（如 480x420），不再强制较高的最小高度。
+        ..minimumSize = minSize.toNative()
+        ..title = StaticsVar.appName
+        ..backgroundColor = Colors.transparent.toNative();
+      window.center();
+      window.show();
+      window.focus();
+    }
     logger.info("窗口配置加载完成");
   }
   // just_audio 官方没有 Linux 实现，这里用 media_kit(mpv) 补上播放后端；

@@ -21,7 +21,7 @@
 import 'dart:async';
 
 import 'package:arabic_learning/core/statics.dart';
-import 'package:arabic_learning/models/config.dart' show Config;
+import 'package:arabic_learning/models/config.dart' show Config, RegularConfig;
 import 'package:arabic_learning/services/app_data.dart';
 import 'package:arabic_learning/services/global_state.dart' show Global;
 import 'package:arabic_learning/services/http_client.dart';
@@ -207,12 +207,38 @@ class UpdateService extends ChangeNotifier {
   /// 当前安装版本（由构建时写入 [StaticsVar.appVersion]）。
   int get currentVersionInt => StaticsVar.appVersion;
 
+  /// 展示用版本字符串：CI 注入的完整版本优先，本地构建回落到 int 版本。
+  String get currentVersionLabel => StaticsVar.buildVersion.isNotEmpty
+      ? StaticsVar.buildVersion
+      : release.versionIntToString(currentVersionInt);
+
+  /// 当前安装的完整版本：优先使用 CI 注入的 [StaticsVar.buildVersion]。
+  release.ReleaseVersion get currentRelease =>
+      release.parseReleaseVersion(StaticsVar.buildVersion) ??
+      (
+        core: currentVersionInt,
+        stage: release.versionStageRelease,
+        ordinal: 0,
+      );
+
+  /// 是否处于开发版（预发布）更新频道。
+  bool get devChannel =>
+      AppData().config.regular.updateChannel == RegularConfig.updateChannelDev;
+
+  /// 最近一次发现的最新版本（由展示用 tag 解析）。
+  release.ReleaseVersion? get _latestRelease {
+    final String? label = _latestVersionLabel;
+    return label == null ? null : release.parseReleaseVersion(label);
+  }
+
   /// 是否存在待安装的新版本（已下载但尚未安装的安装包同样计入）。
-  bool get hasPendingUpdate =>
-      (_stage == UpdateStage.available &&
-          _latestVersionInt != null &&
-          release.isNewerVersion(_latestVersionInt!, currentVersionInt)) ||
-      _stage == UpdateStage.ready;
+  bool get hasPendingUpdate {
+    final release.ReleaseVersion? latest = _latestRelease;
+    return (_stage == UpdateStage.available &&
+            latest != null &&
+            release.isNewerRelease(latest, currentRelease)) ||
+        _stage == UpdateStage.ready;
+  }
 
   /// 已下载的安装包是否仍存在于磁盘上。
   ///
@@ -221,6 +247,8 @@ class UpdateService extends ChangeNotifier {
       _savedPath != null && !kIsWeb && io.File(_savedPath!).existsSync();
 
   /// 该最新版本是否已被用户「跳过」。
+  ///
+  /// 按 int 编码比较：开发频道下同 core 的不同预发布版本无法区分（known limitation）。
   bool get isSkipped =>
       _latestVersionInt != null &&
       AppData().config.regular.skippedVersion == _latestVersionInt;
@@ -266,6 +294,12 @@ class UpdateService extends ChangeNotifier {
     try {
       final Dio dio = _resolveDio();
 
+      // 开发版频道：查含预发布的 Release 列表，不走 `/latest` 快速探测。
+      if (devChannel) {
+        await _checkDevChannel(dio);
+        return;
+      }
+
       // 首选零配额探测：读取 `/releases/latest` 的 302 Location，正常情况下
       // 无需触碰 GitHub API（见 [latestReleaseRedirectUrl]）。探测本身不抛异常。
       final _ReleaseProbe probe = await _probeLatestRelease(dio);
@@ -280,12 +314,17 @@ class UpdateService extends ChangeNotifier {
       final String? redirectTag = probe.kind == _ReleaseProbeKind.tag
           ? probe.tag
           : null;
-      final int? redirectVersion = redirectTag == null
+      final release.ReleaseVersion? redirectRelease = redirectTag == null
           ? null
-          : release.parseGithubTag(redirectTag);
+          : release.parseReleaseVersion(redirectTag);
+      final int? redirectVersion = redirectRelease == null
+          ? null
+          : release.parseGithubTag(redirectTag!);
 
-      if (redirectTag != null && redirectVersion != null) {
-        if (!release.isNewerVersion(redirectVersion, currentVersionInt)) {
+      if (redirectTag != null &&
+          redirectRelease != null &&
+          redirectVersion != null) {
+        if (!release.isNewerRelease(redirectRelease, currentRelease)) {
           // 正常路径：已是最新，零 API 调用，也不触碰 MethodChannel（ABI）。
           _latestVersionLabel = redirectTag;
           _latestVersionInt = redirectVersion;
@@ -370,7 +409,8 @@ class UpdateService extends ChangeNotifier {
 
     final String? tag = latest.tag;
     final int? version = latest.version;
-    if (version == null) {
+    final release.ReleaseVersion? fullVersion = latest.fullVersion;
+    if (version == null || fullVersion == null) {
       throw Exception('无法解析版本号: $tag');
     }
 
@@ -391,12 +431,63 @@ class UpdateService extends ChangeNotifier {
       _assetSize = asset.size;
     }
 
-    if (release.isNewerVersion(version, currentVersionInt)) {
+    if (release.isNewerRelease(fullVersion, currentRelease)) {
       _setStage(UpdateStage.available);
     } else {
       _lastCheckWasUpToDate = true;
       _setStage(UpdateStage.idle);
     }
+  }
+
+  /// 开发版频道：`GET /releases?per_page=20`，从含预发布的列表里取最大版本。
+  Future<void> _checkDevChannel(Dio dio) async {
+    final Response<dynamic> response = await dio.get<dynamic>(
+      release.githubApiReleasesUrl,
+      options: Options(
+        headers: const <String, dynamic>{
+          'Accept': 'application/vnd.github+json',
+          'User-Agent': release.updateUserAgent,
+        },
+      ),
+    );
+
+    // 预发布与正式版一起比较：同 core 时正式版 > rc > beta > alpha。
+    release.GithubRelease? best;
+    release.ReleaseVersion? bestVersion;
+    for (final release.GithubRelease rel in release.parseReleaseList(
+      response.data,
+    )) {
+      if (rel.draft) continue;
+      final release.ReleaseVersion? full = rel.fullVersion;
+      if (full == null) continue;
+      if (bestVersion == null || release.isNewerRelease(full, bestVersion)) {
+        best = rel;
+        bestVersion = full;
+      }
+    }
+
+    if (best == null || bestVersion == null) {
+      _lastCheckWasUpToDate = true;
+      _setStage(UpdateStage.idle);
+      return;
+    }
+
+    if (!release.isNewerRelease(bestVersion, currentRelease)) {
+      _lastCheckWasUpToDate = true;
+      _setStage(UpdateStage.idle);
+      return;
+    }
+
+    _latestVersionLabel = best.tag;
+    _latestVersionInt = best.version;
+    _releaseNotes = best.notes;
+    final release.ReleaseAsset? asset = await _pickAssetForDevice(
+      best.apkAssets,
+    );
+    _assetName = asset?.name;
+    _downloadUrl = asset?.url;
+    _assetSize = asset?.size ?? 0;
+    _setStage(UpdateStage.available);
   }
 
   /// 重定向已确认有新版本：尽力用 API 补全 Release 正文与资产信息。

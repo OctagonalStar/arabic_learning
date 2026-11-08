@@ -13,10 +13,14 @@ import 'package:arabic_learning/core/version.dart';
 
 export 'package:arabic_learning/core/version.dart'
     show
+        ReleaseVersion,
+        isNewerRelease,
         isNewerVersion,
         parseGithubTag,
         parseReleaseRedirectTag,
+        parseReleaseVersion,
         versionIntToString,
+        versionStageRelease,
         versionStringToInt;
 
 // -----------------------------------------------------------------------------
@@ -32,6 +36,10 @@ const String githubRepo = 'arabic_learning';
 /// 最新 Release 接口（`/latest` 已自动排除 draft 与 prerelease）。
 const String githubApiLatestUrl =
     'https://api.github.com/repos/$githubOwner/$githubRepo/releases/latest';
+
+/// Release 列表接口：列出含预发布的 Release（`/latest` 会排除它们）。
+const String githubApiReleasesUrl =
+    'https://api.github.com/repos/$githubOwner/$githubRepo/releases?per_page=20';
 
 /// 仓库发布页的 `/releases/latest`：会 302 跳转到最新 tag。
 ///
@@ -126,6 +134,10 @@ class GithubRelease {
   /// tag 解析出的整数版本号；tag 缺失或无法解析时为 null。
   int? get version => tag == null ? null : parseGithubTag(tag!);
 
+  /// tag 解析出的完整版本（含预发布阶段）；tag 缺失或无法解析时为 null。
+  ReleaseVersion? get fullVersion =>
+      tag == null ? null : parseReleaseVersion(tag!);
+
   /// 草稿或预发布（`/latest` 通常已排除，仍做防御性判断）。
   bool get isDraftOrPrerelease => draft || prerelease;
 
@@ -150,6 +162,18 @@ class GithubRelease {
   /// 同 [parse]，但非 Map 时返回 null 而不是抛异常。
   static GithubRelease? tryParse(dynamic json) =>
       json is Map ? parse(json) : null;
+}
+
+/// 解析 `/releases` 列表响应（可含预发布）。
+///
+/// 非 List 响应抛 [Exception]（文案与 [GithubRelease.parse] 一致）。
+List<GithubRelease> parseReleaseList(dynamic json) {
+  if (json is! List) {
+    throw Exception('无法解析 GitHub 返回的更新信息');
+  }
+  return json
+      .map((dynamic raw) => GithubRelease.parse(raw))
+      .toList(growable: false);
 }
 
 // -----------------------------------------------------------------------------
