@@ -30,6 +30,7 @@ import 'package:arabic_learning/services/recitation_text.dart'
 import 'package:arabic_learning/theme/tokens.dart'
     show AppMotion, AppRadius, AppSpacing;
 import 'package:arabic_learning/widgets/kit.dart' show Button;
+import 'package:arabic_learning/widgets/motion.dart' show CrossFadeSwitcher;
 import 'package:arabic_learning/widgets/overlays.dart' show showSnackBar;
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -775,9 +776,14 @@ class _RecitationReciteTabState extends State<RecitationReciteTab>
           borderRadius: AppRadius.controlBorder,
           border: Border.all(color: scheme.outlineVariant),
         ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: content,
+        // 不同阶段给不同 key，CrossFadeSwitcher 才会切换而不是原地重建。
+        child: CrossFadeSwitcher(
+          duration: AppMotion.quick,
+          child: Column(
+            key: ValueKey<String>('${_stage.name}-${outcome != null}'),
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: content,
+          ),
         ),
       ),
     );
@@ -1045,7 +1051,14 @@ class _RecitationReciteTabState extends State<RecitationReciteTab>
                 ? _wholeList(theme, wide, width)
                 : _sentencePager(theme, wide, width),
           ),
-          if (_whole && _stage != _Stage.result) _wholeControls(theme),
+          if (_whole && _stage != _Stage.result)
+            CrossFadeSwitcher(
+              duration: AppMotion.quick,
+              child: KeyedSubtree(
+                key: ValueKey<String>(_stage.name),
+                child: _wholeControls(theme),
+              ),
+            ),
           // 整篇没有翻句需求，不显示进度条；「统一显示中文」放在逐句的进度条里。
           if (!_whole)
             ValueListenableBuilder<int>(

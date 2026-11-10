@@ -54,8 +54,8 @@ class PlanSessionPage extends StatefulWidget {
 }
 
 class _PlanSessionPageState extends State<PlanSessionPage> {
-  /// 答题区 → 结算页的切换时长（约 260ms）。
-  static const Duration _switchDuration = Duration(milliseconds: 260);
+  /// 答题区 → 结算页的切换时长（沿用动效 token，约 250ms）。
+  static const Duration _switchDuration = AppMotion.mediumShort;
 
   /// 入场时的上移位移（相对自身高度的比例，约 16px / 视口高度）。
   static const Offset _switchSlideOffset = Offset(0.0, 0.035);

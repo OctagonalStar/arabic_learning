@@ -208,7 +208,6 @@ class _MyHomePageState extends State<MyHomePage> {
     );
   }
 
-  // 构建桌面端布局（侧边导航）
   Widget _buildDesktopLayout(BuildContext context) {
     context.read<Global>().uiLogger.fine("构建 DesktopLayout");
     return Row(
@@ -234,7 +233,6 @@ class _MyHomePageState extends State<MyHomePage> {
     );
   }
 
-  // 构建移动端布局（底部导航）
   Widget _buildMobileLayout(BuildContext context) {
     context.read<Global>().uiLogger.fine("构建 MobileLayout");
     return Column(
