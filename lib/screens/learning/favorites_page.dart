@@ -12,6 +12,7 @@ import 'package:arabic_learning/services/global_state.dart' show Global;
 import 'package:arabic_learning/theme/tokens.dart' show AppSpacing;
 import 'package:arabic_learning/widgets/flip_word_card.dart' show FlipWordCard;
 import 'package:arabic_learning/widgets/kit.dart' show Button;
+import 'package:arabic_learning/widgets/shared.dart' show EmptyHintCard;
 import 'package:arabic_learning/widgets/overlays.dart' show alart;
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -32,22 +33,6 @@ class FavoritesPage extends StatefulWidget {
 }
 
 class _FavoritesPageState extends State<FavoritesPage> {
-  /// 空状态提示（样式与 `SynonymPage` 的空状态一致）。
-  Widget _emptyHint(BuildContext context) {
-    return Card(
-      margin: const EdgeInsets.symmetric(horizontal: AppSpacing.sm, vertical: AppSpacing.xxs),
-      child: Padding(
-        padding: const EdgeInsets.all(AppSpacing.sm),
-        child: Text(
-          "暂无收藏单词",
-          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-            color: Theme.of(context).colorScheme.onSurfaceVariant,
-          ),
-        ),
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     final MediaQueryData mediaQuery = MediaQuery.of(context);
@@ -66,7 +51,7 @@ class _FavoritesPageState extends State<FavoritesPage> {
           children: [
             Expanded(
               child: favorites.isEmpty
-                ? Center(child: _emptyHint(context))
+                ? const Center(child: EmptyHintCard("暂无收藏单词"))
                 : LayoutBuilder(
                     builder: (BuildContext context, BoxConstraints constraints) {
                       final int columns = _favoriteGridColumns(constraints.maxWidth);
