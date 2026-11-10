@@ -12,6 +12,7 @@ import 'package:arabic_learning/services/global_state.dart' show Global;
 import 'package:arabic_learning/theme/tokens.dart' show AppSpacing;
 import 'package:arabic_learning/widgets/flip_word_card.dart' show FlipWordCard;
 import 'package:arabic_learning/widgets/kit.dart' show Button;
+import 'package:arabic_learning/widgets/motion.dart' show StaggeredEntrance;
 import 'package:arabic_learning/widgets/shared.dart' show EmptyHintCard;
 import 'package:arabic_learning/widgets/overlays.dart' show alert;
 import 'package:flutter/material.dart';
@@ -70,13 +71,16 @@ class _FavoritesPageState extends State<FavoritesPage> {
                           childAspectRatio: 1.0,
                         ),
                         itemBuilder: (BuildContext context, int index) {
-                          return Center(
-                            child: FlipWordCard(
-                              word: favorites[index],
-                              width: cellWidth,
-                              height: cellWidth,
-                              // 取消收藏后立即从本页移除该卡片。
-                              onFavoriteChanged: () => setState(() {}),
+                          return StaggeredEntrance(
+                            index: index,
+                            child: Center(
+                              child: FlipWordCard(
+                                word: favorites[index],
+                                width: cellWidth,
+                                height: cellWidth,
+                                // 取消收藏后立即从本页移除该卡片。
+                                onFavoriteChanged: () => setState(() {}),
+                              ),
                             ),
                           );
                         },
