@@ -21,6 +21,7 @@
 import 'dart:math' as math;
 import 'dart:ui' show ImageFilter;
 
+import 'package:arabic_learning/core/date_utils.dart' show dueDayText;
 import 'package:arabic_learning/models/dict.dart' show WordItem;
 import 'package:arabic_learning/services/favorites.dart' show FavoriteStore;
 import 'package:arabic_learning/services/fsrs.dart' show FSRS;
@@ -771,16 +772,6 @@ class _FlipCardMemorySection extends StatelessWidget {
     }
   }
 
-  /// `due` 相对今天的文案：已逾期 N 天 / 今天 / N 天后（按自然日比较）。
-  String _dueText(DateTime due, DateTime now) {
-    final DateTime today = DateTime(now.year, now.month, now.day);
-    final DateTime dueDay = DateTime(due.year, due.month, due.day);
-    final int days = dueDay.difference(today).inDays;
-    if (days < 0) return "已逾期 ${-days} 天";
-    if (days == 0) return "今天";
-    return "$days 天后";
-  }
-
   /// 难度 → 语义色：越低越轻松（≤4.5 成功 / ≤7 警告 / >7 错误）。
   Color? _difficultyColor(double? difficulty, AppSemanticColors semantic) {
     if (difficulty == null) return null;
@@ -820,7 +811,7 @@ class _FlipCardMemorySection extends StatelessWidget {
           _difficultyColor(card.difficulty, semantic), null),
       ("可提取率", retrievability != null ? "${(retrievability * 100).round()}%" : "—",
           _retrievabilityColor(retrievability, semantic), null),
-      ("下次复习", _dueText(card.due, now),
+      ("下次复习", dueDayText(card.due, now: now),
           card.due.isBefore(now) ? semantic.error : null, _formatDate(card.due)),
     ];
 

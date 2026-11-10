@@ -11,6 +11,7 @@ import 'package:arabic_learning/theme/tokens.dart' show AppRadius;
 import 'package:arabic_learning/theme/typography.dart';
 import 'package:arabic_learning/widgets/kit.dart' show Button;
 import 'package:arabic_learning/widgets/overlays.dart' show alart;
+import 'package:arabic_learning/widgets/review_forecast_chart.dart' show ReviewForecastChart;
 import 'package:arabic_learning/widgets/shared.dart' show StatCard;
 import 'package:arabic_learning/services/words.dart';
 import 'package:arabic_learning/services/tts.dart';
@@ -36,6 +37,11 @@ class HomePage extends StatelessWidget {
         final double gapSmall = clampDouble(height * 0.01, 4.0, 12.0);
         final double statHeight = clampDouble(height * 0.18, 64.0, 160.0);
         final double statSpacing = clampDouble(height * 0.03, 6.0, 24.0);
+        // 复习计划图只在启用 FSRS 时出现；高度同样按可用高度推导并夹住，
+        // 卡片内部用 Expanded 把剩余空间全部给图，不会撑破外层 Column。
+        final bool showForecast = fsrs.config.enabled;
+        // 下限 96：桌面窗口最小高度 420 时，图表连同卡片外边距仍不撑破首页。
+        final double forecastHeight = clampDouble(height * 0.22, 96.0, 220.0);
         return Column(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -75,7 +81,7 @@ class HomePage extends StatelessWidget {
                   height: statHeight,
                   spacing: statSpacing,
                   label: '规律性学习',
-                  value: fsrs.config.enabled ? "${fsrs.getWillDueCount().toString()}个待复习" : "未启用",
+                  value: fsrs.config.enabled ? "${fsrs.getOverdueCount().toString()}个已逾期" : "未启用",
                 ),
                 StatCard(
                   width: width * 0.30,
@@ -85,7 +91,14 @@ class HomePage extends StatelessWidget {
                   value: AppData().wordCount.toString(),
                 ),
               ]
-            )
+            ),
+            if (showForecast) ...[
+              SizedBox(height: gapSmall),
+              ReviewForecastChart(
+                width: width * 0.9,
+                height: forecastHeight,
+              ),
+            ],
           ],
         );
       },
