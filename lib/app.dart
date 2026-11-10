@@ -259,7 +259,6 @@ class _MyHomePageState extends State<MyHomePage> {
     );
   }
 
-  // 统一的导航点击处理
   void _onNavigationTapped(int index) {
     _pageController.animateToPage(
       index,

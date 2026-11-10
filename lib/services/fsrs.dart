@@ -18,7 +18,6 @@ import 'package:arabic_learning/package_replacement/storage.dart';
 const String _pushSessionStorageKey = "pushSessionData";
 
 class FSRS { 
-  // 作为单例
   static final FSRS _instance = FSRS._internal();
   factory FSRS() => _instance;
   FSRS._internal();

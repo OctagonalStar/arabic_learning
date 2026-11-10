@@ -21,7 +21,6 @@ import 'package:arabic_learning/package_replacement/storage.dart';
 import 'package:arabic_learning/services/app_data.dart';
 
 class PlanStore {
-  // 作为单例
   static final PlanStore _instance = PlanStore._internal();
   factory PlanStore() => _instance;
   PlanStore._internal();

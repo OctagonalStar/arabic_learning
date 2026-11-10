@@ -6,25 +6,10 @@ import 'package:arabic_learning/core/statics.dart';
 import 'package:arabic_learning/theme/tokens.dart' show AppMotion;
 import 'package:flutter/material.dart';
 
-// Base Widgets 较为基础的Widget
-
-/// 文本框容器
-/// 
-/// 显示一个带文本的容器，有背景色
-/// 
-/// [text] :显示的文本 必须
-/// 
-/// [style] :自定义文本的属性TextStyle 默认为null
-/// 
-/// [selectable] :控制文本能否被选中（复制等操作需要） 默认为false
-/// 
-/// [size] :文本容器的大小 默认为null（自适应）
-/// 
-/// [textAlign] :控制文本排布方向 默认为null（自适应）
-/// 
-/// [animated] :入场动画 默认为false。开启后背景从 0.85 长到完整尺寸，
-/// 整段文本一次性淡入并上移约 8px（单行/多行一致，不改动布局），
-/// 系统开启「减弱动态效果」时直接显示
+/// 带背景色的文本容器；[selectable] 为真时可选中复制。
+///
+/// [animated] 开启后背景从 0.85 长到完整尺寸，整段文本淡入并上移约 8px，
+/// 系统开启「减弱动态效果」时直接显示。
 class TextContainer extends StatelessWidget {
   final String text;
   final TextStyle? style;

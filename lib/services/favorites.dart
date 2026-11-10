@@ -14,7 +14,6 @@ import 'package:logging/logging.dart';
 import 'package:arabic_learning/services/app_data.dart';
 
 class FavoriteStore {
-  // 作为单例
   static final FavoriteStore _instance = FavoriteStore._internal();
   factory FavoriteStore() => _instance;
   FavoriteStore._internal();

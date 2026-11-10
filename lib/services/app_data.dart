@@ -60,7 +60,6 @@ class DictImportResult {
 }
 
 class AppData {
-  // 作为单例
   static final AppData _instance = AppData._internal();
   factory AppData() => _instance;
   AppData._internal();
