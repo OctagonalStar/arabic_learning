@@ -17,27 +17,20 @@ import 'package:arabic_learning/widgets/kit.dart' show Button;
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-/// 弹出窗口
-/// 
-/// [context] :Widget树上的context
-/// 
-/// [msg] :需要在窗口中显示的内容（文字）
-/// 
-/// [onConfirmed] :在被确认后运行的函数
-/// 
-/// [delayConfirm] :要求等待多久后可以关闭弹窗
-/// 
-/// [destructive] :是否为不可撤销操作，为真时额外给出「取消」按钮，确定按钮
-/// 以错误色突出显示
-/// 
-/// 示例(可能在某个按钮中)：
-/// 
-/// ``` dart
-/// onPressed: () {
-///   alert(context, "你点击了按钮"，onConfirmed: (){i++}, delayConfirm: Duration(seconds: 1));
-/// }
-/// ```
-void alert(BuildContext context, String msg, {Function? onConfirmed, Duration delayConfirm = const Duration(), bool destructive = false}) {
+/// 应用内唯一的确认弹窗：标题 + 正文 + 动作按钮。
+///
+/// [destructive] 为真时额外给出「取消」，确定按钮以错误色突出显示；
+/// [delayConfirm] 非零时确定按钮置灰并倒计时，归零后才可点击；
+/// [onConfirmed] 在弹窗关闭后执行。
+void alert(
+  BuildContext context,
+  String msg, {
+  String title = "提示",
+  String confirmLabel = "确定",
+  Function? onConfirmed,
+  Duration delayConfirm = const Duration(),
+  bool destructive = false,
+}) {
   context.read<Global>().uiLogger.finest(
     () => "构建弹出窗口: 携带信息: $msg ;确认参数: ${onConfirmed != null}; 延迟: ${delayConfirm.inMilliseconds}; 危险操作: $destructive",
   );
@@ -46,12 +39,13 @@ void alert(BuildContext context, String msg, {Function? onConfirmed, Duration de
     requestFocus: true,
     builder: (BuildContext context) {
       return AlertDialog(
-        title: Text("提示"),
+        title: Text(title),
         content: Text(msg),
         actions: [
           _AlertActions(
             destructive: destructive,
             delayConfirm: delayConfirm,
+            confirmLabel: confirmLabel,
             onConfirmed: onConfirmed,
           ),
         ],
@@ -60,16 +54,18 @@ void alert(BuildContext context, String msg, {Function? onConfirmed, Duration de
   );
 }
 
-/// 弹窗底部的动作区。
-///
-/// [delayConfirm] 非零时确定按钮置灰，并以「确定 (n)」倒计时，归零后启用；
-/// 为零时与原先完全一致（单个可点确定按钮）。[destructive] 为真时在确定
-/// 按钮左侧额外给出「取消」。
+/// 弹窗底部的动作区：[destructive] 为真时在确定按钮左侧额外给出「取消」。
 class _AlertActions extends StatefulWidget {
-  const _AlertActions({required this.destructive, required this.delayConfirm, this.onConfirmed});
+  const _AlertActions({
+    required this.destructive,
+    required this.delayConfirm,
+    required this.confirmLabel,
+    this.onConfirmed,
+  });
 
   final bool destructive;
   final Duration delayConfirm;
+  final String confirmLabel;
   final Function? onConfirmed;
 
   @override
@@ -118,7 +114,7 @@ class _AlertActionsState extends State<_AlertActions> {
   @override
   Widget build(BuildContext context) {
     final bool ready = _remaining <= Duration.zero;
-    final String label = ready ? "确定" : "确定 (${(_remaining.inMilliseconds / 1000).ceil()})";
+    final String label = ready ? widget.confirmLabel : "${widget.confirmLabel} (${(_remaining.inMilliseconds / 1000).ceil()})";
     // 破坏性操作使用错误色实心按钮，其余保持原来的文字按钮外观
     final Widget confirmButton = widget.destructive
         ? FilledButton(
@@ -145,43 +141,6 @@ class _AlertActionsState extends State<_AlertActions> {
       ],
     );
   }
-}
-
-/// 双按钮确认弹窗：[alert] 只有一个「确定」，破坏性操作还需要「取消」出口。
-///
-/// 确认按钮以错误色突出显示；点击后先关闭弹窗再执行 [onConfirm]。
-void showConfirmDialog(
-  BuildContext context, {
-  required String title,
-  required String content,
-  required String confirmLabel,
-  required VoidCallback onConfirm,
-}) {
-  showDialog<void>(
-    context: context,
-    builder: (BuildContext dialogContext) => AlertDialog(
-      title: Text(title),
-      content: Text(content),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.pop(dialogContext),
-          child: Text("取消"),
-        ),
-        TextButton(
-          onPressed: () {
-            Navigator.pop(dialogContext);
-            onConfirm();
-          },
-          child: Text(
-            confirmLabel,
-            style: Theme.of(context).textTheme.labelLarge?.copyWith(
-              color: Theme.of(context).colorScheme.error,
-            ),
-          ),
-        ),
-      ],
-    ),
-  );
 }
 
 void showSnackBar(BuildContext context, String msg, {Duration duration = const Duration(seconds: 3)}){

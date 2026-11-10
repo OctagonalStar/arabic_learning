@@ -18,7 +18,8 @@ import 'package:arabic_learning/services/global_state.dart';
 import 'package:arabic_learning/theme/tokens.dart' show AppRadius, AppSpacing;
 import 'package:arabic_learning/widgets/kit.dart' show Button, SettingItem;
 import 'package:arabic_learning/widgets/overlays.dart'
-    show alert, showConfirmDialog, showSnackBar;
+    show alert, showSnackBar;
+import 'package:arabic_learning/widgets/shared.dart' show EmptyHintCard;
 import 'package:arabic_learning/core/navigation.dart';
 
 class DictManagePage extends StatefulWidget {
@@ -29,25 +30,6 @@ class DictManagePage extends StatefulWidget {
 }
 
 class _DictManagePage extends State<DictManagePage> {
-  /// 已安装词库为空时的提示卡片。
-  Widget _emptyHint(BuildContext context) {
-    return Card(
-      margin: const EdgeInsets.symmetric(
-        horizontal: AppSpacing.sm,
-        vertical: AppSpacing.xxs,
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(AppSpacing.sm),
-        child: Text(
-          "暂无词库，请在下方导入",
-          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-            color: Theme.of(context).colorScheme.onSurfaceVariant,
-          ),
-        ),
-      ),
-    );
-  }
-
   /// 单个已安装词库的卡片（展示词条/课程数量，可删除）。
   Widget _sourceCard(BuildContext context, SourceItem s) {
     final int wordCount = s.subClasses
@@ -76,12 +58,13 @@ class _DictManagePage extends State<DictManagePage> {
   /// 删除词库确认弹窗。
   void _confirmDelete(BuildContext context, SourceItem s) {
     context.read<Global>().uiLogger.info("请求删除词库: ${s.name}");
-    showConfirmDialog(
+    alert(
       context,
+      "将解除「${s.name}」及其课程的归属，词条本体保留（不影响复习进度）。此操作不可撤销。",
       title: "删除词库「${s.name}」？",
-      content: "将解除「${s.name}」及其课程的归属，词条本体保留（不影响复习进度）。此操作不可撤销。",
       confirmLabel: "删除",
-      onConfirm: () {
+      destructive: true,
+      onConfirmed: () {
         final String? name = AppData().deleteDictSource(s.sourceJsonFileName);
         setState(() {});
         showSnackBar(context, "已删除词库：${name ?? s.name}");
@@ -100,12 +83,13 @@ class _DictManagePage extends State<DictManagePage> {
     context.read<Global>().uiLogger.info(
       "请求清理未归属词条: ${orphans.length} 个，涉及复习卡片 $affected 张",
     );
-    showConfirmDialog(
+    alert(
       context,
+      "将彻底删除 ${orphans.length} 个未被任何课程引用的词条${affected > 0 ? "，并丢弃这些词条上的 $affected 张复习卡片（进度不可恢复）" : ""}。此操作会重排词条位置，不可撤销。",
       title: "清理未归属词条？",
-      content: "将彻底删除 ${orphans.length} 个未被任何课程引用的词条${affected > 0 ? "，并丢弃这些词条上的 $affected 张复习卡片（进度不可恢复）" : ""}。此操作会重排词条位置，不可撤销。",
       confirmLabel: "确认清理",
-      onConfirm: () {
+      destructive: true,
+      onConfirmed: () {
         final ({int removedWords, int removedCards}) r = AppData()
             .compactUnreferencedWords();
         setState(() {});
@@ -119,13 +103,14 @@ class _DictManagePage extends State<DictManagePage> {
 
   /// 重置词库但把复习进度按词形暂存到内存，供重新导入后恢复。
   void _resetDicts(BuildContext context) {
-    showConfirmDialog(
+    alert(
       context,
-      title: "重置词库并保留复习进度？",
-      content: "将清空所有已安装词库及其课程归属（阅读题、同义词标记保留）。清空前的复习进度会暂存在本次会话中，"
+      "将清空所有已安装词库及其课程归属（阅读题、同义词标记保留）。清空前的复习进度会暂存在本次会话中，"
           "请在重新导入词库后点击「恢复复习进度」；中途退出应用将无法恢复复习进度。此操作不可撤销。",
+      title: "重置词库并保留复习进度？",
       confirmLabel: "确认重置",
-      onConfirm: () {
+      destructive: true,
+      onConfirmed: () {
         final int pending = AppData().resetDictsPreservingFsrs();
         setState(() {});
         showSnackBar(
@@ -150,12 +135,13 @@ class _DictManagePage extends State<DictManagePage> {
 
   /// 放弃暂存的复习进度（永久丢弃）。
   void _discardPending(BuildContext context) {
-    showConfirmDialog(
+    alert(
       context,
+      "暂存的复习进度将被永久丢弃，不可恢复。",
       title: "放弃恢复复习进度？",
-      content: "暂存的复习进度将被永久丢弃，不可恢复。",
       confirmLabel: "确认放弃",
-      onConfirm: () {
+      destructive: true,
+      onConfirmed: () {
         AppData().discardPendingFsrsRestore();
         setState(() {});
         showSnackBar(context, "已放弃待恢复的复习进度");
@@ -282,7 +268,7 @@ class _DictManagePage extends State<DictManagePage> {
               title: "已安装词库",
               children: [
                 if (sources.isEmpty)
-                  _emptyHint(context)
+                  const EmptyHintCard("暂无词库，请在下方导入")
                 else
                   for (final SourceItem s in sources) _sourceCard(context, s),
               ],
