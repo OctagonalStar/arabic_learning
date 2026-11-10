@@ -13,7 +13,6 @@ import 'package:arabic_learning/package_replacement/storage.dart';
 
 @pragma('vm:entry-point') 
 Future<FlutterLocalNotificationsPlugin?> initNotificationsBackground() async {
-  // 基础设置
   const AndroidInitializationSettings initializationSettingsAndroid =
       AndroidInitializationSettings('@mipmap/launcher_icon'); // 应用图标
 
@@ -21,11 +20,9 @@ Future<FlutterLocalNotificationsPlugin?> initNotificationsBackground() async {
     android: initializationSettingsAndroid,
   );
 
-  // 通知接口
   FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin = FlutterLocalNotificationsPlugin();
   await flutterLocalNotificationsPlugin.initialize(settings: initializationSettings);
 
-  // 通知渠道
   const AndroidNotificationChannel channel = AndroidNotificationChannel(
     'learning_notification_channel', // id
     '学习通知', // 名称

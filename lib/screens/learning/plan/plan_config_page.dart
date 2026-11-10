@@ -147,8 +147,6 @@ class _PlanConfigPageState extends State<PlanConfigPage> {
         unlearnedScopeWords(draft, AppData().wordData, FSRS()).length;
   }
 
-  // 交互
-
   Future<void> _openFsrsSettings() async {
     await pushPage<void>(
       context,
@@ -319,8 +317,6 @@ class _PlanConfigPageState extends State<PlanConfigPage> {
     if (!mounted) return;
     Navigator.of(context).pop(true);
   }
-
-  // 页面
 
   @override
   Widget build(BuildContext context) {

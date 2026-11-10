@@ -149,8 +149,6 @@ class _RecitationReciteTabState extends State<RecitationReciteTab>
   String _clock(int seconds) =>
       "${(seconds ~/ 60).toString().padLeft(2, '0')}:${(seconds % 60).toString().padLeft(2, '0')}";
 
-  // 录音流程
-
   /// 检查麦克风权限；被拒时置位 [<_permissionDenied>]，由顶部提示给出重试入口。
   Future<bool> _ensurePermission() async {
     final Global global = context.read<Global>();
@@ -313,9 +311,6 @@ class _RecitationReciteTabState extends State<RecitationReciteTab>
       curve: AppMotion.standardCurve,
     );
   }
-
-  // 展示
-
 
   /// 「统一显示中文」页内开关：选中即全部译文可见，仅本次会话有效。
   /// 标签压到两个字并靠 tooltip 说全，放进进度条 / 标题行都不会挤爆窄屏。
