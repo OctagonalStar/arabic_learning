@@ -11,7 +11,8 @@ import 'package:arabic_learning/services/recitation_service.dart';
 import 'package:arabic_learning/services/recitation_store.dart';
 import 'package:arabic_learning/theme/tokens.dart' show AppRadius, AppSpacing, AppSemanticColors;
 import 'package:arabic_learning/widgets/kit.dart' show Button;
-import 'package:arabic_learning/widgets/motion.dart' show StaggeredEntrance;
+import 'package:arabic_learning/widgets/motion.dart'
+    show CrossFadeSwitcher, StaggeredEntrance;
 import 'package:arabic_learning/widgets/overlays.dart' show alert;
 import 'package:arabic_learning/core/navigation.dart';
 import 'package:flutter/material.dart';
@@ -77,42 +78,47 @@ class _RecitationListPageState extends State<RecitationListPage> {
       ),
       body: SafeArea(
         top: false,
-        child: units.isEmpty
-            ? Center(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text("还没有课文，先导入一篇吧",
-                        style: theme.textTheme.bodyLarge?.copyWith(
-                          color: theme.colorScheme.onSurfaceVariant,
-                        )),
-                    Padding(
-                      padding: const EdgeInsets.only(top: AppSpacing.md),
-                      child: Button(
-                        onPressed: _openAdd,
-                        child: const Text("导入课文"),
+        // 导入或删空首篇课文时整页淡入淡出，避免直接跳变。
+        child: CrossFadeSwitcher(
+          child: units.isEmpty
+              ? Center(
+                  key: const ValueKey<String>('empty'),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text("还没有课文，先导入一篇吧",
+                          style: theme.textTheme.bodyLarge?.copyWith(
+                            color: theme.colorScheme.onSurfaceVariant,
+                          )),
+                      Padding(
+                        padding: const EdgeInsets.only(top: AppSpacing.md),
+                        child: Button(
+                          onPressed: _openAdd,
+                          child: const Text("导入课文"),
+                        ),
                       ),
-                    ),
-                  ],
-                ),
-              )
-            : ListView.builder(
-                padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
-                itemCount: units.length,
-                itemBuilder: (context, index) => StaggeredEntrance(
-                  index: index,
-                  child: Center(
-                    child: SizedBox(
-                      width: width,
-                      child: _UnitCard(
-                        unit: units[index],
-                        onOpen: () => _openUnit(units[index]),
-                        onDelete: () => _deleteUnit(units[index]),
+                    ],
+                  ),
+                )
+              : ListView.builder(
+                  key: const ValueKey<String>('list'),
+                  padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
+                  itemCount: units.length,
+                  itemBuilder: (context, index) => StaggeredEntrance(
+                    index: index,
+                    child: Center(
+                      child: SizedBox(
+                        width: width,
+                        child: _UnitCard(
+                          unit: units[index],
+                          onOpen: () => _openUnit(units[index]),
+                          onDelete: () => _deleteUnit(units[index]),
+                        ),
                       ),
                     ),
                   ),
                 ),
-              ),
+        ),
       ),
     );
   }
