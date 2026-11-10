@@ -126,8 +126,6 @@ class _UpdatePageState extends State<UpdatePage> with WidgetsBindingObserver {
     );
   }
 
-  // ---------------------------------------------------------------- 下载中
-
   Widget _downloadingBody(BuildContext context) {
     final ColorScheme scheme = Theme.of(context).colorScheme;
     final TextTheme text = Theme.of(context).textTheme;
@@ -263,8 +261,6 @@ class _UpdatePageState extends State<UpdatePage> with WidgetsBindingObserver {
     return leave ?? false;
   }
 
-  // ---------------------------------------------------------------- 下载完成
-
   Widget _readyBody(BuildContext context) {
     final ColorScheme scheme = Theme.of(context).colorScheme;
     final TextTheme text = Theme.of(context).textTheme;
@@ -335,8 +331,6 @@ class _UpdatePageState extends State<UpdatePage> with WidgetsBindingObserver {
     Navigator.of(context).maybePop();
   }
 
-  // ------------------------------------------------------------ 权限引导
-
   Widget _permissionBody(BuildContext context) {
     final ColorScheme scheme = Theme.of(context).colorScheme;
     final TextTheme text = Theme.of(context).textTheme;
@@ -401,8 +395,6 @@ class _UpdatePageState extends State<UpdatePage> with WidgetsBindingObserver {
       showSnackBar(context, "仍未获得安装权限，请在系统设置中允许后重试");
     }
   }
-
-  // ---------------------------------------------------------------- 错误
 
   Widget _errorBody(BuildContext context) {
     final ColorScheme scheme = Theme.of(context).colorScheme;
@@ -469,8 +461,6 @@ class _UpdatePageState extends State<UpdatePage> with WidgetsBindingObserver {
         return;
     }
   }
-
-  // ------------------------------------------------- 兜底（无下载在途时）
 
   Widget _availableBody(BuildContext context) {
     final TextTheme text = Theme.of(context).textTheme;

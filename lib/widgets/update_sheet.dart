@@ -148,8 +148,6 @@ class _UpdateAvailableSheetState extends State<UpdateAvailableSheet> {
     }
   }
 
-  // ------------------------------------------------------------ 检查中
-
   Widget _checkingBody(BuildContext context) {
     final TextTheme text = Theme.of(context).textTheme;
     final bool animationsDisabled =
@@ -182,8 +180,6 @@ class _UpdateAvailableSheetState extends State<UpdateAvailableSheet> {
       ],
     );
   }
-
-  // ------------------------------------------------------------ 有更新
 
   Widget _availableBody(BuildContext context) {
     final ColorScheme scheme = Theme.of(context).colorScheme;
@@ -387,8 +383,6 @@ class _UpdateAvailableSheetState extends State<UpdateAvailableSheet> {
     return lineBreaks > 8;
   }
 
-  // ------------------------------------------- 下载中 / 已下载（再次打开）
-
   Widget _inProgressBody(BuildContext context) {
     final ColorScheme scheme = Theme.of(context).colorScheme;
     final TextTheme text = Theme.of(context).textTheme;
@@ -432,8 +426,6 @@ class _UpdateAvailableSheetState extends State<UpdateAvailableSheet> {
       ],
     );
   }
-
-  // ------------------------------------------------------------ 错误
 
   Widget _errorBody(BuildContext context) {
     final ColorScheme scheme = Theme.of(context).colorScheme;
