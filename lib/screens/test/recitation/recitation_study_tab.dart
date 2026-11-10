@@ -6,6 +6,8 @@ import 'package:arabic_learning/models/dict.dart' show WordItem;
 import 'package:arabic_learning/models/recitation_text.dart';
 import 'package:arabic_learning/screens/test/recitation/recitation_progress_bar.dart'
     show RecitationProgressBar;
+import 'package:arabic_learning/screens/test/recitation/recitation_shared.dart'
+    show RecitationCard, RecitationChip, RecitationTranslation;
 import 'package:arabic_learning/core/recitation_text.dart'
     show normalizeArabic, lookupStems;
 import 'package:arabic_learning/services/search.dart' show BKSearch;
@@ -266,17 +268,7 @@ class _SentenceCard extends StatelessWidget {
     final ColorScheme scheme = theme.colorScheme;
     final TextStyle arabicStyle =
         (wide ? theme.textTheme.headlineMedium : theme.textTheme.headlineSmall)!;
-    return Card(
-      margin: EdgeInsets.zero,
-      elevation: 2.0,
-      surfaceTintColor: Colors.transparent,
-      shadowColor: scheme.shadow,
-      color: scheme.surfaceContainerLow,
-      clipBehavior: Clip.antiAlias,
-      shape: RoundedRectangleBorder(
-        borderRadius: AppRadius.cardBorder,
-        side: BorderSide(color: scheme.outlineVariant),
-      ),
+    return RecitationCard(
       child: Padding(
         padding: const EdgeInsets.all(AppSpacing.sm),
         child: Column(
@@ -284,7 +276,7 @@ class _SentenceCard extends StatelessWidget {
           children: <Widget>[
             Row(
               children: <Widget>[
-                _Chip(
+                RecitationChip(
                   text: "第 ${index + 1} 句",
                   background: scheme.surfaceContainerHighest,
                   foreground: scheme.onSurfaceVariant,
@@ -305,21 +297,7 @@ class _SentenceCard extends StatelessWidget {
             ),
             if (sentence.translation.isNotEmpty) ...<Widget>[
               const SizedBox(height: AppSpacing.sm),
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(AppSpacing.sm),
-                decoration: BoxDecoration(
-                  color: scheme.surfaceContainerHigh,
-                  borderRadius: AppRadius.controlBorder,
-                ),
-                child: Text(
-                  sentence.translation,
-                  style: theme.textTheme.titleMedium?.copyWith(
-                    color: scheme.onSurfaceVariant,
-                    height: 1.5,
-                  ),
-                ),
-              ),
+              RecitationTranslation(text: sentence.translation),
             ],
             if (sentence.note != null && sentence.note!.isNotEmpty) ...<Widget>[
               const SizedBox(height: AppSpacing.xs),
@@ -357,39 +335,6 @@ class _SentenceCard extends StatelessWidget {
               ),
           ],
         ),
-      ),
-    );
-  }
-}
-
-class _Chip extends StatelessWidget {
-  final String text;
-  final Color background;
-  final Color foreground;
-
-  const _Chip({
-    required this.text,
-    required this.background,
-    required this.foreground,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(
-        horizontal: AppSpacing.xs,
-        vertical: 2.0,
-      ),
-      decoration: BoxDecoration(
-        color: background,
-        borderRadius: AppRadius.controlBorder,
-      ),
-      child: Text(
-        text,
-        style: Theme.of(context)
-            .textTheme
-            .labelLarge
-            ?.copyWith(color: foreground),
       ),
     );
   }

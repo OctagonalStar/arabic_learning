@@ -17,6 +17,8 @@ import 'package:arabic_learning/screens/setting/model_management_page.dart'
     show ModelManagementPage;
 import 'package:arabic_learning/screens/test/recitation/recitation_progress_bar.dart'
     show RecitationProgressBar;
+import 'package:arabic_learning/screens/test/recitation/recitation_shared.dart'
+    show RecitationCard, RecitationChip, RecitationTranslation;
 import 'package:arabic_learning/screens/test/recitation/recitation_result.dart'
     show RecitationResultView;
 import 'package:arabic_learning/services/app_data.dart';
@@ -314,22 +316,6 @@ class _RecitationReciteTabState extends State<RecitationReciteTab>
 
   // 展示
 
-  Widget _chip(ThemeData theme, String text, Color background, Color foreground) {
-    return Container(
-      padding: const EdgeInsets.symmetric(
-        horizontal: AppSpacing.xs,
-        vertical: 2.0,
-      ),
-      decoration: BoxDecoration(
-        color: background,
-        borderRadius: AppRadius.controlBorder,
-      ),
-      child: Text(
-        text,
-        style: theme.textTheme.labelLarge?.copyWith(color: foreground),
-      ),
-    );
-  }
 
   /// 「统一显示中文」页内开关：选中即全部译文可见，仅本次会话有效。
   /// 标签压到两个字并靠 tooltip 说全，放进进度条 / 标题行都不会挤爆窄屏。
@@ -549,7 +535,6 @@ class _RecitationReciteTabState extends State<RecitationReciteTab>
     bool wide,
     RecitationOutcome? outcome,
   ) {
-    final ColorScheme scheme = theme.colorScheme;
     final RecitationSentence sentence = widget.unit.sentences[index];
     final TextStyle arabicStyle =
         (wide ? theme.textTheme.headlineMedium : theme.textTheme.headlineSmall)!;
@@ -580,21 +565,7 @@ class _RecitationReciteTabState extends State<RecitationReciteTab>
               onTap: () => _toggleTranslation(index),
               child: _blurUnless(
                 translationVisible,
-                Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.all(AppSpacing.sm),
-                  decoration: BoxDecoration(
-                    color: scheme.surfaceContainerHigh,
-                    borderRadius: AppRadius.controlBorder,
-                  ),
-                  child: Text(
-                    sentence.translation,
-                    style: theme.textTheme.titleMedium?.copyWith(
-                      color: scheme.onSurfaceVariant,
-                      height: 1.5,
-                    ),
-                  ),
-                ),
+                RecitationTranslation(text: sentence.translation),
               ),
             ),
           ),
@@ -609,17 +580,7 @@ class _RecitationReciteTabState extends State<RecitationReciteTab>
     final bool translationVisible =
         _showAllTranslations || _revealedZh.contains(index);
     final RecitationOutcome? outcome = _sentenceOutcomes[index];
-    return Card(
-      margin: EdgeInsets.zero,
-      elevation: 2.0,
-      surfaceTintColor: Colors.transparent,
-      shadowColor: scheme.shadow,
-      color: scheme.surfaceContainerLow,
-      clipBehavior: Clip.antiAlias,
-      shape: RoundedRectangleBorder(
-        borderRadius: AppRadius.cardBorder,
-        side: BorderSide(color: scheme.outlineVariant),
-      ),
+    return RecitationCard(
       child: Padding(
         padding: const EdgeInsets.all(AppSpacing.sm),
         child: Column(
@@ -627,21 +588,20 @@ class _RecitationReciteTabState extends State<RecitationReciteTab>
           children: <Widget>[
             Row(
               children: <Widget>[
-                _chip(
-                  theme,
-                  "第 ${index + 1} 句",
-                  scheme.surfaceContainerHighest,
-                  scheme.onSurfaceVariant,
+                RecitationChip(
+                  text: "第 ${index + 1} 句",
+                  background: scheme.surfaceContainerHighest,
+                  foreground: scheme.onSurfaceVariant,
                 ),
                 if (outcome != null) ...<Widget>[
                   const SizedBox(width: AppSpacing.xs),
-                  _chip(
-                    theme,
-                    outcome.scoreable
+                  RecitationChip(
+                    text: outcome.scoreable
                         ? "${outcome.score} 分 · ${outcome.grade}"
                         : "未评分",
-                    _gradeColor(outcome).withValues(alpha: 0.15),
-                    _gradeColor(outcome),
+                    background:
+                        _gradeColor(outcome).withValues(alpha: 0.15),
+                    foreground: _gradeColor(outcome),
                   ),
                 ],
                 const Spacer(),
