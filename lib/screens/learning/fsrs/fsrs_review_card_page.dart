@@ -208,7 +208,7 @@ class _FSRSReviewCardPage extends State<FSRSReviewCardPage> {
         // 中译阿题面为中文，禁止音频，避免 TTS 朗读中文含义
         allowAudio: testType == 2,
         allowAnitmation: true,
-        allowMutipleSelect: false,
+        allowMultipleSelect: false,
         optionWords: item.optionWords,
         hint: _hint(),
         onSelected: _onChoiceSelected,
@@ -240,7 +240,7 @@ class _FSRSReviewCardPage extends State<FSRSReviewCardPage> {
       question = ListeningQuestion(
         mainWord: item.testWord.arabic,
         choices: item.options!,
-        allowMutipleSelect: false,
+        allowMultipleSelect: false,
         optionWords: item.optionWords,
         hint: "听下面的音频，选择最合适的选项",
         onSelected: _onChoiceSelected,

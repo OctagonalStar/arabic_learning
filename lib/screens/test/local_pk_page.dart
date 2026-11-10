@@ -613,7 +613,7 @@ class _PKOngoingPage extends State<PKOngoingPage> {
                           return false;
                         }
                       },
-                      allowMutipleSelect: false,
+                      allowMultipleSelect: false,
                     );
                   }
                 ),

@@ -34,7 +34,7 @@ import 'package:flutter/services.dart' show HapticFeedback;
 /// 
 /// [isSingleSelect] :是否单选模式。为 true 且 [isShowAnimation] 为 true 时，
 /// 某选项产生判定结果后其余选项会淡化并轻微缩小（选中聚焦）。
-/// 多选（`ChoiceQuestions.allowMutipleSelect`）应保持 false，以免干扰继续选择。
+/// 多选（`ChoiceQuestions.allowMultipleSelect`）应保持 false，以免干扰继续选择。
 /// 默认为false
 ///
 /// 该组件供各 *Question 组件（ChoiceQuestions / ListeningQuestion /

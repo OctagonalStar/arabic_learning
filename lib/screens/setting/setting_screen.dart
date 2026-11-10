@@ -6,7 +6,7 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:arabic_learning/package_replacement/fake_dart_io.dart' if (dart.library.io) 'dart:io' as io;
 import 'package:arabic_learning/core/version.dart' show versionIntToString;
 
-import 'package:arabic_learning/widgets/kit.dart' show Button, SettingItem, SettingRedirctButton, SettingRow;
+import 'package:arabic_learning/widgets/kit.dart' show Button, SettingItem, SettingRedirectButton, SettingRow;
 import 'package:arabic_learning/widgets/overlays.dart' show alert, showSnackBar;
 import 'package:arabic_learning/widgets/feedback.dart' show LoadingIndicator;
 import 'package:arabic_learning/core/extensions.dart';
@@ -53,7 +53,7 @@ class _SettingPage extends State<SettingPage> {
             SettingItem(
               title: "帮助",
               children: [
-                SettingRedirctButton(title: "常见问题", icon: Icons.help, target: HelpPage())
+                SettingRedirectButton(title: "常见问题", icon: Icons.help, target: HelpPage())
               ],
             ),
             SettingItem(
@@ -228,11 +228,11 @@ class _SettingPage extends State<SettingPage> {
             SettingItem(
               title: "学习设置",
               children: [
-                SettingRedirctButton(title: "题型配置",icon: Icons.quiz, target: QuestionsSettingPage()),
-                SettingRedirctButton(title: "同义词管理", icon: Icons.sync_alt, target: SynonymPage()),
-                SettingRedirctButton(title: "词库管理", icon: Icons.library_books, target: DictManagePage()),
-                SettingRedirctButton(title: "数据备份及同步", icon: Icons.sync, target: DataSyncPage()),
-                SettingRedirctButton(title: "复习配置", icon: Icons.bookmark, target: ForeFSRSSettingPage(forceChoosing: true)),
+                SettingRedirectButton(title: "题型配置",icon: Icons.quiz, target: QuestionsSettingPage()),
+                SettingRedirectButton(title: "同义词管理", icon: Icons.sync_alt, target: SynonymPage()),
+                SettingRedirectButton(title: "词库管理", icon: Icons.library_books, target: DictManagePage()),
+                SettingRedirectButton(title: "数据备份及同步", icon: Icons.sync, target: DataSyncPage()),
+                SettingRedirectButton(title: "复习配置", icon: Icons.bookmark, target: ForeFSRSSettingPage(forceChoosing: true)),
               ],
             ),
             SettingItem(
@@ -343,7 +343,7 @@ class _SettingPage extends State<SettingPage> {
                     },
                   )
                 ),
-                SettingRedirctButton(title: "模型管理", icon: Icons.model_training, target: ModelManagementPage())
+                SettingRedirectButton(title: "模型管理", icon: Icons.model_training, target: ModelManagementPage())
               ],
             ),
             if (!kIsWeb && io.Platform.isAndroid)
@@ -419,7 +419,7 @@ class _SettingPage extends State<SettingPage> {
             SettingItem(
               title: "关于",
               children: [
-                SettingRedirctButton(title: "调试信息", icon: Icons.bug_report, target: DebugPage()),
+                SettingRedirectButton(title: "调试信息", icon: Icons.bug_report, target: DebugPage()),
                 Button(
                   size: Size.fromHeight(mediaQuery.size.height * 0.08),
                   shape: BeveledRectangleBorder(),
@@ -455,7 +455,7 @@ class _SettingPage extends State<SettingPage> {
                     ],
                   ),
                 ),
-                SettingRedirctButton(title: "关于本软件", icon: Icons.adb, target: AboutPage())
+                SettingRedirectButton(title: "关于本软件", icon: Icons.adb, target: AboutPage())
               ],
             ),
           ],

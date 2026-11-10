@@ -34,7 +34,7 @@ import 'package:provider/provider.dart';
 /// 
 /// [bottomWidget] :题目下方的组件，可用于翻页之类的其他功能，自行设置
 /// 
-/// [onDisAllowMutipleSelect] :在不允许多次选择的题目中尝试多选时触发，默认会触发底部通知"该题目不允许多次选择"
+/// [onDisallowMultipleSelect] :在不允许多次选择的题目中尝试多选时触发，默认会触发底部通知"该题目不允许多次选择"
 /// 
 /// [allowAudio] :是否允许播放音频（通常 [mainWord] 为中文时设置为不允许(false)）
 /// 
@@ -54,8 +54,8 @@ class ChoiceQuestions extends StatefulWidget {
   final String? hint;
   final Widget? midWidget;
   final Widget? bottomWidget;
-  final Function? onDisAllowMutipleSelect;
-  final bool allowMutipleSelect;
+  final Function? onDisallowMultipleSelect;
+  final bool allowMultipleSelect;
   final bool allowAudio;
   final int bottonLayout;
   final bool allowAnitmation;
@@ -68,9 +68,9 @@ class ChoiceQuestions extends StatefulWidget {
                         this.hint, 
                         this.midWidget,
                         this.bottomWidget, 
-                        this.onDisAllowMutipleSelect,
+                        this.onDisallowMultipleSelect,
                         this.bottonLayout = -1,
-                        this.allowMutipleSelect = true,
+                        this.allowMultipleSelect = true,
                         this.allowAnitmation = true,
                         this.optionWords});
 
@@ -133,17 +133,17 @@ class _ChoiceQuestions extends State<ChoiceQuestions> {
               onSelected: widget.onSelected,
               isShowAnimation: widget.allowAnitmation,
               // 单选时判定后聚焦选中项并淡化其余选项；多选保持原样。
-              isSingleSelect: !widget.allowMutipleSelect,
+              isSingleSelect: !widget.allowMultipleSelect,
               // 单选作答后锁定全部选项（统一由 ChooseButtons 处理）。
-              lockAfterSelect: !widget.allowMutipleSelect,
+              lockAfterSelect: !widget.allowMultipleSelect,
               // 选项词条非空时启用长按卡片与释义揭示；PK 等场景传 null 保持旧行为。
               optionWords: widget.optionWords,
               onOptionLongPress: (WordItem word) {
                 showWordCardOverlay(context, word);
               },
               onLockedTap: (int value) {
-                if(widget.onDisAllowMutipleSelect != null) {
-                  widget.onDisAllowMutipleSelect!(value);
+                if(widget.onDisallowMultipleSelect != null) {
+                  widget.onDisallowMultipleSelect!(value);
                   return;
                 }
                 showSnackBar(context, "该页面不允许多次选择");
@@ -381,8 +381,8 @@ class ListeningQuestion extends StatefulWidget {
   final bool? Function(int) onSelected;
   final String? hint;
   final Widget? bottom;
-  final Function? onDisAllowMutipleSelect;
-  final bool allowMutipleSelect;
+  final Function? onDisallowMultipleSelect;
+  final bool allowMultipleSelect;
   final int bottonLayout;
   final bool allowAnitmation;
 
@@ -396,9 +396,9 @@ class ListeningQuestion extends StatefulWidget {
                         required this.onSelected,
                         this.hint, 
                         this.bottom, 
-                        this.onDisAllowMutipleSelect,
+                        this.onDisallowMultipleSelect,
                         this.bottonLayout = -1,
-                        this.allowMutipleSelect = true,
+                        this.allowMultipleSelect = true,
                         this.allowAnitmation = true,
                         this.optionWords});
 
@@ -459,9 +459,9 @@ class _ListeningQuestion extends State<ListeningQuestion> {
               onSelected: widget.onSelected,
               isShowAnimation: widget.allowAnitmation,
               // 单选时判定后聚焦选中项并淡化其余选项；多选保持原样。
-              isSingleSelect: !widget.allowMutipleSelect,
+              isSingleSelect: !widget.allowMultipleSelect,
               // 单选作答后锁定全部选项；「跳过」后由 locked 统一锁定。
-              lockAfterSelect: !widget.allowMutipleSelect,
+              lockAfterSelect: !widget.allowMultipleSelect,
               locked: choosed,
               // 听力选项同样对应词条：非空时启用长按卡片与释义揭示。
               optionWords: widget.optionWords,
@@ -469,8 +469,8 @@ class _ListeningQuestion extends State<ListeningQuestion> {
                 showWordCardOverlay(context, word);
               },
               onLockedTap: (int value) {
-                if(widget.onDisAllowMutipleSelect != null) {
-                  widget.onDisAllowMutipleSelect!(value);
+                if(widget.onDisallowMultipleSelect != null) {
+                  widget.onDisallowMultipleSelect!(value);
                   return;
                 }
                 showSnackBar(context, "该页面不允许多次选择");

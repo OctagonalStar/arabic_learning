@@ -385,7 +385,7 @@ class _FsrsCalibrationPageState extends State<FsrsCalibrationPage> {
               optionWords: question.optionWords,
               allowAudio: false,
               allowAnitmation: true,
-              allowMutipleSelect: false,
+              allowMultipleSelect: false,
               hint: "通过中文选择阿拉伯语",
               onSelected: _onSelect,
               bottomWidget: _bottomBar(context, question, isLast),

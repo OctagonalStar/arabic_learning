@@ -557,7 +557,7 @@ class _PlanSessionPageState extends State<PlanSessionPage> {
           });
           return ans;
         },
-        allowMutipleSelect: true,
+        allowMultipleSelect: true,
         hint: testItem.testType == 1 ? "通过中文选择阿拉伯语" : "通过阿拉伯语选择中文",
         bottomWidget: BottomTip(
           isShowNext: _answeredIndexes.contains(index),
@@ -655,7 +655,7 @@ class _PlanSessionPageState extends State<PlanSessionPage> {
           });
           return ans;
         },
-        allowMutipleSelect: true,
+        allowMultipleSelect: true,
         hint: "听下面的音频，选择最合适的选项",
         bottom: BottomTip(
           isShowNext: _answeredIndexes.contains(index),

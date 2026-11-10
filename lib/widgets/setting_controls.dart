@@ -1,6 +1,6 @@
 // 设置类控件（原 widgets/kit.dart 拆分）。
 // 承载设置分区 [SettingItem]、单行设置项 [SettingRow] 与跳转按钮
-// [SettingRedirctButton]。
+// [SettingRedirectButton]。
 // 由 widgets/kit.dart 统一 export，调用方仍从 kit.dart 导入。
 
 import 'package:arabic_learning/theme/tokens.dart' show AppRadius;
@@ -8,8 +8,8 @@ import 'package:arabic_learning/core/navigation.dart';
 import 'package:flutter/material.dart';
 
 // 有关设置的Widget
-class SettingRedirctButton extends StatelessWidget {
-  const SettingRedirctButton({
+class SettingRedirectButton extends StatelessWidget {
+  const SettingRedirectButton({
     super.key,
     required this.title,
     required this.target,
@@ -105,7 +105,7 @@ class SettingItem extends StatelessWidget {
         margin: EdgeInsets.all(4.0),
         decoration: BoxDecoration(
           // 统一用 surfaceContainerLow 作为分区卡片底色；分区内各设置项
-          // （SettingRow / SettingRedirctButton）再用更高一层的容器色区分。
+          // （SettingRow / SettingRedirectButton）再用更高一层的容器色区分。
           color: scheme.surfaceContainerLow,
           borderRadius: BorderRadius.vertical(top: Radius.circular(index == 0 ? AppRadius.card : 5.0), bottom: Radius.circular(index == children.length-1 ? AppRadius.card : 5.0)),
         ),
