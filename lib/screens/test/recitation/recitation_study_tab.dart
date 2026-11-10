@@ -13,7 +13,7 @@ import 'package:arabic_learning/core/recitation_text.dart'
 import 'package:arabic_learning/services/search.dart' show BKSearch;
 import 'package:arabic_learning/services/tts.dart' show playTextToSpeech;
 import 'package:arabic_learning/theme/tokens.dart'
-    show AppMotion, AppRadius, AppSpacing;
+    show AppBreakpoints, AppMotion, AppRadius, AppSpacing;
 import 'package:arabic_learning/widgets/overlays.dart' show showWordCardOverlay;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart' show HapticFeedback;
@@ -199,8 +199,7 @@ class _RecitationStudyTabState extends State<RecitationStudyTab> {
   @override
   Widget build(BuildContext context) {
     final bool wide = AdaptiveScope.of(context).isWide;
-    final double width =
-        (MediaQuery.sizeOf(context).width * 0.9).clamp(0.0, 760.0);
+    final double width = AppBreakpoints.contentWidth(context);
     final List<RecitationSentence> sentences = widget.unit.sentences;
     // 若本页在切 tab 期间只是被挂起而非销毁，重新显示的这一帧补齐共用位置。
     WidgetsBinding.instance.addPostFrameCallback((_) => _syncFromPosition());

@@ -136,6 +136,12 @@ class AppBreakpoints {
 
   /// 是否桌面宽度。
   static bool isDesktop(double width) => width >= tablet;
+
+  /// 详情页正文宽度：屏宽的 90%，最宽 760。
+  ///
+  /// 宽屏下不让正文铺满，避免长行阿语难以扫读。
+  static double contentWidth(BuildContext context) =>
+      (MediaQuery.sizeOf(context).width * 0.9).clamp(0.0, 760.0);
 }
 
 /// 语义色主题扩展：成功 / 警告 / 错误 / 禁用。

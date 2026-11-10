@@ -9,7 +9,7 @@ import 'package:arabic_learning/services/app_data.dart';
 import 'package:arabic_learning/services/global_state.dart';
 import 'package:arabic_learning/services/recitation_service.dart';
 import 'package:arabic_learning/services/recitation_store.dart';
-import 'package:arabic_learning/theme/tokens.dart' show AppRadius, AppSpacing, AppSemanticColors;
+import 'package:arabic_learning/theme/tokens.dart' show AppBreakpoints, AppRadius, AppSpacing, AppSemanticColors;
 import 'package:arabic_learning/widgets/kit.dart' show Button;
 import 'package:arabic_learning/widgets/motion.dart'
     show CrossFadeSwitcher, StaggeredEntrance;
@@ -60,8 +60,7 @@ class _RecitationListPageState extends State<RecitationListPage> {
   @override
   Widget build(BuildContext context) {
     final ThemeData theme = Theme.of(context);
-    final double width =
-        (MediaQuery.sizeOf(context).width * 0.9).clamp(0.0, 760.0);
+    final double width = AppBreakpoints.contentWidth(context);
     final List<RecitationTextUnit> units = AppData().recitationTextData.units;
     return Scaffold(
       appBar: AppBar(

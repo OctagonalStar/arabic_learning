@@ -30,7 +30,7 @@ import 'package:arabic_learning/services/recitation_store.dart';
 import 'package:arabic_learning/core/recitation_text.dart'
     show tokenize, tokenSpanOf;
 import 'package:arabic_learning/theme/tokens.dart'
-    show AppMotion, AppRadius, AppSpacing;
+    show AppBreakpoints, AppMotion, AppRadius, AppSpacing;
 import 'package:arabic_learning/widgets/kit.dart' show Button;
 import 'package:arabic_learning/widgets/motion.dart' show CrossFadeSwitcher;
 import 'package:arabic_learning/widgets/overlays.dart' show showSnackBar;
@@ -986,8 +986,7 @@ class _RecitationReciteTabState extends State<RecitationReciteTab>
     super.build(context);
     final ThemeData theme = Theme.of(context);
     final bool wide = AdaptiveScope.of(context).isWide;
-    final double width =
-        (MediaQuery.sizeOf(context).width * 0.9).clamp(0.0, 760.0);
+    final double width = AppBreakpoints.contentWidth(context);
     final int count = widget.unit.sentences.length;
     final bool modelReady = AppData().asrModelDownloaded;
     // KeepAlive 挂起期间监听可能因 pager 无 clients 而跳过，回到前台的第一帧补齐位置。
