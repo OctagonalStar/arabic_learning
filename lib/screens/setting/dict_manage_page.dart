@@ -17,7 +17,8 @@ import 'package:arabic_learning/services/fsrs.dart';
 import 'package:arabic_learning/services/global_state.dart';
 import 'package:arabic_learning/theme/tokens.dart' show AppRadius, AppSpacing;
 import 'package:arabic_learning/widgets/kit.dart' show Button, SettingItem;
-import 'package:arabic_learning/widgets/overlays.dart' show alart, showSnackBar;
+import 'package:arabic_learning/widgets/overlays.dart'
+    show alart, showConfirmDialog, showSnackBar;
 
 class DictManagePage extends StatefulWidget {
   const DictManagePage({super.key});
@@ -71,41 +72,19 @@ class _DictManagePage extends State<DictManagePage> {
     );
   }
 
-  /// 删除词库确认弹窗：共享的 [alart] 只有一个“确定”按钮，这里需要双按钮。
+  /// 删除词库确认弹窗。
   void _confirmDelete(BuildContext context, SourceItem s) {
     context.read<Global>().uiLogger.info("请求删除词库: ${s.name}");
-    showDialog(
-      context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: Text("删除词库「${s.name}」？"),
-        content: Text(
-          "将解除「${s.name}」及其课程的归属，词条本体保留（不影响复习进度）。此操作不可撤销。",
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(dialogContext),
-            child: const Text("取消"),
-          ),
-          TextButton(
-            onPressed: () {
-              final String? name = AppData().deleteDictSource(
-                s.sourceJsonFileName,
-              );
-              Navigator.pop(dialogContext);
-              if (context.mounted) {
-                setState(() {});
-                showSnackBar(context, "已删除词库：${name ?? s.name}");
-              }
-            },
-            child: Text(
-              "删除",
-              style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                color: Theme.of(context).colorScheme.error,
-              ),
-            ),
-          ),
-        ],
-      ),
+    showConfirmDialog(
+      context,
+      title: "删除词库「${s.name}」？",
+      content: "将解除「${s.name}」及其课程的归属，词条本体保留（不影响复习进度）。此操作不可撤销。",
+      confirmLabel: "删除",
+      onConfirm: () {
+        final String? name = AppData().deleteDictSource(s.sourceJsonFileName);
+        setState(() {});
+        showSnackBar(context, "已删除词库：${name ?? s.name}");
+      },
     );
   }
 
@@ -120,79 +99,39 @@ class _DictManagePage extends State<DictManagePage> {
     context.read<Global>().uiLogger.info(
       "请求清理未归属词条: ${orphans.length} 个，涉及复习卡片 $affected 张",
     );
-    showDialog(
-      context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: const Text("清理未归属词条？"),
-        content: Text(
-          "将彻底删除 ${orphans.length} 个未被任何课程引用的词条${affected > 0 ? "，并丢弃这些词条上的 $affected 张复习卡片（进度不可恢复）" : ""}。此操作会重排词条位置，不可撤销。",
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(dialogContext),
-            child: const Text("取消"),
-          ),
-          TextButton(
-            onPressed: () {
-              final ({int removedWords, int removedCards}) r = AppData()
-                  .compactUnreferencedWords();
-              Navigator.pop(dialogContext);
-              if (context.mounted) {
-                setState(() {});
-                showSnackBar(
-                  context,
-                  "已清理 ${r.removedWords} 个词条，丢弃 ${r.removedCards} 张复习卡片",
-                );
-              }
-            },
-            child: Text(
-              "确认清理",
-              style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                color: Theme.of(context).colorScheme.error,
-              ),
-            ),
-          ),
-        ],
-      ),
+    showConfirmDialog(
+      context,
+      title: "清理未归属词条？",
+      content: "将彻底删除 ${orphans.length} 个未被任何课程引用的词条${affected > 0 ? "，并丢弃这些词条上的 $affected 张复习卡片（进度不可恢复）" : ""}。此操作会重排词条位置，不可撤销。",
+      confirmLabel: "确认清理",
+      onConfirm: () {
+        final ({int removedWords, int removedCards}) r = AppData()
+            .compactUnreferencedWords();
+        setState(() {});
+        showSnackBar(
+          context,
+          "已清理 ${r.removedWords} 个词条，丢弃 ${r.removedCards} 张复习卡片",
+        );
+      },
     );
   }
 
   /// 重置词库但把复习进度按词形暂存到内存，供重新导入后恢复。
   void _resetDicts(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: const Text("重置词库并保留复习进度？"),
-        content: const Text(
-          "将清空所有已安装词库及其课程归属（阅读题、同义词标记保留）。清空前的复习进度会暂存在本次会话中，"
+    showConfirmDialog(
+      context,
+      title: "重置词库并保留复习进度？",
+      content: "将清空所有已安装词库及其课程归属（阅读题、同义词标记保留）。清空前的复习进度会暂存在本次会话中，"
           "请在重新导入词库后点击「恢复复习进度」；中途退出应用将无法恢复复习进度。此操作不可撤销。",
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(dialogContext),
-            child: const Text("取消"),
-          ),
-          TextButton(
-            onPressed: () {
-              final int pending = AppData().resetDictsPreservingFsrs();
-              Navigator.pop(dialogContext);
-              if (context.mounted) {
-                setState(() {});
-                showSnackBar(
-                  context,
-                  "已重置词库，暂存 $pending 张复习卡片；请重新导入后恢复进度",
-                );
-              }
-            },
-            child: Text(
-              "确认重置",
-              style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                color: Theme.of(context).colorScheme.error,
-              ),
-            ),
-          ),
-        ],
-      ),
+      confirmLabel: "确认重置",
+      onConfirm: () {
+        final int pending = AppData().resetDictsPreservingFsrs();
+        setState(() {});
+        showSnackBar(
+          context,
+          "已重置词库，暂存 $pending 张复习卡片；请重新导入后恢复进度",
+        );
+      },
     );
   }
 
@@ -210,34 +149,16 @@ class _DictManagePage extends State<DictManagePage> {
 
   /// 放弃暂存的复习进度（永久丢弃）。
   void _discardPending(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: const Text("放弃恢复复习进度？"),
-        content: const Text("暂存的复习进度将被永久丢弃，不可恢复。"),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(dialogContext),
-            child: const Text("取消"),
-          ),
-          TextButton(
-            onPressed: () {
-              AppData().discardPendingFsrsRestore();
-              Navigator.pop(dialogContext);
-              if (context.mounted) {
-                setState(() {});
-                showSnackBar(context, "已放弃待恢复的复习进度");
-              }
-            },
-            child: Text(
-              "确认放弃",
-              style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                color: Theme.of(context).colorScheme.error,
-              ),
-            ),
-          ),
-        ],
-      ),
+    showConfirmDialog(
+      context,
+      title: "放弃恢复复习进度？",
+      content: "暂存的复习进度将被永久丢弃，不可恢复。",
+      confirmLabel: "确认放弃",
+      onConfirm: () {
+        AppData().discardPendingFsrsRestore();
+        setState(() {});
+        showSnackBar(context, "已放弃待恢复的复习进度");
+      },
     );
   }
 

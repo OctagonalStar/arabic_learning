@@ -147,6 +147,43 @@ class _AlartActionsState extends State<_AlartActions> {
   }
 }
 
+/// 双按钮确认弹窗：[alart] 只有一个「确定」，破坏性操作还需要「取消」出口。
+///
+/// 确认按钮以错误色突出显示；点击后先关闭弹窗再执行 [onConfirm]。
+void showConfirmDialog(
+  BuildContext context, {
+  required String title,
+  required String content,
+  required String confirmLabel,
+  required VoidCallback onConfirm,
+}) {
+  showDialog<void>(
+    context: context,
+    builder: (BuildContext dialogContext) => AlertDialog(
+      title: Text(title),
+      content: Text(content),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(dialogContext),
+          child: Text("取消"),
+        ),
+        TextButton(
+          onPressed: () {
+            Navigator.pop(dialogContext);
+            onConfirm();
+          },
+          child: Text(
+            confirmLabel,
+            style: Theme.of(context).textTheme.labelLarge?.copyWith(
+              color: Theme.of(context).colorScheme.error,
+            ),
+          ),
+        ),
+      ],
+    ),
+  );
+}
+
 void showSnackBar(BuildContext context, String msg, {Duration duration = const Duration(seconds: 3)}){
   context.read<Global>().uiLogger.info("展示底部提示，携带信息: $msg ，持续时长: ${duration.inMilliseconds} 毫秒");
   ScaffoldMessenger.of(context).showSnackBar(
