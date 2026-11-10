@@ -5,15 +5,16 @@
 //
 // 说明：本文件位于 widgets 层，但为满足「单一入口」要求（启动与设置页
 // 「检查更新」都只调用 [showUpdateSheet]），这里直接 push 下载页
-// [UpdatePage]，因此存在本方案唯一的 widgets -> screens 反向 import。
+// [UpdatePage]；纯展示逻辑放在 services/update/update_error.dart。
 
 import 'package:arabic_learning/core/extensions.dart';
 import 'package:arabic_learning/core/statics.dart' show StaticsVar;
 import 'package:arabic_learning/screens/setting/update_page.dart'
+    show UpdatePage;
+import 'package:arabic_learning/services/update/update_error.dart'
     show
         UpdateErrorAction,
         UpdateErrorInfo,
-        UpdatePage,
         describeUpdateError,
         displayUpdateVersionLabel,
         updateProjectUrl;
