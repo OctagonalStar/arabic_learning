@@ -54,14 +54,19 @@ class _MyAppState extends State<MyApp> {
     });
   }
 
-  /// 初始化失败页：surface 语义色与加载页一致，避免永久停在加载动画。
-  Widget _buildInitError(Global global, Object error) {
+  /// 初始化期间（加载/失败）用主题 surface 色，与主界面底色一致。
+  Color _initSurface(Global global) {
     final bool platformDark = WidgetsBinding
             .instance.platformDispatcher.platformBrightness ==
         Brightness.dark;
-    final Color surface = (platformDark ? global.darkThemeData : global.lightThemeData)
+    return (platformDark ? global.darkThemeData : global.lightThemeData)
         .colorScheme
         .surface;
+  }
+
+  /// 初始化失败页：surface 语义色与加载页一致，避免永久停在加载动画。
+  Widget _buildInitError(Global global, Object error) {
+    final Color surface = _initSurface(global);
     return Directionality(
       key: const ValueKey<String>('app-init-error'),
       textDirection: TextDirection.ltr,
@@ -114,20 +119,11 @@ class _MyAppState extends State<MyApp> {
           if (asyncSnapshot.hasError) {
             child = _buildInitError(global, asyncSnapshot.error!);
           } else if(!(asyncSnapshot.data??false)) {
-            // 加载页：使用主题 surface 语义色，不再硬编码纯黑。
-            final bool platformDark = WidgetsBinding
-                    .instance.platformDispatcher.platformBrightness ==
-                Brightness.dark;
-            final Color loadingSurface = (platformDark
-                    ? global.darkThemeData
-                    : global.lightThemeData)
-                .colorScheme
-                .surface;
             child = Container(
               key: const ValueKey<String>('app-loading'),
               width: double.infinity,
               height: double.infinity,
-              color: loadingSurface,
+              color: _initSurface(global),
               child: const Center(child: LoadingIndicator()),
             );
           } else {
@@ -166,7 +162,6 @@ class _MyAppState extends State<MyApp> {
   }
 }
 
-
 class MyHomePage extends StatefulWidget {
   const MyHomePage({super.key});
 
@@ -191,25 +186,38 @@ const List<_NavItem> _navItems = [
 ];
 
 
+const List<Widget> _pages = <Widget>[
+  HomePage(),
+  LearningPage(),
+  TestPage(),
+  SettingPage(),
+];
+
 class _MyHomePageState extends State<MyHomePage> {
   final PageController _pageController = PageController(initialPage: 0);
   bool _startupPromptsScheduled = false;
   bool _notificationPermissionAsked = false;
 
+  /// 四个 Tab 的唯一列表：桌面竖向 / 移动横向共用同一控制器与子页。
+  Widget _buildPageView(Axis axis) {
+    return PageView(
+      controller: _pageController,
+      scrollDirection: axis,
+      onPageChanged: (int index) => setState(() {}),
+      children: _pages,
+    );
+  }
 
   // 构建桌面端布局（侧边导航）
   Widget _buildDesktopLayout(BuildContext context) {
     context.read<Global>().uiLogger.fine("构建 DesktopLayout");
     return Row(
       children: [
-        // 侧边导航栏
+        // 宽度夹在 72–96：小窗口下不缩破 48dp 触控目标，大屏不再随宽度无限加宽。
         NavigationRail(
-          // 宽度夹在 72–96：小窗口下不缩破 48dp 触控目标，大屏不再随宽度无限加宽。
           minWidth: clampDouble(MediaQuery.sizeOf(context).width * 0.05, 72.0, 96.0),
           selectedIndex: _pageController.hasClients ? _pageController.page!.round() : 0,
-          onDestinationSelected: (int index) {
-            _onNavigationTapped(index);
-          },
+          onDestinationSelected: _onNavigationTapped,
           labelType: NavigationRailLabelType.selected,
           destinations: [
             for (final _NavItem item in _navItems)
@@ -220,24 +228,8 @@ class _MyHomePageState extends State<MyHomePage> {
               ),
           ],
         ),
-        // 垂直分隔线
         const VerticalDivider(thickness: 1, width: 1),
-        // 主要内容区域
-        Expanded(
-          child: PageView(
-            scrollDirection: Axis.vertical,
-            controller: _pageController,
-            onPageChanged: (index) {
-              setState(() {});
-            },
-            children: [
-              HomePage(),
-              LearningPage(),
-              TestPage(),
-              SettingPage()
-            ],
-          ),
-        ),
+        Expanded(child: _buildPageView(Axis.vertical)),
       ],
     );
   }
@@ -247,28 +239,10 @@ class _MyHomePageState extends State<MyHomePage> {
     context.read<Global>().uiLogger.fine("构建 MobileLayout");
     return Column(
       children: [
-        // 主要内容区域
-        Expanded(
-          child: PageView(
-            controller: _pageController,
-            scrollDirection: Axis.horizontal,
-            onPageChanged: (index) {
-              setState(() {});
-            },
-            children: [
-              HomePage(),
-              LearningPage(),
-              TestPage(),
-              SettingPage()
-            ],
-          ),
-        ),
-        // 底部导航栏
+        Expanded(child: _buildPageView(Axis.horizontal)),
         NavigationBar(
           selectedIndex: _pageController.hasClients ? _pageController.page!.round() : 0,
-          onDestinationSelected: (int index) {
-            _onNavigationTapped(index);
-          },
+          onDestinationSelected: _onNavigationTapped,
           // 高度夹在 48–80：矮横屏下保持 48dp 触控目标（主页磁贴在 420 高度
           // 下要求导航栏不高于 52，故不再取更高下限），大屏不随屏高拉高。
           height: clampDouble(MediaQuery.sizeOf(context).height * 0.1, 48.0, 80.0),
@@ -281,8 +255,8 @@ class _MyHomePageState extends State<MyHomePage> {
                 selectedIcon: Icon(item.selectedIcon),
                 label: item.label,
               ),
-          ]
-        )
+          ],
+        ),
       ],
     );
   }
@@ -367,8 +341,8 @@ class _MyHomePageState extends State<MyHomePage> {
   @override
   Widget build(BuildContext context) {
     context.read<Global>().uiLogger.fine("构建 MyHomePage");
-    final global = context.watch<Global>();
-    
+    final Global global = context.watch<Global>();
+
     if(AppData().isFirstStart) {
       return PolicyPage(isUpdate: false);
     } else if (AppData().config.lastTermVersion != StaticsVar.termVersion) {
