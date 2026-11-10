@@ -7,7 +7,7 @@ import 'dart:math' as math;
 
 import 'package:arabic_learning/services/recitation_asr.dart';
 import 'package:arabic_learning/services/recitation_audio.dart';
-import 'package:arabic_learning/services/recitation_text.dart';
+import 'package:arabic_learning/core/recitation_text.dart';
 
 /// 门禁触发时的统一文案。
 const String unclearSummary = '没听清，请靠近麦克风重录';

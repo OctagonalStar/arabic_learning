@@ -6,7 +6,7 @@ import 'package:arabic_learning/models/dict.dart' show WordItem;
 import 'package:arabic_learning/models/recitation_text.dart';
 import 'package:arabic_learning/screens/test/recitation/recitation_progress_bar.dart'
     show RecitationProgressBar;
-import 'package:arabic_learning/services/recitation_text.dart'
+import 'package:arabic_learning/core/recitation_text.dart'
     show normalizeArabic, lookupStems;
 import 'package:arabic_learning/services/search.dart' show BKSearch;
 import 'package:arabic_learning/services/tts.dart' show playTextToSpeech;

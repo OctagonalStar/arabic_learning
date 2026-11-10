@@ -25,7 +25,7 @@ import 'package:arabic_learning/services/recitation_recorder.dart';
 import 'package:arabic_learning/services/recitation_scorer.dart';
 import 'package:arabic_learning/services/recitation_service.dart';
 import 'package:arabic_learning/services/recitation_store.dart';
-import 'package:arabic_learning/services/recitation_text.dart'
+import 'package:arabic_learning/core/recitation_text.dart'
     show tokenize, tokenSpanOf;
 import 'package:arabic_learning/theme/tokens.dart'
     show AppMotion, AppRadius, AppSpacing;

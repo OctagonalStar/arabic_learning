@@ -6,7 +6,7 @@
 
 import 'dart:convert';
 
-import 'package:arabic_learning/services/recitation_text.dart' show tokenize;
+import 'package:arabic_learning/core/recitation_text.dart' show tokenize;
 import 'package:crypto/crypto.dart';
 
 const List<String> _arabicKeys = <String>['arabic', 'ar', 'text', '阿语', '原文'];
