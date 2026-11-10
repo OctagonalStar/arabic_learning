@@ -159,8 +159,17 @@ class _LocalPKPage extends State<LocalPKPage> {
 
   @override
   void initState() {
-    context.read<PKServer>().initHost(widget.isServer, context, offer: widget.offer);
+    _initHost();
     super.initState();
+  }
+
+  Future<void> _initHost() async {
+    try {
+      await context.read<PKServer>().initHost(widget.isServer, offer: widget.offer);
+    } catch (e) {
+      if (!mounted) return;
+      alert(context, "构建连接错误: $e");
+    }
   }
 
   @override
@@ -210,7 +219,7 @@ class _ServerHostWatingPage extends State<ServerHostWatingPage> {
 
   Future<void> connectClient() async {
     try {
-      await context.read<PKServer>().loadAnswer(connectpwdController.text, context);
+      await context.read<PKServer>().loadAnswer(connectpwdController.text);
     } catch (e) {
       if(context.mounted) {
         // ignore: use_build_context_synchronously
