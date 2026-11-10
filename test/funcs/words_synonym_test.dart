@@ -271,18 +271,5 @@ void main() {
         );
       }
     });
-
-    test('buildChineseChoiceOptions 委托后仍返回 4 个释义字符串', () {
-      for (int seed = 0; seed < 30; seed++) {
-        final List<String> options = buildChineseChoiceOptions(
-          target,
-          dict,
-          preferSimilar: false,
-          rnd: Random(seed),
-        );
-        expect(options.length, 4, reason: 'seed=$seed');
-        expect(options, contains('相会'));
-      }
-    });
   });
 }

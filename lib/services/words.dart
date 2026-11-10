@@ -141,22 +141,6 @@ List<WordItem> buildChineseChoiceOptionWords(
   return getRandomWords(4, dict, include: word, preferClass: !preferSimilar, rnd: rnd, avoidSynonyms: true);
 }
 
-/// 生成选择题的 4 个中文选项（包含 [word] 自身）
-///
-/// 委托 [buildChineseChoiceOptionWords] 构建选项词后映射为释义字符串，
-/// 保持单次 [getRandomWords] 调用与相同的随机数消耗。选项词会排除与
-/// [word] 同义或释义完全重复的干扰项。
-List<String> buildChineseChoiceOptions(
-  WordItem word,
-  DictData dict, {
-  required bool preferSimilar,
-  required Random rnd,
-}) {
-  return buildChineseChoiceOptionWords(word, dict, preferSimilar: preferSimilar, rnd: rnd)
-      .map((WordItem optionWord) => optionWord.chinese)
-      .toList(growable: false);
-}
-
 /// 汇总当前词库中所有单词的分类标签
 /// 
 /// 返回顺序稳定：先按 [preferredOrder] 中出现的分级/常用分类排列，

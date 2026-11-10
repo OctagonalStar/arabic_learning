@@ -13,7 +13,6 @@
 
 import 'package:arabic_learning/core/extensions.dart';
 import 'package:arabic_learning/core/statics.dart' show StaticsVar;
-import 'package:arabic_learning/core/version.dart' show versionIntToString;
 import 'package:arabic_learning/services/update_service.dart';
 import 'package:arabic_learning/theme/tokens.dart'
     show AppMotion, AppRadius, AppSemanticColors, AppSpacing;
@@ -22,15 +21,6 @@ import 'package:arabic_learning/widgets/motion.dart' show CrossFadeSwitcher;
 import 'package:arabic_learning/widgets/overlays.dart' show alart, showSnackBar;
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
-
-/// 把内部版本号（如 `101000`）格式化为展示串（如 `1.1.0`）。
-///
-/// 委托 [versionIntToString]（编码约定：`major * 100000 + minor * 1000 + patch`），
-/// 仅额外提供「无效值返回空串」这一展示层兜底（共享实现返回 `"0.0.0"`）。
-String formatUpdateVersionInt(int value) {
-  if (value <= 0) return "";
-  return versionIntToString(value);
-}
 
 /// 展示用版本号：去掉 GitHub tag 常见的前导 `v`（如 `v1.2.0` → `1.2.0`）。
 String displayUpdateVersionLabel(String? label) {
