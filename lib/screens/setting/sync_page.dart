@@ -7,7 +7,7 @@ import 'package:provider/provider.dart';
 
 import 'package:arabic_learning/widgets/feedback.dart' show LoadingIndicator;
 import 'package:arabic_learning/widgets/kit.dart' show Button, SettingItem;
-import 'package:arabic_learning/widgets/overlays.dart' show alart, showSnackBar;
+import 'package:arabic_learning/widgets/overlays.dart' show alert, showSnackBar;
 import 'package:arabic_learning/widgets/shared.dart' show appInputDecoration;
 import 'package:arabic_learning/core/extensions.dart';
 import 'package:arabic_learning/services/sync.dart';
@@ -123,13 +123,13 @@ class _DataSyncPage extends State<DataSyncPage> {
                         if(context.mounted) await webdav.upload(AppData().storage);
                       } catch (e) {
                         if(!context.mounted) return;
-                        alart(context, e.toString());
+                        alert(context, e.toString());
                         setState(() {isUploading = false;});
                         return;
                       } 
                       setState(() {isUploading = false;});
                       if(!context.mounted) return;
-                      alart(context, "已上传");
+                      alert(context, "已上传");
                     },
                     child: Text("上传")
                   )
@@ -163,13 +163,13 @@ class _DataSyncPage extends State<DataSyncPage> {
                         if(context.mounted) await context.read<Global>().reloadStoredData();
                       } catch (e) {
                         if(!context.mounted) return;
-                        alart(context, e.toString());
+                        alert(context, e.toString());
                         setState(() {isDownloading = false;});
                         return;
                       } 
                       if(!context.mounted) return;
                       setState(() {isDownloading = false;});
-                      alart(context, "已恢复\n部分设置可能需要软件重启后才能生效");
+                      alert(context, "已恢复\n部分设置可能需要软件重启后才能生效");
                     },
                     child: Text("恢复")
                   )
@@ -252,13 +252,13 @@ class _DataSyncPage extends State<DataSyncPage> {
                         } else {
                           if (!context.mounted) return;
                           context.read<Global>().uiLogger.warning("备份数据导入错误: bytes和path均为null");
-                          alart(context, "文件 \"${platformFile.name}\" \n无法读取：bytes和path均为null。");
+                          alert(context, "文件 \"${platformFile.name}\" \n无法读取：bytes和path均为null。");
                           return;
                         }
                       } catch (e) {
                         if (!context.mounted) return;
                         context.read<Global>().uiLogger.severe("备份数据读取失败: $e");
-                        alart(context, "文件读取失败：\n$e");
+                        alert(context, "文件读取失败：\n$e");
                         return;
                       }
                       if (context.mounted) {
@@ -271,12 +271,12 @@ class _DataSyncPage extends State<DataSyncPage> {
                           context.read<Global>().conveySetting();
                           await context.read<Global>().reloadStoredData();
                           if(!context.mounted) return;
-                          alart(context, "备份数据 \"${platformFile.name}\" \n已恢复\n部分设置可能需要软件重启后才能生效");
+                          alert(context, "备份数据 \"${platformFile.name}\" \n已恢复\n部分设置可能需要软件重启后才能生效");
                           context.read<Global>().uiLogger.info("备份数据 \"${platformFile.name}\" \n已导入。");
                         } catch (e) {
                           if (!context.mounted) return;
                           context.read<Global>().uiLogger.severe("文件 ${platformFile.name} 无效: $e");
-                          alart(context, '文件 ${platformFile.name} 无效：\n$e');
+                          alert(context, '文件 ${platformFile.name} 无效：\n$e');
                         }
                       }
                     }, 
@@ -367,7 +367,7 @@ Future<void> popAccountSetting(BuildContext context) async {
                 Uri.parse(uriController.text);
                 if(uriController.text.isNotEmpty && !uriController.text.contains("http")) throw Exception("WebDAV URI must contain http");
               } catch (e) {
-                alart(context, e.toString());
+                alert(context, e.toString());
                 return;
               }
               context.read<Global>().patchConfig(

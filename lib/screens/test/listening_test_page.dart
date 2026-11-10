@@ -12,7 +12,7 @@ import 'package:arabic_learning/services/global_state.dart';
 import 'package:arabic_learning/services/app_data.dart';
 import 'package:arabic_learning/theme/typography.dart';
 import 'package:arabic_learning/widgets/kit.dart' show Button, TextContainer, popSelectClasses;
-import 'package:arabic_learning/widgets/overlays.dart' show alart;
+import 'package:arabic_learning/widgets/overlays.dart' show alert;
 import 'package:arabic_learning/services/words.dart';
 import 'package:arabic_learning/services/tts.dart';
 import 'package:arabic_learning/core/navigation.dart';
@@ -196,7 +196,7 @@ class _ForeListeningSettingPage extends State<ForeListeningSettingPage> {
               icon: Icon(Icons.rocket_launch, size: 32.0,),
               onPressed: () {
                 if(selectedClasses.selectedClass.isEmpty) {
-                  alart(context, "是哪个小可爱没选课程就来听写了");
+                  alert(context, "是哪个小可爱没选课程就来听写了");
                   return;
                 }
                 context.read<Global>().uiLogger.info("准备开始进行听写: 播放速度: $playRate;播放次数: $playTimes;播放间隔: $interval;词间隔: $intervalBetweenWords");

@@ -2,7 +2,7 @@ import 'dart:math';
 
 import 'package:arabic_learning/widgets/feedback.dart' show LoadingIndicator;
 import 'package:arabic_learning/widgets/kit.dart' show Button, TextContainer, popSelectClasses;
-import 'package:arabic_learning/widgets/overlays.dart' show alart;
+import 'package:arabic_learning/widgets/overlays.dart' show alert;
 import 'package:arabic_learning/widgets/questions.dart' show ChoiceQuestions;
 import 'package:arabic_learning/widgets/shared.dart' show PKScoreRow, appInputDecoration;
 import 'package:arabic_learning/services/words.dart';
@@ -111,7 +111,7 @@ class _LocalPKSelectPage extends State<LocalPKSelectPage> {
                   Set<CameraLensType> lens = await scannerController.getSupportedLenses();
                   if(context.mounted) context.read<Global>().uiLogger.fine(lens);
                 } catch (e) {
-                  if(context.mounted) alart(context, "尝试启用相机时出现以下问题: $e");
+                  if(context.mounted) alert(context, "尝试启用相机时出现以下问题: $e");
                   return;
                 }
               }
@@ -214,7 +214,7 @@ class _ServerHostWatingPage extends State<ServerHostWatingPage> {
     } catch (e) {
       if(context.mounted) {
         // ignore: use_build_context_synchronously
-        alart(context, "连接错误: $e", onConfirmed: () {
+        alert(context, "连接错误: $e", onConfirmed: () {
           setState(() {
             isConnecting = false;
           });

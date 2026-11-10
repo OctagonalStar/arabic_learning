@@ -16,7 +16,7 @@ import 'package:arabic_learning/services/fsrs.dart';
 import 'package:arabic_learning/services/words.dart';
 import 'package:arabic_learning/theme/tokens.dart' show AppRadius, AppSpacing;
 import 'package:arabic_learning/widgets/kit.dart' show Button, CategoryFilter, SelectChip, SettingItem, SettingRow;
-import 'package:arabic_learning/widgets/overlays.dart' show alart, showSnackBar;
+import 'package:arabic_learning/widgets/overlays.dart' show alert, showSnackBar;
 import 'package:arabic_learning/core/navigation.dart';
 
 class ForeFSRSSettingPage extends StatelessWidget {
@@ -300,7 +300,7 @@ class ForeFSRSSettingPage extends StatelessWidget {
                                       next.remove(index);
                                     }
                                     if(next.isEmpty) {
-                                      alart(context, "至少保留一项");
+                                      alert(context, "至少保留一项");
                                       return;
                                     }
                                     // 仅修改集合本身，不触发 createScheduler（那会启用 FSRS 并重建 Scheduler）
@@ -390,7 +390,7 @@ class ForeFSRSSettingPage extends StatelessWidget {
                         size: const Size.fromHeight(100),
                         onPressed: (){
                           fsrs.createScheduler(prefs: AppData().storage);
-                          alart(context, "设置完成，重新进入规律学习页面即可开始", onConfirmed: (){Navigator.popUntil(context, (route) => route.isFirst);});
+                          alert(context, "设置完成，重新进入规律学习页面即可开始", onConfirmed: (){Navigator.popUntil(context, (route) => route.isFirst);});
                         },
                         icon: const Icon(Icons.done),
                         child: const Text("确认"),

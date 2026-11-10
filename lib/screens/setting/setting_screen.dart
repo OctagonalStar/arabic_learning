@@ -7,7 +7,7 @@ import 'package:arabic_learning/package_replacement/fake_dart_io.dart' if (dart.
 import 'package:arabic_learning/core/version.dart' show versionIntToString;
 
 import 'package:arabic_learning/widgets/kit.dart' show Button, SettingItem, SettingRedirctButton, SettingRow;
-import 'package:arabic_learning/widgets/overlays.dart' show alart, showSnackBar;
+import 'package:arabic_learning/widgets/overlays.dart' show alert, showSnackBar;
 import 'package:arabic_learning/widgets/feedback.dart' show LoadingIndicator;
 import 'package:arabic_learning/core/extensions.dart';
 import 'package:arabic_learning/models/config.dart' show Config, RegularConfig;
@@ -251,7 +251,7 @@ class _SettingPage extends State<SettingPage> {
                       onChanged: (value) {
                         context.read<Global>().uiLogger.info("更新音频接口: $value");
                         if (value == 1) {
-                          alart(
+                          alert(
                             context,
                             "警告: \n来自\"TextReadTTS.com\"的音频不支持发音符号，且只能合成40字以内的文本。\n开启此功能请知悉。",
                           );

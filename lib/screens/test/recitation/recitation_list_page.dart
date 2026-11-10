@@ -12,7 +12,7 @@ import 'package:arabic_learning/services/recitation_store.dart';
 import 'package:arabic_learning/theme/tokens.dart' show AppRadius, AppSpacing, AppSemanticColors;
 import 'package:arabic_learning/widgets/kit.dart' show Button;
 import 'package:arabic_learning/widgets/motion.dart' show StaggeredEntrance;
-import 'package:arabic_learning/widgets/overlays.dart' show alart;
+import 'package:arabic_learning/widgets/overlays.dart' show alert;
 import 'package:arabic_learning/core/navigation.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -43,7 +43,7 @@ class _RecitationListPageState extends State<RecitationListPage> {
 
   void _deleteUnit(RecitationTextUnit unit) {
     final Global global = context.read<Global>();
-    alart(
+    alert(
       context,
       "确定删除「${unit.title}」吗？历史成绩会保留。",
       destructive: true,

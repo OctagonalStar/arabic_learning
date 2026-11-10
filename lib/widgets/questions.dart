@@ -14,7 +14,7 @@ import 'package:arabic_learning/theme/tokens.dart' show AppMotion;
 import 'package:arabic_learning/theme/typography.dart';
 import 'package:arabic_learning/widgets/flip_word_card.dart' show FlipWordCard;
 import 'package:arabic_learning/widgets/kit.dart' show Button, ChooseButtons, TextContainer;
-import 'package:arabic_learning/widgets/overlays.dart' show alart, showSnackBar, showWordCardOverlay;
+import 'package:arabic_learning/widgets/overlays.dart' show alert, showSnackBar, showWordCardOverlay;
 import 'package:arabic_learning/widgets/shared.dart' show ButtonLabel, appInputDecoration;
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -112,7 +112,7 @@ class _ChoiceQuestions extends State<ChoiceQuestions> {
                       try {
                         await playTextToSpeech(widget.mainWord);
                       } catch (e) {
-                        if(context.mounted) alart(context, e.toString());
+                        if(context.mounted) alert(context, e.toString());
                       }
                       
                       setLocalState(() {
@@ -440,7 +440,7 @@ class _ListeningQuestion extends State<ListeningQuestion> {
                       try {
                         await playTextToSpeech(widget.mainWord);
                       } catch (e) {
-                        if(context.mounted) alart(context, e.toString());
+                        if(context.mounted) alert(context, e.toString());
                       }
                       
                       setLocalState(() {

@@ -18,7 +18,7 @@ import 'package:arabic_learning/services/global_state.dart';
 import 'package:arabic_learning/theme/tokens.dart' show AppRadius, AppSpacing;
 import 'package:arabic_learning/widgets/kit.dart' show Button, SettingItem;
 import 'package:arabic_learning/widgets/overlays.dart'
-    show alart, showConfirmDialog, showSnackBar;
+    show alert, showConfirmDialog, showSnackBar;
 import 'package:arabic_learning/core/navigation.dart';
 
 class DictManagePage extends StatefulWidget {
@@ -140,7 +140,7 @@ class _DictManagePage extends State<DictManagePage> {
   void _restoreFsrs(BuildContext context) {
     final ({int restored, int dropped}) r = AppData().restoreFsrsFromPending();
     setState(() {});
-    alart(
+    alert(
       context,
       r.dropped > 0
           ? "已恢复 ${r.restored} 张复习卡片，丢弃 ${r.dropped} 张（对应词条已不存在）。"
@@ -201,7 +201,7 @@ class _DictManagePage extends State<DictManagePage> {
             } catch (e) {
               if (!context.mounted) return;
               context.read<Global>().uiLogger.severe("文件选择失败: $e");
-              alart(context, "无法打开文件选择器：\n$e");
+              alert(context, "无法打开文件选择器：\n$e");
               return;
             }
             if (result != null) {
@@ -222,7 +222,7 @@ class _DictManagePage extends State<DictManagePage> {
                   } catch (e2) {
                     if (!context.mounted) return;
                     context.read<Global>().uiLogger.severe("文件导入错误: $e2");
-                    alart(
+                    alert(
                       context,
                       "文件 \"${platformFile.name}\" \n无法读取：$e2。",
                     );
@@ -230,7 +230,7 @@ class _DictManagePage extends State<DictManagePage> {
                   }
                 } else {
                   context.read<Global>().uiLogger.severe("文件导入错误: $e");
-                  alart(
+                  alert(
                     context,
                     "文件 \"${platformFile.name}\" \n无法读取：$e。",
                   );
@@ -244,7 +244,7 @@ class _DictManagePage extends State<DictManagePage> {
                   jsonString,
                   platformFile.name,
                 );
-                alart(
+                alert(
                   context,
                   "文件 \"${platformFile.name}\" \n已导入。\n${result.message}",
                 );
@@ -255,7 +255,7 @@ class _DictManagePage extends State<DictManagePage> {
                 context.read<Global>().uiLogger.severe(
                   "文件 ${platformFile.name} 无效: $e",
                 );
-                alart(context, '文件 ${platformFile.name} 无效：\n$e');
+                alert(context, '文件 ${platformFile.name} 无效：\n$e');
               }
             }
           },
@@ -299,7 +299,7 @@ class _DictManagePage extends State<DictManagePage> {
                   icon: const Icon(Icons.build),
                   onPressed: () {
                     final String report = AppData().repairIndexes();
-                    alart(context, report);
+                    alert(context, report);
                   },
                   child: const Text("修复/重建索引"),
                 ),

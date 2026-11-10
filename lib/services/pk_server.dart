@@ -1,7 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:math';
-import 'package:arabic_learning/widgets/overlays.dart' show alart;
+import 'package:arabic_learning/widgets/overlays.dart' show alert;
 import 'package:archive/archive.dart';
 import 'package:arabic_learning/services/words.dart';
 import 'package:arabic_learning/models/dict.dart';
@@ -91,7 +91,7 @@ class PKServer with ChangeNotifier{
       }
     } catch (e) {
       if(!context.mounted) return;
-      alart(context, "构建连接错误: $e");
+      alert(context, "构建连接错误: $e");
     }
     
     notifyListeners();

@@ -1,5 +1,5 @@
 // 弹窗与提示（原 lib/funcs/ui.dart 拆分）。
-// 承载对话框 alart、底部提示 showSnackBar、详解弹窗 viewAnswer
+// 承载对话框 alert、底部提示 showSnackBar、详解弹窗 viewAnswer
 // 与选择题长按用的单词卡片浮层 showWordCardOverlay。
 // 说明：与 widgets/kit.dart 之间存在循环 import，在 Dart 中合法。
 
@@ -34,10 +34,10 @@ import 'package:provider/provider.dart';
 /// 
 /// ``` dart
 /// onPressed: () {
-///   alart(context, "你点击了按钮"，onConfirmed: (){i++}, delayConfirm: Duration(seconds: 1));
+///   alert(context, "你点击了按钮"，onConfirmed: (){i++}, delayConfirm: Duration(seconds: 1));
 /// }
 /// ```
-void alart(BuildContext context, String msg, {Function? onConfirmed, Duration delayConfirm = const Duration(), bool destructive = false}) {
+void alert(BuildContext context, String msg, {Function? onConfirmed, Duration delayConfirm = const Duration(), bool destructive = false}) {
   context.read<Global>().uiLogger.finest(
     () => "构建弹出窗口: 携带信息: $msg ;确认参数: ${onConfirmed != null}; 延迟: ${delayConfirm.inMilliseconds}; 危险操作: $destructive",
   );
@@ -49,7 +49,7 @@ void alart(BuildContext context, String msg, {Function? onConfirmed, Duration de
         title: Text("提示"),
         content: Text(msg),
         actions: [
-          _AlartActions(
+          _AlertActions(
             destructive: destructive,
             delayConfirm: delayConfirm,
             onConfirmed: onConfirmed,
@@ -65,18 +65,18 @@ void alart(BuildContext context, String msg, {Function? onConfirmed, Duration de
 /// [delayConfirm] 非零时确定按钮置灰，并以「确定 (n)」倒计时，归零后启用；
 /// 为零时与原先完全一致（单个可点确定按钮）。[destructive] 为真时在确定
 /// 按钮左侧额外给出「取消」。
-class _AlartActions extends StatefulWidget {
-  const _AlartActions({required this.destructive, required this.delayConfirm, this.onConfirmed});
+class _AlertActions extends StatefulWidget {
+  const _AlertActions({required this.destructive, required this.delayConfirm, this.onConfirmed});
 
   final bool destructive;
   final Duration delayConfirm;
   final Function? onConfirmed;
 
   @override
-  State<_AlartActions> createState() => _AlartActionsState();
+  State<_AlertActions> createState() => _AlertActionsState();
 }
 
-class _AlartActionsState extends State<_AlartActions> {
+class _AlertActionsState extends State<_AlertActions> {
   Timer? _timer;
 
   /// 剩余等待时间，归零后确定按钮启用。
@@ -147,7 +147,7 @@ class _AlartActionsState extends State<_AlartActions> {
   }
 }
 
-/// 双按钮确认弹窗：[alart] 只有一个「确定」，破坏性操作还需要「取消」出口。
+/// 双按钮确认弹窗：[alert] 只有一个「确定」，破坏性操作还需要「取消」出口。
 ///
 /// 确认按钮以错误色突出显示；点击后先关闭弹窗再执行 [onConfirm]。
 void showConfirmDialog(

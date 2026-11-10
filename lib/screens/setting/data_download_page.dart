@@ -3,7 +3,7 @@ import 'dart:convert';
 import 'package:arabic_learning/widgets/feedback.dart' show LoadingIndicator;
 import 'package:arabic_learning/widgets/kit.dart' show Button, SettingItem;
 import 'package:arabic_learning/widgets/motion.dart' show CrossFadeSwitcher;
-import 'package:arabic_learning/widgets/overlays.dart' show alart, showSnackBar;
+import 'package:arabic_learning/widgets/overlays.dart' show alert, showSnackBar;
 import 'package:arabic_learning/core/statics.dart' show DictRepoInfo, StaticsVar;
 import 'package:arabic_learning/models/dict.dart';
 import 'package:flutter/material.dart';
@@ -142,14 +142,14 @@ Widget _buildFileRow(BuildContext context, Dio dio, dynamic f) {
             context.read<Global>().uiLogger.severe(
               "词库[$fileName]$action失败: HTTP ${response.statusCode}",
             );
-            alart(context, "$action失败\nHTTP ${response.statusCode}");
+            alert(context, "$action失败\nHTTP ${response.statusCode}");
             setLocalState(() {
               inDownloading = false;
             });
           }
         } catch (e) {
           context.read<Global>().uiLogger.severe("词库[$fileName]$action失败: $e");
-          alart(context, "$action失败\n${e.toString()}");
+          alert(context, "$action失败\n${e.toString()}");
           setLocalState(() {
             inDownloading = false;
           });
@@ -164,7 +164,7 @@ Widget _buildFileRow(BuildContext context, Dio dio, dynamic f) {
         actionButton = Button(
           icon: Icon(Icons.refresh),
           onPressed: () {
-            alart(
+            alert(
               context,
               "确认更新词库「$fileName」？\n将重新下载线上最新版本并替换本词库。",
               onConfirmed: () => fetchAndImport(isUpdate: true),

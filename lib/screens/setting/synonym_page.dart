@@ -6,7 +6,7 @@ import 'package:arabic_learning/services/synonyms.dart' show SynonymStore;
 import 'package:arabic_learning/theme/tokens.dart' show AppSpacing;
 import 'package:arabic_learning/widgets/kit.dart' show Button, TextContainer;
 import 'package:arabic_learning/widgets/shared.dart' show EmptyHintCard;
-import 'package:arabic_learning/widgets/overlays.dart' show alart;
+import 'package:arabic_learning/widgets/overlays.dart' show alert;
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -108,7 +108,7 @@ class _SynonymPage extends State<SynonymPage> {
                 size: Size.fromHeight(mediaQuery.size.height * 0.08),
                 backgroundColor: Theme.of(context).colorScheme.errorContainer,
                 onPressed: () {
-                  alart(context, "确定清空全部同义/不同标记吗？此操作不可撤销。", destructive: true, onConfirmed: () {
+                  alert(context, "确定清空全部同义/不同标记吗？此操作不可撤销。", destructive: true, onConfirmed: () {
                     context.read<Global>().uiLogger.info("清空全部同义对标记");
                     setState(() {
                       store.clearAll();

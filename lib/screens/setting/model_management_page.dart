@@ -19,7 +19,7 @@ import 'package:arabic_learning/theme/tokens.dart'
     show AppRadius, AppSemanticColors, AppSpacing;
 import 'package:arabic_learning/widgets/kit.dart'
     show Button, SettingItem;
-import 'package:arabic_learning/widgets/overlays.dart' show alart, showSnackBar;
+import 'package:arabic_learning/widgets/overlays.dart' show alert, showSnackBar;
 
 class ModelManagementPage extends StatefulWidget {
   const ModelManagementPage({super.key});
@@ -163,7 +163,7 @@ class _ModelManagementPageState extends State<ModelManagementPage> {
 
   /// 删除确认弹窗；确认后真正执行 [_confirmDelete]。
   void _delete(String id, {required bool isTts, required bool isPreferred}) {
-    alart(
+    alert(
       context,
       isPreferred ? "该模型正在使用中，删除后将回退为默认模型。确定删除吗？" : "删除后需重新下载或导入才能继续使用。确定删除吗？",
       destructive: true,

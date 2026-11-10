@@ -9,7 +9,7 @@ import 'package:arabic_learning/core/extensions.dart';
 import 'package:arabic_learning/theme/tokens.dart' show AppRadius;
 import 'package:arabic_learning/theme/typography.dart';
 import 'package:arabic_learning/widgets/kit.dart' show Button;
-import 'package:arabic_learning/widgets/overlays.dart' show alart;
+import 'package:arabic_learning/widgets/overlays.dart' show alert;
 import 'package:arabic_learning/widgets/review_forecast_chart.dart' show ReviewForecastChart;
 import 'package:arabic_learning/widgets/shared.dart' show StatCard;
 import 'package:arabic_learning/services/words.dart';
@@ -149,7 +149,7 @@ class _DailyWord extends State<DailyWord> {
           try {
             await playTextToSpeech(dailyWord);
           } catch (e) {
-            if(context.mounted) alart(context, e.toString());
+            if(context.mounted) alert(context, e.toString());
           }
           setState(() {
             playing = false;

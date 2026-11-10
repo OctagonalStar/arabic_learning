@@ -4,7 +4,7 @@ import 'package:arabic_learning/core/statics.dart';
 import 'package:arabic_learning/screens/test/reading/reading_config_page.dart';
 import 'package:arabic_learning/screens/test/reading/reading_shared.dart';
 import 'package:arabic_learning/theme/tokens.dart' show AppMotion;
-import 'package:arabic_learning/widgets/overlays.dart' show alart;
+import 'package:arabic_learning/widgets/overlays.dart' show alert;
 import 'package:flutter/foundation.dart' show clampDouble;
 import 'package:flutter/material.dart';
 
@@ -125,7 +125,7 @@ class _ReadingTestAddLeading extends State<ReadingTestAddLeading> {
               ),
               TypeChoose(
                 mainTitle: Text("从在线仓库中获取", style: Theme.of(context).textTheme.headlineMedium), 
-                rt: (){alart(context, "都说了在施工了...");}, 
+                rt: (){alert(context, "都说了在施工了...");}, 
                 subTitle: Text("施工中，暂时无法使用", style: Theme.of(context).textTheme.bodyMedium), 
                 widget: cardWidth, 
                 height: cardHeight

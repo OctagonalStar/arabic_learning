@@ -18,7 +18,7 @@ import 'package:arabic_learning/theme/tokens.dart'
     show AppMotion, AppRadius, AppSemanticColors, AppSpacing;
 import 'package:arabic_learning/widgets/kit.dart' show Button;
 import 'package:arabic_learning/widgets/motion.dart' show CrossFadeSwitcher;
-import 'package:arabic_learning/widgets/overlays.dart' show alart, showSnackBar;
+import 'package:arabic_learning/widgets/overlays.dart' show alert, showSnackBar;
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -353,7 +353,7 @@ class _UpdatePageState extends State<UpdatePage> with WidgetsBindingObserver {
   }
 
   void _confirmCancel(BuildContext context) {
-    alart(
+    alert(
       context,
       "确定要取消下载吗？已下载的内容会被删除。",
       onConfirmed: () {
