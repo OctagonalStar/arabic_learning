@@ -92,9 +92,7 @@ class ForeFSRSSettingPage extends StatelessWidget {
                 return ListView(
                   padding: const EdgeInsets.only(bottom: AppSpacing.sm),
                   children: [
-                    // ---------------------------------------------------------
                     // 记忆强度：三个时间/概率参数
-                    // ---------------------------------------------------------
                     SettingItem(
                       title: "记忆强度",
                       padding: _rowPadding,
@@ -157,9 +155,7 @@ class ForeFSRSSettingPage extends StatelessWidget {
                       ],
                     ),
 
-                    // ---------------------------------------------------------
                     // 答题节奏：自我评级与评分相关开关
-                    // ---------------------------------------------------------
                     SettingItem(
                       title: "答题节奏",
                       padding: _rowPadding,
@@ -215,9 +211,7 @@ class ForeFSRSSettingPage extends StatelessWidget {
                       ],
                     ),
 
-                    // ---------------------------------------------------------
                     // 内容：每日推送与复习队列
-                    // ---------------------------------------------------------
                     SettingItem(
                       title: "内容",
                       padding: _rowPadding,
@@ -272,9 +266,7 @@ class ForeFSRSSettingPage extends StatelessWidget {
                       ],
                     ),
 
-                    // ---------------------------------------------------------
                     // 题型：复习/推送的随机题型（自我评级下不适用）
-                    // ---------------------------------------------------------
                     if(!fsrs.config.selfEvaluate) SettingItem(
                       title: "题型",
                       padding: _rowPadding,
@@ -326,9 +318,7 @@ class ForeFSRSSettingPage extends StatelessWidget {
                       ],
                     ),
 
-                    // ---------------------------------------------------------
                     // 高级：个性化校准
-                    // ---------------------------------------------------------
                     SettingItem(
                       title: "高级",
                       padding: _rowPadding,
@@ -387,9 +377,7 @@ class ForeFSRSSettingPage extends StatelessWidget {
                       ],
                     ),
 
-                    // ---------------------------------------------------------
                     // 保存 / 重置
-                    // ---------------------------------------------------------
                     Padding(
                       padding: const EdgeInsets.fromLTRB(
                         AppSpacing.sm,

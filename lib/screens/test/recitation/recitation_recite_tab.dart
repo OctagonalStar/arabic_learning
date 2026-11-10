@@ -145,9 +145,7 @@ class _RecitationReciteTabState extends State<RecitationReciteTab>
   String _clock(int seconds) =>
       "${(seconds ~/ 60).toString().padLeft(2, '0')}:${(seconds % 60).toString().padLeft(2, '0')}";
 
-  // ---------------------------------------------------------------------------
   // 录音流程
-  // ---------------------------------------------------------------------------
 
   /// 检查麦克风权限；被拒时置位 [<_permissionDenied>]，由顶部提示给出重试入口。
   Future<bool> _ensurePermission() async {
@@ -301,9 +299,7 @@ class _RecitationReciteTabState extends State<RecitationReciteTab>
 
   void _retryRecording() => _startRecording(_whole ? -1 : _retryIndex);
 
-  // ---------------------------------------------------------------------------
   // 定位 / 进度同步
-  // ---------------------------------------------------------------------------
 
   void _locatePage(int index) {
     if (!_pager.hasClients) return;
@@ -314,9 +310,7 @@ class _RecitationReciteTabState extends State<RecitationReciteTab>
     );
   }
 
-  // ---------------------------------------------------------------------------
   // 展示
-  // ---------------------------------------------------------------------------
 
   Widget _chip(ThemeData theme, String text, Color background, Color foreground) {
     return Container(

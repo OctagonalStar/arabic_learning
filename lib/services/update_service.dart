@@ -68,9 +68,7 @@ enum UpdateStage {
 }
 
 class UpdateService extends ChangeNotifier {
-  // ---------------------------------------------------------------------------
   // 单例
-  // ---------------------------------------------------------------------------
 
   static final UpdateService _instance = UpdateService._internal();
   factory UpdateService() => _instance;
@@ -88,9 +86,7 @@ class UpdateService extends ChangeNotifier {
   }) : _injectedDio = dio,
        _injectedApkVerifier = apkVerifier;
 
-  // ---------------------------------------------------------------------------
   // 常量（保留为静态成员以维持对外 API；值来自 github_release.dart）
-  // ---------------------------------------------------------------------------
 
   /// GitHub 仓库所有者。
   static const String owner = release.githubOwner;
@@ -119,17 +115,13 @@ class UpdateService extends ChangeNotifier {
 
   final Logger logger = Logger('UpdateService');
 
-  // ---------------------------------------------------------------------------
   // 可注入依赖（仅测试使用）
-  // ---------------------------------------------------------------------------
 
   final Dio? _injectedDio;
   final Future<io.Directory> Function()? _documentsDirectoryProvider;
   final Future<bool> Function(String path)? _injectedApkVerifier;
 
-  // ---------------------------------------------------------------------------
   // 状态
-  // ---------------------------------------------------------------------------
 
   UpdateStage _stage = UpdateStage.idle;
   UpdateStage get stage => _stage;
@@ -200,9 +192,7 @@ class UpdateService extends ChangeNotifier {
   /// 下载实现（无状态，可直接复用）。
   static const UpdateDownloader _downloader = UpdateDownloader();
 
-  // ---------------------------------------------------------------------------
   // 派生状态
-  // ---------------------------------------------------------------------------
 
   /// 当前安装版本（由构建时写入 [StaticsVar.appVersion]）。
   int get currentVersionInt => StaticsVar.appVersion;
@@ -265,9 +255,7 @@ class UpdateService extends ChangeNotifier {
       !isSkipped &&
       !_dismissedForSession;
 
-  // ---------------------------------------------------------------------------
   // 检查更新
-  // ---------------------------------------------------------------------------
 
   /// 检查最新 Release。
   ///
@@ -564,9 +552,7 @@ class UpdateService extends ChangeNotifier {
   /// 查询设备支持的 ABI 列表（最优在前）。
   Future<List<String>> _supportedAbis() => _bridge.supportedAbis();
 
-  // ---------------------------------------------------------------------------
   // 下载
-  // ---------------------------------------------------------------------------
 
   /// 开始下载最新 APK。重复调用（下载中）为空操作。
   void startDownload() {
@@ -693,9 +679,7 @@ class UpdateService extends ChangeNotifier {
     unawaited(notifications.cancelUpdateNotification());
   }
 
-  // ---------------------------------------------------------------------------
   // 安装
-  // ---------------------------------------------------------------------------
 
   /// 触发安装：若缺少「安装未知来源应用」权限，则申请并标记
   /// [needsInstallPermission]（UI 展示引导），否则直接调起系统安装器。
@@ -755,9 +739,7 @@ class UpdateService extends ChangeNotifier {
     }
   }
 
-  // ---------------------------------------------------------------------------
   // 启动提示 / 跳过
-  // ---------------------------------------------------------------------------
 
   /// 本次进程内不再提示当前最新版本的更新。
   void dismissForSession() {
@@ -789,9 +771,7 @@ class UpdateService extends ChangeNotifier {
     notifyListeners();
   }
 
-  // ---------------------------------------------------------------------------
   // 内部工具
-  // ---------------------------------------------------------------------------
 
   /// 解析网络客户端；注入的 Dio 原样返回（测试不设超时），
   /// 自建的 Dio 设置连接 / 接收 / 发送超时，避免黑洞连接使检查永久挂起（D3）。
@@ -888,9 +868,7 @@ class UpdateService extends ChangeNotifier {
     }
   }
 
-  // ---------------------------------------------------------------------------
   // 测试辅助
-  // ---------------------------------------------------------------------------
 
   /// 直接填充发布信息，便于测试在不触网的情况下驱动下载流程。
   @visibleForTesting

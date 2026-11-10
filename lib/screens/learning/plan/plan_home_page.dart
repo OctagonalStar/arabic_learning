@@ -231,9 +231,7 @@ class _PlanHomePageState extends State<PlanHomePage> {
     }
   }
 
-  // ---------------------------------------------------------------------------
   // 状态 1：还没有计划
-  // ---------------------------------------------------------------------------
 
   Widget _buildEmpty(BuildContext context) {
     final ThemeData theme = Theme.of(context);
@@ -287,9 +285,7 @@ class _PlanHomePageState extends State<PlanHomePage> {
     );
   }
 
-  // ---------------------------------------------------------------------------
   // 状态 2：复习系统未启用
-  // ---------------------------------------------------------------------------
 
   Widget _buildFsrsBlocked(BuildContext context) {
     final ThemeData theme = Theme.of(context);
@@ -331,9 +327,7 @@ class _PlanHomePageState extends State<PlanHomePage> {
     );
   }
 
-  // ---------------------------------------------------------------------------
   // 状态 3：学习范围失效
-  // ---------------------------------------------------------------------------
 
   Widget _buildInvalidScope(BuildContext context, StudyPlan plan) {
     final ThemeData theme = Theme.of(context);
@@ -378,9 +372,7 @@ class _PlanHomePageState extends State<PlanHomePage> {
     );
   }
 
-  // ---------------------------------------------------------------------------
   // 状态 4：逾期
-  // ---------------------------------------------------------------------------
 
   Widget _buildOverdue(BuildContext context, StudyPlan plan) {
     final ThemeData theme = Theme.of(context);
@@ -459,9 +451,7 @@ class _PlanHomePageState extends State<PlanHomePage> {
     );
   }
 
-  // ---------------------------------------------------------------------------
   // 状态 5：本周期完成
-  // ---------------------------------------------------------------------------
 
   Widget _buildComplete(BuildContext context, StudyPlan plan) {
     final ThemeData theme = Theme.of(context);
@@ -509,9 +499,7 @@ class _PlanHomePageState extends State<PlanHomePage> {
     );
   }
 
-  // ---------------------------------------------------------------------------
   // 状态 6：进行中
-  // ---------------------------------------------------------------------------
 
   Widget _buildActive(BuildContext context, StudyPlan plan) {
     return Column(
@@ -1051,9 +1039,7 @@ class _PlanHomePageState extends State<PlanHomePage> {
     );
   }
 
-  // ---------------------------------------------------------------------------
   // 共用布局
-  // ---------------------------------------------------------------------------
 
   /// 统一卡片容器：25 圆角、扁平底色，可选描边与渐变。
   Widget _panel(
