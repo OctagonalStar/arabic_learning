@@ -4,13 +4,12 @@ import 'package:arabic_learning/widgets/kit.dart' show Button;
 import 'package:arabic_learning/widgets/shared.dart' show ButtonLabel;
 import 'package:flutter/foundation.dart' show clampDouble;
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
 
-import 'package:arabic_learning/services/global_state.dart';
 import 'package:arabic_learning/screens/test/listening_test_page.dart' show ForeListeningSettingPage;
 import 'package:arabic_learning/screens/test/local_pk_page.dart' show LocalPKSelectPage;
 import 'package:arabic_learning/screens/test/reading_test_page.dart' show ReadingTestPage;
 import 'package:arabic_learning/screens/test/recitation/recitation_list_page.dart' show RecitationListPage;
+import 'package:arabic_learning/core/navigation.dart';
 class TestPage extends StatelessWidget {
   const TestPage({super.key});
   @override
@@ -35,12 +34,9 @@ class TestPage extends StatelessWidget {
                   icon: Icon(Icons.connect_without_contact, size: 36.0),
                   size: Size(width * 0.4, rowHeight),
                   onPressed: () {
-                    context.read<Global>().uiLogger.info("跳转: TestPage => LocalPKSelectPage");
-                    Navigator.push(
+                    pushPage(
                       context, 
-                      MaterialPageRoute(
-                        builder: (context) => LocalPKSelectPage()
-                      )
+                      LocalPKSelectPage()
                     );
                   },
                   child: ButtonLabel(child: Text('联机', style: withoutColor(Theme.of(context).textTheme.headlineLarge!))),
@@ -50,12 +46,9 @@ class TestPage extends StatelessWidget {
                   icon: Icon(Icons.auto_stories, size: 36.0),
                   size: Size(width * 0.45, rowHeight),
                   onPressed: () {
-                    context.read<Global>().uiLogger.info("跳转: TestPage => ReadingTestLeading");
-                    Navigator.push(
+                    pushPage(
                       context, 
-                      MaterialPageRoute(
-                        builder: (context) => ReadingTestPage()
-                      )
+                      ReadingTestPage()
                     );
                   },
                   child: ButtonLabel(child: Text('阅读理解', style: withoutColor(Theme.of(context).textTheme.headlineLarge!))),
@@ -67,12 +60,9 @@ class TestPage extends StatelessWidget {
               icon: Icon(Icons.multitrack_audio, size: 36.0),
               size: Size(width * 0.8, fullHeight),
               onPressed: () {
-                context.read<Global>().uiLogger.info("跳转: TestPage => ForeListeningSettingPage");
-                Navigator.push(
+                pushPage(
                   context, 
-                  MaterialPageRoute(
-                    builder: (context) => ForeListeningSettingPage()
-                  )
+                  ForeListeningSettingPage()
                 );
               },
               child: ButtonLabel(child: Text('自主听写', style: withoutColor(Theme.of(context).textTheme.headlineLarge!))),
@@ -82,12 +72,9 @@ class TestPage extends StatelessWidget {
               icon: Icon(Icons.record_voice_over, size: 36.0),
               size: Size(width * 0.8, fullHeight),
               onPressed: () {
-                context.read<Global>().uiLogger.info("跳转: TestPage => RecitationListPage");
-                Navigator.push(
+                pushPage(
                   context,
-                  MaterialPageRoute(
-                    builder: (context) => RecitationListPage()
-                  )
+                  RecitationListPage()
                 );
               },
               child: ButtonLabel(child: Text('课文背诵', style: withoutColor(Theme.of(context).textTheme.headlineLarge!))),

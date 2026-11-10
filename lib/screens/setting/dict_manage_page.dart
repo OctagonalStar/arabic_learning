@@ -19,6 +19,7 @@ import 'package:arabic_learning/theme/tokens.dart' show AppRadius, AppSpacing;
 import 'package:arabic_learning/widgets/kit.dart' show Button, SettingItem;
 import 'package:arabic_learning/widgets/overlays.dart'
     show alart, showConfirmDialog, showSnackBar;
+import 'package:arabic_learning/core/navigation.dart';
 
 class DictManagePage extends StatefulWidget {
   const DictManagePage({super.key});
@@ -175,12 +176,7 @@ class _DictManagePage extends State<DictManagePage> {
             ),
           ),
           onPressed: () async {
-            context.read<Global>().uiLogger.info(
-              "跳转: DictManagePage => DownloadPage",
-            );
-            await Navigator.of(context).push(
-              MaterialPageRoute(builder: (context) => DownloadPage()),
-            );
+            await pushPage(context, DownloadPage());
             // 从下载页返回后刷新已安装词库列表（下载页内可能已导入词库）。
             if (context.mounted) setState(() {});
           },

@@ -10,6 +10,7 @@ import 'package:arabic_learning/services/app_data.dart';
 import 'package:arabic_learning/theme/tokens.dart' show AppSemanticColors;
 import 'package:arabic_learning/widgets/kit.dart' show Button, TextContainer;
 import 'package:arabic_learning/widgets/motion.dart' show StaggeredEntrance;
+import 'package:arabic_learning/core/navigation.dart';
 import 'package:flutter/material.dart';
 
 class ReadingTestPage extends StatefulWidget {
@@ -27,7 +28,7 @@ class _ReadingTestPage extends State<ReadingTestPage> {
     return Scaffold(
       appBar: AppBar(title: Text("阅读理解"), actions: [
         IconButton(
-          onPressed: () => Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => ReadingTestAddLeading())), 
+          onPressed: () => replacePage(context, ReadingTestAddLeading()), 
           icon: Icon(Icons.add)
         )
       ]),
@@ -104,9 +105,9 @@ class ReadingUnitButton extends StatelessWidget {
         child: Button(
           size: Size.fromWidth(mediaQuery.size.width * 0.9),
           onPressed: () {
-            Navigator.push(
+            pushPage(
               context, 
-              MaterialPageRoute(builder: (context) => ReadingQuestionPage(unit: unit, listIndex: listIndex))
+              ReadingQuestionPage(unit: unit, listIndex: listIndex)
             );
           }, 
           padding: EdgeInsetsGeometry.all(0.0),

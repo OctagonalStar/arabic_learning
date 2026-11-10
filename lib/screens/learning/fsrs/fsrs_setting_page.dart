@@ -17,6 +17,7 @@ import 'package:arabic_learning/services/words.dart';
 import 'package:arabic_learning/theme/tokens.dart' show AppRadius, AppSpacing;
 import 'package:arabic_learning/widgets/kit.dart' show Button, CategoryFilter, SelectChip, SettingItem, SettingRow;
 import 'package:arabic_learning/widgets/overlays.dart' show alart, showSnackBar;
+import 'package:arabic_learning/core/navigation.dart';
 
 class ForeFSRSSettingPage extends StatelessWidget {
   final bool forceChoosing;
@@ -346,9 +347,9 @@ class ForeFSRSSettingPage extends StatelessWidget {
                                   TextButton(
                                     onPressed: () async {
                                       final BuildContext pageContext = context;
-                                      final double? result = await Navigator.push<double>(
+                                      final double? result = await pushPage<double>(
                                         context,
-                                        MaterialPageRoute<double>(builder: (BuildContext context) => const FsrsCalibrationPage()),
+                                        const FsrsCalibrationPage(),
                                       );
                                       if (!pageContext.mounted) return;
                                       if (result != null) {

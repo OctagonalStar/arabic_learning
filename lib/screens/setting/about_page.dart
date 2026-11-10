@@ -1,13 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart' show rootBundle;
 import 'package:flutter_markdown_plus/flutter_markdown_plus.dart';
-import 'package:provider/provider.dart';
 
-import 'package:arabic_learning/services/global_state.dart';
 import 'package:arabic_learning/services/app_data.dart';
 import 'package:arabic_learning/widgets/kit.dart' show Button, TextContainer;
 import 'package:arabic_learning/widgets/shared.dart' show SettingCard;
 import 'package:arabic_learning/screens/setting/open_source_licenses.dart';
+import 'package:arabic_learning/core/navigation.dart';
 
 class AboutPage extends StatelessWidget {
   const AboutPage({super.key});
@@ -26,13 +25,7 @@ class AboutPage extends StatelessWidget {
           Button(
             size: Size.fromHeight(MediaQuery.of(context).size.height * 0.1),
             onPressed: () {
-              context.read<Global>().uiLogger.info("跳转: AboutPage => OpenSourceLicensePage");
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => OpenSourceLicensePage(),
-                )
-              );
+              pushPage(context, OpenSourceLicensePage());
             }, 
             icon: Icon(Icons.balance),
             child: Text("开放源代码许可"),

@@ -24,6 +24,7 @@ import 'package:arabic_learning/theme/typography.dart' show withoutColor;
 import 'package:arabic_learning/widgets/overlays.dart' show showSnackBar;
 import 'package:arabic_learning/widgets/question_chain_editor.dart'
     show kQuestionTypeLabels;
+import 'package:arabic_learning/core/navigation.dart';
 
 /// 「计划学习」首页。
 ///
@@ -71,21 +72,18 @@ class _PlanHomePageState extends State<PlanHomePage> {
   }
 
   Future<void> _openConfig({StudyPlan? initial}) async {
-    await Navigator.of(context).push<bool>(
-      MaterialPageRoute<bool>(
-        builder: (BuildContext context) => PlanConfigPage(initial: initial),
-      ),
+    await pushPage<bool>(
+      context,
+      PlanConfigPage(initial: initial),
     );
     // 配置页可能同时改变复习系统状态，返回后一律重算。
     _refresh();
   }
 
   Future<void> _openFsrsSettings() async {
-    await Navigator.of(context).push<void>(
-      MaterialPageRoute<void>(
-        builder: (BuildContext context) =>
-            const ForeFSRSSettingPage(forceChoosing: true),
-      ),
+    await pushPage<void>(
+      context,
+      const ForeFSRSSettingPage(forceChoosing: true),
     );
     _refresh();
   }
@@ -105,12 +103,11 @@ class _PlanHomePageState extends State<PlanHomePage> {
       _starting = true;
     });
     // 会话页以 bool 告知本组是否新增了已学词；首页统一重算，不区分结果。
-    await Navigator.of(context).push<bool>(
-      MaterialPageRoute<bool>(
-        builder: (BuildContext context) => PlanSessionPage(
-          words: words,
-          chain: plan.chain,
-        ),
+    await pushPage<bool>(
+      context,
+      PlanSessionPage(
+        words: words,
+        chain: plan.chain,
       ),
     );
     if (!mounted) return;

@@ -2,7 +2,6 @@ import 'dart:math';
 
 import 'package:flutter/foundation.dart' show clampDouble;
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
 
 import 'package:arabic_learning/core/adaptive.dart' show AdaptiveTabBody;
 import 'package:arabic_learning/core/date_utils.dart';
@@ -17,9 +16,9 @@ import 'package:arabic_learning/services/words.dart';
 import 'package:arabic_learning/services/tts.dart';
 import 'package:arabic_learning/screens/setting/dict_manage_page.dart';
 import 'package:arabic_learning/models/dict.dart';
-import 'package:arabic_learning/services/global_state.dart';
 import 'package:arabic_learning/services/app_data.dart';
 import 'package:arabic_learning/services/fsrs.dart';
+import 'package:arabic_learning/core/navigation.dart';
 
 class HomePage extends StatelessWidget {
   const HomePage({super.key});
@@ -156,8 +155,7 @@ class _DailyWord extends State<DailyWord> {
             playing = false;
           });
         } else {
-          context.read<Global>().uiLogger.info("跳转: DailyWord => DictManagePage");
-          Navigator.of(context).push(MaterialPageRoute(builder: (context) => const DictManagePage()));
+          pushPage(context, const DictManagePage());
         }
       },
       backgroundColor: Theme.of(context).colorScheme.primaryContainer,

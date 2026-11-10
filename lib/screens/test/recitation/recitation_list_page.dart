@@ -13,6 +13,7 @@ import 'package:arabic_learning/theme/tokens.dart' show AppRadius, AppSpacing, A
 import 'package:arabic_learning/widgets/kit.dart' show Button;
 import 'package:arabic_learning/widgets/motion.dart' show StaggeredEntrance;
 import 'package:arabic_learning/widgets/overlays.dart' show alart;
+import 'package:arabic_learning/core/navigation.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -25,17 +26,17 @@ class RecitationListPage extends StatefulWidget {
 
 class _RecitationListPageState extends State<RecitationListPage> {
   Future<void> _openAdd() async {
-    await Navigator.push(
+    await pushPage(
       context,
-      MaterialPageRoute(builder: (context) => RecitationAddPage()),
+      RecitationAddPage(),
     );
     if (mounted) setState(() {});
   }
 
   Future<void> _openUnit(RecitationTextUnit unit) async {
-    await Navigator.push(
+    await pushPage(
       context,
-      MaterialPageRoute(builder: (context) => RecitationDetailPage(unit: unit)),
+      RecitationDetailPage(unit: unit),
     );
     if (mounted) setState(() {});
   }

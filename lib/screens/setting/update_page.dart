@@ -158,7 +158,7 @@ UpdateErrorInfo describeUpdateError(Object? error) {
 /// 应用内更新的下载页。
 ///
 /// 由 `showUpdateSheet`（`lib/widgets/update_sheet.dart`）在用户选择
-/// 「立即更新」后通过 `Navigator.push(MaterialPageRoute(...))` 打开。
+/// 「立即更新」后通过 `pushPage(...)` 打开。
 class UpdatePage extends StatefulWidget {
   /// 创建下载页。
   const UpdatePage({super.key});

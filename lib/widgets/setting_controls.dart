@@ -3,10 +3,9 @@
 // [SettingRedirctButton]。
 // 由 widgets/kit.dart 统一 export，调用方仍从 kit.dart 导入。
 
-import 'package:arabic_learning/services/global_state.dart';
 import 'package:arabic_learning/theme/tokens.dart' show AppRadius;
+import 'package:arabic_learning/core/navigation.dart';
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
 
 // 有关设置的Widget
 class SettingRedirctButton extends StatelessWidget {
@@ -35,14 +34,7 @@ class SettingRedirctButton extends StatelessWidget {
         shape: BeveledRectangleBorder(),
       ),
       onPressed: () {
-        context.read<Global>().uiLogger.info(
-          "跳转: SettingPage => ${target.toString()}",
-        );
-        Navigator.of(context).push(
-          MaterialPageRoute(
-            builder: (context) => target,
-          ),
-        );
+        pushPage(context, target);
       },
       child: Row(
         children: [

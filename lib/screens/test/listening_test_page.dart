@@ -15,6 +15,7 @@ import 'package:arabic_learning/widgets/kit.dart' show Button, TextContainer, po
 import 'package:arabic_learning/widgets/overlays.dart' show alart;
 import 'package:arabic_learning/services/words.dart';
 import 'package:arabic_learning/services/tts.dart';
+import 'package:arabic_learning/core/navigation.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
 
 class ForeListeningSettingPage extends StatefulWidget {
@@ -77,9 +78,7 @@ class _ForeListeningSettingPage extends State<ForeListeningSettingPage> {
                   context,
                   withCache: false,
                   withReviewChoose: false,
-                  onImportDict: () => navigator.push(
-                    MaterialPageRoute(builder: (BuildContext context) => const DictManagePage()),
-                  ),
+                  onImportDict: () => pushPageOn(navigator, const DictManagePage()),
                 );
                 setState(() {});
               }, 
@@ -201,17 +200,14 @@ class _ForeListeningSettingPage extends State<ForeListeningSettingPage> {
                   return;
                 }
                 context.read<Global>().uiLogger.info("准备开始进行听写: 播放速度: $playRate;播放次数: $playTimes;播放间隔: $interval;词间隔: $intervalBetweenWords");
-                context.read<Global>().uiLogger.info("跳转 ForeListeningSettingPage => MainListeningPage");
-                Navigator.push(
+                pushPage(
                   context, 
-                  MaterialPageRoute(
-                    builder: (context) => MainListeningPage(
-                      playRate: playRate, 
-                      playTimes: playTimes, 
-                      interval: interval, 
-                      intervalBetweenWords: intervalBetweenWords, 
-                      words: getSelectedWords(AppData().wordData, selectedClasses.selectedClass, doShuffle: true)
-                    )
+                  MainListeningPage(
+                    playRate: playRate, 
+                    playTimes: playTimes, 
+                    interval: interval, 
+                    intervalBetweenWords: intervalBetweenWords, 
+                    words: getSelectedWords(AppData().wordData, selectedClasses.selectedClass, doShuffle: true)
                   )
                 );
               },

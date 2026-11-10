@@ -32,6 +32,7 @@ import 'package:arabic_learning/theme/tokens.dart'
 import 'package:arabic_learning/widgets/kit.dart' show Button;
 import 'package:arabic_learning/widgets/motion.dart' show CrossFadeSwitcher;
 import 'package:arabic_learning/widgets/overlays.dart' show showSnackBar;
+import 'package:arabic_learning/core/navigation.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -429,10 +430,9 @@ class _RecitationReciteTabState extends State<RecitationReciteTab>
                   text: "语音识别模型未下载，无法进行背诵评分。请先在「模型管理」中下载。",
                   action: Button(
                     onPressed: () async {
-                      await Navigator.of(context).push(
-                        MaterialPageRoute(
-                          builder: (context) => ModelManagementPage(),
-                        ),
+                      await pushPage(
+                        context,
+                        ModelManagementPage(),
                       );
                       if (mounted) setState(() {});
                     },

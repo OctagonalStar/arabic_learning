@@ -26,6 +26,7 @@ import 'package:arabic_learning/widgets/questions.dart'
         SpellQuestion,
         TestItem,
         WordCardQuestion;
+import 'package:arabic_learning/core/navigation.dart';
 import 'package:flutter/foundation.dart' show clampDouble;
 import 'package:flutter/material.dart';
 import 'package:fsrs/fsrs.dart' show Rating;
@@ -277,11 +278,9 @@ class _PlanSessionPageState extends State<PlanSessionPage> {
       return;
     }
     if (!mounted) return;
-    Navigator.pushReplacement(
+    replacePage<bool>(
       context,
-      MaterialPageRoute<bool>(
-        builder: (_) => PlanSessionPage(words: next, chain: widget.chain),
-      ),
+      PlanSessionPage(words: next, chain: widget.chain),
     );
   }
 

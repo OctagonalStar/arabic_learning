@@ -10,6 +10,7 @@ import 'package:arabic_learning/theme/tokens.dart' show AppMotion;
 import 'package:arabic_learning/widgets/empty_dict_dialog.dart' show showEmptyDictDialog;
 import 'package:arabic_learning/widgets/kit.dart' show Button;
 import 'package:arabic_learning/widgets/shared.dart' show appInputDecoration;
+import 'package:arabic_learning/core/navigation.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -74,9 +75,9 @@ class _WordCardOverViewPage extends State<WordCardOverViewPage> {
         showEmptyDictDialog(
           context,
           // 跳转由 widget 层的调用方注入，避免 widgets/ 依赖 screens/。
-          onImport: () => Navigator.push(
+          onImport: () => pushPage(
             context,
-            MaterialPageRoute(builder: (BuildContext context) => const DictManagePage()),
+            const DictManagePage(),
           ),
         );
       });

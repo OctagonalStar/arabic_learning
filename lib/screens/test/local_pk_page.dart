@@ -22,6 +22,7 @@ import 'package:qr_flutter/qr_flutter.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:provider/provider.dart';
 import 'package:arabic_learning/services/pk_server.dart';
+import 'package:arabic_learning/core/navigation.dart';
 
 
 class LocalPKSelectPage extends StatefulWidget {
@@ -37,13 +38,11 @@ class _LocalPKSelectPage extends State<LocalPKSelectPage> {
 
   void connecting() {
     if(connectpwdController.text.isEmpty) return;
-    Navigator.push(
+    pushPage(
       context, 
-      MaterialPageRoute(builder: (context) => 
-        ChangeNotifierProvider(
-          create: (context) => PKServer(),
-          child: LocalPKPage(isServer: false, offer: connectpwdController.text),
-        )
+      ChangeNotifierProvider(
+        create: (context) => PKServer(),
+        child: LocalPKPage(isServer: false, offer: connectpwdController.text),
       )
     );
   }
@@ -68,13 +67,11 @@ class _LocalPKSelectPage extends State<LocalPKSelectPage> {
           Button(
             size: Size(mediaQuery.size.width * 0.8, mediaQuery.size.height * 0.1),
             onPressed: (){
-              Navigator.push(
+              pushPage(
                 context, 
-                MaterialPageRoute(
-                  builder: (context) => ChangeNotifierProvider(
-                    create: (context) => PKServer(),
-                    child: LocalPKPage(isServer: true),
-                  )
+                ChangeNotifierProvider(
+                  create: (context) => PKServer(),
+                  child: LocalPKPage(isServer: true),
                 )
               );
             }, 
@@ -377,9 +374,7 @@ class PKClassSelectionPage extends StatelessWidget {
                   forceSelectRange: context.read<PKServer>().selectableSource,
                   withCache: false,
                   withReviewChoose: false,
-                  onImportDict: () => navigator.push(
-                    MaterialPageRoute(builder: (BuildContext context) => const DictManagePage()),
-                  ),
+                  onImportDict: () => pushPageOn(navigator, const DictManagePage()),
                 );
                 if(!context.mounted || selection.selectedClass.isEmpty) return;
                 context.read<PKServer>().setSelectedClass(selection);

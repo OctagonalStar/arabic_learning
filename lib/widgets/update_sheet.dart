@@ -24,6 +24,7 @@ import 'package:arabic_learning/widgets/feedback.dart' show LoadingIndicator;
 import 'package:arabic_learning/widgets/kit.dart' show Button;
 import 'package:arabic_learning/widgets/motion.dart' show FadeSlideIn;
 import 'package:arabic_learning/widgets/overlays.dart' show showSnackBar;
+import 'package:arabic_learning/core/navigation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_markdown_plus/flutter_markdown_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -67,10 +68,9 @@ Future<void> showUpdateSheet(BuildContext context) async {
 
   if (!context.mounted) return;
   if (result == UpdateSheetResult.download) {
-    await Navigator.of(context).push(
-      MaterialPageRoute<void>(
-        builder: (BuildContext context) => const UpdatePage(),
-      ),
+    await pushPage<void>(
+      context,
+      const UpdatePage(),
     );
   }
 }

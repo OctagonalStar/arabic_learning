@@ -19,6 +19,7 @@ import 'package:arabic_learning/theme/tokens.dart';
 import 'package:arabic_learning/theme/typography.dart' show withoutColor;
 import 'package:arabic_learning/widgets/kit.dart' show Button;
 import 'package:arabic_learning/widgets/shared.dart' show ButtonLabel;
+import 'package:arabic_learning/core/navigation.dart';
 
 /// 学习页的计划入口。
 ///
@@ -43,10 +44,9 @@ class _PlanEntryCardState extends State<PlanEntryCard> {
   }
 
   Future<void> _open() async {
-    await Navigator.of(context).push<void>(
-      MaterialPageRoute<void>(
-        builder: (BuildContext context) => const PlanHomePage(),
-      ),
+    await pushPage<void>(
+      context,
+      const PlanHomePage(),
     );
     if (!mounted) return;
     setState(() {
