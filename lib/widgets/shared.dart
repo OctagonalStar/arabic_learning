@@ -9,7 +9,7 @@ import 'dart:math' as math;
 
 import 'package:arabic_learning/widgets/kit.dart' show Button;
 import 'package:arabic_learning/core/statics.dart';
-import 'package:arabic_learning/theme/tokens.dart' show AppMotion;
+import 'package:arabic_learning/theme/tokens.dart' show AppMotion, AppSpacing;
 import 'package:flutter/material.dart';
 
 /// 首页统计卡片
@@ -400,4 +400,30 @@ InputDecoration appInputDecoration(
       borderSide: BorderSide(color: Theme.of(context).colorScheme.outline),
     ),
   );
+}
+
+/// 空状态提示卡：分区或整页无数据时的统一占位。
+class EmptyHintCard extends StatelessWidget {
+  final String text;
+
+  const EmptyHintCard(this.text, {super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      margin: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.sm,
+        vertical: AppSpacing.xxs,
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(AppSpacing.sm),
+        child: Text(
+          text,
+          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+            color: Theme.of(context).colorScheme.onSurfaceVariant,
+          ),
+        ),
+      ),
+    );
+  }
 }

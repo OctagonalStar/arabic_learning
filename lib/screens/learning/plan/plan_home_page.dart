@@ -24,6 +24,7 @@ import 'package:arabic_learning/theme/typography.dart' show withoutColor;
 import 'package:arabic_learning/widgets/overlays.dart' show showSnackBar;
 import 'package:arabic_learning/widgets/question_chain_editor.dart'
     show kQuestionTypeLabels;
+import 'package:arabic_learning/core/navigation.dart';
 
 /// 「计划学习」首页。
 ///
@@ -71,21 +72,18 @@ class _PlanHomePageState extends State<PlanHomePage> {
   }
 
   Future<void> _openConfig({StudyPlan? initial}) async {
-    await Navigator.of(context).push<bool>(
-      MaterialPageRoute<bool>(
-        builder: (BuildContext context) => PlanConfigPage(initial: initial),
-      ),
+    await pushPage<bool>(
+      context,
+      PlanConfigPage(initial: initial),
     );
     // 配置页可能同时改变复习系统状态，返回后一律重算。
     _refresh();
   }
 
   Future<void> _openFsrsSettings() async {
-    await Navigator.of(context).push<void>(
-      MaterialPageRoute<void>(
-        builder: (BuildContext context) =>
-            const ForeFSRSSettingPage(forceChoosing: true),
-      ),
+    await pushPage<void>(
+      context,
+      const ForeFSRSSettingPage(forceChoosing: true),
     );
     _refresh();
   }
@@ -105,12 +103,11 @@ class _PlanHomePageState extends State<PlanHomePage> {
       _starting = true;
     });
     // 会话页以 bool 告知本组是否新增了已学词；首页统一重算，不区分结果。
-    await Navigator.of(context).push<bool>(
-      MaterialPageRoute<bool>(
-        builder: (BuildContext context) => PlanSessionPage(
-          words: words,
-          chain: plan.chain,
-        ),
+    await pushPage<bool>(
+      context,
+      PlanSessionPage(
+        words: words,
+        chain: plan.chain,
       ),
     );
     if (!mounted) return;
@@ -231,9 +228,7 @@ class _PlanHomePageState extends State<PlanHomePage> {
     }
   }
 
-  // ---------------------------------------------------------------------------
   // 状态 1：还没有计划
-  // ---------------------------------------------------------------------------
 
   Widget _buildEmpty(BuildContext context) {
     final ThemeData theme = Theme.of(context);
@@ -287,9 +282,7 @@ class _PlanHomePageState extends State<PlanHomePage> {
     );
   }
 
-  // ---------------------------------------------------------------------------
   // 状态 2：复习系统未启用
-  // ---------------------------------------------------------------------------
 
   Widget _buildFsrsBlocked(BuildContext context) {
     final ThemeData theme = Theme.of(context);
@@ -331,9 +324,7 @@ class _PlanHomePageState extends State<PlanHomePage> {
     );
   }
 
-  // ---------------------------------------------------------------------------
   // 状态 3：学习范围失效
-  // ---------------------------------------------------------------------------
 
   Widget _buildInvalidScope(BuildContext context, StudyPlan plan) {
     final ThemeData theme = Theme.of(context);
@@ -378,9 +369,7 @@ class _PlanHomePageState extends State<PlanHomePage> {
     );
   }
 
-  // ---------------------------------------------------------------------------
   // 状态 4：逾期
-  // ---------------------------------------------------------------------------
 
   Widget _buildOverdue(BuildContext context, StudyPlan plan) {
     final ThemeData theme = Theme.of(context);
@@ -459,9 +448,7 @@ class _PlanHomePageState extends State<PlanHomePage> {
     );
   }
 
-  // ---------------------------------------------------------------------------
   // 状态 5：本周期完成
-  // ---------------------------------------------------------------------------
 
   Widget _buildComplete(BuildContext context, StudyPlan plan) {
     final ThemeData theme = Theme.of(context);
@@ -509,9 +496,7 @@ class _PlanHomePageState extends State<PlanHomePage> {
     );
   }
 
-  // ---------------------------------------------------------------------------
   // 状态 6：进行中
-  // ---------------------------------------------------------------------------
 
   Widget _buildActive(BuildContext context, StudyPlan plan) {
     return Column(
@@ -1051,9 +1036,7 @@ class _PlanHomePageState extends State<PlanHomePage> {
     );
   }
 
-  // ---------------------------------------------------------------------------
   // 共用布局
-  // ---------------------------------------------------------------------------
 
   /// 统一卡片容器：25 圆角、扁平底色，可选描边与渐变。
   Widget _panel(

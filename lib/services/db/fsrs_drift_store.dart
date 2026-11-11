@@ -154,9 +154,7 @@ class DriftFsrsStore implements FsrsStore {
   /// hot_kv 的内存缓存：同步读、异步写。
   final Map<String, String> _hotCache = <String, String>{};
 
-  // ---------------------------------------------------------------------------
   // 已落库快照（与数据库内容保持一致，仅在事务成功后才更新）
-  // ---------------------------------------------------------------------------
 
   /// cardId → 已落库的 `card_json`。用于脏检查。
   final Map<int, String> _writtenCardJson = <int, String>{};

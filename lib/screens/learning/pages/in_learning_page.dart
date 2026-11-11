@@ -115,7 +115,6 @@ class _InLearningPageState extends State<InLearningPage> {
     _sessionSeed = widget.resume?.seed ?? DateTime.now().microsecondsSinceEpoch;
     final Random rnd = Random(_sessionSeed);
 
-    // 加载测试词
     final QuizConfig questionsSetting = _quiz;
     List<List<TestItem>> questionsInSections = List.generate(questionsSetting.questionSections.length, (_) => []);
 
@@ -372,7 +371,7 @@ class _InLearningPageState extends State<InLearningPage> {
                     });});
                     return ans;
                   },
-                  allowMutipleSelect: true,
+                  allowMultipleSelect: true,
                   hint: testItem.testType == 1 ? "通过中文选择阿拉伯语" : "通过阿拉伯语选择中文",
                   bottomWidget: BottomTip(
                     isShowNext: clicked, 
@@ -458,7 +457,7 @@ class _InLearningPageState extends State<InLearningPage> {
                     });});
                     return ans;
                   },
-                  allowMutipleSelect: true,
+                  allowMultipleSelect: true,
                   hint: "听下面的音频，选择最合适的选项",
                   bottom: BottomTip(
                     isShowNext: clicked, 

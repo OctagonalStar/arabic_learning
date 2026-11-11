@@ -62,9 +62,6 @@ void main() {
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
 
-    final PageController pageController = PageController();
-    addTearDown(pageController.dispose);
-
     await tester.pumpWidget(
       ChangeNotifierProvider<Global>(
         create: (BuildContext context) => Global(),
@@ -77,7 +74,8 @@ void main() {
                   wordID: 0,
                   fsrs: FSRS(),
                   rnd: Random(1),
-                  controller: pageController,
+                  onNext: () {},
+                  onReviewed: (_) {},
                 );
               },
             ),

@@ -22,6 +22,7 @@ import 'package:arabic_learning/screens/learning/fsrs_screens.dart' show FSRSLea
 import 'package:arabic_learning/screens/learning/learning_pages_build.dart';
 import 'package:arabic_learning/screens/learning/plan/plan_entry_card.dart' show PlanEntryCard;
 import 'package:arabic_learning/screens/setting/dict_manage_page.dart' show DictManagePage;
+import 'package:arabic_learning/core/navigation.dart';
 
 class LearningPage extends StatelessWidget {
   const LearningPage({super.key});
@@ -77,8 +78,7 @@ class LearningPage extends StatelessWidget {
                       size: Size(width * 0.4, rowHeight * 0.4),
                       shape: RoundedRectangleBorder(borderRadius: BorderRadiusGeometry.vertical(bottom: Radius.circular(AppRadius.card))),
                       onPressed: (){
-                        context.read<Global>().uiLogger.info("跳转: SettingPage => QuestionsSettingPage");
-                        Navigator.of(context).push(MaterialPageRoute(builder: (context) => QuestionsSettingPage()));
+                        pushPage(context, QuestionsSettingPage());
                       }, 
                       icon: Icon(Icons.quiz),
                       child: Text("配置题型"),
@@ -89,13 +89,7 @@ class LearningPage extends StatelessWidget {
                   backgroundColor: Theme.of(context).colorScheme.primaryContainer,
                   size: Size(width * 0.4, rowHeight),
                   onPressed: (){
-                    context.read<Global>().uiLogger.info("跳转: LearningPage => ForeFSRSSettingPage");
-                    Navigator.push(
-                      context, 
-                      MaterialPageRoute(
-                        builder: (context) => ForeFSRSSettingPage()
-                      )
-                    );
+                    pushPage(context, ForeFSRSSettingPage());
                   },
                   icon: Padding(
                     padding: const EdgeInsets.all(8.0),
@@ -143,13 +137,7 @@ class LearningPage extends StatelessWidget {
                       initialQuestionIndex = anchor;
                     }
                   }
-                  context.read<Global>().uiLogger.info("跳转: LearningPage => FSRSLearningPage");
-                  Navigator.push(
-                    context, 
-                    MaterialPageRoute(
-                      builder: (context) => FSRSLearningPage(fsrs: FSRS(), words: plan.words, initialPhase: initialPhase, initialLearningIndex: initialLearningIndex, initialQuestionIndex: initialQuestionIndex)
-                    )
-                  );
+                  pushPage(context, FSRSLearningPage(fsrs: FSRS(), words: plan.words, initialPhase: initialPhase, initialLearningIndex: initialLearningIndex, initialQuestionIndex: initialQuestionIndex));
                 },
                 icon: Icon(Icons.push_pin, size: 24),
                 // 次级全宽按钮统一 titleLarge(22)：与主 CTA（学习/复习，displaySmall 36）
@@ -167,13 +155,7 @@ class LearningPage extends StatelessWidget {
                   backgroundColor: Theme.of(context).colorScheme.primaryContainer,
                   size: Size(width * 0.4, overviewHeight),
                   onPressed: (){
-                    context.read<Global>().uiLogger.info("跳转: LearningPage => WordCardOverViewPage");
-                    Navigator.push(
-                      context, 
-                      MaterialPageRoute(
-                        builder: (context) => WordCardOverViewPage()
-                      )
-                    );
+                    pushPage(context, WordCardOverViewPage());
                   },
                   icon: Icon(Icons.abc, size: 24),
                   // 与「学习推送单词」同为次级按钮，统一 titleLarge(22)；
@@ -184,13 +166,7 @@ class LearningPage extends StatelessWidget {
                   backgroundColor: Theme.of(context).colorScheme.primaryContainer,
                   size: Size(width * 0.4, overviewHeight),
                   onPressed: (){
-                    context.read<Global>().uiLogger.info("跳转: LearningPage => FavoritesPage");
-                    Navigator.push(
-                      context, 
-                      MaterialPageRoute(
-                        builder: (context) => FavoritesPage()
-                      )
-                    );
+                    pushPage(context, FavoritesPage());
                   },
                   icon: Icon(Icons.star, size: 24),
                   child: ButtonLabel(child: Text("收藏单词", style: withoutColor(Theme.of(context).textTheme.titleLarge!))),
@@ -226,14 +202,12 @@ Future<void> shiftToStudy(BuildContext context) async {
         showSnackBar(context, "上次的学习进度已失效，将重新开始");
       } else {
         context.read<Global>().uiLogger.info("恢复暂存学习进度，剩余${checkpoint.remaining}题");
-        final bool? finished = await Navigator.push(
+        final bool? finished = await pushPage<bool>(
           context,
-          MaterialPageRoute(
-            builder: (context) => InLearningPage(
-              words: words,
-              countInReview: checkpoint.countInReview,
-              resume: checkpoint,
-            ),
+          InLearningPage(
+            words: words,
+            countInReview: checkpoint.countInReview,
+            resume: checkpoint,
           ),
         );
         if(!context.mounted) return;
@@ -249,9 +223,7 @@ Future<void> shiftToStudy(BuildContext context) async {
     withCache: false,
     withReviewChoose: true,
     withCategoryFilter: true,
-    onImportDict: () => navigator.push(
-      MaterialPageRoute(builder: (BuildContext context) => const DictManagePage()),
-    ),
+    onImportDict: () => pushPageOn(navigator, const DictManagePage()),
   );
   if(classSelection.selectedClass.isEmpty || !context.mounted) return;
   final List<WordItem> selectedWords = getSelectedWords(AppData().wordData, classSelection.selectedClass, doShuffle: false, doDouble: false);
@@ -266,12 +238,9 @@ Future<void> shiftToStudy(BuildContext context) async {
     }
     return;
   }
-  context.read<Global>().uiLogger.info("跳转: LearningPage => InLearningPage");
-  final bool? finished = await Navigator.push(
+  final bool? finished = await pushPage<bool>(
     context,
-    MaterialPageRoute(
-      builder: (context) => InLearningPage(words: words, countInReview: classSelection.countInReview),
-    ),
+    InLearningPage(words: words, countInReview: classSelection.countInReview),
   );
   if(!context.mounted) return;
   context.read<Global>().uiLogger.info("返回完成情况: $finished");

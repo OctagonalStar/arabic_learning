@@ -193,7 +193,7 @@ class _FSRSLearningPageState extends State<FSRSLearningPage> {
                   // 中译阿题面为中文，禁止音频，避免 TTS 朗读中文含义
                   allowAudio: testItem.testType == 2,
                   allowAnitmation: true,
-                  allowMutipleSelect: true,
+                  allowMultipleSelect: true,
                   optionWords: testItem.optionWords,
                   hint: testItem.testType == 1 ? "通过中文选择阿拉伯语" : "通过阿拉伯语选择中文",
                   onSelected: (value) {
@@ -232,7 +232,7 @@ class _FSRSLearningPageState extends State<FSRSLearningPage> {
                 return ListeningQuestion(
                   mainWord: testItem.testWord.arabic,
                   choices: testItem.options!,
-                  allowMutipleSelect: true,
+                  allowMultipleSelect: true,
                   optionWords: testItem.optionWords,
                   hint: "听下面的音频，选择最合适的选项",
                   onSelected: (value) {

@@ -33,6 +33,7 @@ import 'package:arabic_learning/widgets/kit.dart'
 import 'package:arabic_learning/widgets/overlays.dart' show showSnackBar;
 import 'package:arabic_learning/widgets/question_chain_editor.dart'
     show QuestionChainListView, kQuestionTypeLabels;
+import 'package:arabic_learning/core/navigation.dart';
 
 /// 题型链条的列表与添加按钮都按 `MediaQuery.size.height` 计算行高；
 /// 高度不足时统一按 800 计算，避免矮窗口里 48px 的删除按钮被压进 33px 的行。
@@ -146,16 +147,10 @@ class _PlanConfigPageState extends State<PlanConfigPage> {
         unlearnedScopeWords(draft, AppData().wordData, FSRS()).length;
   }
 
-  // ---------------------------------------------------------------------------
-  // 交互
-  // ---------------------------------------------------------------------------
-
   Future<void> _openFsrsSettings() async {
-    await Navigator.of(context).push<void>(
-      MaterialPageRoute<void>(
-        builder: (BuildContext context) =>
-            const ForeFSRSSettingPage(forceChoosing: true),
-      ),
+    await pushPage<void>(
+      context,
+      const ForeFSRSSettingPage(forceChoosing: true),
     );
     if (!mounted) return;
     setState(() {
@@ -195,9 +190,7 @@ class _PlanConfigPageState extends State<PlanConfigPage> {
       withReviewChoose: false,
       // 与常规学习一致的标签筛选（多选，或逻辑）。
       withCategoryFilter: true,
-      onImportDict: () => navigator.push(
-        MaterialPageRoute(builder: (BuildContext context) => const DictManagePage()),
-      ),
+      onImportDict: () => pushPageOn(navigator, const DictManagePage()),
     );
     if (!mounted) return;
     final List<ClassItem> pickedClasses = selection.selectedClass;
@@ -324,10 +317,6 @@ class _PlanConfigPageState extends State<PlanConfigPage> {
     if (!mounted) return;
     Navigator.of(context).pop(true);
   }
-
-  // ---------------------------------------------------------------------------
-  // 页面
-  // ---------------------------------------------------------------------------
 
   @override
   Widget build(BuildContext context) {

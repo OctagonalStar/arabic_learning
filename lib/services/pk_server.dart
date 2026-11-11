@@ -1,13 +1,12 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:math';
-import 'package:arabic_learning/widgets/overlays.dart' show alart;
 import 'package:archive/archive.dart';
 import 'package:arabic_learning/services/words.dart';
 import 'package:arabic_learning/models/dict.dart';
 import 'package:arabic_learning/models/reading.dart';
 import 'package:arabic_learning/services/app_data.dart';
-import 'package:flutter/material.dart' show BuildContext, PageController;
+import 'package:flutter/material.dart' show PageController;
 import 'package:logging/logging.dart';
 import 'package:arabic_learning/core/statics.dart';
 import 'package:arabic_learning/theme/tokens.dart' show AppMotion;
@@ -54,46 +53,40 @@ class PKServer with ChangeNotifier{
     super.dispose();
   }
 
-  Future<void> initHost(bool isHoster, BuildContext context, {String? offer}) async {
+  Future<void> initHost(bool isHoster, {String? offer}) async {
     isServer = isHoster;
 
-    try {
-      logger.info("正在初始化WebRTC");
-      _connection = await createPeerConnection(_rtcConfig, _rtcConstraints);
-      _connection!.onConnectionState = (state) {
-        logger.info("连接状态变更: $state");
-        if(state == RTCPeerConnectionState.RTCPeerConnectionStateFailed && _channel != null && !over) {
-            disconnect();
-            pageController!.jumpToPage(4);
-        }
-        notifyListeners();
-      };
-      if(isServer) {
-        _channel = await _connection!.createDataChannel("Connection", RTCDataChannelInit());
-        logger.info("已创建信道");
-        _channel!.onMessage = ((msg) {
-          logger.fine('收到消息：${msg.text}');
-        });
-        _setupDataChannel();
-        RTCSessionDescription offer = await _connection!.createOffer(_rtcConstraints);
-        await _connection!.setLocalDescription(offer);
-        // 等待 ICE 收集完毕后再生成最终字符串，防止 Candidate 丢失
-        await _waitForIceGathering(); 
-      } else {
-        await _connection!.setRemoteDescription(RTCSessionDescription(utf8.decode(ZLibDecoderWeb().decodeBytes(base64Decode(offer!))), "offer"));
-        await _connection!.setLocalDescription(await _connection!.createAnswer(_rtcConstraints));
-        _connection!.onDataChannel = (channel) {
-        logger.info("Client 接收到了来自 Server 的 DataChannel: ${channel.label}");
-          _channel = channel;
-          _setupDataChannel();
-        };
-        await _waitForIceGathering();
+    logger.info("正在初始化WebRTC");
+    _connection = await createPeerConnection(_rtcConfig, _rtcConstraints);
+    _connection!.onConnectionState = (state) {
+      logger.info("连接状态变更: $state");
+      if(state == RTCPeerConnectionState.RTCPeerConnectionStateFailed && _channel != null && !over) {
+          disconnect();
+          pageController!.jumpToPage(4);
       }
-    } catch (e) {
-      if(!context.mounted) return;
-      alart(context, "构建连接错误: $e");
+      notifyListeners();
+    };
+    if(isServer) {
+      _channel = await _connection!.createDataChannel("Connection", RTCDataChannelInit());
+      logger.info("已创建信道");
+      _channel!.onMessage = ((msg) {
+        logger.fine('收到消息：${msg.text}');
+      });
+      _setupDataChannel();
+      RTCSessionDescription offer = await _connection!.createOffer(_rtcConstraints);
+      await _connection!.setLocalDescription(offer);
+      // 等待 ICE 收集完毕后再生成最终字符串，防止 Candidate 丢失
+      await _waitForIceGathering(); 
+    } else {
+      await _connection!.setRemoteDescription(RTCSessionDescription(utf8.decode(ZLibDecoderWeb().decodeBytes(base64Decode(offer!))), "offer"));
+      await _connection!.setLocalDescription(await _connection!.createAnswer(_rtcConstraints));
+      _connection!.onDataChannel = (channel) {
+      logger.info("Client 接收到了来自 Server 的 DataChannel: ${channel.label}");
+        _channel = channel;
+        _setupDataChannel();
+      };
+      await _waitForIceGathering();
     }
-    
     notifyListeners();
   }
 
@@ -172,7 +165,7 @@ class PKServer with ChangeNotifier{
 
   void setPageControler(PageController pageController) => this.pageController = pageController;
 
-  Future<void> loadAnswer(String answer, BuildContext context) async {
+  Future<void> loadAnswer(String answer) async {
     await _connection!.setRemoteDescription(RTCSessionDescription(utf8.decode(ZLibDecoderWeb().decodeBytes(base64Decode(answer))), "answer"));
     while(!connected || _channel?.state != RTCDataChannelState.RTCDataChannelOpen){
       await Future.delayed(Duration(seconds: 1));

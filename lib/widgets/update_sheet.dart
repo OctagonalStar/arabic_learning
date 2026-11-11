@@ -5,15 +5,16 @@
 //
 // 说明：本文件位于 widgets 层，但为满足「单一入口」要求（启动与设置页
 // 「检查更新」都只调用 [showUpdateSheet]），这里直接 push 下载页
-// [UpdatePage]，因此存在本方案唯一的 widgets -> screens 反向 import。
+// [UpdatePage]；纯展示逻辑放在 services/update/update_error.dart。
 
 import 'package:arabic_learning/core/extensions.dart';
 import 'package:arabic_learning/core/statics.dart' show StaticsVar;
 import 'package:arabic_learning/screens/setting/update_page.dart'
+    show UpdatePage;
+import 'package:arabic_learning/services/update/update_error.dart'
     show
         UpdateErrorAction,
         UpdateErrorInfo,
-        UpdatePage,
         describeUpdateError,
         displayUpdateVersionLabel,
         updateProjectUrl;
@@ -24,6 +25,7 @@ import 'package:arabic_learning/widgets/feedback.dart' show LoadingIndicator;
 import 'package:arabic_learning/widgets/kit.dart' show Button;
 import 'package:arabic_learning/widgets/motion.dart' show FadeSlideIn;
 import 'package:arabic_learning/widgets/overlays.dart' show showSnackBar;
+import 'package:arabic_learning/core/navigation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_markdown_plus/flutter_markdown_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -67,10 +69,9 @@ Future<void> showUpdateSheet(BuildContext context) async {
 
   if (!context.mounted) return;
   if (result == UpdateSheetResult.download) {
-    await Navigator.of(context).push(
-      MaterialPageRoute<void>(
-        builder: (BuildContext context) => const UpdatePage(),
-      ),
+    await pushPage<void>(
+      context,
+      const UpdatePage(),
     );
   }
 }
@@ -147,8 +148,6 @@ class _UpdateAvailableSheetState extends State<UpdateAvailableSheet> {
     }
   }
 
-  // ------------------------------------------------------------ 检查中
-
   Widget _checkingBody(BuildContext context) {
     final TextTheme text = Theme.of(context).textTheme;
     final bool animationsDisabled =
@@ -181,8 +180,6 @@ class _UpdateAvailableSheetState extends State<UpdateAvailableSheet> {
       ],
     );
   }
-
-  // ------------------------------------------------------------ 有更新
 
   Widget _availableBody(BuildContext context) {
     final ColorScheme scheme = Theme.of(context).colorScheme;
@@ -386,8 +383,6 @@ class _UpdateAvailableSheetState extends State<UpdateAvailableSheet> {
     return lineBreaks > 8;
   }
 
-  // ------------------------------------------- 下载中 / 已下载（再次打开）
-
   Widget _inProgressBody(BuildContext context) {
     final ColorScheme scheme = Theme.of(context).colorScheme;
     final TextTheme text = Theme.of(context).textTheme;
@@ -431,8 +426,6 @@ class _UpdateAvailableSheetState extends State<UpdateAvailableSheet> {
       ],
     );
   }
-
-  // ------------------------------------------------------------ 错误
 
   Widget _errorBody(BuildContext context) {
     final ColorScheme scheme = Theme.of(context).colorScheme;

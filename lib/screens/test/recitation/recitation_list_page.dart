@@ -9,10 +9,12 @@ import 'package:arabic_learning/services/app_data.dart';
 import 'package:arabic_learning/services/global_state.dart';
 import 'package:arabic_learning/services/recitation_service.dart';
 import 'package:arabic_learning/services/recitation_store.dart';
-import 'package:arabic_learning/theme/tokens.dart' show AppRadius, AppSpacing, AppSemanticColors;
+import 'package:arabic_learning/theme/tokens.dart' show AppBreakpoints, AppRadius, AppSpacing, AppSemanticColors;
 import 'package:arabic_learning/widgets/kit.dart' show Button;
-import 'package:arabic_learning/widgets/motion.dart' show StaggeredEntrance;
-import 'package:arabic_learning/widgets/overlays.dart' show alart;
+import 'package:arabic_learning/widgets/motion.dart'
+    show CrossFadeSwitcher, StaggeredEntrance;
+import 'package:arabic_learning/widgets/overlays.dart' show alert;
+import 'package:arabic_learning/core/navigation.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -25,24 +27,24 @@ class RecitationListPage extends StatefulWidget {
 
 class _RecitationListPageState extends State<RecitationListPage> {
   Future<void> _openAdd() async {
-    await Navigator.push(
+    await pushPage(
       context,
-      MaterialPageRoute(builder: (context) => RecitationAddPage()),
+      RecitationAddPage(),
     );
     if (mounted) setState(() {});
   }
 
   Future<void> _openUnit(RecitationTextUnit unit) async {
-    await Navigator.push(
+    await pushPage(
       context,
-      MaterialPageRoute(builder: (context) => RecitationDetailPage(unit: unit)),
+      RecitationDetailPage(unit: unit),
     );
     if (mounted) setState(() {});
   }
 
   void _deleteUnit(RecitationTextUnit unit) {
     final Global global = context.read<Global>();
-    alart(
+    alert(
       context,
       "确定删除「${unit.title}」吗？历史成绩会保留。",
       destructive: true,
@@ -58,8 +60,7 @@ class _RecitationListPageState extends State<RecitationListPage> {
   @override
   Widget build(BuildContext context) {
     final ThemeData theme = Theme.of(context);
-    final double width =
-        (MediaQuery.sizeOf(context).width * 0.9).clamp(0.0, 760.0);
+    final double width = AppBreakpoints.contentWidth(context);
     final List<RecitationTextUnit> units = AppData().recitationTextData.units;
     return Scaffold(
       appBar: AppBar(
@@ -76,42 +77,47 @@ class _RecitationListPageState extends State<RecitationListPage> {
       ),
       body: SafeArea(
         top: false,
-        child: units.isEmpty
-            ? Center(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text("还没有课文，先导入一篇吧",
-                        style: theme.textTheme.bodyLarge?.copyWith(
-                          color: theme.colorScheme.onSurfaceVariant,
-                        )),
-                    Padding(
-                      padding: const EdgeInsets.only(top: AppSpacing.md),
-                      child: Button(
-                        onPressed: _openAdd,
-                        child: const Text("导入课文"),
+        // 导入或删空首篇课文时整页淡入淡出，避免直接跳变。
+        child: CrossFadeSwitcher(
+          child: units.isEmpty
+              ? Center(
+                  key: const ValueKey<String>('empty'),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text("还没有课文，先导入一篇吧",
+                          style: theme.textTheme.bodyLarge?.copyWith(
+                            color: theme.colorScheme.onSurfaceVariant,
+                          )),
+                      Padding(
+                        padding: const EdgeInsets.only(top: AppSpacing.md),
+                        child: Button(
+                          onPressed: _openAdd,
+                          child: const Text("导入课文"),
+                        ),
                       ),
-                    ),
-                  ],
-                ),
-              )
-            : ListView.builder(
-                padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
-                itemCount: units.length,
-                itemBuilder: (context, index) => StaggeredEntrance(
-                  index: index,
-                  child: Center(
-                    child: SizedBox(
-                      width: width,
-                      child: _UnitCard(
-                        unit: units[index],
-                        onOpen: () => _openUnit(units[index]),
-                        onDelete: () => _deleteUnit(units[index]),
+                    ],
+                  ),
+                )
+              : ListView.builder(
+                  key: const ValueKey<String>('list'),
+                  padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
+                  itemCount: units.length,
+                  itemBuilder: (context, index) => StaggeredEntrance(
+                    index: index,
+                    child: Center(
+                      child: SizedBox(
+                        width: width,
+                        child: _UnitCard(
+                          unit: units[index],
+                          onOpen: () => _openUnit(units[index]),
+                          onDelete: () => _deleteUnit(units[index]),
+                        ),
                       ),
                     ),
                   ),
                 ),
-              ),
+        ),
       ),
     );
   }

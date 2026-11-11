@@ -17,6 +17,8 @@ import 'package:arabic_learning/screens/setting/model_management_page.dart'
     show ModelManagementPage;
 import 'package:arabic_learning/screens/test/recitation/recitation_progress_bar.dart'
     show RecitationProgressBar;
+import 'package:arabic_learning/screens/test/recitation/recitation_shared.dart'
+    show RecitationCard, RecitationChip, RecitationTranslation;
 import 'package:arabic_learning/screens/test/recitation/recitation_result.dart'
     show RecitationResultView;
 import 'package:arabic_learning/services/app_data.dart';
@@ -25,12 +27,14 @@ import 'package:arabic_learning/services/recitation_recorder.dart';
 import 'package:arabic_learning/services/recitation_scorer.dart';
 import 'package:arabic_learning/services/recitation_service.dart';
 import 'package:arabic_learning/services/recitation_store.dart';
-import 'package:arabic_learning/services/recitation_text.dart'
+import 'package:arabic_learning/core/recitation_text.dart'
     show tokenize, tokenSpanOf;
 import 'package:arabic_learning/theme/tokens.dart'
-    show AppMotion, AppRadius, AppSpacing;
+    show AppBreakpoints, AppMotion, AppRadius, AppSpacing;
 import 'package:arabic_learning/widgets/kit.dart' show Button;
+import 'package:arabic_learning/widgets/motion.dart' show CrossFadeSwitcher;
 import 'package:arabic_learning/widgets/overlays.dart' show showSnackBar;
+import 'package:arabic_learning/core/navigation.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -144,10 +148,6 @@ class _RecitationReciteTabState extends State<RecitationReciteTab>
 
   String _clock(int seconds) =>
       "${(seconds ~/ 60).toString().padLeft(2, '0')}:${(seconds % 60).toString().padLeft(2, '0')}";
-
-  // ---------------------------------------------------------------------------
-  // 录音流程
-  // ---------------------------------------------------------------------------
 
   /// 检查麦克风权限；被拒时置位 [<_permissionDenied>]，由顶部提示给出重试入口。
   Future<bool> _ensurePermission() async {
@@ -301,9 +301,7 @@ class _RecitationReciteTabState extends State<RecitationReciteTab>
 
   void _retryRecording() => _startRecording(_whole ? -1 : _retryIndex);
 
-  // ---------------------------------------------------------------------------
   // 定位 / 进度同步
-  // ---------------------------------------------------------------------------
 
   void _locatePage(int index) {
     if (!_pager.hasClients) return;
@@ -311,27 +309,6 @@ class _RecitationReciteTabState extends State<RecitationReciteTab>
       index - 1,
       duration: AppMotion.quick,
       curve: AppMotion.standardCurve,
-    );
-  }
-
-  // ---------------------------------------------------------------------------
-  // 展示
-  // ---------------------------------------------------------------------------
-
-  Widget _chip(ThemeData theme, String text, Color background, Color foreground) {
-    return Container(
-      padding: const EdgeInsets.symmetric(
-        horizontal: AppSpacing.xs,
-        vertical: 2.0,
-      ),
-      decoration: BoxDecoration(
-        color: background,
-        borderRadius: AppRadius.controlBorder,
-      ),
-      child: Text(
-        text,
-        style: theme.textTheme.labelLarge?.copyWith(color: foreground),
-      ),
     );
   }
 
@@ -434,10 +411,9 @@ class _RecitationReciteTabState extends State<RecitationReciteTab>
                   text: "语音识别模型未下载，无法进行背诵评分。请先在「模型管理」中下载。",
                   action: Button(
                     onPressed: () async {
-                      await Navigator.of(context).push(
-                        MaterialPageRoute(
-                          builder: (context) => ModelManagementPage(),
-                        ),
+                      await pushPage(
+                        context,
+                        ModelManagementPage(),
                       );
                       if (mounted) setState(() {});
                     },
@@ -554,7 +530,6 @@ class _RecitationReciteTabState extends State<RecitationReciteTab>
     bool wide,
     RecitationOutcome? outcome,
   ) {
-    final ColorScheme scheme = theme.colorScheme;
     final RecitationSentence sentence = widget.unit.sentences[index];
     final TextStyle arabicStyle =
         (wide ? theme.textTheme.headlineMedium : theme.textTheme.headlineSmall)!;
@@ -585,21 +560,7 @@ class _RecitationReciteTabState extends State<RecitationReciteTab>
               onTap: () => _toggleTranslation(index),
               child: _blurUnless(
                 translationVisible,
-                Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.all(AppSpacing.sm),
-                  decoration: BoxDecoration(
-                    color: scheme.surfaceContainerHigh,
-                    borderRadius: AppRadius.controlBorder,
-                  ),
-                  child: Text(
-                    sentence.translation,
-                    style: theme.textTheme.titleMedium?.copyWith(
-                      color: scheme.onSurfaceVariant,
-                      height: 1.5,
-                    ),
-                  ),
-                ),
+                RecitationTranslation(text: sentence.translation),
               ),
             ),
           ),
@@ -614,17 +575,7 @@ class _RecitationReciteTabState extends State<RecitationReciteTab>
     final bool translationVisible =
         _showAllTranslations || _revealedZh.contains(index);
     final RecitationOutcome? outcome = _sentenceOutcomes[index];
-    return Card(
-      margin: EdgeInsets.zero,
-      elevation: 2.0,
-      surfaceTintColor: Colors.transparent,
-      shadowColor: scheme.shadow,
-      color: scheme.surfaceContainerLow,
-      clipBehavior: Clip.antiAlias,
-      shape: RoundedRectangleBorder(
-        borderRadius: AppRadius.cardBorder,
-        side: BorderSide(color: scheme.outlineVariant),
-      ),
+    return RecitationCard(
       child: Padding(
         padding: const EdgeInsets.all(AppSpacing.sm),
         child: Column(
@@ -632,21 +583,20 @@ class _RecitationReciteTabState extends State<RecitationReciteTab>
           children: <Widget>[
             Row(
               children: <Widget>[
-                _chip(
-                  theme,
-                  "第 ${index + 1} 句",
-                  scheme.surfaceContainerHighest,
-                  scheme.onSurfaceVariant,
+                RecitationChip(
+                  text: "第 ${index + 1} 句",
+                  background: scheme.surfaceContainerHighest,
+                  foreground: scheme.onSurfaceVariant,
                 ),
                 if (outcome != null) ...<Widget>[
                   const SizedBox(width: AppSpacing.xs),
-                  _chip(
-                    theme,
-                    outcome.scoreable
+                  RecitationChip(
+                    text: outcome.scoreable
                         ? "${outcome.score} 分 · ${outcome.grade}"
                         : "未评分",
-                    _gradeColor(outcome).withValues(alpha: 0.15),
-                    _gradeColor(outcome),
+                    background:
+                        _gradeColor(outcome).withValues(alpha: 0.15),
+                    foreground: _gradeColor(outcome),
                   ),
                 ],
                 const Spacer(),
@@ -781,9 +731,14 @@ class _RecitationReciteTabState extends State<RecitationReciteTab>
           borderRadius: AppRadius.controlBorder,
           border: Border.all(color: scheme.outlineVariant),
         ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: content,
+        // 不同阶段给不同 key，CrossFadeSwitcher 才会切换而不是原地重建。
+        child: CrossFadeSwitcher(
+          duration: AppMotion.quick,
+          child: Column(
+            key: ValueKey<String>('${_stage.name}-${outcome != null}'),
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: content,
+          ),
         ),
       ),
     );
@@ -1031,8 +986,7 @@ class _RecitationReciteTabState extends State<RecitationReciteTab>
     super.build(context);
     final ThemeData theme = Theme.of(context);
     final bool wide = AdaptiveScope.of(context).isWide;
-    final double width =
-        (MediaQuery.sizeOf(context).width * 0.9).clamp(0.0, 760.0);
+    final double width = AppBreakpoints.contentWidth(context);
     final int count = widget.unit.sentences.length;
     final bool modelReady = AppData().asrModelDownloaded;
     // KeepAlive 挂起期间监听可能因 pager 无 clients 而跳过，回到前台的第一帧补齐位置。
@@ -1051,7 +1005,14 @@ class _RecitationReciteTabState extends State<RecitationReciteTab>
                 ? _wholeList(theme, wide, width)
                 : _sentencePager(theme, wide, width),
           ),
-          if (_whole && _stage != _Stage.result) _wholeControls(theme),
+          if (_whole && _stage != _Stage.result)
+            CrossFadeSwitcher(
+              duration: AppMotion.quick,
+              child: KeyedSubtree(
+                key: ValueKey<String>(_stage.name),
+                child: _wholeControls(theme),
+              ),
+            ),
           // 整篇没有翻句需求，不显示进度条；「统一显示中文」放在逐句的进度条里。
           if (!_whole)
             ValueListenableBuilder<int>(

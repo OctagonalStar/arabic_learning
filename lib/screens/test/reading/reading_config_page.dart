@@ -12,7 +12,7 @@ import 'package:arabic_learning/services/app_data.dart';
 import 'package:arabic_learning/services/http_client.dart';
 import 'package:arabic_learning/widgets/feedback.dart' show LoadingIndicator;
 import 'package:arabic_learning/widgets/kit.dart' show Button, SettingItem, SettingRow;
-import 'package:arabic_learning/widgets/overlays.dart' show alart;
+import 'package:arabic_learning/widgets/overlays.dart' show alert;
 import 'package:arabic_learning/widgets/shared.dart' show appInputDecoration;
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
@@ -67,11 +67,11 @@ class _QuestionConfigPage extends State<QuestionConfigPage> {
             AppData().readingData.units.add(unit);
             AppData().saveReadingData();
             // ignore: use_build_context_synchronously
-            if(context.mounted) alart(context, "添加成功: ${unit.title}");
+            if(context.mounted) alert(context, "添加成功: ${unit.title}");
           }
         } catch (e) {
           // ignore: use_build_context_synchronously
-          if(context.mounted) alart(context, "生成错误: $e");
+          if(context.mounted) alert(context, "生成错误: $e");
         }
         break;
       }
@@ -146,12 +146,12 @@ class _QuestionConfigPage extends State<QuestionConfigPage> {
           if(unit.questions.isEmpty) throw Exception("Unit Questions is null");
           if(appData.readingData.units.any((testunit) => testunit.getHash() == unit.getHash())) throw Exception("Unit already exist");
         } catch (e) { 
-          alart(context, e.toString());
+          alert(context, e.toString());
           break;
         }
         appData.readingData.units.add(unit);
         appData.saveReadingData();
-        alart(
+        alert(
           context, 
           "添加成功",
           onConfirmed: () => Navigator.popUntil(context, (route) => route.isFirst),

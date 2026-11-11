@@ -26,6 +26,7 @@ import 'package:arabic_learning/widgets/questions.dart'
         SpellQuestion,
         TestItem,
         WordCardQuestion;
+import 'package:arabic_learning/core/navigation.dart';
 import 'package:flutter/foundation.dart' show clampDouble;
 import 'package:flutter/material.dart';
 import 'package:fsrs/fsrs.dart' show Rating;
@@ -54,8 +55,8 @@ class PlanSessionPage extends StatefulWidget {
 }
 
 class _PlanSessionPageState extends State<PlanSessionPage> {
-  /// 答题区 → 结算页的切换时长（约 260ms）。
-  static const Duration _switchDuration = Duration(milliseconds: 260);
+  /// 答题区 → 结算页的切换时长（沿用动效 token，约 250ms）。
+  static const Duration _switchDuration = AppMotion.mediumShort;
 
   /// 入场时的上移位移（相对自身高度的比例，约 16px / 视口高度）。
   static const Offset _switchSlideOffset = Offset(0.0, 0.035);
@@ -277,11 +278,9 @@ class _PlanSessionPageState extends State<PlanSessionPage> {
       return;
     }
     if (!mounted) return;
-    Navigator.pushReplacement(
+    replacePage<bool>(
       context,
-      MaterialPageRoute<bool>(
-        builder: (_) => PlanSessionPage(words: next, chain: widget.chain),
-      ),
+      PlanSessionPage(words: next, chain: widget.chain),
     );
   }
 
@@ -558,7 +557,7 @@ class _PlanSessionPageState extends State<PlanSessionPage> {
           });
           return ans;
         },
-        allowMutipleSelect: true,
+        allowMultipleSelect: true,
         hint: testItem.testType == 1 ? "通过中文选择阿拉伯语" : "通过阿拉伯语选择中文",
         bottomWidget: BottomTip(
           isShowNext: _answeredIndexes.contains(index),
@@ -656,7 +655,7 @@ class _PlanSessionPageState extends State<PlanSessionPage> {
           });
           return ans;
         },
-        allowMutipleSelect: true,
+        allowMultipleSelect: true,
         hint: "听下面的音频，选择最合适的选项",
         bottom: BottomTip(
           isShowNext: _answeredIndexes.contains(index),

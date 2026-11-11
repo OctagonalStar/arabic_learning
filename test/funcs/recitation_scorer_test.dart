@@ -1,7 +1,7 @@
 import 'package:arabic_learning/services/recitation_asr.dart';
 import 'package:arabic_learning/services/recitation_audio.dart';
 import 'package:arabic_learning/services/recitation_scorer.dart';
-import 'package:arabic_learning/services/recitation_text.dart';
+import 'package:arabic_learning/core/recitation_text.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 const String _reference = 'بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ';

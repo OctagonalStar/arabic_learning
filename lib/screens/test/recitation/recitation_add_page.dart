@@ -2,7 +2,7 @@
 
 import 'package:arabic_learning/core/ai_prompt.dart' show recitationPrompt;
 import 'package:arabic_learning/models/recitation_text.dart';
-import 'package:arabic_learning/screens/test/reading/reading_add_page.dart' show TypeChoose;
+import 'package:arabic_learning/widgets/type_choose_card.dart';
 import 'package:arabic_learning/theme/tokens.dart' show AppRadius, AppSpacing;
 import 'package:arabic_learning/widgets/kit.dart' show Button;
 import 'package:arabic_learning/widgets/overlays.dart' show showSnackBar;
@@ -185,29 +185,29 @@ class _RecitationAddPageState extends State<RecitationAddPage> {
                 children: [
                   if (_pane == _Pane.source) ...[
                     SizedBox(height: AppSpacing.lg),
-                    TypeChoose(
+                    TypeChooseCard(
                       mainTitle: Text("粘贴 JSON",
                           style: theme.textTheme.headlineMedium),
                       subTitle: Text(
                           "把整理好的课文 JSON 直接粘贴导入",
                           style: theme.textTheme.bodyLarge),
-                      widget: cardWidth,
+                      width: cardWidth,
                       height: cardHeight,
-                      rt: () => setState(() {
+                      onTap: () => setState(() {
                         _pane = _Pane.paste;
                         _error = null;
                       }),
                     ),
                     SizedBox(height: AppSpacing.md),
-                    TypeChoose(
+                    TypeChooseCard(
                       mainTitle: Text("复制提示词",
                           style: theme.textTheme.headlineMedium),
                       subTitle: Text(
                           "复制整理提示词，发给任意聊天 AI 整理课文，再把返回的 JSON 粘回来",
                           style: theme.textTheme.bodyLarge),
-                      widget: cardWidth,
+                      width: cardWidth,
                       height: cardHeight,
-                      rt: () => setState(() => _pane = _Pane.prompt),
+                      onTap: () => setState(() => _pane = _Pane.prompt),
                     ),
                     SizedBox(height: AppSpacing.lg),
                   ],

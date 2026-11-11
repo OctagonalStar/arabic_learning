@@ -5,11 +5,11 @@ import 'package:flutter/material.dart';
 import 'package:fsrs/fsrs.dart' show Rating;
 import 'package:provider/provider.dart';
 
+import 'package:arabic_learning/core/date_utils.dart' show dueDayText;
 import 'package:arabic_learning/models/dict.dart';
 import 'package:arabic_learning/services/app_data.dart';
 import 'package:arabic_learning/services/fsrs.dart';
 import 'package:arabic_learning/services/global_state.dart';
-import 'package:arabic_learning/theme/tokens.dart' show AppMotion;
 import 'package:arabic_learning/widgets/kit.dart' show TextContainer;
 import 'package:arabic_learning/widgets/overlays.dart' show viewAnswer;
 import 'package:arabic_learning/widgets/questions.dart' show ChoiceQuestions, ListeningQuestion, SelfRatingQuestion, SpellQuestion, TestItem;
@@ -20,8 +20,13 @@ class FSRSReviewCardPage extends StatefulWidget {
   final int wordID;
   final FSRS fsrs;
   final Random rnd;
-  final PageController controller;
-  const FSRSReviewCardPage({super.key, required this.wordID, required this.fsrs, required this.rnd, required this.controller});
+
+  /// 底部「下一题」：由父级把列表推进到下一页。
+  final VoidCallback onNext;
+
+  /// 真正向 FSRS 提交一次复习后回调，用于父级更新逾期进度。
+  final void Function(int wordID) onReviewed;
+  const FSRSReviewCardPage({super.key, required this.wordID, required this.fsrs, required this.rnd, required this.onNext, required this.onReviewed});
 
   @override
   State<FSRSReviewCardPage> createState() => _FSRSReviewCardPage();
@@ -69,7 +74,31 @@ class _FSRSReviewCardPage extends State<FSRSReviewCardPage> {
     );
   }
 
-  String _hint() => "单词ID: ${widget.wordID}${choosed ? " 用时: ${end!.difference(start).inMilliseconds}毫秒" : ""}";
+  String _hint() {
+    final DateTime? due = widget.fsrs.cardFor(widget.wordID)?.due.toLocal();
+    final String dueText = due == null ? "新词" : "${dueDayText(due)}逾期";
+    return "$dueText${choosed ? " 用时: ${end!.difference(start).inMilliseconds}毫秒" : ""}";
+  }
+
+  /// 强化记忆循环：返回 true 表示本次不向 FSRS 提交。
+  /// 第一次达到 good 以上只标记待确认（到期时间不变，下一次仍取到这张卡）；
+  /// 同一张卡第二次达到 good 以上才提交一次（评级用第二次），
+  /// 第二次未达 good 则两次作答一并丢弃。
+  bool _deferSubmission(Rating rating) {
+    if (!widget.fsrs.config.reinforceMemory) {
+      widget.fsrs.clearReinforcePending();
+      return false;
+    }
+    if (widget.fsrs.isReinforcePending(widget.wordID)) {
+      widget.fsrs.clearReinforcePending();
+      return rating.index < Rating.good.index;
+    }
+    if (rating.index >= Rating.good.index) {
+      widget.fsrs.markReinforcePending(widget.wordID);
+      return true;
+    }
+    return false;
+  }
 
   /// 选择题/听力题统一作答（含听力跳过 value == -1）
   bool _onChoiceSelected(int value) {
@@ -78,17 +107,27 @@ class _FSRSReviewCardPage extends State<FSRSReviewCardPage> {
     _reveal();
     context.read<Global>().updateLearningStreak();
     if(value == -1) {
-      // 听力跳过得记为失败，否则卡片仍到期，_extendQueue 会无限重加
-      widget.fsrs.produceCard(widget.wordID, forceRate: Rating.again);
+      // 听力跳过得记为失败，否则卡片仍到期，会无限重加
+      if(!_deferSubmission(Rating.again)) {
+        widget.fsrs.produceCard(widget.wordID, forceRate: Rating.again);
+        widget.onReviewed(widget.wordID);
+      }
       return false;
     }
     chosenIndex = value;
     final int correct = item.correctIndex ?? -1;
+    final int duration = end!.difference(start).inMilliseconds;
     if(correct == value) {
-      widget.fsrs.produceCard(widget.wordID, duration: end!.difference(start).inMilliseconds, isCorrect: true);
+      if(!_deferSubmission(widget.fsrs.calculate(duration, true))) {
+        widget.fsrs.produceCard(widget.wordID, duration: duration, isCorrect: true);
+        widget.onReviewed(widget.wordID);
+      }
       return true;
     }
-    widget.fsrs.produceCard(widget.wordID, duration: end!.difference(start).inMilliseconds, isCorrect: false);
+    if(!_deferSubmission(widget.fsrs.calculate(duration, false))) {
+      widget.fsrs.produceCard(widget.wordID, duration: duration, isCorrect: false);
+      widget.onReviewed(widget.wordID);
+    }
     widget.fsrs.penalizeWrongChoice(item.optionWords?[value].id);
     return false;
   }
@@ -123,9 +162,7 @@ class _FSRSReviewCardPage extends State<FSRSReviewCardPage> {
       nextWidth: (value) => mediaQuery.size.width * (selfRated ? 0.8 : 0.5) * value,
       nextIcon: Icon(Icons.arrow_downward),
       nextLabel: "下一题",
-      onNextClicked: () {
-        widget.controller.nextPage(duration: AppMotion.medium, curve: AppMotion.standardCurve);
-      },
+      onNextClicked: widget.onNext,
     );
   }
 
@@ -155,7 +192,11 @@ class _FSRSReviewCardPage extends State<FSRSReviewCardPage> {
             end = DateTime.now();
           });
           context.read<Global>().updateLearningStreak();
-          widget.fsrs.produceCard(widget.wordID, forceRate: (const [Rating.easy, Rating.good, Rating.hard, Rating.again]).elementAt(value));
+          final Rating rating = (const [Rating.easy, Rating.good, Rating.hard, Rating.again]).elementAt(value);
+          if(!_deferSubmission(rating)) {
+            widget.fsrs.produceCard(widget.wordID, forceRate: rating);
+            widget.onReviewed(widget.wordID);
+          }
           return true;
         },
         bottomWidget: _bottomBar(mediaQuery, wordData, correct),
@@ -167,7 +208,7 @@ class _FSRSReviewCardPage extends State<FSRSReviewCardPage> {
         // 中译阿题面为中文，禁止音频，避免 TTS 朗读中文含义
         allowAudio: testType == 2,
         allowAnitmation: true,
-        allowMutipleSelect: false,
+        allowMultipleSelect: false,
         optionWords: item.optionWords,
         hint: _hint(),
         onSelected: _onChoiceSelected,
@@ -186,7 +227,11 @@ class _FSRSReviewCardPage extends State<FSRSReviewCardPage> {
           });
           context.read<Global>().updateLearningStreak();
           spellResult = text == item.testWord.arabic;
-          widget.fsrs.produceCard(widget.wordID, forceRate: spellResult ? Rating.good : Rating.again);
+          final Rating rating = spellResult ? Rating.good : Rating.again;
+          if(!_deferSubmission(rating)) {
+            widget.fsrs.produceCard(widget.wordID, forceRate: rating);
+            widget.onReviewed(widget.wordID);
+          }
           return spellResult;
         },
         bottomWidget: _bottomBar(mediaQuery, wordData, correct),
@@ -195,7 +240,7 @@ class _FSRSReviewCardPage extends State<FSRSReviewCardPage> {
       question = ListeningQuestion(
         mainWord: item.testWord.arabic,
         choices: item.options!,
-        allowMutipleSelect: false,
+        allowMultipleSelect: false,
         optionWords: item.optionWords,
         hint: "听下面的音频，选择最合适的选项",
         onSelected: _onChoiceSelected,

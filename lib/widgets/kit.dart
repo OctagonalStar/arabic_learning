@@ -6,7 +6,7 @@
 // - widgets/category_chips.dart   分类标签 CategoryChips / 筛选 CategoryFilter / 单选 chip SelectChip
 // - widgets/choose_buttons.dart   选择题选项 ChooseButtons / ChooseButtonBox
 // - widgets/class_select.dart     课程选择 popSelectClasses / classesSelectionList / ClassSelectPage
-// - widgets/setting_controls.dart 设置控件 SettingItem / SettingRow / SettingRedirctButton
+// - widgets/setting_controls.dart 设置控件 SettingItem / SettingRow / SettingRedirectButton
 //
 // 保留本文件是为了让既有 `import '.../widgets/kit.dart'` 的调用点零改动；
 // 新增代码请优先直接 import 对应的实现文件。

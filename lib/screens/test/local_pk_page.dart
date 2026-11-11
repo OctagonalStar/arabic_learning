@@ -2,7 +2,7 @@ import 'dart:math';
 
 import 'package:arabic_learning/widgets/feedback.dart' show LoadingIndicator;
 import 'package:arabic_learning/widgets/kit.dart' show Button, TextContainer, popSelectClasses;
-import 'package:arabic_learning/widgets/overlays.dart' show alart;
+import 'package:arabic_learning/widgets/overlays.dart' show alert;
 import 'package:arabic_learning/widgets/questions.dart' show ChoiceQuestions;
 import 'package:arabic_learning/widgets/shared.dart' show PKScoreRow, appInputDecoration;
 import 'package:arabic_learning/services/words.dart';
@@ -22,6 +22,7 @@ import 'package:qr_flutter/qr_flutter.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:provider/provider.dart';
 import 'package:arabic_learning/services/pk_server.dart';
+import 'package:arabic_learning/core/navigation.dart';
 
 
 class LocalPKSelectPage extends StatefulWidget {
@@ -37,13 +38,11 @@ class _LocalPKSelectPage extends State<LocalPKSelectPage> {
 
   void connecting() {
     if(connectpwdController.text.isEmpty) return;
-    Navigator.push(
+    pushPage(
       context, 
-      MaterialPageRoute(builder: (context) => 
-        ChangeNotifierProvider(
-          create: (context) => PKServer(),
-          child: LocalPKPage(isServer: false, offer: connectpwdController.text),
-        )
+      ChangeNotifierProvider(
+        create: (context) => PKServer(),
+        child: LocalPKPage(isServer: false, offer: connectpwdController.text),
       )
     );
   }
@@ -68,13 +67,11 @@ class _LocalPKSelectPage extends State<LocalPKSelectPage> {
           Button(
             size: Size(mediaQuery.size.width * 0.8, mediaQuery.size.height * 0.1),
             onPressed: (){
-              Navigator.push(
+              pushPage(
                 context, 
-                MaterialPageRoute(
-                  builder: (context) => ChangeNotifierProvider(
-                    create: (context) => PKServer(),
-                    child: LocalPKPage(isServer: true),
-                  )
+                ChangeNotifierProvider(
+                  create: (context) => PKServer(),
+                  child: LocalPKPage(isServer: true),
                 )
               );
             }, 
@@ -114,7 +111,7 @@ class _LocalPKSelectPage extends State<LocalPKSelectPage> {
                   Set<CameraLensType> lens = await scannerController.getSupportedLenses();
                   if(context.mounted) context.read<Global>().uiLogger.fine(lens);
                 } catch (e) {
-                  if(context.mounted) alart(context, "尝试启用相机时出现以下问题: $e");
+                  if(context.mounted) alert(context, "尝试启用相机时出现以下问题: $e");
                   return;
                 }
               }
@@ -162,8 +159,17 @@ class _LocalPKPage extends State<LocalPKPage> {
 
   @override
   void initState() {
-    context.read<PKServer>().initHost(widget.isServer, context, offer: widget.offer);
+    _initHost();
     super.initState();
+  }
+
+  Future<void> _initHost() async {
+    try {
+      await context.read<PKServer>().initHost(widget.isServer, offer: widget.offer);
+    } catch (e) {
+      if (!mounted) return;
+      alert(context, "构建连接错误: $e");
+    }
   }
 
   @override
@@ -213,11 +219,11 @@ class _ServerHostWatingPage extends State<ServerHostWatingPage> {
 
   Future<void> connectClient() async {
     try {
-      await context.read<PKServer>().loadAnswer(connectpwdController.text, context);
+      await context.read<PKServer>().loadAnswer(connectpwdController.text);
     } catch (e) {
       if(context.mounted) {
         // ignore: use_build_context_synchronously
-        alart(context, "连接错误: $e", onConfirmed: () {
+        alert(context, "连接错误: $e", onConfirmed: () {
           setState(() {
             isConnecting = false;
           });
@@ -377,9 +383,7 @@ class PKClassSelectionPage extends StatelessWidget {
                   forceSelectRange: context.read<PKServer>().selectableSource,
                   withCache: false,
                   withReviewChoose: false,
-                  onImportDict: () => navigator.push(
-                    MaterialPageRoute(builder: (BuildContext context) => const DictManagePage()),
-                  ),
+                  onImportDict: () => pushPageOn(navigator, const DictManagePage()),
                 );
                 if(!context.mounted || selection.selectedClass.isEmpty) return;
                 context.read<PKServer>().setSelectedClass(selection);
@@ -618,7 +622,7 @@ class _PKOngoingPage extends State<PKOngoingPage> {
                           return false;
                         }
                       },
-                      allowMutipleSelect: false,
+                      allowMultipleSelect: false,
                     );
                   }
                 ),

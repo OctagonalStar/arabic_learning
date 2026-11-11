@@ -23,9 +23,7 @@ export 'package:arabic_learning/core/version.dart'
         versionStageRelease,
         versionStringToInt;
 
-// -----------------------------------------------------------------------------
 // 常量
-// -----------------------------------------------------------------------------
 
 /// GitHub 仓库所有者。
 const String githubOwner = 'OctagonalStar';
@@ -57,9 +55,7 @@ const String updateUserAgent = 'arabic_learning-updater';
 /// 原生桥接通道名（见 android/app/src/main/kotlin/com/ayuban/arlearning/MainActivity.kt）。
 const String updateMethodChannelName = 'app_update';
 
-// -----------------------------------------------------------------------------
 // 资产 / Release 模型
-// -----------------------------------------------------------------------------
 
 /// 一个 APK 资产（GitHub Release 的 `assets` 元素）。
 class ReleaseAsset {
@@ -176,9 +172,7 @@ List<GithubRelease> parseReleaseList(dynamic json) {
       .toList(growable: false);
 }
 
-// -----------------------------------------------------------------------------
 // ABI 匹配
-// -----------------------------------------------------------------------------
 
 /// 将设备 ABI 名映射为资产文件名中的标识；未知 ABI 返回 null。
 String? abiToken(String abi) {
@@ -252,9 +246,7 @@ String? buildDeterministicAssetUrl(String tag, List<String> abis) {
   return null;
 }
 
-// -----------------------------------------------------------------------------
 // 校验规则
-// -----------------------------------------------------------------------------
 
 /// 将原生返回的版本号字段宽松地转为 int（int / num / String 均可）。
 int? toIntOrNull(dynamic value) {

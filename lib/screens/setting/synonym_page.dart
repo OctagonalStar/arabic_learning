@@ -5,7 +5,8 @@ import 'package:arabic_learning/services/global_state.dart';
 import 'package:arabic_learning/services/synonyms.dart' show SynonymStore;
 import 'package:arabic_learning/theme/tokens.dart' show AppSpacing;
 import 'package:arabic_learning/widgets/kit.dart' show Button, TextContainer;
-import 'package:arabic_learning/widgets/overlays.dart' show alart;
+import 'package:arabic_learning/widgets/shared.dart' show EmptyHintCard;
+import 'package:arabic_learning/widgets/overlays.dart' show alert;
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -27,22 +28,6 @@ class _SynonymPage extends State<SynonymPage> {
     });
   }
 
-  /// 分区空状态。
-  Widget _emptyHint(BuildContext context) {
-    return Card(
-      margin: const EdgeInsets.symmetric(horizontal: AppSpacing.sm, vertical: AppSpacing.xxs),
-      child: Padding(
-        padding: const EdgeInsets.all(AppSpacing.sm),
-        child: Text(
-          "暂无标记",
-          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-            color: Theme.of(context).colorScheme.onSurfaceVariant,
-          ),
-        ),
-      ),
-    );
-  }
-
   /// 一个“同义对 / 不同对”列表分区。
   Widget _pairSection(BuildContext context, String title, IconData icon, List<GlossPair> pairs) {
     return Column(
@@ -50,7 +35,7 @@ class _SynonymPage extends State<SynonymPage> {
       children: [
         TextContainer(text: title),
         if (pairs.isEmpty)
-          _emptyHint(context)
+          const EmptyHintCard("暂无标记")
         else
           for (final GlossPair pair in pairs)
             Card(
@@ -77,7 +62,7 @@ class _SynonymPage extends State<SynonymPage> {
       children: [
         TextContainer(text: "同义组"),
         if (groups.isEmpty)
-          _emptyHint(context)
+          const EmptyHintCard("暂无标记")
         else
           for (final List<String> group in groups)
             Card(
@@ -123,7 +108,7 @@ class _SynonymPage extends State<SynonymPage> {
                 size: Size.fromHeight(mediaQuery.size.height * 0.08),
                 backgroundColor: Theme.of(context).colorScheme.errorContainer,
                 onPressed: () {
-                  alart(context, "确定清空全部同义/不同标记吗？此操作不可撤销。", destructive: true, onConfirmed: () {
+                  alert(context, "确定清空全部同义/不同标记吗？此操作不可撤销。", destructive: true, onConfirmed: () {
                     context.read<Global>().uiLogger.info("清空全部同义对标记");
                     setState(() {
                       store.clearAll();

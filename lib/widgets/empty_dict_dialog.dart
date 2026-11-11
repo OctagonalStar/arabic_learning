@@ -14,7 +14,7 @@ import 'package:provider/provider.dart';
 /// [context] :Widget树上的context
 ///
 /// [onImport] :点击「去导入词库」后执行的跳转动作，由调用方提供
-/// （例如 `() => Navigator.push(... DictManagePage())`）。弹窗会先关闭自身
+/// （例如 `() => pushPage(context, DictManagePage())`）。弹窗会先关闭自身
 /// 再调用它，因此回调里不应再依赖弹窗的 dialogContext。
 ///
 /// 触发条件由调用方判定（一般为 `AppData().wordData.words.isEmpty`），

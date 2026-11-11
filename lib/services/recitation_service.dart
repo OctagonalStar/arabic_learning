@@ -11,7 +11,7 @@ import 'package:arabic_learning/services/recitation_asr.dart';
 import 'package:arabic_learning/services/recitation_audio.dart';
 import 'package:arabic_learning/services/recitation_scorer.dart';
 import 'package:arabic_learning/services/recitation_store.dart';
-import 'package:arabic_learning/services/recitation_text.dart';
+import 'package:arabic_learning/core/recitation_text.dart';
 import 'package:crypto/crypto.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;

@@ -13,7 +13,6 @@ import 'package:arabic_learning/package_replacement/storage.dart';
 
 @pragma('vm:entry-point') 
 Future<FlutterLocalNotificationsPlugin?> initNotificationsBackground() async {
-  // 基础设置
   const AndroidInitializationSettings initializationSettingsAndroid =
       AndroidInitializationSettings('@mipmap/launcher_icon'); // 应用图标
 
@@ -21,11 +20,9 @@ Future<FlutterLocalNotificationsPlugin?> initNotificationsBackground() async {
     android: initializationSettingsAndroid,
   );
 
-  // 通知接口
   FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin = FlutterLocalNotificationsPlugin();
   await flutterLocalNotificationsPlugin.initialize(settings: initializationSettings);
 
-  // 通知渠道
   const AndroidNotificationChannel channel = AndroidNotificationChannel(
     'learning_notification_channel', // id
     '学习通知', // 名称
@@ -86,10 +83,8 @@ void callbackDispatcher() {
   });
 }
 
-// ---------------------------------------------------------------------------
 // 应用更新下载通知：复用同一个 flutter_local_notifications 插件，仅用于前台展示
 // APK 下载进度。点击通知只打开应用（不做深链导航）。非 Android / 插件缺失时静默跳过。
-// ---------------------------------------------------------------------------
 
 /// 更新下载通知使用的固定通知 id。
 ///

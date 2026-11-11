@@ -1,7 +1,7 @@
 import 'dart:convert';
 
 import 'package:arabic_learning/models/recitation_text.dart';
-import 'package:arabic_learning/services/recitation_text.dart';
+import 'package:arabic_learning/core/recitation_text.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {

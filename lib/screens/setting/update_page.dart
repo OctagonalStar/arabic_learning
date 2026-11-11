@@ -8,167 +8,23 @@
 //   模式，状态由 `UpdateService`（变更通知单例）驱动；
 // - 用 `WidgetsBindingObserver` 在回到前台时对账：下载结果由 service 自行刷新，
 //   本页额外处理「用户去系统设置授予未知来源权限后返回」的自动重试；
-// - 本文件同时导出若干更新相关的公共小工具（版本号格式化、错误归类、项目主页
-//   地址），供 `lib/widgets/update_sheet.dart` 复用。
 
 import 'package:arabic_learning/core/extensions.dart';
 import 'package:arabic_learning/core/statics.dart' show StaticsVar;
-import 'package:arabic_learning/core/version.dart' show versionIntToString;
+import 'package:arabic_learning/services/update/update_error.dart';
 import 'package:arabic_learning/services/update_service.dart';
 import 'package:arabic_learning/theme/tokens.dart'
     show AppMotion, AppRadius, AppSemanticColors, AppSpacing;
 import 'package:arabic_learning/widgets/kit.dart' show Button;
 import 'package:arabic_learning/widgets/motion.dart' show CrossFadeSwitcher;
-import 'package:arabic_learning/widgets/overlays.dart' show alart, showSnackBar;
+import 'package:arabic_learning/widgets/overlays.dart' show alert, showSnackBar;
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
-
-/// 把内部版本号（如 `101000`）格式化为展示串（如 `1.1.0`）。
-///
-/// 委托 [versionIntToString]（编码约定：`major * 100000 + minor * 1000 + patch`），
-/// 仅额外提供「无效值返回空串」这一展示层兜底（共享实现返回 `"0.0.0"`）。
-String formatUpdateVersionInt(int value) {
-  if (value <= 0) return "";
-  return versionIntToString(value);
-}
-
-/// 展示用版本号：去掉 GitHub tag 常见的前导 `v`（如 `v1.2.0` → `1.2.0`）。
-String displayUpdateVersionLabel(String? label) {
-  final String value = (label ?? "").trim();
-  if (value.isEmpty) return "";
-  return value.startsWith("v") || value.startsWith("V")
-      ? value.substring(1)
-      : value;
-}
-
-/// 项目主页（最新发布页）地址，取自 [UpdateService] 的仓库常量。
-String updateProjectUrl() =>
-    "https://github.com/${UpdateService.owner}/${UpdateService.repo}/releases/latest";
-
-/// 错误发生后主按钮的动作类别。
-enum UpdateErrorAction {
-  /// 重试当前操作（下载 / 安装）。
-  retry,
-
-  /// 打开项目主页手动下载。
-  openProject,
-
-  /// 无需更多操作，关闭即可。
-  dismiss,
-}
-
-/// 面向用户的错误描述（标题 + 说明 + 动作）。
-@immutable
-class UpdateErrorInfo {
-  const UpdateErrorInfo({
-    required this.title,
-    required this.message,
-    required this.action,
-    required this.actionLabel,
-  });
-
-  /// 一句话原因。
-  final String title;
-
-  /// 补充说明 / 建议。
-  final String message;
-
-  /// 主按钮动作。
-  final UpdateErrorAction action;
-
-  /// 主按钮文案。
-  final String actionLabel;
-}
-
-/// 将底层错误归类为用户可读的 [UpdateErrorInfo]。
-///
-/// [UpdateService] 只暴露 `Object? error`，且其文案既有中文（如
-/// `未找到可下载的安装包`）也可能是原始异常；这里按错误文本的中英文特征
-/// 归类，识别不到时按「网络失败」处理（最常见）。
-UpdateErrorInfo describeUpdateError(Object? error) {
-  final String text = (error ?? "").toString().toLowerCase();
-  // 限流（GitHub 403 / 次数已达上限）。
-  if (text.contains("403") ||
-      text.contains("rate limit") ||
-      text.contains("rate_limit") ||
-      text.contains("ratelimit") ||
-      text.contains("已达上限") ||
-      text.contains("过于频繁")) {
-    return const UpdateErrorInfo(
-      title: "请求过于频繁",
-      message: "GitHub 暂时限制了访问，请稍后再试",
-      action: UpdateErrorAction.dismiss,
-      actionLabel: "知道了",
-    );
-  }
-  // 存储空间不足。
-  if (text.contains("enospc") ||
-      text.contains("no space") ||
-      text.contains("空间不足")) {
-    return const UpdateErrorInfo(
-      title: "存储空间不足",
-      message: "请清理一些空间后重试",
-      action: UpdateErrorAction.retry,
-      actionLabel: "重试",
-    );
-  }
-  // 安装包校验失败（包名 / 版本号不匹配）。
-  if (text.contains("signature") ||
-      text.contains("verify") ||
-      text.contains("mismatch") ||
-      text.contains("versioncode") ||
-      text.contains("校验") ||
-      text.contains("不匹配") ||
-      text.contains("包名")) {
-    return const UpdateErrorInfo(
-      title: "安装包校验未通过",
-      message: "这个安装包与当前应用不一致，为安全起见已阻止安装。请到项目主页重新下载",
-      action: UpdateErrorAction.openProject,
-      actionLabel: "打开项目主页",
-    );
-  }
-  // 当前设备 / 平台不支持应用内更新。
-  if (text.contains("不支持")) {
-    return const UpdateErrorInfo(
-      title: "当前设备暂不支持",
-      message: "请到项目主页手动下载最新版本",
-      action: UpdateErrorAction.openProject,
-      actionLabel: "打开项目主页",
-    );
-  }
-  // 没有可下载的安装包。
-  if (text.contains("未找到") ||
-      text.contains("没有提供") ||
-      text.contains(".apk") ||
-      text.contains("asset")) {
-    return const UpdateErrorInfo(
-      title: "未找到安装包",
-      message: "这个版本暂时没有提供安卓安装包，请到项目主页手动下载",
-      action: UpdateErrorAction.openProject,
-      actionLabel: "打开项目主页",
-    );
-  }
-  // 安装器启动 / 安装过程失败。
-  if (text.contains("install") || text.contains("安装")) {
-    return const UpdateErrorInfo(
-      title: "安装未完成",
-      message: "你可以重新尝试安装",
-      action: UpdateErrorAction.retry,
-      actionLabel: "重试",
-    );
-  }
-  return const UpdateErrorInfo(
-    title: "网络连接失败",
-    message: "请检查网络后重试",
-    action: UpdateErrorAction.retry,
-    actionLabel: "重试",
-  );
-}
 
 /// 应用内更新的下载页。
 ///
 /// 由 `showUpdateSheet`（`lib/widgets/update_sheet.dart`）在用户选择
-/// 「立即更新」后通过 `Navigator.push(MaterialPageRoute(...))` 打开。
+/// 「立即更新」后通过 `pushPage(...)` 打开。
 class UpdatePage extends StatefulWidget {
   /// 创建下载页。
   const UpdatePage({super.key});
@@ -270,8 +126,6 @@ class _UpdatePageState extends State<UpdatePage> with WidgetsBindingObserver {
     );
   }
 
-  // ---------------------------------------------------------------- 下载中
-
   Widget _downloadingBody(BuildContext context) {
     final ColorScheme scheme = Theme.of(context).colorScheme;
     final TextTheme text = Theme.of(context).textTheme;
@@ -363,7 +217,7 @@ class _UpdatePageState extends State<UpdatePage> with WidgetsBindingObserver {
   }
 
   void _confirmCancel(BuildContext context) {
-    alart(
+    alert(
       context,
       "确定要取消下载吗？已下载的内容会被删除。",
       onConfirmed: () {
@@ -406,8 +260,6 @@ class _UpdatePageState extends State<UpdatePage> with WidgetsBindingObserver {
     );
     return leave ?? false;
   }
-
-  // ---------------------------------------------------------------- 下载完成
 
   Widget _readyBody(BuildContext context) {
     final ColorScheme scheme = Theme.of(context).colorScheme;
@@ -479,8 +331,6 @@ class _UpdatePageState extends State<UpdatePage> with WidgetsBindingObserver {
     Navigator.of(context).maybePop();
   }
 
-  // ------------------------------------------------------------ 权限引导
-
   Widget _permissionBody(BuildContext context) {
     final ColorScheme scheme = Theme.of(context).colorScheme;
     final TextTheme text = Theme.of(context).textTheme;
@@ -545,8 +395,6 @@ class _UpdatePageState extends State<UpdatePage> with WidgetsBindingObserver {
       showSnackBar(context, "仍未获得安装权限，请在系统设置中允许后重试");
     }
   }
-
-  // ---------------------------------------------------------------- 错误
 
   Widget _errorBody(BuildContext context) {
     final ColorScheme scheme = Theme.of(context).colorScheme;
@@ -613,8 +461,6 @@ class _UpdatePageState extends State<UpdatePage> with WidgetsBindingObserver {
         return;
     }
   }
-
-  // ------------------------------------------------- 兜底（无下载在途时）
 
   Widget _availableBody(BuildContext context) {
     final TextTheme text = Theme.of(context).textTheme;

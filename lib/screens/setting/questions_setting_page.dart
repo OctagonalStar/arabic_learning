@@ -1,5 +1,5 @@
 import 'package:arabic_learning/widgets/kit.dart' show Button, TextContainer;
-import 'package:arabic_learning/widgets/overlays.dart' show alart;
+import 'package:arabic_learning/widgets/overlays.dart' show alert;
 import 'package:arabic_learning/widgets/question_chain_editor.dart' show QuestionChainListView, QuestionTypeAddMenu;
 import 'package:arabic_learning/widgets/shared.dart' show ButtonLabel;
 import 'package:arabic_learning/models/config.dart';
@@ -59,7 +59,7 @@ class _QuestionsSettingPage extends State<QuestionsSettingPage> {
                 },
                 onRemove: (index) {
                   if(selectedTypes!.length == 1) {
-                    alart(context, "至少保留一项");
+                    alert(context, "至少保留一项");
                   } else {
                     context.read<Global>().uiLogger.fine("移除题型项目: $index");
                     setState(() {

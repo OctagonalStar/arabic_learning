@@ -96,9 +96,6 @@ Future<void> _pumpReviewCard(WidgetTester tester) async {
   addTearDown(tester.view.resetPhysicalSize);
   addTearDown(tester.view.resetDevicePixelRatio);
 
-  final PageController controller = PageController();
-  addTearDown(controller.dispose);
-
   await tester.pumpWidget(
     ChangeNotifierProvider<Global>(
       create: (BuildContext context) => Global(),
@@ -108,7 +105,8 @@ Future<void> _pumpReviewCard(WidgetTester tester) async {
             wordID: 0,
             fsrs: FSRS(),
             rnd: Random(1),
-            controller: controller,
+            onNext: () {},
+            onReviewed: (_) {},
           ),
         ),
       ),

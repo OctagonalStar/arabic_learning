@@ -10,7 +10,6 @@ import 'package:arabic_learning/models/synonym.dart';
 import 'package:arabic_learning/services/app_data.dart';
 
 class SynonymStore {
-  // 作为单例
   static final SynonymStore _instance = SynonymStore._internal();
   factory SynonymStore() => _instance;
   SynonymStore._internal();

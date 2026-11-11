@@ -18,7 +18,6 @@ import 'package:arabic_learning/package_replacement/storage.dart';
 const String _pushSessionStorageKey = "pushSessionData";
 
 class FSRS { 
-  // 作为单例
   static final FSRS _instance = FSRS._internal();
   factory FSRS() => _instance;
   FSRS._internal();
@@ -453,6 +452,55 @@ class FSRS {
     }
     return dueCards;
   }
+
+  /// 已逾期（到期时间早于当前时刻）的卡片数量。
+  int getOverdueCount() {
+    if (!_inited) return 0;
+    final DateTime now = DateTime.now();
+    int count = 0;
+    for (final Card card in config.cards) {
+      if (card.due.toLocal().isBefore(now)) count++;
+    }
+    return count;
+  }
+
+  /// 未来 [days] 天（含今天）每天到期的卡片数量。
+  ///
+  /// 下标 0 = 今天（已逾期的卡片也计入今天），下标 1..days-1 = 之后各自然日。
+  List<int> getForecastCounts(int days) {
+    if (!_inited || days <= 0) return const <int>[];
+    final DateTime now = DateTime.now();
+    final DateTime today = DateTime(now.year, now.month, now.day);
+    final List<int> counts = List<int>.filled(days, 0);
+    for (final Card card in config.cards) {
+      final DateTime due = card.due.toLocal();
+      final int day = DateTime(due.year, due.month, due.day)
+          .difference(today)
+          .inDays;
+      final int index = day < 0 ? 0 : day;
+      if (index < days) counts[index]++;
+    }
+    return counts;
+  }
+
+  /// 到期时间最早（不限是否已逾期）的卡片词 id；没有卡片时返回 null。
+  int? nearestDueWordId() {
+    Card? nearest;
+    for (final Card card in config.cards) {
+      if (nearest == null || card.due.isBefore(nearest.due)) nearest = card;
+    }
+    return nearest?.cardId;
+  }
+
+  /// 强化记忆循环：第一次达到 good 以上、正在等同一张卡再次作答的词 id。
+  /// 仅存于内存，不落盘；进入复习页时由页面清除。
+  int? _reinforcePendingWordId;
+
+  bool isReinforcePending(int wordId) => _reinforcePendingWordId == wordId;
+
+  void markReinforcePending(int wordId) => _reinforcePendingWordId = wordId;
+
+  void clearReinforcePending() => _reinforcePendingWordId = null;
 
   bool isContained(int wordId) {
     // 读一次 config：未赋值时仍抛 `LateInitializationError`（与改造前一致）。
