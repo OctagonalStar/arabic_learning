@@ -65,6 +65,7 @@ screens/  →  services/  models/  theme/  widgets/
 | `RevealableActionBar` | `shared.dart` | 底部双按钮栏（「查看详解 / 下一题」），`revealed` 驱动揭示动画。 |
 | `ButtonLabel` | `shared.dart` | 按钮内文字惯用法 `Expanded + FittedBox`；只缩不放。 |
 | `LoadingIndicator` | `feedback.dart` | 不确定进度指示器，颜色解析与原生一致。 |
+| `ProgressBar` | `feedback.dart` | 线性进度条（下载 / 解压 / 同步统一用它）：`value` 0~1，null 为不确定进度；确定值按 `AppMotion.quick` 插值；`animationsDisabled` 为 null 时读系统「减弱动态效果」；`minHeight` 默认 6。**不要直接写 `LinearProgressIndicator`**。 |
 
 ### 弹窗 / 浮层 / 提示
 
@@ -151,7 +152,7 @@ screens/  →  services/  models/  theme/  widgets/
 | `playTextToSpeech` / `TtsFailure` | `tts.dart` | 统一朗读入口与错误归一。 |
 | `UpdateService`（`ChangeNotifier`） | `update_service.dart` | 检查更新、下载、安装、跳过版本；错误描述在 `update/update_error.dart`。 |
 | `WebDAV` | `sync.dart` | WebDAV 备份上传/下载（按 `usedKeys`）。 |
-| `downloadFile` / `downloadBytes` / `extractTarBz2` | `download.dart` | 通用下载与解压。 |
+| `downloadFile` / `downloadBytes` / `extractTarBz2` | `download.dart` | **统一的文件传输入口**：`downloadFile(url, savePath, {onDownloading, cancelToken, options, dio})` 落盘（更新 APK、TTS/ASR 模型包都走它，`dio` 可注入调用方已配好 DoH/超时的客户端）；`downloadBytes` 进内存（Web / 无文件系统）；`extractTarBz2` 解压模型包。 |
 | `WordMembershipIndex` | `memberships.dart` | 词条→课程归属反查（内存缓存）。 |
 | `getSelectedWords` / `getRandomWords` / `buildChineseChoiceOptionWords` / `collectAllCategories` / `wordMatchesCategories` / `wordMatchesAnyCategory` / `calculateButtonBoxLayout` / `getStrokeDays` | `words.dart` | 出题、选词、分类筛选等纯选词逻辑。 |
 

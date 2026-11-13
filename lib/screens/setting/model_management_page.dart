@@ -19,6 +19,7 @@ import 'package:arabic_learning/theme/tokens.dart'
     show AppRadius, AppSemanticColors, AppSpacing;
 import 'package:arabic_learning/widgets/kit.dart'
     show Button, SettingItem;
+import 'package:arabic_learning/widgets/feedback.dart' show ProgressBar;
 import 'package:arabic_learning/widgets/overlays.dart' show alert, showSnackBar;
 
 class ModelManagementPage extends StatefulWidget {
@@ -300,14 +301,11 @@ class _ModelManagementPageState extends State<ModelManagementPage> {
           if (downloading || installing) ...[
             Padding(
               padding: const EdgeInsets.only(top: AppSpacing.xs),
-              child: LinearProgressIndicator(
-                // 解压阶段拿不到字节进度，用不确定动画表示仍在进行。
-                value: downloading
-                    ? (_total > 0
-                        ? (_received / _total).clamp(0.0, 1.0)
-                        : null)
+              // 解压阶段拿不到字节进度，用不确定动画表示仍在进行。
+              child: ProgressBar(
+                value: downloading && _total > 0
+                    ? (_received / _total).clamp(0.0, 1.0)
                     : null,
-                borderRadius: AppRadius.controlBorder,
               ),
             ),
             Padding(
@@ -625,7 +623,7 @@ class _ModelManagementPageState extends State<ModelManagementPage> {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              const LinearProgressIndicator(),
+                              const ProgressBar(value: null),
                               const SizedBox(height: AppSpacing.xxs),
                               Text(
                                 "正在解压并导入模型包…",

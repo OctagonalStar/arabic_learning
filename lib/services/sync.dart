@@ -81,10 +81,11 @@ class WebDAV {
     }
   }
 
-  Future<void> upload(SharedPreferences pref) async {
+  /// [onProgress] 为传输进度回调（已发送字节 / 总字节）。
+  Future<void> upload(SharedPreferences pref, {void Function(int count, int total)? onProgress}) async {
     logger.info("开始上传文件:");
     try {
-        await client.write("arabic_learning.bak", utf8.encode(jsonEncode(pref.export())));
+        await client.write("arabic_learning.bak", utf8.encode(jsonEncode(pref.export())), onProgress: onProgress);
         logger.info("文件上传成功");
         return;
     } catch (e) {
@@ -93,11 +94,12 @@ class WebDAV {
     }
   }
 
-  Future<void> download(SharedPreferences pref,{bool force = false}) async {
+  /// [onProgress] 为传输进度回调（已接收字节 / 总字节，总字节未知时为负数）。
+  Future<void> download(SharedPreferences pref,{bool force = false, void Function(int count, int total)? onProgress}) async {
     logger.info("开始恢复文件: 服务可读: $isReadable; force: $force");
     try {
       if(isReadable || force) {
-        Map<String, dynamic> file = jsonDecode(utf8.decode(await client.read("arabic_learning.bak")));
+        Map<String, dynamic> file = jsonDecode(utf8.decode(await client.read("arabic_learning.bak", onProgress: onProgress)));
         logger.fine("文件下载成功，开始恢复");
         // 必须 await：SQLite 卡片后端需要把 fsrsData 异步灌回数据库。
         await pref.recovery(file);

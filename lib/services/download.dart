@@ -15,12 +15,26 @@ import 'package:arabic_learning/package_replacement/fake_dart_io.dart' if (dart.
 /// [savePath] :保存地址
 /// 
 /// [onDownloading] :下载进程中的回调，传入两个参数(int count, int total)，可用于进度展示
-Future<void> downloadFile(String url, String savePath, {ProgressCallback? onDownloading}) async {
-  final dio = createDio();
-  await dio.download(
+/// 
+/// [cancelToken] :取消令牌
+/// 
+/// [options] :额外请求选项（请求头等）
+/// 
+/// [dio] :复用调用方已配置的客户端（如更新下载的 DoH / 超时）；为 null 时新建
+Future<void> downloadFile(
+  String url,
+  String savePath, {
+  ProgressCallback? onDownloading,
+  CancelToken? cancelToken,
+  Options? options,
+  Dio? dio,
+}) async {
+  await (dio ?? createDio()).download(
     url,
     savePath,
-    onReceiveProgress: onDownloading?? (count, total){},
+    onReceiveProgress: onDownloading,
+    cancelToken: cancelToken,
+    options: options,
   );
 }
 

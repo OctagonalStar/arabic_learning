@@ -1,6 +1,8 @@
 // APK 下载：目录解析、临时文件名清洗、写盘与大小校验。
 //
-// 只负责「把文件完整写到磁盘」这一件事，进度回调、速度估算、状态机与通知
+// 实际传输交给 `services/download.dart` 的 `downloadFile`（与模型下载同一入口），
+// 本类只保留策略：目录解析、大小校验、取消 / 代次中止。
+// 进度回调、速度估算、状态机与通知
 // 仍留在 `UpdateService`（门面）中，因此本类不持有任何 UI 状态，可被单元测试
 // 直接驱动（注入 Dio / 目录 provider 即可，不依赖平台通道）。
 //
@@ -10,6 +12,7 @@
 import 'package:arabic_learning/package_replacement/fake_dart_io.dart'
     if (dart.library.io) 'dart:io'
     as io;
+import 'package:arabic_learning/services/download.dart' show downloadFile;
 import 'package:dio/dio.dart';
 import 'package:path_provider/path_provider.dart' as path_provider;
 
@@ -100,18 +103,18 @@ class UpdateDownloader {
     final String savePath = '${dir.path}/$safeName';
     onPathResolved?.call(savePath);
 
-    await dioProvider().download(
+    await downloadFile(
       url,
       savePath,
+      dio: dioProvider(),
       cancelToken: cancelToken,
-      deleteOnError: true,
       options: Options(
         headers: const <String, dynamic>{
           'Accept': 'application/octet-stream',
           'User-Agent': 'arabic_learning-updater',
         },
       ),
-      onReceiveProgress: onReceiveProgress,
+      onDownloading: onReceiveProgress,
     );
     if (!isActive()) throw const DownloadAborted();
 

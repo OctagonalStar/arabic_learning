@@ -4,8 +4,8 @@
 // 下载进度 / 下载完成 / 未知来源权限引导 / 错误重试。
 //
 // 设计要点：
-// - 复用 `model_management_page.dart` 的「按钮 + 原生 LinearProgressIndicator」
-//   模式，状态由 `UpdateService`（变更通知单例）驱动；
+// - 进度条统一用 `widgets/feedback.dart` 的 `ProgressBar`（与模型下载 / WebDAV
+//   同步一致），状态由 `UpdateService`（变更通知单例）驱动；
 // - 用 `WidgetsBindingObserver` 在回到前台时对账：下载结果由 service 自行刷新，
 //   本页额外处理「用户去系统设置授予未知来源权限后返回」的自动重试；
 
@@ -14,7 +14,8 @@ import 'package:arabic_learning/core/statics.dart' show StaticsVar;
 import 'package:arabic_learning/services/update/update_error.dart';
 import 'package:arabic_learning/services/update_service.dart';
 import 'package:arabic_learning/theme/tokens.dart'
-    show AppMotion, AppRadius, AppSemanticColors, AppSpacing;
+    show AppSemanticColors, AppSpacing;
+import 'package:arabic_learning/widgets/feedback.dart' show ProgressBar;
 import 'package:arabic_learning/widgets/kit.dart' show Button;
 import 'package:arabic_learning/widgets/motion.dart' show CrossFadeSwitcher;
 import 'package:arabic_learning/widgets/overlays.dart' show alert, showSnackBar;
@@ -129,8 +130,6 @@ class _UpdatePageState extends State<UpdatePage> with WidgetsBindingObserver {
   Widget _downloadingBody(BuildContext context) {
     final ColorScheme scheme = Theme.of(context).colorScheme;
     final TextTheme text = Theme.of(context).textTheme;
-    final bool animationsDisabled =
-        MediaQuery.maybeDisableAnimationsOf(context) ?? false;
 
     final int total = _service.totalBytes;
     final int got = _service.downloadedBytes;
@@ -156,7 +155,7 @@ class _UpdatePageState extends State<UpdatePage> with WidgetsBindingObserver {
           textAlign: TextAlign.center,
         ),
         const SizedBox(height: AppSpacing.md),
-        _ProgressBar(value: value, animationsDisabled: animationsDisabled),
+        ProgressBar(value: value, minHeight: 12.0),
         const SizedBox(height: AppSpacing.sm),
         Semantics(
           liveRegion: true,
@@ -489,50 +488,6 @@ class _UpdatePageState extends State<UpdatePage> with WidgetsBindingObserver {
           child: const Text("开始下载"),
         ),
       ],
-    );
-  }
-}
-
-/// 进度条：确定进度平滑推进；总大小未知时不定期进度；
-/// 「减弱动态效果」/测试下退化为静态，保证 `pumpAndSettle` 能结束。
-class _ProgressBar extends StatelessWidget {
-  const _ProgressBar({required this.value, required this.animationsDisabled});
-
-  /// 0.0 ~ 1.0；为 null 表示总大小未知（不确定进度）。
-  final double? value;
-
-  /// 是否禁用动画。
-  final bool animationsDisabled;
-
-  @override
-  Widget build(BuildContext context) {
-    final double? target = value;
-    if (target == null) {
-      return LinearProgressIndicator(
-        value: animationsDisabled ? 0.0 : null,
-        minHeight: 12.0,
-        borderRadius: AppRadius.controlBorder,
-      );
-    }
-    if (animationsDisabled) {
-      return LinearProgressIndicator(
-        value: target,
-        minHeight: 12.0,
-        borderRadius: AppRadius.controlBorder,
-      );
-    }
-    // `begin` 仅用于首次动画；后续重建会从当前值平滑过渡到新的目标值。
-    return TweenAnimationBuilder<double>(
-      tween: Tween<double>(begin: 0.0, end: target),
-      duration: AppMotion.quick,
-      curve: AppMotion.standardCurve,
-      builder: (BuildContext context, double animated, Widget? child) {
-        return LinearProgressIndicator(
-          value: animated,
-          minHeight: 12.0,
-          borderRadius: AppRadius.controlBorder,
-        );
-      },
     );
   }
 }
