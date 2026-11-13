@@ -1,15 +1,16 @@
 import 'dart:convert';
 
 import 'package:file_picker/file_picker.dart';
-import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:flutter/foundation.dart' show ValueListenable, kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import 'package:arabic_learning/widgets/feedback.dart' show LoadingIndicator;
+import 'package:arabic_learning/widgets/feedback.dart' show LoadingIndicator, ProgressBar;
 import 'package:arabic_learning/widgets/kit.dart' show Button, SettingItem;
 import 'package:arabic_learning/widgets/overlays.dart' show alert, showSnackBar;
 import 'package:arabic_learning/widgets/shared.dart' show appInputDecoration;
 import 'package:arabic_learning/core/extensions.dart';
+import 'package:arabic_learning/theme/tokens.dart' show AppSpacing;
 import 'package:arabic_learning/services/sync.dart';
 import 'package:arabic_learning/models/config.dart';
 import 'package:arabic_learning/services/global_state.dart';
@@ -28,14 +29,117 @@ class _DataSyncPage extends State<DataSyncPage> {
   bool isUploading = false;
   bool isDownloading = false;
 
+  /// 传输进度 0.0~1.0；null 表示尚未开始或总大小未知（不确定进度）。
+  /// 用 ValueNotifier 只重建进度所在行，避免整页 rebuild 反复触发联通性测试。
+  final ValueNotifier<double?> uploadProgress = ValueNotifier<double?>(null);
+  final ValueNotifier<double?> downloadProgress = ValueNotifier<double?>(null);
+
+  /// 联通性检查只在绑定账户与首次进入时发起，页面 rebuild 不再重复请求。
+  late Future<List<dynamic>> connectivityTest;
+
+  @override
+  void initState() {
+    super.initState();
+    connectivityTest = _testConnection();
+  }
+
+  @override
+  void dispose() {
+    uploadProgress.dispose();
+    downloadProgress.dispose();
+    super.dispose();
+  }
+
+  WebDAV get _webdav => WebDAV(
+    uri: AppData().config.webSync.account.uri,
+    user: AppData().config.webSync.account.userName,
+    password: AppData().config.webSync.account.passWord,
+  );
+
+  Future<List<dynamic>> _testConnection() => WebDAV.test(
+    AppData().config.webSync.account.uri,
+    AppData().config.webSync.account.userName,
+    password: AppData().config.webSync.account.passWord,
+  );
+
+  /// 进度回调很密集，仅在整数百分比变化时通知进度条。
+  void _setProgress(int count, int total, {required bool upload}) {
+    if (total <= 0) return;
+    final double value = (count / total).clamp(0.0, 1.0);
+    final ValueNotifier<double?> notifier = upload ? uploadProgress : downloadProgress;
+    final double? current = notifier.value;
+    if (current != null && (current - value).abs() < 0.01) return;
+    notifier.value = value;
+  }
+
+  Future<void> _upload() async {
+    context.read<Global>().uiLogger.info("用户上传数据");
+    setState(() {
+      isUploading = true;
+    });
+    uploadProgress.value = null;
+    final WebDAV webdav = _webdav;
+    try {
+      if (!webdav.isReachable) await webdav.connect();
+      if (!mounted) return;
+      await webdav.upload(
+        AppData().storage,
+        onProgress: (int count, int total) => _setProgress(count, total, upload: true),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      alert(context, e.toString());
+      setState(() {
+        isUploading = false;
+      });
+      uploadProgress.value = null;
+      return;
+    }
+    if (!mounted) return;
+    setState(() {
+      isUploading = false;
+    });
+    uploadProgress.value = null;
+    alert(context, "已上传");
+  }
+
+  Future<void> _download() async {
+    context.read<Global>().uiLogger.info("用户恢复数据");
+    setState(() {
+      isDownloading = true;
+    });
+    downloadProgress.value = null;
+    final WebDAV webdav = _webdav;
+    try {
+      if (!webdav.isReachable) await webdav.connect();
+      if (!mounted) return;
+      await webdav.download(
+        AppData().storage,
+        onProgress: (int count, int total) => _setProgress(count, total, upload: false),
+      );
+      if (!mounted) return;
+      context.read<Global>().conveySetting();
+      await context.read<Global>().reloadStoredData();
+    } catch (e) {
+      if (!mounted) return;
+      alert(context, e.toString());
+      setState(() {
+        isDownloading = false;
+      });
+      downloadProgress.value = null;
+      return;
+    }
+    if (!mounted) return;
+    setState(() {
+      isDownloading = false;
+    });
+    downloadProgress.value = null;
+    alert(context, "已恢复\n部分设置可能需要软件重启后才能生效");
+  }
+
   @override
   Widget build(BuildContext context) {
     enabled ??= AppData().config.webSync.enabled;
-    final WebDAV webdav = WebDAV(
-      uri: AppData().config.webSync.account.uri, 
-      user: AppData().config.webSync.account.userName,
-      password: AppData().config.webSync.account.passWord
-    );
     MediaQueryData mediaQuery = MediaQuery.of(context);
 
     return Scaffold(
@@ -57,7 +161,9 @@ class _DataSyncPage extends State<DataSyncPage> {
                   Button(
                     onPressed: () async {
                       await popAccountSetting(context);
-                      setState(() {});
+                      setState(() {
+                        connectivityTest = _testConnection();
+                      });
                     }, 
                     child: Text("绑定")
                   ),
@@ -68,11 +174,7 @@ class _DataSyncPage extends State<DataSyncPage> {
                   Text("联通性检查: "),
                   if(AppData().config.webSync.account.uri.isEmpty) Text("未绑定", style: Theme.of(context).textTheme.labelSmall),
                   FutureBuilder(
-                    future: WebDAV.test(
-                      AppData().config.webSync.account.uri, 
-                      AppData().config.webSync.account.userName,
-                      password: AppData().config.webSync.account.passWord
-                    ), 
+                    future: connectivityTest,
                     builder: (context, snapshot) {
                       if(snapshot.hasError) {
                         return Row(
@@ -97,83 +199,35 @@ class _DataSyncPage extends State<DataSyncPage> {
                   )
                 ],
               ),
-              Row(
-                children: [
-                  Icon(Icons.cloud_upload),
-                  SizedBox(width: mediaQuery.size.width * 0.01),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text("上传数据"),
-                        Text("将本地配置上传到WebDAV服务器", style: Theme.of(context).textTheme.labelSmall?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant))
-                      ],
-                    )
-                  ),
-                  isUploading 
-                  ? LoadingIndicator()
-                  :Button(
-                    onPressed: () async {
-                      context.read<Global>().uiLogger.info("用户上传数据");
-                      setState(() {
-                        isUploading = true;
-                      });
-                      try{
-                        if(!webdav.isReachable) await webdav.connect();
-                        if(context.mounted) await webdav.upload(AppData().storage);
-                      } catch (e) {
-                        if(!context.mounted) return;
-                        alert(context, e.toString());
-                        setState(() {isUploading = false;});
-                        return;
-                      } 
-                      setState(() {isUploading = false;});
-                      if(!context.mounted) return;
-                      alert(context, "已上传");
-                    },
-                    child: Text("上传")
-                  )
-                ],
+              _SyncActionRow(
+                icon: Icons.cloud_upload,
+                title: "上传数据",
+                subtitle: "将本地配置上传到WebDAV服务器",
+                actionLabel: "上传",
+                running: isUploading,
+                progress: uploadProgress,
+                onPressed: () => alert(
+                  context,
+                  "确认将本地配置上传到WebDAV服务器？\n服务器上的备份将被覆盖。",
+                  destructive: true,
+                  confirmLabel: "上传",
+                  onConfirmed: _upload,
+                ),
               ),
-              Row(
-                children: [
-                  Icon(Icons.cloud_download),
-                  SizedBox(width: mediaQuery.size.width * 0.01),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text("恢复数据"),
-                        Text("从WebDAV服务器恢复配置", style: Theme.of(context).textTheme.labelSmall?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant))
-                      ],
-                    )
-                  ),
-                  isDownloading 
-                  ? LoadingIndicator()
-                  : Button(
-                    onPressed: () async {
-                      context.read<Global>().uiLogger.info("用户恢复数据");
-                      setState(() {
-                        isDownloading = true;
-                      });
-                      try{
-                        if(!webdav.isReachable) await webdav.connect();
-                        if(context.mounted) await webdav.download(AppData().storage);
-                        if(context.mounted) context.read<Global>().conveySetting();
-                        if(context.mounted) await context.read<Global>().reloadStoredData();
-                      } catch (e) {
-                        if(!context.mounted) return;
-                        alert(context, e.toString());
-                        setState(() {isDownloading = false;});
-                        return;
-                      } 
-                      if(!context.mounted) return;
-                      setState(() {isDownloading = false;});
-                      alert(context, "已恢复\n部分设置可能需要软件重启后才能生效");
-                    },
-                    child: Text("恢复")
-                  )
-                ],
+              _SyncActionRow(
+                icon: Icons.cloud_download,
+                title: "恢复数据",
+                subtitle: "从WebDAV服务器恢复配置",
+                actionLabel: "恢复",
+                running: isDownloading,
+                progress: downloadProgress,
+                onPressed: () => alert(
+                  context,
+                  "确认从WebDAV服务器恢复配置？\n本地数据将被覆盖。",
+                  destructive: true,
+                  confirmLabel: "恢复",
+                  onConfirmed: _download,
+                ),
               )
             ],
           ),
@@ -292,6 +346,62 @@ class _DataSyncPage extends State<DataSyncPage> {
   }
 }
 
+
+/// WebDAV 上传 / 恢复共用的一行：图标 + 文案 + 进度条 + 操作按钮。
+class _SyncActionRow extends StatelessWidget {
+  const _SyncActionRow({
+    required this.icon,
+    required this.title,
+    required this.subtitle,
+    required this.actionLabel,
+    required this.running,
+    required this.progress,
+    required this.onPressed,
+  });
+
+  final IconData icon;
+  final String title;
+  final String subtitle;
+  final String actionLabel;
+  final bool running;
+  /// 0.0~1.0；null 表示总大小未知（不确定进度）。
+  final ValueListenable<double?> progress;
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    final ThemeData theme = Theme.of(context);
+    // 进度变化只重建本行，不触碰页面上其余（含联通性检查）的组件。
+    return ValueListenableBuilder<double?>(
+      valueListenable: progress,
+      builder: (BuildContext context, double? value, Widget? child) {
+        return Row(
+          children: [
+            Icon(icon),
+            const SizedBox(width: AppSpacing.xs),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(title),
+                  Text(subtitle, style: theme.textTheme.labelSmall?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
+                  if (running) ...[
+                    const SizedBox(height: AppSpacing.xs),
+                    ProgressBar(value: value),
+                  ],
+                ],
+              ),
+            ),
+            const SizedBox(width: AppSpacing.xs),
+            running
+            ? Text(value == null ? "请稍候…" : "${(value * 100).round()}%")
+            : Button(onPressed: onPressed, child: Text(actionLabel)),
+          ],
+        );
+      },
+    );
+  }
+}
 
 Future<void> popAccountSetting(BuildContext context) async {
   TextEditingController uriController = TextEditingController();
