@@ -82,7 +82,7 @@ class DictRepoInfo {
 @immutable
 class StaticsVar {
   static const String appName = 'Ar学';
-  static const int appVersion = 102001;
+  static const int appVersion = 102002;
 
   /// CI 构建时注入的完整版本（如 `1.2.1-alpha.37`）；本地/正式构建为空串。
   static const String buildVersion = String.fromEnvironment('APP_VERSION');
