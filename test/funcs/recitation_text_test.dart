@@ -86,6 +86,24 @@ void main() {
     });
   });
 
+  group('splitSentences', () {
+    test('按换行与句末标点切分并保留标点', () {
+      expect(
+        splitSentences('الجملة الأولى. الجملة الثانية؟\n\nالثالثة'),
+        <String>['الجملة الأولى.', 'الجملة الثانية؟', 'الثالثة'],
+      );
+      expect(
+        splitSentences('第一句。Second! 第三句؟'),
+        <String>['第一句。', 'Second!', '第三句؟'],
+      );
+    });
+
+    test('句内逗号不切分，空文本得到空列表', () {
+      expect(splitSentences('مرحبا، كيف حالك'), <String>['مرحبا، كيف حالك']);
+      expect(splitSentences('  \n '), isEmpty);
+    });
+  });
+
   group('estimateSeconds', () {
     test('长元音与 shadda 增加权重', () {
       expect(estimateSeconds('باب'), greaterThan(estimateSeconds('ببب')));

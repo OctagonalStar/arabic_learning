@@ -5,6 +5,7 @@ import 'package:arabic_learning/widgets/shared.dart' show ButtonLabel;
 import 'package:flutter/foundation.dart' show clampDouble;
 import 'package:flutter/material.dart';
 
+import 'package:arabic_learning/screens/test/dictation/dictation_list_page.dart' show DictationListPage;
 import 'package:arabic_learning/screens/test/listening_test_page.dart' show ForeListeningSettingPage;
 import 'package:arabic_learning/screens/test/local_pk_page.dart' show LocalPKSelectPage;
 import 'package:arabic_learning/screens/test/reading_test_page.dart' show ReadingTestPage;
@@ -54,6 +55,18 @@ class TestPage extends StatelessWidget {
                   child: ButtonLabel(child: Text('阅读理解', style: withoutColor(Theme.of(context).textTheme.headlineLarge!))),
                 ),
               ],
+            ),
+            SizedBox(height: gap),
+            Button(
+              icon: Icon(Icons.headphones, size: 36.0),
+              size: Size(width * 0.8, fullHeight),
+              onPressed: () {
+                pushPage(
+                  context,
+                  DictationListPage()
+                );
+              },
+              child: ButtonLabel(child: Text('听抄训练', style: withoutColor(Theme.of(context).textTheme.headlineLarge!))),
             ),
             SizedBox(height: gap),
             Button(

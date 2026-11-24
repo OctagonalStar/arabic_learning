@@ -115,7 +115,7 @@ screens/  →  services/  models/  theme/  widgets/
 | `SingleSelectionNotifier` | `selection.dart` | 单选状态的 `ChangeNotifier`。 |
 | `daysSinceEpoch` / `dueDayText` | `date_utils.dart` | 以 `learningEpoch` 计天数 / 到期相对文案（已逾期 N 天·今天·N 天后）。 |
 | `versionStringToInt` / `versionIntToString` / `parseGithubTag` / `isNewerVersion` / `parseReleaseVersion` / `isNewerRelease` / `parseReleaseRedirectTag` | `version.dart` | 版本号编解码与比较（含 alpha/rc 后缀）。 |
-| `normalizeArabic` / `tokenize` / `lookupStems` / `estimateSeconds` | `recitation_text.dart` | 阿语归一化、词序列、查词候选（剥前附词/后缀）、背诵时长估算。 |
+| `normalizeArabic` / `tokenize` / `lookupStems` / `estimateSeconds` / `splitSentences` | `recitation_text.dart` | 阿语归一化、词序列、查词候选（剥前附词/后缀）、背诵时长估算、按换行与句末标点切句（课文背诵与听抄共用）。 |
 | `encodeWav16` | `wav.dart` | Float32 采样 → 16-bit PCM WAV。 |
 | `StaticsVar` 常量 | `statics.dart` | `appName`、`appVersion`、`buildVersion`（`--dart-define=APP_VERSION`）、`isDesktop`、`player`、`br`、主题种子列表 `themeList`、`ttsModels`/`asrModels`/`dictRepos` 目录、`learningMessage`、备份字体名。 |
 | `AIPrompt` | `ai_prompt.dart` | 生成给外部 AI 用的提示词（词库整理 / 课文整理）。 |
@@ -149,7 +149,8 @@ screens/  →  services/  models/  theme/  widgets/
 | `PushSessionStore` / `PushCheckpoint` / `buildDailyPushPlan` | `push_session.dart` | 每日推送断点与选词。 |
 | `RecitationService` / `RecitationRecorder` / audio / asr / scorer / store | `recitation_*.dart` | 录音→能量分析→ASR→LCS 对齐→打分，成绩摘要落 `RecitationStore`。 |
 | `ModelManager` | `model_manager.dart` | 本地模型下载/解压/删除/导入；`resolveTts` / `resolveAsr` 按目录内容识别架构。 |
-| `playTextToSpeech` / `TtsFailure` | `tts.dart` | 统一朗读入口与错误归一。 |
+| `playTextToSpeech` / `TtsFailure` | `tts.dart` | 统一朗读入口与错误归一；`awaitCompletion` 为 true 时等到朗读结束。 |
+| `SpeechClip` / `prepareSpeech` / `playSpeech` | `tts.dart` | 听抄等需要精确间隔的场景：先 `prepareSpeech` 预合成（本地音源落盘到 `tts_clips/`，Web 存内存；系统/在线音源 `cached == false`），再用 `playSpeech` 播放。 |
 | `UpdateService`（`ChangeNotifier`） | `update_service.dart` | 检查更新、下载、安装、跳过版本；错误描述在 `update/update_error.dart`。 |
 | `WebDAV` | `sync.dart` | WebDAV 备份上传/下载（按 `usedKeys`）。 |
 | `downloadFile` / `downloadBytes` / `extractTarBz2` | `download.dart` | **统一的文件传输入口**：`downloadFile(url, savePath, {onDownloading, cancelToken, options, dio})` 落盘（更新 APK、TTS/ASR 模型包都走它，`dio` 可注入调用方已配好 DoH/超时的客户端）；`downloadBytes` 进内存（Web / 无文件系统）；`extractTarBz2` 解压模型包。 |

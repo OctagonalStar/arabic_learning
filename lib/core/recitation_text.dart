@@ -39,6 +39,31 @@ int _fold(int code) {
   return _isLetter(code) ? code : 0;
 }
 
+/// 按换行与句末标点切分文本，丢弃空段（标点保留在句尾）。
+///
+/// 供课文背诵的整段兜底与听抄训练共用；句内逗号不切分。
+List<String> splitSentences(String text) {
+  final List<String> out = <String>[];
+  final StringBuffer buffer = StringBuffer();
+  void flush() {
+    final String part = buffer.toString().trim();
+    buffer.clear();
+    if (part.isNotEmpty) out.add(part);
+  }
+
+  for (final int code in text.codeUnits) {
+    final String char = String.fromCharCode(code);
+    if (char == '\n' || char == '\r') {
+      flush();
+      continue;
+    }
+    buffer.write(char);
+    if ('。？！?!؟.۔'.contains(char)) flush();
+  }
+  flush();
+  return out;
+}
+
 /// 归一化：去变音符号与 tatweel，统一字母写法，标点/数字/拉丁字符转为词边界。
 String normalizeArabic(String text) {
   final StringBuffer out = StringBuffer();

@@ -6,7 +6,8 @@
 
 import 'dart:convert';
 
-import 'package:arabic_learning/core/recitation_text.dart' show tokenize;
+import 'package:arabic_learning/core/recitation_text.dart'
+    show splitSentences, tokenize;
 import 'package:crypto/crypto.dart';
 
 const List<String> _arabicKeys = <String>['arabic', 'ar', 'text', '阿语', '原文'];
@@ -70,29 +71,6 @@ Map<String, dynamic>? _decodeObject(dynamic raw) {
   } catch (_) {
     return null;
   }
-}
-
-/// 按换行与句末标点（含阿语问号、句点）切分，丢弃空段。
-List<String> _splitPassage(String text) {
-  final List<String> out = <String>[];
-  final StringBuffer buffer = StringBuffer();
-  void flush() {
-    final String part = buffer.toString().trim();
-    buffer.clear();
-    if (part.isNotEmpty) out.add(part);
-  }
-
-  for (final int code in text.codeUnits) {
-    final String char = String.fromCharCode(code);
-    if (char == '\n' || char == '\r') {
-      flush();
-      continue;
-    }
-    buffer.write(char);
-    if ('。？！?!؟.'.contains(char)) flush();
-  }
-  flush();
-  return out;
 }
 
 int _difficulty(dynamic raw) {
@@ -272,7 +250,7 @@ class RecitationTextUnit {
     if (sentences.isEmpty) {
       final dynamic passage = _pick(map, _passageKeys);
       if (passage is String) {
-        for (final String line in _splitPassage(passage)) {
+        for (final String line in splitSentences(passage)) {
           sentences.add(RecitationSentence(arabic: line, translation: ''));
         }
       }
