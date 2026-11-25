@@ -18,7 +18,7 @@ import 'package:arabic_learning/widgets/overlays.dart' show viewAnswer;
 import 'package:arabic_learning/widgets/questions.dart'
     show ChoiceQuestions, ListeningQuestion, SpellQuestion, TestItem, WordCardQuestion;
 import 'package:flutter/foundation.dart' show clampDouble;
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:fsrs/fsrs.dart' show Rating;
 import 'package:provider/provider.dart';
 

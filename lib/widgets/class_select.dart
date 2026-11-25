@@ -16,7 +16,7 @@ import 'package:arabic_learning/widgets/app_button.dart' show Button;
 import 'package:arabic_learning/widgets/category_chips.dart' show CategoryFilter;
 import 'package:arabic_learning/widgets/empty_dict_dialog.dart' show showEmptyDictDialog;
 import 'package:arabic_learning/widgets/overlays.dart' show showSnackBar;
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:provider/provider.dart';
 
 /// 弹出课程选择（ClassSelectPage）

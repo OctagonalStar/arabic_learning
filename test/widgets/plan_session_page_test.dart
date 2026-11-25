@@ -14,7 +14,7 @@ import 'package:arabic_learning/services/plan_store.dart' show PlanStore;
 import 'package:arabic_learning/services/search.dart' show BKSearch;
 import 'package:arabic_learning/widgets/questions.dart'
     show ChoiceQuestions, WordCardQuestion;
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fsrs/fsrs.dart' show Rating;
 import 'package:provider/provider.dart';

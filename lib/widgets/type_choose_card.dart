@@ -1,6 +1,6 @@
 import 'package:arabic_learning/core/statics.dart';
 import 'package:flutter/foundation.dart' show clampDouble;
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 /// 向导里的大号类型选择卡片：标题 + 说明 + 右向箭头。
 ///

@@ -1,5 +1,5 @@
 import 'package:arabic_learning/widgets/motion.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 /// 动效控件的行为测试：延迟封顶、动画有限可结束、减弱动态效果下跳过动画。

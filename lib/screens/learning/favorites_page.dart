@@ -15,7 +15,7 @@ import 'package:arabic_learning/widgets/kit.dart' show Button;
 import 'package:arabic_learning/widgets/motion.dart' show StaggeredEntrance;
 import 'package:arabic_learning/widgets/shared.dart' show EmptyHintCard;
 import 'package:arabic_learning/widgets/overlays.dart' show alert;
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:provider/provider.dart';
 
 /// 收藏网格列数：与词汇总览 `_overviewGridColumns` 同一规则——用户固定列数

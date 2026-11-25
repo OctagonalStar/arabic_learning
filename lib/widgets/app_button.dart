@@ -4,7 +4,7 @@
 
 import 'package:arabic_learning/core/statics.dart';
 import 'package:arabic_learning/theme/tokens.dart' show AppMotion;
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 class Button extends StatefulWidget {
   final Widget? child;

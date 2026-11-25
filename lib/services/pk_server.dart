@@ -6,7 +6,7 @@ import 'package:arabic_learning/services/words.dart';
 import 'package:arabic_learning/models/dict.dart';
 import 'package:arabic_learning/models/reading.dart';
 import 'package:arabic_learning/services/app_data.dart';
-import 'package:flutter/material.dart' show PageController;
+import 'package:material_ui/material_ui.dart' show PageController;
 import 'package:logging/logging.dart';
 import 'package:arabic_learning/core/statics.dart';
 import 'package:arabic_learning/theme/tokens.dart' show AppMotion;

@@ -11,7 +11,7 @@ import 'package:arabic_learning/theme/tokens.dart' show AppSemanticColors;
 import 'package:arabic_learning/widgets/kit.dart' show Button, TextContainer;
 import 'package:arabic_learning/widgets/motion.dart' show StaggeredEntrance;
 import 'package:arabic_learning/core/navigation.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 class ReadingTestPage extends StatefulWidget {
   const ReadingTestPage({super.key});

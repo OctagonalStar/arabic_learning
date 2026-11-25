@@ -15,7 +15,7 @@ import 'package:arabic_learning/widgets/kit.dart' show Button, SettingItem, Sett
 import 'package:arabic_learning/widgets/overlays.dart' show alert;
 import 'package:arabic_learning/widgets/shared.dart' show appInputDecoration;
 import 'package:dio/dio.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter/services.dart' show Clipboard, ClipboardData;
 
 class QuestionConfigPage extends StatefulWidget {

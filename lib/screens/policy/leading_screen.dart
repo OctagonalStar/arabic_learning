@@ -7,7 +7,7 @@ import 'package:arabic_learning/models/config.dart' show Config;
 import 'package:arabic_learning/core/statics.dart';
 import 'package:arabic_learning/theme/tokens.dart' show AppSpacing;
 import 'package:arabic_learning/theme/typography.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter/services.dart' show rootBundle, SystemChannels, SystemNavigator;
 import 'package:flutter_markdown_plus/flutter_markdown_plus.dart' show MarkdownBody;
 import 'package:provider/provider.dart';

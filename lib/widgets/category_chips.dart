@@ -5,7 +5,7 @@
 
 import 'package:arabic_learning/core/statics.dart';
 import 'package:arabic_learning/theme/tokens.dart' show AppRadius, AppSpacing;
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 /// 分类标签组件
 /// 

@@ -12,7 +12,7 @@ import 'package:arabic_learning/theme/typography.dart';
 import 'package:arabic_learning/widgets/feedback.dart' show ProgressBar;
 import 'package:arabic_learning/widgets/kit.dart' show Button, TextContainer;
 import 'package:arabic_learning/widgets/overlays.dart' show alert;
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
 
 class DictationPlayPage extends StatefulWidget {

@@ -2,7 +2,7 @@ import 'package:arabic_learning/services/app_data.dart';
 import 'package:arabic_learning/services/fsrs.dart';
 import 'package:arabic_learning/widgets/review_forecast_chart.dart';
 import 'package:fsrs/fsrs.dart' show Card;
-import 'package:flutter/material.dart' hide Card;
+import 'package:material_ui/material_ui.dart' hide Card;
 import 'package:flutter_test/flutter_test.dart';
 
 import '../helpers/test_env.dart';

@@ -11,7 +11,7 @@ import 'package:arabic_learning/services/global_state.dart' show Global;
 import 'package:arabic_learning/services/learning_session.dart'
     show LearningSessionCheckpoint, LearningSessionStore;
 import 'package:arabic_learning/widgets/questions.dart' show WordCardQuestion;
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
 

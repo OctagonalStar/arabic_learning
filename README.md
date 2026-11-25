@@ -107,7 +107,7 @@
 
 ## 构建
 
-> 使用 Flutter **3.47.5**（Dart SDK `^3.11.0`）；Android 构建另需 AGP **9.1.0** / Gradle **9.3.1**。
+> 使用 Flutter **3.50.1**（Dart SDK `^3.13.0`）；Android 构建另需 AGP **9.1.0** / Gradle **9.3.1**。
 
 ```bash
 flutter pub get

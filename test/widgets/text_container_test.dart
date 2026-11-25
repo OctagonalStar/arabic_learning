@@ -1,5 +1,5 @@
 import 'package:arabic_learning/widgets/kit.dart' show TextContainer;
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {

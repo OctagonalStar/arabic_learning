@@ -10,7 +10,7 @@ import 'package:arabic_learning/package_replacement/fake_dart_io.dart' if (dart.
 import 'package:arabic_learning/services/global_state.dart' show Global;
 import 'package:arabic_learning/services/notifications.dart';
 import 'package:flutter/foundation.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter/services.dart';
 import 'package:just_audio_media_kit/just_audio_media_kit.dart';
 import 'package:logging/logging.dart';

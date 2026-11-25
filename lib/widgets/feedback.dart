@@ -4,7 +4,7 @@
 // 说明：圆形进度（`CircularProgressIndicator`）表达的是真实进度，保留原生控件与各页参数不变。
 
 import 'package:arabic_learning/theme/tokens.dart' show AppMotion, AppRadius;
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 /// 不确定进度加载指示器：`CircularProgressIndicator` 的统一封装。
 ///

@@ -28,7 +28,7 @@ import 'package:arabic_learning/widgets/questions.dart'
         WordCardQuestion;
 import 'package:arabic_learning/core/navigation.dart';
 import 'package:flutter/foundation.dart' show clampDouble;
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:fsrs/fsrs.dart' show Rating;
 import 'package:provider/provider.dart';
 

@@ -4,7 +4,7 @@
 // widgets / screens / theme 各层复用。`StaticsVar.br` 与 `StaticsVar.curve`
 // 直接引用此处的 token，保证既有调用点不破。
 
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 /// 间距 token（4 / 8 / 16 / 24 / 32）。
 @immutable

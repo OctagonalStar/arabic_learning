@@ -2,7 +2,7 @@ import 'package:arabic_learning/core/statics.dart';
 import 'package:arabic_learning/models/config.dart';
 import 'package:arabic_learning/theme/theme_resolver.dart';
 import 'package:dynamic_color_testing/dynamic_color_testing.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {

@@ -3,7 +3,7 @@
 // 三个控件原本在两个 tab 里各写了一份完全相同的样式，改这里即可同时生效。
 
 import 'package:arabic_learning/theme/tokens.dart' show AppRadius, AppSpacing;
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 /// 句子卡外框：低层底色 + outlineVariant 描边，内边距由调用方决定。
 class RecitationCard extends StatelessWidget {

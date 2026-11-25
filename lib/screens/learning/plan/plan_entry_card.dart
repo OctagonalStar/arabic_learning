@@ -9,7 +9,7 @@
 // 随按钮自身的圆角裁切、随按压一起缩放，与底色连成一体，而不是浮在卡片上的
 // 独立仪表条。
 
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 import 'package:arabic_learning/models/plan.dart' show StudyPlan;
 import 'package:arabic_learning/screens/learning/plan/plan_home_page.dart';

@@ -5,7 +5,7 @@ import 'package:arabic_learning/services/fsrs.dart' show FSRS, FSRSConfig;
 import 'package:arabic_learning/services/global_state.dart' show Global;
 import 'package:arabic_learning/services/search.dart' show BKSearch;
 import 'package:fsrs/fsrs.dart' show Card, Rating, ReviewLog, Scheduler;
-import 'package:flutter/material.dart' hide Card;
+import 'package:material_ui/material_ui.dart' hide Card;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
 

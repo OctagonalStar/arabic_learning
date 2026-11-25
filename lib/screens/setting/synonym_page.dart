@@ -7,7 +7,7 @@ import 'package:arabic_learning/theme/tokens.dart' show AppSpacing;
 import 'package:arabic_learning/widgets/kit.dart' show Button, TextContainer;
 import 'package:arabic_learning/widgets/shared.dart' show EmptyHintCard;
 import 'package:arabic_learning/widgets/overlays.dart' show alert;
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:provider/provider.dart';
 
 class SynonymPage extends StatefulWidget {

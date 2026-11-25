@@ -5,7 +5,7 @@
 // Tab 切换、阅读题标题 Hero、翻卡展开层等保持同一套动效 token。
 
 import 'package:arabic_learning/theme/tokens.dart' show AppMotion;
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 /// 全平台统一的路由转场 builder。
 ///

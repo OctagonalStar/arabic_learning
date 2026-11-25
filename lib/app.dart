@@ -20,7 +20,7 @@ import 'package:arabic_learning/widgets/feedback.dart' show LoadingIndicator;
 import 'package:arabic_learning/widgets/kit.dart';
 import 'package:arabic_learning/widgets/motion.dart' show CrossFadeSwitcher;
 import 'package:flutter/foundation.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter_markdown_plus/flutter_markdown_plus.dart';

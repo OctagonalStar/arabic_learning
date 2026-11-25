@@ -15,7 +15,7 @@ import 'package:arabic_learning/services/tts.dart' show playTextToSpeech;
 import 'package:arabic_learning/theme/tokens.dart'
     show AppBreakpoints, AppMotion, AppRadius, AppSpacing;
 import 'package:arabic_learning/widgets/overlays.dart' show showWordCardOverlay;
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter/services.dart' show HapticFeedback;
 
 class RecitationStudyTab extends StatefulWidget {

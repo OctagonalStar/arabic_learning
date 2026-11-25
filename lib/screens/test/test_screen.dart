@@ -3,7 +3,7 @@ import 'package:arabic_learning/theme/typography.dart';
 import 'package:arabic_learning/widgets/kit.dart' show Button;
 import 'package:arabic_learning/widgets/shared.dart' show ButtonLabel;
 import 'package:flutter/foundation.dart' show clampDouble;
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 import 'package:arabic_learning/screens/test/dictation/dictation_list_page.dart' show DictationListPage;
 import 'package:arabic_learning/screens/test/listening_test_page.dart' show ForeListeningSettingPage;

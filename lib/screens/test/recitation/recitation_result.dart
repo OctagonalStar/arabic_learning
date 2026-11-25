@@ -4,7 +4,7 @@
 import 'package:arabic_learning/services/recitation_scorer.dart';
 import 'package:arabic_learning/theme/tokens.dart' show AppRadius, AppSpacing;
 import 'package:arabic_learning/widgets/kit.dart' show Button, TextContainer;
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 /// 各问题类型的分组标题。
 const Map<RecitationIssueType, String> _issueTitles = <RecitationIssueType, String>{

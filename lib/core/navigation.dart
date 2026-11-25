@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 /// 页面入栈的唯一入口：路由类型与转场由主题统一提供，调用点只关心打开哪个页面。
 Future<T?> pushPage<T>(BuildContext context, Widget page) =>

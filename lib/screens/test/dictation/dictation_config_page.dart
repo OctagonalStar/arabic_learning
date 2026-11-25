@@ -11,7 +11,7 @@ import 'package:arabic_learning/services/app_data.dart';
 import 'package:arabic_learning/theme/tokens.dart';
 import 'package:arabic_learning/theme/typography.dart';
 import 'package:arabic_learning/widgets/kit.dart' show Button, TextContainer;
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 class DictationConfigPage extends StatefulWidget {
   final ReadingUnit unit;
@@ -45,10 +45,6 @@ class _DictationConfigPageState extends State<DictationConfigPage> {
                 widget.unit.title,
                 base: theme.textTheme.headlineSmall,
               ),
-            ),
-            TextContainer(
-              text: "共 ${sentences.length} 句。流程固定为四遍："
-                  "正常速度 → 稍慢速度（逐句留间隔）→ 稍慢速度（逐句留间隔）→ 正常速度。",
             ),
             if (!cacheAvailable)
               Padding(

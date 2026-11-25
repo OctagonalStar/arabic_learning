@@ -3,7 +3,7 @@
 // `buildTheme` 是纯函数（不读取全局状态），由 `Global` 传入当前 `ColorScheme`
 // 与字体家族调用。亮 / 暗两套主题共用同一套组件主题规则，仅 `scheme` 不同。
 
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 import 'package:arabic_learning/theme/page_transitions.dart';
 import 'package:arabic_learning/theme/tokens.dart';

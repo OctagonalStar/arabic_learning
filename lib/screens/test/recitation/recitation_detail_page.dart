@@ -4,7 +4,7 @@
 import 'package:arabic_learning/models/recitation_text.dart';
 import 'package:arabic_learning/screens/test/recitation/recitation_recite_tab.dart';
 import 'package:arabic_learning/screens/test/recitation/recitation_study_tab.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 class RecitationDetailPage extends StatefulWidget {
   final RecitationTextUnit unit;

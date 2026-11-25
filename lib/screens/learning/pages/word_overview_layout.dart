@@ -6,7 +6,7 @@ import 'package:arabic_learning/services/app_data.dart' show AppData;
 import 'package:arabic_learning/theme/tokens.dart' show AppMotion;
 import 'package:arabic_learning/widgets/flip_word_card.dart' show FlipWordCard;
 import 'package:arabic_learning/widgets/motion.dart' show StaggeredEntrance;
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 import 'overview_grid_metrics.dart';
 

@@ -10,7 +10,7 @@
 
 import 'dart:math' as math;
 
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 import 'package:arabic_learning/core/extensions.dart' show SemanticColorsContext;
 import 'package:arabic_learning/models/dict.dart' show ClassItem, SourceItem;

@@ -4,7 +4,7 @@ import 'package:arabic_learning/screens/setting/questions_setting_page.dart' sho
 import 'package:arabic_learning/models/dict.dart';
 import 'package:arabic_learning/models/reading.dart';
 import 'package:flutter/foundation.dart' show clampDouble;
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:provider/provider.dart';
 
 import 'package:arabic_learning/widgets/kit.dart' show Button, popSelectClasses;

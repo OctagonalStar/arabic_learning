@@ -1,7 +1,7 @@
 import 'dart:math';
 
 import 'package:flutter/foundation.dart' show clampDouble;
-import 'package:flutter/material.dart' hide Card;
+import 'package:material_ui/material_ui.dart' hide Card;
 import 'package:fsrs/fsrs.dart' show Card;
 
 import 'package:arabic_learning/core/statics.dart';

@@ -5,7 +5,7 @@
 
 import 'package:arabic_learning/theme/tokens.dart' show AppRadius;
 import 'package:arabic_learning/core/navigation.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 // 有关设置的Widget
 class SettingRedirectButton extends StatelessWidget {

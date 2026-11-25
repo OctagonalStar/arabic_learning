@@ -7,7 +7,7 @@
 // - 交错入场只为有限个元素创建动画，长列表（数百项）不会首屏迟滞。
 
 import 'package:arabic_learning/theme/tokens.dart' show AppMotion;
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 /// 单元素入场：淡入 + 轻微位移。
 ///

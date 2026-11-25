@@ -1,7 +1,7 @@
 import 'dart:math';
 
 import 'package:flutter/foundation.dart' show clampDouble;
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 import 'package:arabic_learning/core/adaptive.dart' show AdaptiveTabBody;
 import 'package:arabic_learning/core/date_utils.dart';

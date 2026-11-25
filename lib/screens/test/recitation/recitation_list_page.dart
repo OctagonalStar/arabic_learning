@@ -15,7 +15,7 @@ import 'package:arabic_learning/widgets/motion.dart'
     show CrossFadeSwitcher, StaggeredEntrance;
 import 'package:arabic_learning/widgets/overlays.dart' show alert;
 import 'package:arabic_learning/core/navigation.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:provider/provider.dart';
 
 class RecitationListPage extends StatefulWidget {

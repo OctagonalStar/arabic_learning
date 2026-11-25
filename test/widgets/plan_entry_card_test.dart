@@ -9,7 +9,7 @@ import 'package:arabic_learning/services/plan_scheduler.dart' show evaluateNow;
 import 'package:arabic_learning/services/plan_store.dart' show PlanStore;
 import 'package:arabic_learning/theme/app_theme.dart' show buildTheme;
 import 'package:arabic_learning/widgets/kit.dart' show Button;
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fsrs/fsrs.dart' as fsrs show Card, State;
 

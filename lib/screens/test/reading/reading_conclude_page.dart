@@ -7,7 +7,7 @@ import 'package:arabic_learning/screens/test/reading/reading_shared.dart';
 import 'package:arabic_learning/theme/tokens.dart' show AppMotion, AppSemanticColors;
 import 'package:arabic_learning/widgets/kit.dart' show Button;
 import 'package:flutter/foundation.dart' show clampDouble;
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_markdown_plus/flutter_markdown_plus.dart';
 
 class ReadingResultPage extends StatelessWidget {

@@ -6,7 +6,7 @@ import 'package:arabic_learning/widgets/motion.dart' show CrossFadeSwitcher;
 import 'package:arabic_learning/widgets/overlays.dart' show alert, showSnackBar;
 import 'package:arabic_learning/core/statics.dart' show DictRepoInfo, StaticsVar;
 import 'package:arabic_learning/models/dict.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:provider/provider.dart';
 import 'package:dio/dio.dart';
 

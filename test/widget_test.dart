@@ -4,7 +4,7 @@ import 'package:arabic_learning/app.dart' show MyApp;
 import 'package:arabic_learning/models/config.dart';
 import 'package:arabic_learning/services/global_state.dart' show Global;
 import 'package:arabic_learning/core/statics.dart' show StaticsVar;
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
 
