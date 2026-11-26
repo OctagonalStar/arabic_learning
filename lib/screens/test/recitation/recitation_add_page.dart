@@ -161,18 +161,21 @@ class _RecitationAddPageState extends State<RecitationAddPage> {
           padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
           child: ConstrainedBox(
             constraints: const BoxConstraints(maxHeight: 280),
-            child: Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(AppSpacing.sm),
-              decoration: BoxDecoration(
-                color: theme.colorScheme.surfaceContainerHigh,
-                borderRadius: AppRadius.controlBorder,
-                border: Border.all(color: theme.colorScheme.outlineVariant),
+            child: Card(
+              margin: EdgeInsets.zero,
+              color: theme.colorScheme.surfaceContainerHigh,
+              clipBehavior: Clip.antiAlias,
+              shape: RoundedRectangleBorder(
+                borderRadius: AppRadius.cardBorder,
+                side: BorderSide(color: theme.colorScheme.outlineVariant),
               ),
-              child: SingleChildScrollView(
-                child: SelectableText(
-                  recitationPrompt,
-                  style: const TextStyle(fontFamily: "monospace"),
+              child: Padding(
+                padding: const EdgeInsets.all(AppSpacing.sm),
+                child: SingleChildScrollView(
+                  child: SelectableText(
+                    recitationPrompt,
+                    style: const TextStyle(fontFamily: "monospace"),
+                  ),
                 ),
               ),
             ),

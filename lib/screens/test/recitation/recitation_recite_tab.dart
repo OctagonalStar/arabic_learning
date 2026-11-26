@@ -836,15 +836,20 @@ class _RecitationReciteTabState extends State<RecitationReciteTab>
 
   Widget _panel(ThemeData theme, {required Widget child}) {
     final ColorScheme scheme = theme.colorScheme;
-    return Container(
+    return SizedBox(
       width: double.infinity,
-      padding: const EdgeInsets.all(AppSpacing.sm),
-      decoration: BoxDecoration(
+      child: Card(
+        margin: EdgeInsets.zero,
         color: scheme.surfaceContainerLow,
-        borderRadius: AppRadius.cardBorder,
-        border: Border.all(color: scheme.outlineVariant),
+        shape: RoundedRectangleBorder(
+          borderRadius: AppRadius.cardBorder,
+          side: BorderSide(color: scheme.outlineVariant),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(AppSpacing.sm),
+          child: child,
+        ),
       ),
-      child: child,
     );
   }
 
