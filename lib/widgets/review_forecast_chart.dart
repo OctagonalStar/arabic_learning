@@ -15,16 +15,12 @@ import 'package:arabic_learning/theme/tokens.dart'
 
 /// 未来复习量折线图卡片（含 7 / 14 / 30 / 60 天切换）。
 class ReviewForecastChart extends StatefulWidget {
-  const ReviewForecastChart({
-    super.key,
-    required this.width,
-    required this.height,
-  });
+  const ReviewForecastChart({super.key, this.width, this.height = 220.0});
 
-  /// 卡片总宽度，由首页按可用宽度推导。
-  final double width;
+  /// 卡片总宽度；省略时占满父级可用宽度。
+  final double? width;
 
-  /// 卡片总高度（含标题行），由首页按可用高度推导并保证不溢出。
+  /// 卡片总高度（含标题行），默认 220。
   final double height;
 
   /// 可切换的天数档位。
@@ -44,82 +40,80 @@ class _ReviewForecastChartState extends State<ReviewForecastChart> {
     final List<int> counts = FSRS().getForecastCounts(_days);
     final bool hasPlan = counts.any((int c) => c > 0);
 
-    return Container(
-      width: widget.width,
-      height: widget.height,
-      margin: const EdgeInsets.all(4.0),
-      padding: const EdgeInsets.fromLTRB(14.0, 8.0, 10.0, 8.0),
-      decoration: BoxDecoration(
-        color: scheme.secondaryContainer,
-        boxShadow: [
-          BoxShadow(
-            color: scheme.shadow.withAlpha(51),
-            offset: const Offset(2, 4),
-            blurRadius: 8.0,
-          ),
-        ],
-        borderRadius: AppRadius.cardBorder,
-      ),
-      child: Column(
-        children: [
-          Row(
+    return Card.outlined(
+      margin: EdgeInsets.zero,
+      clipBehavior: Clip.antiAlias,
+      child: SizedBox(
+        width: widget.width ?? double.infinity,
+        height: widget.height,
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(14.0, 8.0, 10.0, 8.0),
+          child: Column(
             children: [
-              Flexible(
-                child: Text(
-                  '未来复习（天）',
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: theme.textTheme.labelMedium,
-                ),
+              Row(
+                children: [
+                  Flexible(
+                    child: Text(
+                      '未来复习（天）',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: theme.textTheme.labelMedium,
+                    ),
+                  ),
+                  const SizedBox(width: AppSpacing.xs),
+                  _DaySelector(
+                    options: ReviewForecastChart.dayOptions,
+                    selected: _days,
+                    onChanged: (int d) {
+                      if (d != _days) setState(() => _days = d);
+                    },
+                  ),
+                ],
               ),
-              const SizedBox(width: AppSpacing.xs),
-              _DaySelector(
-                options: ReviewForecastChart.dayOptions,
-                selected: _days,
-                onChanged: (int d) {
-                  if (d != _days) setState(() => _days = d);
-                },
+              const SizedBox(height: AppSpacing.xxs),
+              Expanded(
+                // 图形只有像素，这里补一句可读的说明，读屏能拿到关键数值。
+                child: Semantics(
+                  label: counts.isEmpty
+                      ? '未来 $_days 天暂无复习计划'
+                      : '未来 $_days 天复习计划，今天 ${counts.first} 个，单日最多 ${counts.reduce(math.max)} 个',
+                  child: hasPlan
+                      ? TweenAnimationBuilder<double>(
+                          key: ValueKey<int>(_days),
+                          tween: Tween<double>(begin: 0.0, end: 1.0),
+                          duration: AppMotion.mediumShort,
+                          curve: AppMotion.decelerateCurve,
+                          builder: (BuildContext context, double t, Widget? _) {
+                            return CustomPaint(
+                              size: Size.infinite,
+                              painter: _ForecastPainter(
+                                counts: counts,
+                                progress: t,
+                                lineColor: scheme.primary,
+                                gridColor: scheme.outlineVariant,
+                                labelStyle:
+                                    (theme.textTheme.labelSmall ??
+                                            const TextStyle(fontSize: 10.0))
+                                        .copyWith(
+                                          color: scheme.onSurfaceVariant,
+                                        ),
+                              ),
+                            );
+                          },
+                        )
+                      : Center(
+                          child: Text(
+                            '暂无复习计划',
+                            style: theme.textTheme.bodySmall?.copyWith(
+                              color: scheme.onSurfaceVariant,
+                            ),
+                          ),
+                        ),
+                ),
               ),
             ],
           ),
-          const SizedBox(height: AppSpacing.xxs),
-          Expanded(
-            // 图形只有像素，这里补一句可读的说明，读屏能拿到关键数值。
-            child: Semantics(
-              label: counts.isEmpty
-                  ? '未来 $_days 天暂无复习计划'
-                  : '未来 $_days 天复习计划，今天 ${counts.first} 个，单日最多 ${counts.reduce(math.max)} 个',
-              child: hasPlan
-                  ? TweenAnimationBuilder<double>(
-                      key: ValueKey<int>(_days),
-                      tween: Tween<double>(begin: 0.0, end: 1.0),
-                      duration: AppMotion.mediumShort,
-                      curve: AppMotion.decelerateCurve,
-                      builder: (BuildContext context, double t, Widget? _) {
-                        return CustomPaint(
-                          size: Size.infinite,
-                          painter: _ForecastPainter(
-                            counts: counts,
-                            progress: t,
-                            lineColor: scheme.primary,
-                            gridColor: scheme.outlineVariant,
-                            labelStyle: (theme.textTheme.labelSmall ??
-                                    const TextStyle(fontSize: 10.0))
-                                .copyWith(color: scheme.onSurfaceVariant),
-                          ),
-                        );
-                      },
-                    )
-                  : Center(
-                      child: Text(
-                        '暂无复习计划',
-                        style: theme.textTheme.bodySmall
-                            ?.copyWith(color: scheme.onSurfaceVariant),
-                      ),
-                    ),
-            ),
-          ),
-        ],
+        ),
       ),
     );
   }
@@ -142,7 +136,9 @@ class _DaySelector extends StatelessWidget {
   Widget build(BuildContext context) {
     final ThemeData theme = Theme.of(context);
     final ColorScheme scheme = theme.colorScheme;
-    final BorderRadius itemRadius = BorderRadius.circular(AppRadius.control - 2.0);
+    final BorderRadius itemRadius = BorderRadius.circular(
+      AppRadius.control - 2.0,
+    );
     return Container(
       padding: const EdgeInsets.all(2.0),
       decoration: BoxDecoration(
@@ -159,7 +155,10 @@ class _DaySelector extends StatelessWidget {
               child: AnimatedContainer(
                 duration: AppMotion.quick,
                 curve: AppMotion.standardCurve,
-                padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 3.0),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 8.0,
+                  vertical: 3.0,
+                ),
                 decoration: BoxDecoration(
                   color: d == selected ? scheme.primary : Colors.transparent,
                   borderRadius: itemRadius,
@@ -167,7 +166,9 @@ class _DaySelector extends StatelessWidget {
                 child: Text(
                   '$d',
                   style: theme.textTheme.labelSmall?.copyWith(
-                    color: d == selected ? scheme.onPrimary : scheme.onSurfaceVariant,
+                    color: d == selected
+                        ? scheme.onPrimary
+                        : scheme.onSurfaceVariant,
                     fontWeight: d == selected ? FontWeight.bold : null,
                   ),
                 ),
@@ -263,14 +264,17 @@ class _ForecastPainter extends CustomPainter {
       canvas.drawPath(
         fill,
         Paint()
-          ..shader = LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: <Color>[
-              lineColor.withValues(alpha: 0.28),
-              lineColor.withValues(alpha: 0.0),
-            ],
-          ).createShader(Rect.fromLTRB(_leftPad, _topPad, _leftPad + plotW, bottom)),
+          ..shader =
+              LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: <Color>[
+                  lineColor.withValues(alpha: 0.28),
+                  lineColor.withValues(alpha: 0.0),
+                ],
+              ).createShader(
+                Rect.fromLTRB(_leftPad, _topPad, _leftPad + plotW, bottom),
+              ),
       );
 
       canvas.drawPath(
@@ -298,8 +302,11 @@ class _ForecastPainter extends CustomPainter {
       for (final int i in ticks) {
         final TextPainter tp = _layoutText(i == 0 ? '今天' : '+$i天');
         final double maxX = math.max(_leftPad, _leftPad + plotW - tp.width);
-        final double x =
-            clampDouble(points[i].dx - tp.width / 2, _leftPad, maxX);
+        final double x = clampDouble(
+          points[i].dx - tp.width / 2,
+          _leftPad,
+          maxX,
+        );
         tp.paint(canvas, Offset(x, bottom + 1.0));
       }
     }
