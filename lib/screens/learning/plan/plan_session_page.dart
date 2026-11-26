@@ -155,7 +155,9 @@ class _PlanSessionPageState extends State<PlanSessionPage> {
     final int size = status.groupSize < 1 ? 1 : status.groupSize;
     _groupTotal = status.groupsToday < 1 ? 1 : status.groupsToday;
     final int groupNo = status.doneWords ~/ size + 1;
-    _groupNo = groupNo < 1 ? 1 : (groupNo > _groupTotal ? _groupTotal : groupNo);
+    _groupNo = groupNo < 1
+        ? 1
+        : (groupNo > _groupTotal ? _groupTotal : groupNo);
   }
 
   @override
@@ -403,9 +405,9 @@ class _PlanSessionPageState extends State<PlanSessionPage> {
                         (BuildContext context, double value, Widget? child) {
                           return LinearProgressIndicator(
                             value: 0.05 + value * 0.95,
-                            backgroundColor: Theme.of(
-                              context,
-                            ).colorScheme.secondaryContainer,
+                            backgroundColor: Theme.of(context)
+                                .colorScheme
+                                .secondaryContainer,
                             color: Theme.of(context).colorScheme.secondary,
                             minHeight: clampDouble(
                               mediaQuery.size.height * 0.04,
@@ -745,81 +747,85 @@ class _PlanSessionPageState extends State<PlanSessionPage> {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Container(
+                  SizedBox(
                     width: cardWidth,
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: AppSpacing.sm,
-                      vertical: AppSpacing.sm,
-                    ),
-                    decoration: BoxDecoration(
+                    child: Card.filled(
+                      margin: EdgeInsets.zero,
                       color: scheme.primaryContainer,
-                      borderRadius: StaticsVar.br,
-                    ),
-                    child: Row(
-                      children: [
-                        stat("本组题数", "$total"),
-                        stat("正确数", "$_correctCount"),
-                        stat("用时", timeText),
-                      ],
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: AppSpacing.sm,
+                          vertical: AppSpacing.sm,
+                        ),
+                        child: Row(
+                          children: [
+                            stat("本组题数", "$total"),
+                            stat("正确数", "$_correctCount"),
+                            stat("用时", timeText),
+                          ],
+                        ),
+                      ),
                     ),
                   ),
                   const SizedBox(height: AppSpacing.sm),
-                  Container(
+                  SizedBox(
                     width: cardWidth,
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: AppSpacing.sm,
-                      vertical: AppSpacing.sm,
-                    ),
-                    decoration: BoxDecoration(
+                    child: Card.filled(
+                      margin: EdgeInsets.zero,
                       color: scheme.secondaryContainer,
-                      borderRadius: StaticsVar.br,
-                    ),
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Row(
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: AppSpacing.sm,
+                          vertical: AppSpacing.sm,
+                        ),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
                           children: [
-                            Expanded(
-                              child: Text(
-                                "今日进度",
-                                style: textTheme.titleMedium?.copyWith(
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: Text(
+                                    "今日进度",
+                                    style: textTheme.titleMedium?.copyWith(
+                                      color: scheme.onSecondaryContainer,
+                                    ),
+                                  ),
+                                ),
+                                Text(
+                                  "$doneWords / $minWords",
+                                  style: textTheme.titleMedium?.copyWith(
+                                    fontWeight: FontWeight.bold,
+                                    color: scheme.onSecondaryContainer,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: AppSpacing.xs),
+                            ClipRRect(
+                              borderRadius: BorderRadius.circular(
+                                AppRadius.control / 2,
+                              ),
+                              child: LinearProgressIndicator(
+                                value: todayProgress,
+                                minHeight: 10,
+                                backgroundColor: scheme.onSecondaryContainer
+                                    .withValues(alpha: 0.12),
+                                color: scheme.secondary,
+                              ),
+                            ),
+                            if (todayDone) ...[
+                              const SizedBox(height: AppSpacing.xs),
+                              Text(
+                                "今日最低目标已完成",
+                                style: textTheme.bodyMedium?.copyWith(
                                   color: scheme.onSecondaryContainer,
+                                  fontWeight: FontWeight.bold,
                                 ),
                               ),
-                            ),
-                            Text(
-                              "$doneWords / $minWords",
-                              style: textTheme.titleMedium?.copyWith(
-                                fontWeight: FontWeight.bold,
-                                color: scheme.onSecondaryContainer,
-                              ),
-                            ),
+                            ],
                           ],
                         ),
-                        const SizedBox(height: AppSpacing.xs),
-                        ClipRRect(
-                          borderRadius: BorderRadius.circular(
-                            AppRadius.control / 2,
-                          ),
-                          child: LinearProgressIndicator(
-                            value: todayProgress,
-                            minHeight: 10,
-                            backgroundColor: scheme.onSecondaryContainer
-                                .withValues(alpha: 0.12),
-                            color: scheme.secondary,
-                          ),
-                        ),
-                        if (todayDone) ...[
-                          const SizedBox(height: AppSpacing.xs),
-                          Text(
-                            "今日最低目标已完成",
-                            style: textTheme.bodyMedium?.copyWith(
-                              color: scheme.onSecondaryContainer,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ],
-                      ],
+                      ),
                     ),
                   ),
                   if (cycleComplete) ...[
