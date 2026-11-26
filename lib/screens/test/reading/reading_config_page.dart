@@ -115,13 +115,13 @@ class _QuestionConfigPage extends State<QuestionConfigPage> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                     children: [
-                      ElevatedButton(
+                      FilledButton(
                         onPressed: (){
                           Navigator.popUntil(context, (route) =>  route.isFirst);
                         }, 
                         child: Text("返回到主页")
                       ),
-                      ElevatedButton(
+                      FilledButton.tonal(
                         onPressed: (){
                           Navigator.pop(context);
                         }, 

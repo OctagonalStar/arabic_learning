@@ -125,7 +125,7 @@ class QuestionTypeAddMenu extends StatelessWidget {
         final int type = allowedTypes[i];
         return Button(
           size: Size(70 + 150 * expandValue, mediaQuery.size.height * 0.1 * expandValue),
-          shape: i == 0 ? RoundedRectangleBorder(borderRadius: BorderRadiusGeometry.vertical(top: Radius.circular(AppRadius.card))) : BeveledRectangleBorder(),
+          shape: RoundedRectangleBorder(borderRadius: AppRadius.cardBorder),
           onPressed: () => onAdd(type),
           icon: Icon(Icons.add),
           // 依主题 labelLarge(14)；ButtonLabel 默认 scaleDown 只缩不放，

@@ -89,7 +89,7 @@ class _MyAppState extends State<MyApp> {
                   style: const TextStyle(fontSize: 12),
                 ),
                 const SizedBox(height: 16),
-                ElevatedButton(
+                FilledButton(
                   onPressed: _retryInit,
                   child: const Text("重试"),
                 ),
