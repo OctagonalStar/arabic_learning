@@ -19,6 +19,7 @@ import 'package:arabic_learning/theme/tokens.dart'
     show AppRadius, AppSemanticColors, AppSpacing;
 import 'package:arabic_learning/widgets/kit.dart'
     show Button, SettingItem;
+import 'package:arabic_learning/widgets/shared.dart' show StatusChip;
 import 'package:arabic_learning/widgets/feedback.dart' show ProgressBar;
 import 'package:arabic_learning/widgets/overlays.dart' show alert, showSnackBar;
 
@@ -264,19 +265,10 @@ class _ModelManagementPageState extends State<ModelManagementPage> {
           Row(
             children: [
               Expanded(child: Text(title, style: theme.textTheme.titleSmall)),
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: AppSpacing.xs,
-                  vertical: 2.0,
-                ),
-                decoration: BoxDecoration(
-                  color: stateColor.withValues(alpha: 0.15),
-                  borderRadius: AppRadius.controlBorder,
-                ),
-                child: Text(
-                  stateText,
-                  style: theme.textTheme.labelSmall?.copyWith(color: stateColor),
-                ),
+              StatusChip(
+                text: stateText,
+                background: stateColor.withValues(alpha: 0.15),
+                foreground: stateColor,
               ),
             ],
           ),

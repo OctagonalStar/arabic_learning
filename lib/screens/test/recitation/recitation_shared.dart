@@ -35,39 +35,6 @@ class RecitationCard extends StatelessWidget {
   }
 }
 
-/// 小标签（句序、评分等）。
-class RecitationChip extends StatelessWidget {
-  final String text;
-  final Color background;
-  final Color foreground;
-
-  const RecitationChip({
-    super.key,
-    required this.text,
-    required this.background,
-    required this.foreground,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(
-        horizontal: AppSpacing.xs,
-        vertical: 2.0,
-      ),
-      decoration: BoxDecoration(
-        color: background,
-        borderRadius: AppRadius.controlBorder,
-      ),
-      child: Text(
-        text,
-        style: Theme.of(context).textTheme.labelLarge
-            ?.copyWith(color: foreground),
-      ),
-    );
-  }
-}
-
 /// 译文块：与原文层次拉开的中性底色，逐句页会再套一层模糊。
 class RecitationTranslation extends StatelessWidget {
   final String text;

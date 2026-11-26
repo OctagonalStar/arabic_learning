@@ -9,8 +9,40 @@ import 'dart:math' as math;
 
 import 'package:arabic_learning/widgets/kit.dart' show Button;
 import 'package:arabic_learning/core/statics.dart';
-import 'package:arabic_learning/theme/tokens.dart' show AppMotion, AppSpacing;
+import 'package:arabic_learning/theme/tokens.dart' show AppMotion, AppRadius, AppSpacing;
 import 'package:material_ui/material_ui.dart';
+
+/// 状态标签：M3 [Chip] 的紧凑封装，统一圆角、内边距与文字样式。
+class StatusChip extends StatelessWidget {
+  final String text;
+  final Color background;
+  final Color foreground;
+  final TextStyle? textStyle;
+
+  const StatusChip({
+    super.key,
+    required this.text,
+    required this.background,
+    required this.foreground,
+    this.textStyle,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Chip(
+      label: Text(text),
+      labelStyle: (textStyle ?? Theme.of(context).textTheme.labelLarge)
+          ?.copyWith(color: foreground),
+      backgroundColor: background,
+      side: BorderSide.none,
+      padding: EdgeInsets.zero,
+      labelPadding: const EdgeInsets.symmetric(horizontal: AppSpacing.xxs),
+      visualDensity: VisualDensity.compact,
+      materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+      shape: RoundedRectangleBorder(borderRadius: AppRadius.controlBorder),
+    );
+  }
+}
 
 /// 统计卡片（M3 filled card）：标题 + 数值，尺寸由父级网格决定。
 ///

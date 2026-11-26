@@ -16,7 +16,7 @@ import 'package:arabic_learning/widgets/flip_word_card.dart' show FlipWordCard;
 import 'package:arabic_learning/widgets/kit.dart' show Button, TextContainer;
 import 'package:arabic_learning/widgets/overlays.dart' show viewAnswer;
 import 'package:arabic_learning/widgets/questions.dart' show ChoiceQuestions;
-import 'package:arabic_learning/widgets/shared.dart' show RevealableActionBar;
+import 'package:arabic_learning/widgets/shared.dart' show RevealableActionBar, StatusChip;
 
 /// 每个词的展示时长。
 const Duration _showDuration = Duration(seconds: 5);
@@ -613,13 +613,11 @@ class FsrsCalibrationResultView extends StatelessWidget {
             ),
           ),
           const SizedBox(height: AppSpacing.sm),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm, vertical: AppSpacing.xxs),
-            decoration: BoxDecoration(
-              color: accent.withValues(alpha: 0.14),
-              borderRadius: AppRadius.controlBorder,
-            ),
-            child: Text(tierText(factor), style: theme.textTheme.titleMedium?.copyWith(color: accent)),
+          StatusChip(
+            text: tierText(factor),
+            background: accent.withValues(alpha: 0.14),
+            foreground: accent,
+            textStyle: theme.textTheme.titleMedium,
           ),
           const SizedBox(height: AppSpacing.md),
           _CalibCard(

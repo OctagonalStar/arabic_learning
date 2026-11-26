@@ -18,7 +18,8 @@ import 'package:arabic_learning/screens/setting/model_management_page.dart'
 import 'package:arabic_learning/screens/test/recitation/recitation_progress_bar.dart'
     show RecitationProgressBar;
 import 'package:arabic_learning/screens/test/recitation/recitation_shared.dart'
-    show RecitationCard, RecitationChip, RecitationTranslation;
+    show RecitationCard, RecitationTranslation;
+import 'package:arabic_learning/widgets/shared.dart' show StatusChip;
 import 'package:arabic_learning/screens/test/recitation/recitation_result.dart'
     show RecitationResultView;
 import 'package:arabic_learning/services/app_data.dart';
@@ -585,14 +586,14 @@ class _RecitationReciteTabState extends State<RecitationReciteTab>
           children: <Widget>[
             Row(
               children: <Widget>[
-                RecitationChip(
+                StatusChip(
                   text: "第 ${index + 1} 句",
                   background: scheme.surfaceContainerHighest,
                   foreground: scheme.onSurfaceVariant,
                 ),
                 if (outcome != null) ...<Widget>[
                   const SizedBox(width: AppSpacing.xs),
-                  RecitationChip(
+                  StatusChip(
                     text: outcome.scoreable
                         ? "${outcome.score} 分 · ${outcome.grade}"
                         : "未评分",
