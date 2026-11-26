@@ -2,51 +2,74 @@
 // 承载设置分区 [SettingItem]、单行设置项 [SettingRow] 与跳转按钮
 // [SettingRedirectButton]。
 // 由 widgets/kit.dart 统一 export，调用方仍从 kit.dart 导入。
+//
+// 布局对齐 M3：分区是一张 Card，跳转项是 ListTile，普通设置行保留 Flex
+// 布局以兼容 `end` 里的 Slider / Expanded 等伸缩控件。
 
-import 'package:arabic_learning/theme/tokens.dart' show AppRadius;
+import 'package:arabic_learning/theme/tokens.dart' show AppSpacing;
 import 'package:arabic_learning/core/navigation.dart';
 import 'package:material_ui/material_ui.dart';
 
-// 有关设置的Widget
-class SettingRedirectButton extends StatelessWidget {
-  const SettingRedirectButton({
+/// 设置分区：标题 + 一张 Card，子项之间用 Divider 分隔。
+class SettingItem extends StatelessWidget {
+  final String title;
+  final EdgeInsetsGeometry? padding;
+  final List<Widget> children;
+
+  const SettingItem({
     super.key,
     required this.title,
-    required this.target,
-    this.icon = Icons.settings
+    required this.children,
+    this.padding,
   });
-
-  final String title;
-  final IconData icon;
-  final Widget target;
 
   @override
   Widget build(BuildContext context) {
-    MediaQueryData mediaQuery = MediaQuery.of(context);
-    final ColorScheme scheme = Theme.of(context).colorScheme;
-    return ElevatedButton(
-      style: ElevatedButton.styleFrom(
-        minimumSize: Size.fromHeight(mediaQuery.size.height * 0.08),
-        // 与 SettingItem 卡片形成同一容器的“更亮一层”，整块设置项观感统一；
-        // 前置图标用主题主色、尾部箭头用次级前景，稳定传达“可跳转”。
-        backgroundColor: scheme.surfaceContainerHighest,
-        foregroundColor: scheme.onSurface,
-        shape: BeveledRectangleBorder(),
-      ),
-      onPressed: () {
-        pushPage(context, target);
-      },
-      child: Row(
-        children: [
-          Icon(icon, color: scheme.primary),
-          Expanded(child: Text(title)),
-          Icon(Icons.arrow_forward_ios, size: 16.0, color: scheme.onSurfaceVariant),
-        ],
-      ),
+    final ThemeData theme = Theme.of(context);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.fromLTRB(
+            AppSpacing.sm,
+            AppSpacing.sm,
+            AppSpacing.sm,
+            AppSpacing.xs,
+          ),
+          child: Text(
+            title,
+            style: theme.textTheme.titleSmall?.copyWith(
+              color: theme.colorScheme.primary,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ),
+        Card(
+          margin: const EdgeInsets.symmetric(
+            horizontal: AppSpacing.sm,
+            vertical: AppSpacing.xxs,
+          ),
+          child: Column(
+            children: [
+              for (int i = 0; i < children.length; i++) ...[
+                if (i > 0) const Divider(),
+                if (padding == null)
+                  children[i]
+                else
+                  Padding(padding: padding!, child: children[i]),
+              ],
+            ],
+          ),
+        ),
+      ],
     );
   }
 }
 
+/// 单行设置项：图标 + 标题/说明 + 右侧控件。
+///
+/// [end] 可以是 Switch、DropdownButton、按钮，也可以是 `Expanded` /
+/// `Slider`；因此这里保留 Flex 布局，不使用 ListTile 的固定 trailing 槽位。
 class SettingRow extends StatelessWidget {
   const SettingRow({
     super.key,
@@ -63,78 +86,89 @@ class SettingRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    MediaQueryData mediaQuery = MediaQuery.of(context);
-    return Row(
+    final ThemeData theme = Theme.of(context);
+    final Widget header = Row(
       children: [
-        SizedBox(width: mediaQuery.size.width * 0.02),
-        Icon(icon, size: 24.0),
-        SizedBox(width: mediaQuery.size.width * 0.01),
+        Icon(icon, size: 24.0, color: theme.colorScheme.onSurfaceVariant),
+        const SizedBox(width: AppSpacing.sm),
         Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(leading),
-              if(note != null) Text(
-                note!,
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant),
-              ),
+              Text(leading, style: theme.textTheme.bodyLarge),
+              if (note != null)
+                Text(
+                  note!,
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
+                ),
             ],
           ),
         ),
-        end,
-        SizedBox(width: mediaQuery.size.width * 0.02)
       ],
+    );
+
+    // 大字号下把右侧控件放到下一行：固定尾部控件在 2 倍字号时会把
+    // Row 撑爆，而 ListTile 的 trailing 同样不具备收缩能力。
+    final bool stacked = MediaQuery.textScalerOf(context).scale(1.0) >= 1.5;
+    final Widget trailing = end is Flexible ? (end as Flexible).child : end;
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.sm,
+        vertical: AppSpacing.xs,
+      ),
+      child: stacked
+          ? Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                header,
+                if (trailing is! SizedBox)
+                  Padding(
+                    padding: const EdgeInsets.only(
+                      left: 24.0 + AppSpacing.sm,
+                      top: AppSpacing.xs,
+                    ),
+                    child: Align(
+                      alignment: AlignmentDirectional.centerEnd,
+                      child: trailing,
+                    ),
+                  ),
+              ],
+            )
+          : Row(
+              children: [
+                Expanded(child: header),
+                const SizedBox(width: AppSpacing.sm),
+                end,
+              ],
+            ),
     );
   }
 }
 
-class SettingItem extends StatelessWidget {
+/// 跳转设置项：ListTile + 尾部 chevron。
+class SettingRedirectButton extends StatelessWidget {
+  const SettingRedirectButton({
+    super.key,
+    required this.title,
+    required this.target,
+    this.icon = Icons.settings,
+  });
+
   final String title;
-  final EdgeInsetsGeometry? padding;
-  final List<Widget> children;
-  const SettingItem({super.key, required this.title, required this.children, this.padding});
+  final IconData icon;
+  final Widget target;
 
   @override
   Widget build(BuildContext context) {
-    MediaQueryData mediaQuery = MediaQuery.of(context);
     final ColorScheme scheme = Theme.of(context).colorScheme;
-    List<Container> decoratedContainers = List.generate(children.length, (int index) {
-      return Container(
-        width: mediaQuery.size.width * 0.90,
-        padding: padding,
-        margin: EdgeInsets.all(4.0),
-        decoration: BoxDecoration(
-          // 统一用 surfaceContainerLow 作为分区卡片底色；分区内各设置项
-          // （SettingRow / SettingRedirectButton）再用更高一层的容器色区分。
-          color: scheme.surfaceContainerLow,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(index == 0 ? AppRadius.card : 5.0), bottom: Radius.circular(index == children.length-1 ? AppRadius.card : 5.0)),
-        ),
-        clipBehavior: Clip.antiAlias,
-        child: children[index],
-      );
-    });
-
-    return Column(
-      mainAxisAlignment: MainAxisAlignment.start,
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        // 分区标题：主题主色 + 加粗，避免再叠一层灰色容器造成色彩杂乱。
-        Padding(
-          padding: const EdgeInsets.fromLTRB(16.0, 16.0, 16.0, 4.0),
-          child: Text(
-            title,
-            style: Theme.of(context).textTheme.titleMedium?.copyWith(
-              color: scheme.primary,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-        ),
-        Center(
-          child: Column(
-            children: decoratedContainers,
-          ),
-        ),
-      ]
+    return ListTile(
+      leading: Icon(icon, color: scheme.primary),
+      title: Text(title, style: Theme.of(context).textTheme.bodyLarge),
+      trailing: Icon(Icons.chevron_right, color: scheme.onSurfaceVariant),
+      onTap: () => pushPage(context, target),
     );
   }
 }
