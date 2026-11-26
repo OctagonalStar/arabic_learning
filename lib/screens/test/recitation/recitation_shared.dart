@@ -2,8 +2,13 @@
 //
 // 三个控件原本在两个 tab 里各写了一份完全相同的样式，改这里即可同时生效。
 
+import 'package:arabic_learning/models/recitation_text.dart';
 import 'package:arabic_learning/theme/tokens.dart' show AppRadius, AppSpacing;
 import 'package:material_ui/material_ui.dart';
+
+/// 课文列表 → 详情页共享的 Hero tag。
+String recitationUnitHeroTag(RecitationTextUnit unit, {int? listIndex}) =>
+    'recitation-${listIndex ?? 'x'}-${unit.getHash()}';
 
 /// 句子卡外框：低层底色 + outlineVariant 描边，内边距由调用方决定。
 class RecitationCard extends StatelessWidget {

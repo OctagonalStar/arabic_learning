@@ -4,19 +4,20 @@ import 'package:arabic_learning/core/extensions.dart';
 import 'package:arabic_learning/core/navigation.dart';
 import 'package:arabic_learning/core/recitation_text.dart' show splitSentences;
 import 'package:arabic_learning/core/statics.dart' show StaticsVar;
-import 'package:arabic_learning/models/reading.dart';
 import 'package:arabic_learning/screens/test/dictation/dictation_play_page.dart';
 import 'package:arabic_learning/screens/test/dictation/dictation_shared.dart';
 import 'package:arabic_learning/services/app_data.dart';
 import 'package:arabic_learning/theme/tokens.dart';
 import 'package:arabic_learning/theme/typography.dart';
+import 'package:arabic_learning/widgets/hero_title.dart';
 import 'package:arabic_learning/widgets/kit.dart' show Button, TextContainer;
 import 'package:material_ui/material_ui.dart';
 
 class DictationConfigPage extends StatefulWidget {
-  final ReadingUnit unit;
+  final DictationArticle article;
+  final int? listIndex;
 
-  const DictationConfigPage({super.key, required this.unit});
+  const DictationConfigPage({super.key, required this.article, this.listIndex});
 
   @override
   State<DictationConfigPage> createState() => _DictationConfigPageState();
@@ -24,27 +25,38 @@ class DictationConfigPage extends StatefulWidget {
 
 class _DictationConfigPageState extends State<DictationConfigPage> {
   DictationConfig config = const DictationConfig();
-  late final List<String> sentences = splitSentences(widget.unit.passage);
+  late final List<String> sentences = splitSentences(widget.article.passage);
 
   @override
   Widget build(BuildContext context) {
     final ThemeData theme = Theme.of(context);
-    final int minutes = (estimateDictationSeconds(sentences, config) / 60).ceil();
+    final int minutes = (estimateDictationSeconds(sentences, config) / 60)
+        .ceil();
     final bool cacheAvailable = AppData().config.audio.audioSource == 2;
 
     return Scaffold(
-      appBar: AppBar(title: Text("听抄设置")),
+      appBar: AppBar(
+        title: HeroTitle(
+          tag: dictationArticleHeroTag(
+            widget.article,
+            listIndex: widget.listIndex,
+          ),
+          text: widget.article.title,
+          style: theme.textTheme.headlineSmall,
+          flightStyle: theme.textTheme.headlineSmall,
+          maxLines: 1,
+          softWrap: false,
+        ),
+      ),
       body: SafeArea(
         top: false,
         child: ListView(
           children: [
             TextContainer(
-              text: widget.unit.title,
-              style: arabicTextStyle(
-                context,
-                widget.unit.title,
-                base: theme.textTheme.headlineSmall,
-              ),
+              text:
+                  "${widget.article.sourceLabel} · ${sentences.length} 句 · "
+                  "难度 ${widget.article.difficulty}\n"
+                  "流程固定四遍：正常速度 → 稍慢逐句 → 稍慢逐句 → 正常速度。",
             ),
             if (!cacheAvailable)
               Padding(
@@ -169,7 +181,7 @@ class _DictationConfigPageState extends State<DictationConfigPage> {
                   pushPage(
                     context,
                     DictationPlayPage(
-                      unit: widget.unit,
+                      article: widget.article,
                       sentences: sentences,
                       config: config,
                     ),

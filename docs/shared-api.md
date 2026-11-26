@@ -56,7 +56,9 @@ screens/  →  services/  models/  theme/  widgets/
 | `ReviewForecastChart` | `review_forecast_chart.dart` | 未来复习量折线图卡片（7/14/30/60 天切换）。 |
 | `QuestionChainListView` | `question_chain_editor.dart` | 题型序号链展示（长按拖动排序、可删除）。 |
 | `QuestionTypeAddMenu` | `question_chain_editor.dart` | FAB 展开后的「添加题型」按钮组。 |
-| `TypeChooseCard` | `type_choose_card.dart` | 向导式大号类型选择卡（标题 + 说明 + 箭头）。 |
+| `TypeChooseCard` | `type_choose_card.dart` | 向导式大号类型选择卡（图标 + 标题 + 说明 + 箭头），阅读题与课文背诵共用；`emphasized` 标出主操作，`width`/`height` 同时给时锁定尺寸。 |
+| `UnitCard` | `unit_card.dart` | 测试板块文章列表统一卡片：难度徽标 + Hero 标题 + 摘要 + 标签 + 打开/删除；`difficultyColorValue` 统一 0-100 色阶。 |
+| `HeroTitle` | `hero_title.dart` | 列表标题 → 详情页 AppBar 的共享 Hero：`heroEnabled` / `flightShuttleEnabled` 特性开关，`scaleDown` 供列表侧缩放，飞行中强制单行。 |
 | `EmptyHintCard` | `shared.dart` | 空状态提示卡（`EmptyHintCard("暂无收藏单词")`）。 |
 | `StatCard` | `shared.dart` | 首页统计卡（`width`/`height`/`spacing`/`label`/`value`/`statusIcon`）。 |
 | `SettingCard` | `shared.dart` | 设置页参数卡（`color` + `child`，`padding` 默认 8）。 |
@@ -150,7 +152,7 @@ screens/  →  services/  models/  theme/  widgets/
 | `RecitationService` / `RecitationRecorder` / audio / asr / scorer / store | `recitation_*.dart` | 录音→能量分析→ASR→LCS 对齐→打分，成绩摘要落 `RecitationStore`。 |
 | `ModelManager` | `model_manager.dart` | 本地模型下载/解压/删除/导入；`resolveTts` / `resolveAsr` 按目录内容识别架构。 |
 | `playTextToSpeech` / `TtsFailure` | `tts.dart` | 统一朗读入口与错误归一；`awaitCompletion` 为 true 时等到朗读结束。 |
-| `SpeechClip` / `prepareSpeech` / `playSpeech` | `tts.dart` | 听抄等需要精确间隔的场景：先 `prepareSpeech` 预合成（本地音源落盘到 `tts_clips/`，Web 存内存；系统/在线音源 `cached == false`），再用 `playSpeech` 播放。 |
+| `SpeechClip` / `prepareSpeech` / `playSpeech` | `tts.dart` | 听抄等需要精确间隔的场景：先 `prepareSpeech` 预合成（本地音源落盘到 `tts_clips/`，Web 存内存；系统/在线音源 `cached == false`），再用 `playSpeech` 播放。缓存首次使用时自动清理：删除 7 天前的文件，总量超过 200MB 时按修改时间淘汰。 |
 | `UpdateService`（`ChangeNotifier`） | `update_service.dart` | 检查更新、下载、安装、跳过版本；错误描述在 `update/update_error.dart`。 |
 | `WebDAV` | `sync.dart` | WebDAV 备份上传/下载（按 `usedKeys`）。 |
 | `downloadFile` / `downloadBytes` / `extractTarBz2` | `download.dart` | **统一的文件传输入口**：`downloadFile(url, savePath, {onDownloading, cancelToken, options, dio})` 落盘（更新 APK、TTS/ASR 模型包都走它，`dio` 可注入调用方已配好 DoH/超时的客户端）；`downloadBytes` 进内存（Web / 无文件系统）；`extractTarBz2` 解压模型包。 |

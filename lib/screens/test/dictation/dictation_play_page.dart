@@ -2,7 +2,6 @@
 
 import 'package:arabic_learning/core/extensions.dart';
 import 'package:arabic_learning/core/statics.dart' show StaticsVar;
-import 'package:arabic_learning/models/reading.dart';
 import 'package:arabic_learning/screens/test/dictation/dictation_shared.dart';
 import 'package:arabic_learning/services/app_data.dart';
 import 'package:arabic_learning/services/tts.dart'
@@ -16,13 +15,13 @@ import 'package:material_ui/material_ui.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
 
 class DictationPlayPage extends StatefulWidget {
-  final ReadingUnit unit;
+  final DictationArticle article;
   final List<String> sentences;
   final DictationConfig config;
 
   const DictationPlayPage({
     super.key,
-    required this.unit,
+    required this.article,
     required this.sentences,
     required this.config,
   });
@@ -32,10 +31,14 @@ class DictationPlayPage extends StatefulWidget {
 }
 
 class _DictationPlayPageState extends State<DictationPlayPage> {
-  late final List<SpeechClip> _normalClips =
-      List<SpeechClip>.filled(widget.sentences.length, _placeholderClip);
-  late final List<SpeechClip> _slowClips =
-      List<SpeechClip>.filled(widget.sentences.length, _placeholderClip);
+  late final List<SpeechClip> _normalClips = List<SpeechClip>.filled(
+    widget.sentences.length,
+    _placeholderClip,
+  );
+  late final List<SpeechClip> _slowClips = List<SpeechClip>.filled(
+    widget.sentences.length,
+    _placeholderClip,
+  );
 
   bool _preparing = true;
   bool _finished = false;
@@ -48,8 +51,7 @@ class _DictationPlayPageState extends State<DictationPlayPage> {
   int _sentenceIndex = 0;
   int _secondsLeft = 0;
 
-  int get _totalUnits =>
-      widget.sentences.length * dictationPasses.length;
+  int get _totalUnits => widget.sentences.length * dictationPasses.length;
 
   bool get _cacheAvailable => AppData().config.audio.audioSource == 2;
 
@@ -154,23 +156,15 @@ class _DictationPlayPageState extends State<DictationPlayPage> {
           _sentenceIndex = i;
           _status = "正在播放第 ${i + 1} 句";
         });
-        await playSpeech(kind == DictationPassKind.normal
-            ? _normalClips[i]
-            : _slowClips[i]);
+        await playSpeech(
+          kind == DictationPassKind.normal ? _normalClips[i] : _slowClips[i],
+        );
         if (!mounted) return;
         _completedUnits++;
         setState(() {
           _progress = _completedUnits / _totalUnits;
         });
-        if (kind == DictationPassKind.normal) {
-          if (i < widget.sentences.length - 1) {
-            await Future<void>.delayed(
-              Duration(
-                milliseconds: (dictationNormalSentenceGap * 1000).round(),
-              ),
-            );
-          }
-        } else {
+        if (kind == DictationPassKind.slow) {
           await _setCountdown(
             "第 ${pass + 1} 遍 · 第 ${i + 1} 句已读完\n请继续书写",
             widget.config.sentenceInterval,
@@ -186,10 +180,7 @@ class _DictationPlayPageState extends State<DictationPlayPage> {
     }
     if (!mounted) return;
     if (widget.config.finalCheck > 0) {
-      await _setCountdown(
-        "四遍结束\n请检查拼写、格位与标点",
-        widget.config.finalCheck,
-      );
+      await _setCountdown("四遍结束\n请检查拼写、格位与标点", widget.config.finalCheck);
     }
     if (!mounted) return;
     setState(() {
@@ -216,8 +207,7 @@ class _DictationPlayPageState extends State<DictationPlayPage> {
   }
 
   String _passTitle(int pass, DictationPassKind kind) {
-    final String mode =
-        kind == DictationPassKind.normal ? "正常速度" : "慢速逐句";
+    final String mode = kind == DictationPassKind.normal ? "正常速度" : "慢速逐句";
     return "第 ${pass + 1} 遍 · $mode";
   }
 
@@ -239,18 +229,16 @@ class _DictationPlayPageState extends State<DictationPlayPage> {
         );
       },
       child: Scaffold(
-        appBar: AppBar(
-          title: Text(_finished ? "听抄完成" : "听抄中"),
-        ),
+        appBar: AppBar(title: Text(_finished ? "听抄完成" : "听抄中")),
         body: SafeArea(
           top: false,
           child: _preparing
               ? _buildPreparing(context)
               : _error != null
-                  ? _buildError(context)
-                  : _finished
-                      ? _buildFinished(context)
-                      : _buildRunning(context),
+              ? _buildError(context)
+              : _finished
+              ? _buildFinished(context)
+              : _buildRunning(context),
         ),
       ),
     );
@@ -263,10 +251,7 @@ class _DictationPlayPageState extends State<DictationPlayPage> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text(
-              "正在预缓存音频",
-              style: Theme.of(context).textTheme.headlineSmall,
-            ),
+            Text("正在预缓存音频", style: Theme.of(context).textTheme.headlineSmall),
             const SizedBox(height: AppSpacing.sm),
             ProgressBar(value: _prepProgress, minHeight: 12),
             const SizedBox(height: AppSpacing.sm),
@@ -276,9 +261,8 @@ class _DictationPlayPageState extends State<DictationPlayPage> {
               Text(
                 "当前音源不支持预缓存，每句开始前仍会现场合成，间隔可能略有偏差。",
                 textAlign: TextAlign.center,
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: context.semanticColors.warning,
-                    ),
+                style: Theme.of(context).textTheme.bodyMedium
+                    ?.copyWith(color: context.semanticColors.warning),
               ),
             ],
           ],
@@ -408,17 +392,11 @@ class _DictationPlayPageState extends State<DictationPlayPage> {
     final ThemeData theme = Theme.of(context);
     return ListView(
       children: [
+        TextContainer(text: "听抄完成。下面是可以用于核对的原文：", textAlign: TextAlign.center),
         TextContainer(
-          text: "听抄完成。下面是可以用于核对的原文：",
-          textAlign: TextAlign.center,
-        ),
-        TextContainer(
-          text: widget.unit.passage,
+          text: widget.article.passage,
           selectable: true,
-          style: arabicStyle(
-            context,
-            base: theme.textTheme.headlineSmall,
-          ),
+          style: arabicStyle(context, base: theme.textTheme.headlineSmall),
         ),
         Padding(
           padding: const EdgeInsets.all(AppSpacing.sm),
@@ -457,25 +435,21 @@ class _PassMark extends StatelessWidget {
     final Color background = active
         ? scheme.primary
         : done
-            ? scheme.primaryContainer
-            : scheme.surfaceContainerHighest;
+        ? scheme.primaryContainer
+        : scheme.surfaceContainerHighest;
     final Color foreground = active
         ? scheme.onPrimary
         : done
-            ? scheme.onPrimaryContainer
-            : scheme.onSurfaceVariant;
+        ? scheme.onPrimaryContainer
+        : scheme.onSurfaceVariant;
     return Container(
       padding: const EdgeInsets.symmetric(vertical: AppSpacing.xs),
-      decoration: BoxDecoration(
-        color: background,
-        borderRadius: StaticsVar.br,
-      ),
+      decoration: BoxDecoration(color: background, borderRadius: StaticsVar.br),
       child: Text(
         label,
         textAlign: TextAlign.center,
-        style: Theme.of(context).textTheme.labelMedium?.copyWith(
-              color: foreground,
-            ),
+        style: Theme.of(context).textTheme.labelMedium
+            ?.copyWith(color: foreground),
       ),
     );
   }

@@ -3,10 +3,64 @@
 // 纯数据与估算，不依赖 Flutter 组件，便于单测。
 
 import 'package:arabic_learning/core/recitation_text.dart' show estimateSeconds;
+import 'package:arabic_learning/models/reading.dart';
+import 'package:arabic_learning/models/recitation_text.dart';
 import 'package:flutter/foundation.dart' show immutable;
 
 /// 正常遍句间固定留白（秒）：专业四级的第一、四遍是整篇连读，不留书写间隔。
 const double dictationNormalSentenceGap = 0.0;
+
+/// 听抄文本的轻量视图：阅读题和课文背诵都转成它，播放层不再关心来源。
+@immutable
+class DictationArticle {
+  final String title;
+  final String passage;
+
+  /// 列表上显示来源：阅读理解 / 完形填空 / 课文背诵。
+  final String sourceLabel;
+  final int difficulty;
+
+  /// 统一色阶用（0-100）：阅读题难度是 0-10，转换后与课文共用一套阈值。
+  final int difficultyPercent;
+
+  /// 内容身份，用于 Hero tag。
+  final String key;
+
+  const DictationArticle({
+    required this.title,
+    required this.passage,
+    required this.sourceLabel,
+    required this.difficulty,
+    required this.difficultyPercent,
+    required this.key,
+  });
+
+  factory DictationArticle.fromReading(ReadingUnit unit) {
+    return DictationArticle(
+      title: unit.title,
+      passage: unit.passage,
+      sourceLabel: unit.type == 1 ? "阅读理解" : "完形填空",
+      difficulty: unit.difficulty,
+      difficultyPercent: unit.difficulty * 10,
+      key: unit.getHash().join('-'),
+    );
+  }
+
+  factory DictationArticle.fromRecitation(RecitationTextUnit unit) {
+    return DictationArticle(
+      title: unit.title,
+      passage: unit.reference,
+      sourceLabel: "课文背诵",
+      difficulty: unit.difficulty,
+      difficultyPercent: unit.difficulty,
+      key: unit.getHash(),
+    );
+  }
+}
+
+/// 听抄列表 → 配置页的共享 Hero tag。
+String dictationArticleHeroTag(DictationArticle article, {int? listIndex}) =>
+    'dictation-${listIndex ?? 'x'}-${article.key}';
 
 /// 单遍的播放方式。
 enum DictationPassKind {
@@ -74,17 +128,15 @@ class DictationConfig {
 }
 
 /// 粗略估算总耗时（秒），只用于配置页提示，不参与播放计时。
-int estimateDictationSeconds(
-  List<String> sentences,
-  DictationConfig config,
-) {
+int estimateDictationSeconds(List<String> sentences, DictationConfig config) {
   double total = config.countdown.toDouble();
   final int passGaps = dictationPasses.length - 1;
   total += passGaps * config.passInterval;
   total += config.finalCheck;
   for (final DictationPassKind kind in dictationPasses) {
-    final double speed =
-        kind == DictationPassKind.normal ? config.normalSpeed : config.slowSpeed;
+    final double speed = kind == DictationPassKind.normal
+        ? config.normalSpeed
+        : config.slowSpeed;
     for (final String sentence in sentences) {
       total += estimateSeconds(sentence) / speed;
       total += kind == DictationPassKind.slow

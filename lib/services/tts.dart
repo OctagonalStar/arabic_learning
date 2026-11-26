@@ -12,12 +12,14 @@ import 'package:arabic_learning/services/speech_worker.dart';
 import 'package:arabic_learning/services/web_audio.dart';
 import 'package:arabic_learning/services/http_client.dart';
 import 'package:crypto/crypto.dart';
-import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:flutter/foundation.dart' show kIsWeb, visibleForTesting;
 import 'package:flutter_tts/flutter_tts.dart';
 import 'package:just_audio/just_audio.dart';
 import 'package:logging/logging.dart';
 import 'package:path_provider/path_provider.dart' as path_provider;
-import 'package:arabic_learning/package_replacement/fake_dart_io.dart' if (dart.library.io) 'dart:io' as io;
+import 'package:arabic_learning/package_replacement/fake_dart_io.dart'
+    if (dart.library.io) 'dart:io'
+    as io;
 import 'package:sherpa_onnx/sherpa_onnx.dart' as sherpa_onnx;
 
 final Logger _logger = Logger("TTS");
@@ -89,10 +91,7 @@ Future<void> _ensureLocalTtsLoaded() async {
     try {
       await AppData().loadTTS(AppData().config.audio.playRate);
     } catch (e) {
-      throw _toTtsFailure(
-        "本地语音模型加载失败。可在 设置-音频 中重新下载模型。",
-        e,
-      );
+      throw _toTtsFailure("本地语音模型加载失败。可在 设置-音频 中重新下载模型。", e);
     }
   }
   if (kIsWeb ? AppData().vitsTTS == null : !AppData().ttsLoaded) {
@@ -108,8 +107,10 @@ Future<({Uint8List wav, Duration duration})> _synthesizeWav(
   final Float32List samples;
   final int sampleRate;
   if (kIsWeb) {
-    final sherpa_onnx.GeneratedAudio audio =
-        AppData().vitsTTS!.generate(text: text, speed: speed);
+    final sherpa_onnx.GeneratedAudio audio = AppData().vitsTTS!.generate(
+      text: text,
+      speed: speed,
+    );
     samples = audio.samples;
     sampleRate = audio.sampleRate;
   } else {
@@ -127,8 +128,62 @@ Future<({Uint8List wav, Duration duration})> _synthesizeWav(
   );
 }
 
-/// 预合成并缓存一段文本，供听抄等需要精确间隔的场景反复播放。
+bool _clipCachePruned = false;
+
+/// 清理听抄语音缓存：删除超过 [maxAge] 的文件，再按修改时间从旧到新
+/// 淘汰到总大小不超过 [maxBytes]。
 ///
+/// 只在需要预合成时才扫描一次；单独导出便于测试。
+@visibleForTesting
+void pruneTtsClipCache(
+  String directoryPath, {
+  Duration maxAge = const Duration(days: 7),
+  int maxBytes = 200 * 1024 * 1024,
+}) {
+  final io.Directory dir = io.Directory(directoryPath);
+  final DateTime now = DateTime.now();
+  final List<({io.File file, DateTime modified, int size})> entries =
+      <({io.File file, DateTime modified, int size})>[];
+  int total = 0;
+  for (final io.FileSystemEntity entity in dir.listSync()) {
+    final String path = entity.path;
+    if (!path.endsWith('.wav')) continue;
+    final io.File file = io.File(path);
+    if (!file.existsSync()) continue;
+    final DateTime modified = file.lastModifiedSync();
+    final int size = file.lengthSync();
+    if (now.difference(modified) > maxAge) {
+      file.deleteSync();
+      continue;
+    }
+    entries.add((file: file, modified: modified, size: size));
+    total += size;
+  }
+  if (total <= maxBytes) return;
+  entries.sort(
+    (
+      ({io.File file, DateTime modified, int size}) a,
+      ({io.File file, DateTime modified, int size}) b,
+    ) => a.modified.compareTo(b.modified),
+  );
+  for (final ({io.File file, DateTime modified, int size}) entry in entries) {
+    if (total <= maxBytes) break;
+    entry.file.deleteSync();
+    total -= entry.size;
+  }
+}
+
+void _pruneClipCacheOnce(io.Directory dir) {
+  if (_clipCachePruned) return;
+  _clipCachePruned = true;
+  try {
+    pruneTtsClipCache(dir.path);
+  } catch (e) {
+    _logger.warning("清理听抄语音缓存失败", e);
+  }
+}
+
+/// 预合成并缓存一段文本，供听抄等需要精确间隔的场景反复播放。///
 /// 仅本地 sherpa-onnx 音源能落盘；系统 / 在线音源返回 `cached == false`，
 /// 由 [playSpeech] 回退到现场朗读。
 Future<SpeechClip> prepareSpeech(String text, {double? speed}) async {
@@ -139,8 +194,10 @@ Future<SpeechClip> prepareSpeech(String text, {double? speed}) async {
   await _ensureLocalTtsLoaded();
   try {
     if (kIsWeb) {
-      final ({Uint8List wav, Duration duration}) audio =
-          await _synthesizeWav(text, speed);
+      final ({Uint8List wav, Duration duration}) audio = await _synthesizeWav(
+        text,
+        speed,
+      );
       return SpeechClip(
         text: text,
         speed: speed,
@@ -150,14 +207,12 @@ Future<SpeechClip> prepareSpeech(String text, {double? speed}) async {
       );
     }
     final String key = sha1
-        .convert(
-          utf8.encode("$text|$speed|${AppData().preferredTtsModelId}"),
-        )
+        .convert(utf8.encode("$text|$speed|${AppData().preferredTtsModelId}"))
         .toString();
     final basePath = await path_provider.getApplicationCacheDirectory();
-    // shortcut: 缓存文件按文本/语速累积且不主动清理，依赖系统清缓存；若长期使用后占用过大，再加 LRU 清理。
     final io.Directory dir = io.Directory("${basePath.path}/tts_clips");
     if (!dir.existsSync()) await dir.create(recursive: true);
+    _pruneClipCacheOnce(dir);
     final io.File file = io.File("${dir.path}/$key.wav");
     if (file.existsSync()) {
       return SpeechClip(
@@ -167,8 +222,10 @@ Future<SpeechClip> prepareSpeech(String text, {double? speed}) async {
         source: Uri.file(file.path),
       );
     }
-    final ({Uint8List wav, Duration duration}) audio =
-        await _synthesizeWav(text, speed);
+    final ({Uint8List wav, Duration duration}) audio = await _synthesizeWav(
+      text,
+      speed,
+    );
     await file.writeAsBytes(audio.wav);
     return SpeechClip(
       text: text,
@@ -178,10 +235,7 @@ Future<SpeechClip> prepareSpeech(String text, {double? speed}) async {
       duration: audio.duration,
     );
   } catch (e) {
-    throw _toTtsFailure(
-      "本地语音合成失败。可重试一次，仍失败请在 设置-音频 中重新下载模型。",
-      e,
-    );
+    throw _toTtsFailure("本地语音合成失败。可重试一次，仍失败请在 设置-音频 中重新下载模型。", e);
   }
 }
 
@@ -200,8 +254,9 @@ Future<void> playSpeech(SpeechClip clip) async {
         revokeBlobUrl(url);
       }
     } else {
-      final Duration? duration =
-          await StaticsVar.player.setAudioSource(AudioSource.uri(clip.source!));
+      final Duration? duration = await StaticsVar.player.setAudioSource(
+        AudioSource.uri(clip.source!),
+      );
       // 音频已按目标语速合成，播放器保持 1.0。
       await StaticsVar.player.setSpeed(1.0);
       await Future.wait([
@@ -225,7 +280,7 @@ Future<void> playTextToSpeech(
   if (AppData().config.audio.audioSource == 0) {
     FlutterTts flutterTts = FlutterTts();
     try {
-      if(!(await flutterTts.getLanguages).toString().contains("ar")) {
+      if (!(await flutterTts.getLanguages).toString().contains("ar")) {
         throw const TtsFailure(
           "设备上没有可用的阿拉伯语语音。请安装阿拉伯语语音包后再试，或在 设置-音频 中换用其他音源。\n"
           "详细说明见 设置-常见问题。",
@@ -242,21 +297,24 @@ Future<void> playTextToSpeech(
         await Future.delayed(Duration(seconds: 2));
       }
     } catch (e) {
-      throw _toTtsFailure(
-        "系统语音暂时无法播放。可稍后重试，或在 设置-音频 中换用其他音源。",
-        e,
-      );
+      throw _toTtsFailure("系统语音暂时无法播放。可稍后重试，或在 设置-音频 中换用其他音源。", e);
     }
 
     // 1: TextReadTTS
   } else if (AppData().config.audio.audioSource == 1) {
     try {
-      final response = await createDio().getUri(Uri.parse("https://textreadtts.com/tts/convert?accessKey=FREE&language=arabic&speaker=speaker2&text=$text")).timeout(
+      final response = await createDio()
+          .getUri(
+            Uri.parse(
+              "https://textreadtts.com/tts/convert?accessKey=FREE&language=arabic&speaker=speaker2&text=$text",
+            ),
+          )
+          .timeout(
             Duration(seconds: 8),
             onTimeout: () => throw const TtsFailure("在线音源连接超时。请检查网络，或换用其他音源。"),
           );
       if (response.statusCode == 200) {
-        if(response.data["code"] == 1) {
+        if (response.data["code"] == 1) {
           throw const TtsFailure("这段文本超过了在线音源的长度限制。可以把文本拆短，或换用其他音源。");
         }
         await StaticsVar.player.setUrl(response.data["audio"]);
@@ -270,10 +328,7 @@ Future<void> playTextToSpeech(
         );
       }
     } catch (e) {
-      throw _toTtsFailure(
-        "在线音源请求失败。请检查网络，或换用其他音源。",
-        e,
-      );
+      throw _toTtsFailure("在线音源请求失败。请检查网络，或换用其他音源。", e);
     }
 
     // 2: sherpa-onnx
@@ -285,7 +340,8 @@ Future<void> playTextToSpeech(
     late final Duration duration;
     late final Uri source;
     final String cacheKey = "$text|$speed|${AppData().preferredTtsModelId}";
-    final bool hit = _cacheKey == cacheKey &&
+    final bool hit =
+        _cacheKey == cacheKey &&
         (kIsWeb
             ? _cacheWebUrl != null
             : _cacheFile != null && _cacheFile!.existsSync());
@@ -296,8 +352,10 @@ Future<void> playTextToSpeech(
     } else {
       // 合成与播放分开报错：播放失败不代表模型有问题，不能让用户去重下模型。
       try {
-        final ({Uint8List wav, Duration duration}) audio =
-            await _synthesizeWav(text, speed);
+        final ({Uint8List wav, Duration duration}) audio = await _synthesizeWav(
+          text,
+          speed,
+        );
         duration = audio.duration;
         if (kIsWeb) {
           // 轮换两个槽位：上一段可能还在播，只回收再往前的那一段。
@@ -319,16 +377,15 @@ Future<void> playTextToSpeech(
         _cacheKey = cacheKey;
         _cacheDuration = duration;
       } catch (e) {
-        throw _toTtsFailure(
-          "本地语音合成失败。可重试一次，仍失败请在 设置-音频 中重新下载模型。",
-          e,
-        );
+        throw _toTtsFailure("本地语音合成失败。可重试一次，仍失败请在 设置-音频 中重新下载模型。", e);
       }
     }
     try {
       if (kIsWeb) {
         // Web 上 just_audio 换源会残留旧音频，这里用一次性 <audio> 元素。
-        _logger.info("Web 本地语音播放: ${text.length} 字, ${duration.inMilliseconds}ms");
+        _logger.info(
+          "Web 本地语音播放: ${text.length} 字, ${duration.inMilliseconds}ms",
+        );
         await playWavBlobUrl(source.toString(), duration);
       } else {
         await StaticsVar.player.setAudioSource(AudioSource.uri(source));
