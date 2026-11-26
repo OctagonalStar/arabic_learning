@@ -76,11 +76,8 @@ bool shouldLockPortrait(double shortestSide) =>
 /// 已扣除 AppBar / 导航栏），应优先据此推导卡片与间距尺寸；返回的 [Column]
 /// 需使用 [MainAxisSize.min] 以便在滚动容器中测量。
 ///
-/// 手势策略：
-/// - 手机布局（宽度 <= 600，顶层 `PageView` 横向翻页）允许纵向滚动，矮屏内容
-///   超出时可滚动查看；
-/// - 平板 / 桌面布局（顶层 `PageView` 纵向翻页）禁用内层滚动，避免抢占翻页
-///   手势；尺寸由调用方按约束推导保证不溢出，[ConstrainedBox] 同时兜底。
+/// 桌面端导航已改为 IndexedStack（不再整页纵向翻页），因此这里始终允许纵向
+/// 滚动，矮窗口下内容可按需滚动，不再与转页手势冲突。
 class AdaptiveTabBody extends StatelessWidget {
   const AdaptiveTabBody({super.key, required this.builder});
 
@@ -92,9 +89,7 @@ class AdaptiveTabBody extends StatelessWidget {
     return LayoutBuilder(
       builder: (BuildContext context, BoxConstraints constraints) {
         return SingleChildScrollView(
-          physics: AdaptiveScope.of(context).isWide
-              ? const NeverScrollableScrollPhysics()
-              : const ClampingScrollPhysics(),
+          physics: const ClampingScrollPhysics(),
           child: ConstrainedBox(
             constraints: BoxConstraints(minHeight: constraints.maxHeight),
             child: builder(context, constraints),

@@ -195,15 +195,15 @@ const List<Widget> _pages = <Widget>[
 
 class _MyHomePageState extends State<MyHomePage> {
   final PageController _pageController = PageController(initialPage: 0);
+  int _index = 0;
   bool _startupPromptsScheduled = false;
   bool _notificationPermissionAsked = false;
 
-  /// 四个 Tab 的唯一列表：桌面竖向 / 移动横向共用同一控制器与子页。
-  Widget _buildPageView(Axis axis) {
+  /// 移动端横向翻页：桌面端改用 IndexedStack，避免纵向翻页与页面内滚动抢手势。
+  Widget _buildMobilePageView() {
     return PageView(
       controller: _pageController,
-      scrollDirection: axis,
-      onPageChanged: (int index) => setState(() {}),
+      onPageChanged: (int index) => setState(() => _index = index),
       children: _pages,
     );
   }
@@ -212,12 +212,14 @@ class _MyHomePageState extends State<MyHomePage> {
     context.read<Global>().uiLogger.fine("构建 DesktopLayout");
     return Row(
       children: [
-        // 宽度夹在 72–96：小窗口下不缩破 48dp 触控目标，大屏不再随宽度无限加宽。
         NavigationRail(
-          minWidth: clampDouble(MediaQuery.sizeOf(context).width * 0.05, 72.0, 96.0),
-          selectedIndex: _pageController.hasClients ? _pageController.page!.round() : 0,
+          // 固定 88：标签常显后不再随窗口宽度变化，避免导航区忽宽忽窄。
+          minWidth: 88,
+          selectedIndex: _index,
           onDestinationSelected: _onNavigationTapped,
-          labelType: NavigationRailLabelType.selected,
+          labelType: NavigationRailLabelType.all,
+          // 目的地靠近顶部，底部留白给未来的账户/版本入口。
+          groupAlignment: -0.9,
           destinations: [
             for (final _NavItem item in _navItems)
               NavigationRailDestination(
@@ -228,7 +230,8 @@ class _MyHomePageState extends State<MyHomePage> {
           ],
         ),
         const VerticalDivider(thickness: 1, width: 1),
-        Expanded(child: _buildPageView(Axis.vertical)),
+        // IndexedStack 保留各 Tab 状态，且不会把纵向滑动解释成切换 Tab。
+        Expanded(child: IndexedStack(index: _index, children: _pages)),
       ],
     );
   }
@@ -237,15 +240,13 @@ class _MyHomePageState extends State<MyHomePage> {
     context.read<Global>().uiLogger.fine("构建 MobileLayout");
     return Column(
       children: [
-        Expanded(child: _buildPageView(Axis.horizontal)),
+        Expanded(child: _buildMobilePageView()),
         NavigationBar(
-          selectedIndex: _pageController.hasClients ? _pageController.page!.round() : 0,
+          selectedIndex: _index,
           onDestinationSelected: _onNavigationTapped,
-          // 高度夹在 48–80：矮横屏下保持 48dp 触控目标（主页磁贴在 420 高度
-          // 下要求导航栏不高于 52，故不再取更高下限），大屏不随屏高拉高。
+          // 高度夹在 48–80：矮横屏下主页磁贴要求导航栏不高于 52，大屏不随屏高拉高。
           height: clampDouble(MediaQuery.sizeOf(context).height * 0.1, 48.0, 80.0),
           animationDuration: AppMotion.medium,
-          labelBehavior: NavigationDestinationLabelBehavior.onlyShowSelected,
           destinations: [
             for (final _NavItem item in _navItems)
               NavigationDestination(
@@ -260,6 +261,11 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 
   void _onNavigationTapped(int index) {
+    if (_index == index) return;
+    if (MediaQuery.sizeOf(context).width > AppBreakpoints.mobile) {
+      setState(() => _index = index);
+      return;
+    }
     _pageController.animateToPage(
       index,
       duration: AppMotion.medium,
@@ -352,15 +358,16 @@ class _MyHomePageState extends State<MyHomePage> {
     return Scaffold(
       appBar: AppBar(
         centerTitle: true,
-        title: Text(StaticsVar.appName),
+        title: Text(_index == 0 ? StaticsVar.appName : _navItems[_index].label),
         actions: [
-          if(kIsWeb && !AppData().config.regular.hideAppDownloadButton) Button(
-            icon: Icon(Icons.add_to_home_screen),
-            child: Text('下载APP版本'),
-            onPressed: () {
-              launchUrl(Uri.parse("https://github.com/OctagonalStar/arabic_learning/releases/latest"));
-            }
-          ),
+          if(kIsWeb && !AppData().config.regular.hideAppDownloadButton)
+            TextButton.icon(
+              icon: const Icon(Icons.add_to_home_screen),
+              label: const Text('下载 APP'),
+              onPressed: () {
+                launchUrl(Uri.parse("https://github.com/OctagonalStar/arabic_learning/releases/latest"));
+              },
+            ),
         ],
       ),
       body: SafeArea(top: false, child: LayoutBuilder(
