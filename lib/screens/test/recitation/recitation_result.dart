@@ -7,16 +7,17 @@ import 'package:arabic_learning/widgets/kit.dart' show Button, TextContainer;
 import 'package:material_ui/material_ui.dart';
 
 /// 各问题类型的分组标题。
-const Map<RecitationIssueType, String> _issueTitles = <RecitationIssueType, String>{
-  RecitationIssueType.missing: '漏读',
-  RecitationIssueType.extra: '多读',
-  RecitationIssueType.order: '顺序',
-  RecitationIssueType.pause: '停顿',
-  RecitationIssueType.tooFast: '偏快',
-  RecitationIssueType.tooSlow: '偏慢',
-  RecitationIssueType.unclear: '没听清',
-  RecitationIssueType.misread: '错读',
-};
+const Map<RecitationIssueType, String> _issueTitles =
+    <RecitationIssueType, String>{
+      RecitationIssueType.missing: '漏读',
+      RecitationIssueType.extra: '多读',
+      RecitationIssueType.order: '顺序',
+      RecitationIssueType.pause: '停顿',
+      RecitationIssueType.tooFast: '偏快',
+      RecitationIssueType.tooSlow: '偏慢',
+      RecitationIssueType.unclear: '没听清',
+      RecitationIssueType.misread: '错读',
+    };
 
 /// 结果视图。[onRetry] 保留原文重录，[onNewText] 为空时不显示「换一段」。
 class RecitationResultView extends StatelessWidget {
@@ -130,24 +131,42 @@ class RecitationResultView extends StatelessWidget {
         ),
         Padding(
           padding: const EdgeInsets.only(top: AppSpacing.sm),
-          child: Container(
-            width: double.infinity,
-            padding: const EdgeInsets.symmetric(
-              horizontal: AppSpacing.sm,
-              vertical: AppSpacing.xs,
-            ),
-            decoration: BoxDecoration(
-              color: theme.colorScheme.surfaceContainerHigh,
+          child: Card(
+            margin: EdgeInsets.zero,
+            color: theme.colorScheme.surfaceContainerHigh,
+            shape: RoundedRectangleBorder(
               borderRadius: AppRadius.controlBorder,
-              border: Border.all(color: theme.colorScheme.outlineVariant),
+              side: BorderSide(color: theme.colorScheme.outlineVariant),
             ),
-            child: Column(
-              children: <Widget>[
-                _metricRow(theme, "覆盖率", "${(outcome.coverage * 100).round()}%"),
-                _metricRow(theme, "顺序", "${(outcome.orderRate * 100).round()}%"),
-                _metricRow(theme, "多读", "${(outcome.insertionRate * 100).round()}%"),
-                _metricRow(theme, "时长", "${outcome.durationRatio.toStringAsFixed(2)}×"),
-              ],
+            child: Padding(
+              padding: const EdgeInsets.symmetric(
+                horizontal: AppSpacing.sm,
+                vertical: AppSpacing.xs,
+              ),
+              child: Column(
+                children: <Widget>[
+                  _metricRow(
+                    theme,
+                    "覆盖率",
+                    "${(outcome.coverage * 100).round()}%",
+                  ),
+                  _metricRow(
+                    theme,
+                    "顺序",
+                    "${(outcome.orderRate * 100).round()}%",
+                  ),
+                  _metricRow(
+                    theme,
+                    "多读",
+                    "${(outcome.insertionRate * 100).round()}%",
+                  ),
+                  _metricRow(
+                    theme,
+                    "时长",
+                    "${outcome.durationRatio.toStringAsFixed(2)}×",
+                  ),
+                ],
+              ),
             ),
           ),
         ),
@@ -171,31 +190,38 @@ class RecitationResultView extends StatelessWidget {
                     ),
                   ),
                   for (final RecitationIssue issue in group.value)
-                    Container(
-                      width: double.infinity,
+                    Card(
                       margin: const EdgeInsets.only(top: AppSpacing.xxs),
-                      padding: const EdgeInsets.all(AppSpacing.sm),
-                      decoration: BoxDecoration(
-                        color: theme.colorScheme.surfaceContainerHighest,
+                      color: theme.colorScheme.surfaceContainerHighest,
+                      shape: RoundedRectangleBorder(
                         borderRadius: AppRadius.controlBorder,
-                        border: Border.all(
+                        side: BorderSide(
                           color: theme.colorScheme.outlineVariant,
                         ),
                       ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(issue.text,
+                      child: Padding(
+                        padding: const EdgeInsets.all(AppSpacing.sm),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              issue.text,
                               style: theme.textTheme.headlineSmall,
-                              textDirection: TextDirection.rtl),
-                          Padding(
-                            padding: const EdgeInsets.only(top: AppSpacing.xxs),
-                            child: Text(issue.detail,
+                              textDirection: TextDirection.rtl,
+                            ),
+                            Padding(
+                              padding: const EdgeInsets.only(
+                                top: AppSpacing.xxs,
+                              ),
+                              child: Text(
+                                issue.detail,
                                 style: theme.textTheme.bodyMedium?.copyWith(
                                   color: theme.colorScheme.onSurfaceVariant,
-                                )),
-                          ),
-                        ],
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
                     ),
                 ],
