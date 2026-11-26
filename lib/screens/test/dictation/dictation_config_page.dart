@@ -3,14 +3,14 @@
 import 'package:arabic_learning/core/extensions.dart';
 import 'package:arabic_learning/core/navigation.dart';
 import 'package:arabic_learning/core/recitation_text.dart' show splitSentences;
-import 'package:arabic_learning/core/statics.dart' show StaticsVar;
 import 'package:arabic_learning/screens/test/dictation/dictation_play_page.dart';
 import 'package:arabic_learning/screens/test/dictation/dictation_shared.dart';
 import 'package:arabic_learning/services/app_data.dart';
 import 'package:arabic_learning/theme/tokens.dart';
 import 'package:arabic_learning/theme/typography.dart';
 import 'package:arabic_learning/widgets/hero_title.dart';
-import 'package:arabic_learning/widgets/kit.dart' show Button, TextContainer;
+import 'package:arabic_learning/widgets/kit.dart'
+    show Button, SettingSliderRow, TextContainer;
 import 'package:material_ui/material_ui.dart';
 
 class DictationConfigPage extends StatefulWidget {
@@ -72,97 +72,95 @@ class _DictationConfigPageState extends State<DictationConfigPage> {
                   ),
                 ),
               ),
-            Container(
+            Card(
               margin: const EdgeInsets.all(AppSpacing.sm),
-              padding: const EdgeInsets.all(AppSpacing.sm),
-              decoration: BoxDecoration(
-                color: theme.colorScheme.surfaceContainer,
-                borderRadius: StaticsVar.br,
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  _SpeedRow(
-                    label: "第一、四遍语速",
-                    value: config.normalSpeed,
-                    min: 0.5,
-                    max: 1.5,
-                    divisions: 10,
-                    onChanged: (double value) {
-                      setState(() {
-                        config = config.copyWith(
-                          normalSpeed: value,
-                          slowSpeed: value < config.slowSpeed
-                              ? value
-                              : config.slowSpeed,
-                        );
-                      });
-                    },
-                  ),
-                  _SpeedRow(
-                    label: "第二、三遍语速",
-                    value: config.slowSpeed,
-                    min: 0.4,
-                    max: config.normalSpeed,
-                    divisions: ((config.normalSpeed - 0.4) / 0.05).round(),
-                    onChanged: (double value) {
-                      setState(() {
-                        config = config.copyWith(slowSpeed: value);
-                      });
-                    },
-                  ),
-                  _SecondsRow(
-                    label: "慢速遍每句间隔",
-                    value: config.sentenceInterval,
-                    min: 3,
-                    max: 30,
-                    divisions: 27,
-                    onChanged: (int value) {
-                      setState(() {
-                        config = config.copyWith(sentenceInterval: value);
-                      });
-                    },
-                  ),
-                  _SecondsRow(
-                    label: "两遍之间准备时间",
-                    value: config.passInterval,
-                    min: 5,
-                    max: 60,
-                    divisions: 11,
-                    step: 5,
-                    onChanged: (int value) {
-                      setState(() {
-                        config = config.copyWith(passInterval: value);
-                      });
-                    },
-                  ),
-                  _SecondsRow(
-                    label: "开始前倒计时",
-                    value: config.countdown,
-                    min: 0,
-                    max: 30,
-                    divisions: 6,
-                    step: 5,
-                    onChanged: (int value) {
-                      setState(() {
-                        config = config.copyWith(countdown: value);
-                      });
-                    },
-                  ),
-                  _SecondsRow(
-                    label: "结束后校对时间",
-                    value: config.finalCheck,
-                    min: 0,
-                    max: 120,
-                    divisions: 12,
-                    step: 10,
-                    onChanged: (int value) {
-                      setState(() {
-                        config = config.copyWith(finalCheck: value);
-                      });
-                    },
-                  ),
-                ],
+              child: Padding(
+                padding: const EdgeInsets.all(AppSpacing.sm),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _SpeedRow(
+                      label: "第一、四遍语速",
+                      value: config.normalSpeed,
+                      min: 0.5,
+                      max: 1.5,
+                      divisions: 10,
+                      onChanged: (double value) {
+                        setState(() {
+                          config = config.copyWith(
+                            normalSpeed: value,
+                            slowSpeed: value < config.slowSpeed
+                                ? value
+                                : config.slowSpeed,
+                          );
+                        });
+                      },
+                    ),
+                    _SpeedRow(
+                      label: "第二、三遍语速",
+                      value: config.slowSpeed,
+                      min: 0.4,
+                      max: config.normalSpeed,
+                      divisions: ((config.normalSpeed - 0.4) / 0.05).round(),
+                      onChanged: (double value) {
+                        setState(() {
+                          config = config.copyWith(slowSpeed: value);
+                        });
+                      },
+                    ),
+                    _SecondsRow(
+                      label: "慢速遍每句间隔",
+                      value: config.sentenceInterval,
+                      min: 3,
+                      max: 30,
+                      divisions: 27,
+                      onChanged: (int value) {
+                        setState(() {
+                          config = config.copyWith(sentenceInterval: value);
+                        });
+                      },
+                    ),
+                    _SecondsRow(
+                      label: "两遍之间准备时间",
+                      value: config.passInterval,
+                      min: 5,
+                      max: 60,
+                      divisions: 11,
+                      step: 5,
+                      onChanged: (int value) {
+                        setState(() {
+                          config = config.copyWith(passInterval: value);
+                        });
+                      },
+                    ),
+                    _SecondsRow(
+                      label: "开始前倒计时",
+                      value: config.countdown,
+                      min: 0,
+                      max: 30,
+                      divisions: 6,
+                      step: 5,
+                      onChanged: (int value) {
+                        setState(() {
+                          config = config.copyWith(countdown: value);
+                        });
+                      },
+                    ),
+                    _SecondsRow(
+                      label: "结束后校对时间",
+                      value: config.finalCheck,
+                      min: 0,
+                      max: 120,
+                      divisions: 12,
+                      step: 10,
+                      onChanged: (int value) {
+                        setState(() {
+                          config = config.copyWith(finalCheck: value);
+                        });
+                      },
+                    ),
+                  ],
+                ),
               ),
             ),
             Padding(
@@ -219,7 +217,7 @@ class _SpeedRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return _SliderRow(
+    return SettingSliderRow(
       label: label,
       value: value,
       min: min,
@@ -252,7 +250,7 @@ class _SecondsRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return _SliderRow(
+    return SettingSliderRow(
       label: label,
       value: value.toDouble(),
       min: min.toDouble(),
@@ -262,48 +260,6 @@ class _SecondsRow extends StatelessWidget {
       onChanged: (double sliderValue) {
         onChanged((sliderValue / step).round() * step);
       },
-    );
-  }
-}
-
-class _SliderRow extends StatelessWidget {
-  final String label;
-  final double value;
-  final double min;
-  final double max;
-  final int divisions;
-  final String valueText;
-  final ValueChanged<double> onChanged;
-
-  const _SliderRow({
-    required this.label,
-    required this.value,
-    required this.min,
-    required this.max,
-    required this.divisions,
-    required this.valueText,
-    required this.onChanged,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final double safeValue = value.clamp(min, max).toDouble();
-    return Row(
-      children: [
-        Expanded(child: Text(label)),
-        SizedBox(
-          width: MediaQuery.sizeOf(context).width * 0.45,
-          child: Slider(
-            value: safeValue,
-            min: min,
-            max: max,
-            divisions: divisions,
-            label: valueText,
-            onChanged: onChanged,
-          ),
-        ),
-        SizedBox(width: 76.0, child: Text(valueText)),
-      ],
     );
   }
 }

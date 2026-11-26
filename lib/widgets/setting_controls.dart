@@ -148,6 +148,62 @@ class SettingRow extends StatelessWidget {
   }
 }
 
+/// 滑块设置行：标题 + Slider + 右对齐数值。
+///
+/// 听写与听抄等配置页共用，避免各自复制一份 Row + Slider + 固定宽度数值。
+class SettingSliderRow extends StatelessWidget {
+  const SettingSliderRow({
+    super.key,
+    required this.label,
+    required this.value,
+    required this.min,
+    required this.max,
+    required this.divisions,
+    required this.valueText,
+    required this.onChanged,
+  });
+
+  final String label;
+  final double value;
+  final double min;
+  final double max;
+  final int divisions;
+  final String valueText;
+  final ValueChanged<double> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    final double safeValue = value.clamp(min, max).toDouble();
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: AppSpacing.xxs),
+      child: Row(
+        children: [
+          Expanded(child: Text(label)),
+          SizedBox(
+            width: 200.0,
+            child: Slider(
+              value: safeValue,
+              min: min,
+              max: max,
+              divisions: divisions,
+              label: valueText,
+              onChanged: onChanged,
+            ),
+          ),
+          const SizedBox(width: AppSpacing.xs),
+          SizedBox(
+            width: 68.0,
+            child: Align(
+              alignment: AlignmentDirectional.centerEnd,
+              child: FittedBox(fit: BoxFit.scaleDown, child: Text(valueText)),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 /// 跳转设置项：ListTile + 尾部 chevron。
 class SettingRedirectButton extends StatelessWidget {
   const SettingRedirectButton({
