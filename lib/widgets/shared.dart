@@ -102,11 +102,10 @@ class SettingCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(borderRadius: StaticsVar.br, color: color),
+    return Card(
+      color: color,
       margin: margin,
-      padding: padding,
-      child: child,
+      child: Padding(padding: padding, child: child),
     );
   }
 }
