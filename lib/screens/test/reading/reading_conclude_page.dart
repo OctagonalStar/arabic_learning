@@ -1,10 +1,9 @@
 // 阅读题结算页：逐题展示你的答案 / 正确答案 / 解析，三段动画依次入场。
 
 import 'package:arabic_learning/core/extensions.dart';
-import 'package:arabic_learning/core/statics.dart';
 import 'package:arabic_learning/models/reading.dart';
 import 'package:arabic_learning/screens/test/reading/reading_shared.dart';
-import 'package:arabic_learning/theme/tokens.dart' show AppMotion, AppSemanticColors;
+import 'package:arabic_learning/theme/tokens.dart' show AppMotion, AppSemanticColors, AppSpacing;
 import 'package:arabic_learning/widgets/kit.dart' show Button;
 import 'package:flutter/foundation.dart' show clampDouble;
 import 'package:material_ui/material_ui.dart';
@@ -84,41 +83,44 @@ class ReadingResultPage extends StatelessWidget {
                               children: [
                                 Transform.translate(
                                   offset: Offset(-(mediaQuery.size.width * (1-(sp-1*index*(1-sp) < 0 ? 0 : sp-1*index*(1-sp)))), 0),
-                                  child: Container(
-                                    decoration: BoxDecoration(
-                                      borderRadius: StaticsVar.br,
-                                      color: Theme.of(context).colorScheme.surfaceContainerHigh
-                                    ),
-                                    padding: EdgeInsets.all(8.0),
+                                  child: SizedBox(
                                     width: mediaQuery.size.width * 0.4,
-                                    child: Column(
-                                      children: [
-                                        Text("问题: \n${unit.questions[index].riddle}\n你的答案: \n${selection[index] == null ? "未选择" : options[index][selection[index]!]}", style: Theme.of(context).textTheme.bodyLarge),
-                                        SizedBox(
-                                          width: mediaQuery.size.width * 0.4,
-                                          child: Opacity(
-                                            opacity: (cp-1*index*(1-cp) < 0 ? 0 : cp-1*index*(1-cp)),
-                                            child: Transform.scale(
-                                              scale: 1.5 - 0.5*(cp-1*index*(1-cp) < 0 ? 0 : cp-1*index*(1-cp)),
-                                              child: FittedBox(fit: BoxFit.scaleDown, child: Icon(correctList[index] ? Icons.check : Icons.clear, color: correctList[index] ? semantic.success : semantic.error, size: 96))
-                                            ),
-                                          ),
-                                        )
-                                      ],
+                                    child: Card(
+                                      margin: EdgeInsets.zero,
+                                      color: Theme.of(context).colorScheme.surfaceContainerHigh,
+                                      child: Padding(
+                                        padding: const EdgeInsets.all(AppSpacing.xs),
+                                        child: Column(
+                                          children: [
+                                            Text("问题: \n${unit.questions[index].riddle}\n你的答案: \n${selection[index] == null ? "未选择" : options[index][selection[index]!]}", style: Theme.of(context).textTheme.bodyLarge),
+                                            SizedBox(
+                                              width: mediaQuery.size.width * 0.4,
+                                              child: Opacity(
+                                                opacity: (cp-1*index*(1-cp) < 0 ? 0 : cp-1*index*(1-cp)),
+                                                child: Transform.scale(
+                                                  scale: 1.5 - 0.5*(cp-1*index*(1-cp) < 0 ? 0 : cp-1*index*(1-cp)),
+                                                  child: FittedBox(fit: BoxFit.scaleDown, child: Icon(correctList[index] ? Icons.check : Icons.clear, color: correctList[index] ? semantic.success : semantic.error, size: 96))
+                                                ),
+                                              ),
+                                            )
+                                          ],
+                                        ),
+                                      ),
                                     ),
                                   ),
                                 ),
                                 Transform.translate(
                                   offset: Offset(mediaQuery.size.width * (1-(sp-1*index*(1-sp) < 0 ? 0 : sp-1*index*(1-sp))), 0),
-                                  child: Container(
-                                    decoration: BoxDecoration(
+                                  child: SizedBox(
+                                    width: mediaQuery.size.width * 0.5,
+                                    child: Card(
+                                      margin: const EdgeInsets.all(AppSpacing.xs),
                                       color: Theme.of(context).colorScheme.surfaceContainerHighest,
-                                      borderRadius: StaticsVar.br
+                                      child: Padding(
+                                        padding: const EdgeInsets.all(AppSpacing.xs),
+                                        child: Text("正确答案: \n${unit.questions[index].answers[0]}\n解析: \n${unit.questions[index].analysis}", style: Theme.of(context).textTheme.bodyLarge),
+                                      ),
                                     ),
-                                    width: mediaQuery.size.width * 0.5, 
-                                    padding: EdgeInsets.all(8.0),
-                                    margin: EdgeInsets.all(8.0),
-                                    child: Text("正确答案: \n${unit.questions[index].answers[0]}\n解析: \n${unit.questions[index].analysis}", style: Theme.of(context).textTheme.bodyLarge),
                                   ),
                                 ),
                               ],

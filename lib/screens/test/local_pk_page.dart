@@ -13,7 +13,7 @@ import 'package:arabic_learning/services/app_data.dart';
 import 'package:arabic_learning/screens/setting/dict_manage_page.dart' show DictManagePage;
 import 'package:arabic_learning/core/extensions.dart';
 import 'package:arabic_learning/core/statics.dart';
-import 'package:arabic_learning/theme/tokens.dart' show AppMotion;
+import 'package:arabic_learning/theme/tokens.dart' show AppMotion, AppSpacing;
 import 'package:arabic_learning/theme/typography.dart';
 import 'package:flutter/foundation.dart' show clampDouble;
 import 'package:material_ui/material_ui.dart';
@@ -465,48 +465,52 @@ class PKPreparePage extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               
               children: [
-                Container(
-                  padding: EdgeInsets.all(8.0),
+                SizedBox(
                   height: mediaQuery.size.height * 0.3,
                   width: mediaQuery.size.width * 0.4,
-                  decoration: BoxDecoration(
+                  child: Card.filled(
+                    margin: EdgeInsets.zero,
                     color: Theme.of(context).colorScheme.primaryContainer,
-                    borderRadius: StaticsVar.br
-                  ),
-                  child: Column(
-                    children: [
-                      Text("你", style: Theme.of(context).textTheme.headlineSmall),
-                      SizedBox(height: mediaQuery.size.height * 0.05),
-                      context.watch<PKServer>().preparedP1
-                      ? Text("已准备")
-                      : Button(
-                        size: Size.fromHeight(mediaQuery.size.height * 0.1),
-                        // 卡片本身为 primaryContainer，按钮改用更高一层的容器色区分。
-                        backgroundColor: Theme.of(context).colorScheme.surfaceContainerHighest,
-                        onPressed: (){
-                          context.read<PKServer>().setPrepare();
-                        }, 
-                        child: Text("准备")
+                    child: Padding(
+                      padding: const EdgeInsets.all(AppSpacing.xs),
+                      child: Column(
+                        children: [
+                          Text("你", style: Theme.of(context).textTheme.headlineSmall),
+                          SizedBox(height: mediaQuery.size.height * 0.05),
+                          context.watch<PKServer>().preparedP1
+                          ? Text("已准备")
+                          : Button(
+                            size: Size.fromHeight(mediaQuery.size.height * 0.1),
+                            // 卡片本身为 primaryContainer，按钮改用更高一层的容器色区分。
+                            backgroundColor: Theme.of(context).colorScheme.surfaceContainerHighest,
+                            onPressed: (){
+                              context.read<PKServer>().setPrepare();
+                            }, 
+                            child: Text("准备")
+                          ),
+                          if(context.watch<PKServer>().preparedP1) Icon(Icons.done, color: context.semanticColors.success, size: 36)
+                        ],
                       ),
-                      if(context.watch<PKServer>().preparedP1) Icon(Icons.done, color: context.semanticColors.success, size: 36)
-                    ],
+                    ),
                   ),
                 ),
-                Container(
-                  padding: EdgeInsets.all(8.0),
+                SizedBox(
                   height: mediaQuery.size.height * 0.3,
                   width: mediaQuery.size.width * 0.4,
-                  decoration: BoxDecoration(
+                  child: Card.filled(
+                    margin: EdgeInsets.zero,
                     color: Theme.of(context).colorScheme.secondaryContainer,
-                    borderRadius: StaticsVar.br
-                  ),
-                  child: Column(
-                    children: [
-                      Text("对方", style: Theme.of(context).textTheme.headlineSmall),
-                      SizedBox(height: mediaQuery.size.height * 0.05),
-                      Text("${context.watch<PKServer>().preparedP2 ? "已" : "未"}准备"),
-                      if(context.watch<PKServer>().preparedP2) Icon(Icons.done, color: context.semanticColors.success, size: 36)
-                    ],
+                    child: Padding(
+                      padding: const EdgeInsets.all(AppSpacing.xs),
+                      child: Column(
+                        children: [
+                          Text("对方", style: Theme.of(context).textTheme.headlineSmall),
+                          SizedBox(height: mediaQuery.size.height * 0.05),
+                          Text("${context.watch<PKServer>().preparedP2 ? "已" : "未"}准备"),
+                          if(context.watch<PKServer>().preparedP2) Icon(Icons.done, color: context.semanticColors.success, size: 36)
+                        ],
+                      ),
+                    ),
                   ),
                 )
               ],
