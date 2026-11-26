@@ -95,10 +95,10 @@ Future<void> _pumpCard(
 ColorScheme _scheme(WidgetTester tester) =>
     Theme.of(tester.element(find.byType(PlanEntryCard))).colorScheme;
 
-/// 磁贴容器色（Button 内部 ElevatedButton 的 backgroundColor）。
+/// 磁贴容器色（Button 内部 FilledButton 的 backgroundColor）。
 Color? _tileBackground(WidgetTester tester) {
-  final ElevatedButton button = tester.widget<ElevatedButton>(
-    find.byType(ElevatedButton),
+  final FilledButton button = tester.widget<FilledButton>(
+    find.byType(FilledButton),
   );
   return button.style?.backgroundColor?.resolve(const <WidgetState>{});
 }

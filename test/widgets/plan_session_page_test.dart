@@ -282,10 +282,10 @@ void main() {
       expect(find.text('学习完成'), findsOneWidget);
       expect(find.text('本周期已完成，请回到计划页重新配置'), findsOneWidget);
       expect(find.text('返回计划'), findsOneWidget);
-      final ElevatedButton continueButton = tester.widget<ElevatedButton>(
+      final FilledButton continueButton = tester.widget<FilledButton>(
         find.ancestor(
           of: find.text('继续第 1 组'),
-          matching: find.byType(ElevatedButton),
+          matching: find.byType(FilledButton),
         ),
       );
       expect(continueButton.onPressed, isNull);
