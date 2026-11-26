@@ -1,7 +1,6 @@
 // 阅读题作答页：左（上）文章 + 右（下）题目分页，末页检查答案并提交。
 
 import 'package:arabic_learning/core/selection.dart';
-import 'package:arabic_learning/core/statics.dart';
 import 'package:arabic_learning/models/reading.dart';
 import 'package:arabic_learning/screens/test/reading/reading_conclude_page.dart';
 import 'package:arabic_learning/screens/test/reading/reading_shared.dart';
@@ -101,7 +100,6 @@ class _ReadingQuestionPage extends State<ReadingQuestionPage> {
                             return TableRow(
                               decoration: BoxDecoration(
                                 color: context.watch<SingleSelectionNotifier>().value == i ? Theme.of(context).colorScheme.primaryContainer : null,
-                                borderRadius: StaticsVar.br
                               ),
                               children: [
                                 TextContainer(text: ["A", "B", "C", "D", "E", "F", "G"].elementAt(i)),
