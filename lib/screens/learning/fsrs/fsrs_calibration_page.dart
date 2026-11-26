@@ -221,10 +221,9 @@ class _FsrsCalibrationPageState extends State<FsrsCalibrationPage> {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Container(
-            width: 88,
-            height: 88,
-            decoration: BoxDecoration(color: scheme.primaryContainer, shape: BoxShape.circle),
+          CircleAvatar(
+            radius: 44,
+            backgroundColor: scheme.primaryContainer,
             child: Icon(Icons.psychology_alt_outlined, size: 44, color: scheme.onPrimaryContainer),
           ),
           const SizedBox(height: AppSpacing.md),
@@ -731,11 +730,9 @@ class _StepRow extends StatelessWidget {
     final ColorScheme scheme = theme.colorScheme;
     return Row(
       children: [
-        Container(
-          width: 32,
-          height: 32,
-          alignment: Alignment.center,
-          decoration: BoxDecoration(color: scheme.primaryContainer, shape: BoxShape.circle),
+        CircleAvatar(
+          radius: 16,
+          backgroundColor: scheme.primaryContainer,
           child: Text("$index", style: theme.textTheme.labelLarge?.copyWith(color: scheme.onPrimaryContainer)),
         ),
         const SizedBox(width: AppSpacing.xs),
@@ -768,15 +765,17 @@ class _CalibCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final ColorScheme scheme = Theme.of(context).colorScheme;
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(AppSpacing.sm),
-      decoration: BoxDecoration(
-        color: scheme.surfaceContainerLow,
+    return Card(
+      margin: EdgeInsets.zero,
+      color: scheme.surfaceContainerLow,
+      shape: RoundedRectangleBorder(
         borderRadius: AppRadius.cardBorder,
-        border: Border.all(color: scheme.outlineVariant),
+        side: BorderSide(color: scheme.outlineVariant),
       ),
-      child: child,
+      child: Padding(
+        padding: const EdgeInsets.all(AppSpacing.sm),
+        child: child,
+      ),
     );
   }
 }
