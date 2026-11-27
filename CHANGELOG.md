@@ -1,5 +1,25 @@
 # Changelog
 
+## Unreleased
+
+### Improvement
+
+- 全应用对齐 Material 3：主页改为宽屏两栏（每日一词 + 统计与复习预测）、窄屏单列；学习页改为学习/复习操作卡与「更多」入口列表；测试页改为分组 `ListTile` 入口；设置页居中限宽并统一为 `Card` 分组
+- 桌面端导航改用 `NavigationRail` + `IndexedStack`，切换 Tab 保留页面状态；移动端 `NavigationBar` 标签常显
+- 各子页面（FSRS、计划学习、听抄、阅读、课文背诵、联机对战、设置子页）的自绘容器统一改为 M3 `Card`、`Chip`、`CircleAvatar`
+- 统一圆角 token（卡片 16 / 控件 12 / 底部面板 28）与按钮、下拉、滑块等组件主题；设置行在系统大字号下自动换行
+- 抽出共享 `StatusChip`、`SettingSliderRow`，`StatCard` 与 `ReviewForecastChart` 改为自适应 `Card`
+
+### Fixed
+
+- 修复词库词条数少于请求数量时 `getRandomWords` 可能死循环的问题
+- 修复 FSRS 设置页拖动滑块时重复扫描全部词库分类的问题
+
+### Changed
+
+- 自造 `Button` 内部改用 M3 `FilledButton`，并清理遗留的 `ElevatedButton` 与斜角按钮
+- 更新共享组件手册与人工冒烟清单
+
 ## V1.2.2 - 2026-11-14 - (102002)
 
 ### Added
