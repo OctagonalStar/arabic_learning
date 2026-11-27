@@ -205,7 +205,8 @@ class _DailyWordState extends State<DailyWord> {
         child: Padding(
           padding: const EdgeInsets.all(AppSpacing.md),
           child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
+            mainAxisAlignment: MainAxisAlignment.start,
+            mainAxisSize: MainAxisSize.max,
             children: <Widget>[
               Row(
                 children: <Widget>[
@@ -225,35 +226,29 @@ class _DailyWordState extends State<DailyWord> {
                     ),
                 ],
               ),
-              const SizedBox(height: AppSpacing.md),
-              if (hasWords) ...<Widget>[
-                FittedBox(
-                  fit: BoxFit.scaleDown,
-                  child: Text(
-                    word.arabic,
+              const SizedBox(height: AppSpacing.lg * 2),
+              
+              if(hasWords) ...[
+                  FittedBox(
+                    fit: BoxFit.scaleDown,
+                    child: Text(
+                      word.arabic,
+                      textAlign: TextAlign.center,
+                      style: arabicStyle(
+                        context,
+                        base: theme.textTheme.headlineMedium!,
+                      ).copyWith(color: scheme.onPrimaryContainer),
+                    ),
+                  ),
+                  const SizedBox(height: AppSpacing.xs),
+                  Text(
+                    word.chinese,
                     textAlign: TextAlign.center,
-                    style: arabicStyle(
-                      context,
-                      base: theme.textTheme.headlineMedium!,
-                    ).copyWith(color: scheme.onPrimaryContainer),
+                    style: theme.textTheme.titleMedium?.copyWith(
+                      color: scheme.onPrimaryContainer,
+                    ),
                   ),
-                ),
-                const SizedBox(height: AppSpacing.xs),
-                Text(
-                  word.chinese,
-                  textAlign: TextAlign.center,
-                  style: theme.textTheme.titleMedium?.copyWith(
-                    color: scheme.onPrimaryContainer,
-                  ),
-                ),
-                const SizedBox(height: AppSpacing.md),
-                Text(
-                  '点击卡片朗读',
-                  style: theme.textTheme.bodySmall?.copyWith(
-                    color: scheme.onPrimaryContainer.withValues(alpha: 0.7),
-                  ),
-                ),
-              ] else ...<Widget>[
+              ] else ...[
                 Icon(
                   Icons.library_books_outlined,
                   size: 40.0,
@@ -274,7 +269,7 @@ class _DailyWordState extends State<DailyWord> {
                   label: const Text('导入词库'),
                 ),
               ],
-            ],
+            ]
           ),
         ),
       ),

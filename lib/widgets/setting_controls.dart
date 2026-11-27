@@ -225,6 +225,7 @@ class SettingRedirectButton extends StatelessWidget {
       title: Text(title, style: Theme.of(context).textTheme.bodyLarge),
       trailing: Icon(Icons.chevron_right, color: scheme.onSurfaceVariant),
       onTap: () => pushPage(context, target),
+      minTileHeight: 80,
     );
   }
 }
