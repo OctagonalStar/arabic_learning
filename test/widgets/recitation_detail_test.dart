@@ -7,7 +7,7 @@ import 'package:arabic_learning/screens/test/recitation/recitation_progress_bar.
 import 'package:arabic_learning/screens/test/recitation/recitation_recite_tab.dart';
 import 'package:arabic_learning/services/app_data.dart';
 import 'package:arabic_learning/services/global_state.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
 

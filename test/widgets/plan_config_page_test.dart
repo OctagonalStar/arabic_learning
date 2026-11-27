@@ -11,7 +11,7 @@ import 'package:arabic_learning/services/fsrs.dart' show FSRS, FSRSConfig;
 import 'package:arabic_learning/services/global_state.dart' show Global;
 import 'package:arabic_learning/services/plan_store.dart' show PlanStore;
 import 'package:arabic_learning/theme/app_theme.dart' show buildTheme;
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fsrs/fsrs.dart' as fsrs show Card;
 import 'package:provider/provider.dart';

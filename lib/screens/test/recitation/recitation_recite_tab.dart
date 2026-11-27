@@ -18,7 +18,8 @@ import 'package:arabic_learning/screens/setting/model_management_page.dart'
 import 'package:arabic_learning/screens/test/recitation/recitation_progress_bar.dart'
     show RecitationProgressBar;
 import 'package:arabic_learning/screens/test/recitation/recitation_shared.dart'
-    show RecitationCard, RecitationChip, RecitationTranslation;
+    show RecitationCard, RecitationTranslation;
+import 'package:arabic_learning/widgets/shared.dart' show StatusChip;
 import 'package:arabic_learning/screens/test/recitation/recitation_result.dart'
     show RecitationResultView;
 import 'package:arabic_learning/services/app_data.dart';
@@ -35,7 +36,7 @@ import 'package:arabic_learning/widgets/kit.dart' show Button;
 import 'package:arabic_learning/widgets/motion.dart' show CrossFadeSwitcher;
 import 'package:arabic_learning/widgets/overlays.dart' show showSnackBar;
 import 'package:arabic_learning/core/navigation.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:provider/provider.dart';
 
 /// 背诵页的两种形态；每个 tab 只承担一种。
@@ -343,18 +344,19 @@ class _RecitationReciteTabState extends State<RecitationReciteTab>
     final ColorScheme scheme = theme.colorScheme;
     return Padding(
       padding: const EdgeInsets.only(top: AppSpacing.sm),
-      child: Container(
-        width: double.infinity,
-        padding: const EdgeInsets.all(AppSpacing.sm),
-        decoration: BoxDecoration(
-          color: Color.alphaBlend(
-            scheme.error.withValues(alpha: 0.08),
-            scheme.surfaceContainerLow,
-          ),
-          borderRadius: AppRadius.controlBorder,
-          border: Border.all(color: scheme.error.withValues(alpha: 0.38)),
+      child: Card(
+        margin: EdgeInsets.zero,
+        color: Color.alphaBlend(
+          scheme.error.withValues(alpha: 0.08),
+          scheme.surfaceContainerLow,
         ),
-        child: Column(
+        shape: RoundedRectangleBorder(
+          borderRadius: AppRadius.controlBorder,
+          side: BorderSide(color: scheme.error.withValues(alpha: 0.38)),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(AppSpacing.sm),
+          child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: <Widget>[
             Row(
@@ -375,6 +377,7 @@ class _RecitationReciteTabState extends State<RecitationReciteTab>
               child: action,
             ),
           ],
+        ),
         ),
       ),
     );
@@ -583,14 +586,14 @@ class _RecitationReciteTabState extends State<RecitationReciteTab>
           children: <Widget>[
             Row(
               children: <Widget>[
-                RecitationChip(
+                StatusChip(
                   text: "第 ${index + 1} 句",
                   background: scheme.surfaceContainerHighest,
                   foreground: scheme.onSurfaceVariant,
                 ),
                 if (outcome != null) ...<Widget>[
                   const SizedBox(width: AppSpacing.xs),
-                  RecitationChip(
+                  StatusChip(
                     text: outcome.scoreable
                         ? "${outcome.score} 分 · ${outcome.grade}"
                         : "未评分",
@@ -722,23 +725,24 @@ class _RecitationReciteTabState extends State<RecitationReciteTab>
     }
     return Padding(
       padding: const EdgeInsets.only(top: AppSpacing.sm),
-      child: Container(
-        width: double.infinity,
-        padding: const EdgeInsets.all(AppSpacing.sm),
-        // 控制区用最深一档容器色，和译文区 / 卡片本身分开。
-        decoration: BoxDecoration(
-          color: scheme.surfaceContainerHighest,
+      child: Card(
+        margin: EdgeInsets.zero,
+        color: scheme.surfaceContainerHighest,
+        shape: RoundedRectangleBorder(
           borderRadius: AppRadius.controlBorder,
-          border: Border.all(color: scheme.outlineVariant),
+          side: BorderSide(color: scheme.outlineVariant),
         ),
         // 不同阶段给不同 key，CrossFadeSwitcher 才会切换而不是原地重建。
-        child: CrossFadeSwitcher(
+        child: Padding(
+          padding: const EdgeInsets.all(AppSpacing.sm),
+          child: CrossFadeSwitcher(
           duration: AppMotion.quick,
           child: Column(
             key: ValueKey<String>('${_stage.name}-${outcome != null}'),
             crossAxisAlignment: CrossAxisAlignment.start,
             children: content,
           ),
+        ),
         ),
       ),
     );
@@ -832,15 +836,20 @@ class _RecitationReciteTabState extends State<RecitationReciteTab>
 
   Widget _panel(ThemeData theme, {required Widget child}) {
     final ColorScheme scheme = theme.colorScheme;
-    return Container(
+    return SizedBox(
       width: double.infinity,
-      padding: const EdgeInsets.all(AppSpacing.sm),
-      decoration: BoxDecoration(
+      child: Card(
+        margin: EdgeInsets.zero,
         color: scheme.surfaceContainerLow,
-        borderRadius: AppRadius.cardBorder,
-        border: Border.all(color: scheme.outlineVariant),
+        shape: RoundedRectangleBorder(
+          borderRadius: AppRadius.cardBorder,
+          side: BorderSide(color: scheme.outlineVariant),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(AppSpacing.sm),
+          child: child,
+        ),
       ),
-      child: child,
     );
   }
 
@@ -941,18 +950,15 @@ class _RecitationReciteTabState extends State<RecitationReciteTab>
           child: Text("历史成绩", style: theme.textTheme.titleLarge),
         ),
         for (final RecitationRecord record in records.take(5))
-          Container(
-            width: double.infinity,
+          Card.filled(
             margin: const EdgeInsets.only(bottom: AppSpacing.xxs),
-            padding: const EdgeInsets.symmetric(
-              horizontal: AppSpacing.sm,
-              vertical: AppSpacing.xs,
-            ),
-            decoration: BoxDecoration(
-              color: theme.colorScheme.surfaceContainerHigh,
-              borderRadius: AppRadius.controlBorder,
-            ),
-            child: Row(
+            color: theme.colorScheme.surfaceContainerHigh,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(
+                horizontal: AppSpacing.sm,
+                vertical: AppSpacing.xs,
+              ),
+              child: Row(
               children: <Widget>[
                 Expanded(
                   child: Text(
@@ -976,6 +982,7 @@ class _RecitationReciteTabState extends State<RecitationReciteTab>
                 ),
               ],
             ),
+          ),
           ),
       ],
     );

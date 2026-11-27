@@ -7,7 +7,7 @@
 
 import 'dart:math' as math;
 
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 import 'package:arabic_learning/screens/learning/fsrs/fsrs_calibration_page.dart' show FsrsCalibrationPage;
 import 'package:arabic_learning/screens/learning/fsrs/fsrs_review_page.dart' show MainFSRSPage;
@@ -54,11 +54,12 @@ class ForeFSRSSettingPage extends StatelessWidget {
           // `SettingItem` 的卡片宽度固定为屏幕宽度的 90%，宽屏下把内容区的
           // MediaQuery 宽度夹到 880，避免设置项在大屏上被拉得过长。
           final double cappedWidth = math.min(constraints.maxWidth, 880.0);
+          // 分类来自全词库扫描；放在 StatefulBuilder 外，滑块拖动时不重复计算。
+          final List<String> availableCategories = collectAllCategories();
           return MediaQuery(
             data: media.copyWith(size: Size(cappedWidth, media.size.height)),
             child: StatefulBuilder(
               builder: (context, setState) {
-                final List<String> availableCategories = collectAllCategories();
 
                 /// 滑块行：定宽尾巴 + 当前值/说明写在 note 里，窄屏不溢出。
                 Widget sliderRow({

@@ -19,7 +19,7 @@ import 'package:arabic_learning/widgets/feedback.dart' show ProgressBar;
 import 'package:arabic_learning/widgets/kit.dart' show Button;
 import 'package:arabic_learning/widgets/motion.dart' show CrossFadeSwitcher;
 import 'package:arabic_learning/widgets/overlays.dart' show alert, showSnackBar;
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 /// 应用内更新的下载页。

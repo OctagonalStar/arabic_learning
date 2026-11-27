@@ -9,7 +9,7 @@ import 'package:arabic_learning/services/plan_scheduler.dart' show evaluateNow;
 import 'package:arabic_learning/services/plan_store.dart' show PlanStore;
 import 'package:arabic_learning/theme/app_theme.dart' show buildTheme;
 import 'package:arabic_learning/widgets/kit.dart' show Button;
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fsrs/fsrs.dart' as fsrs show Card, State;
 
@@ -95,10 +95,10 @@ Future<void> _pumpCard(
 ColorScheme _scheme(WidgetTester tester) =>
     Theme.of(tester.element(find.byType(PlanEntryCard))).colorScheme;
 
-/// 磁贴容器色（Button 内部 ElevatedButton 的 backgroundColor）。
+/// 磁贴容器色（Button 内部 FilledButton 的 backgroundColor）。
 Color? _tileBackground(WidgetTester tester) {
-  final ElevatedButton button = tester.widget<ElevatedButton>(
-    find.byType(ElevatedButton),
+  final FilledButton button = tester.widget<FilledButton>(
+    find.byType(FilledButton),
   );
   return button.style?.backgroundColor?.resolve(const <WidgetState>{});
 }

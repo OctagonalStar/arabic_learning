@@ -4,7 +4,7 @@
 
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter/services.dart' show Clipboard, ClipboardData;
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -16,9 +16,10 @@ import 'package:arabic_learning/services/app_data.dart';
 import 'package:arabic_learning/services/global_state.dart';
 import 'package:arabic_learning/services/model_manager.dart';
 import 'package:arabic_learning/theme/tokens.dart'
-    show AppRadius, AppSemanticColors, AppSpacing;
+    show AppSemanticColors, AppSpacing;
 import 'package:arabic_learning/widgets/kit.dart'
     show Button, SettingItem;
+import 'package:arabic_learning/widgets/shared.dart' show StatusChip;
 import 'package:arabic_learning/widgets/feedback.dart' show ProgressBar;
 import 'package:arabic_learning/widgets/overlays.dart' show alert, showSnackBar;
 
@@ -264,19 +265,10 @@ class _ModelManagementPageState extends State<ModelManagementPage> {
           Row(
             children: [
               Expanded(child: Text(title, style: theme.textTheme.titleSmall)),
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: AppSpacing.xs,
-                  vertical: 2.0,
-                ),
-                decoration: BoxDecoration(
-                  color: stateColor.withValues(alpha: 0.15),
-                  borderRadius: AppRadius.controlBorder,
-                ),
-                child: Text(
-                  stateText,
-                  style: theme.textTheme.labelSmall?.copyWith(color: stateColor),
-                ),
+              StatusChip(
+                text: stateText,
+                background: stateColor.withValues(alpha: 0.15),
+                foreground: stateColor,
               ),
             ],
           ),
@@ -520,36 +512,36 @@ class _ModelManagementPageState extends State<ModelManagementPage> {
             if (kIsWeb)
               Padding(
                 padding: const EdgeInsets.all(AppSpacing.sm),
-                child: Container(
-                  padding: const EdgeInsets.all(AppSpacing.sm),
-                  decoration: BoxDecoration(
-                    color: Theme.of(context).colorScheme.errorContainer,
-                    borderRadius: AppRadius.cardBorder,
-                  ),
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Icon(
-                        Icons.warning_amber_rounded,
-                        color: Theme.of(context).colorScheme.onErrorContainer,
-                      ),
-                      const SizedBox(width: AppSpacing.xs),
-                      Expanded(
-                        child: Text(
-                          "模型保存在浏览器的 IndexedDB 中，单个模型通常有几十到上百 MB。"
-                          "清除站点数据会一并删除已下载的模型；首次加载与合成都比较慢，"
-                          "移动浏览器在内存不足时可能失败。受浏览器 CORS 限制，"
-                          "网页内下载可能失败；失败时按提示复制链接自行下载，"
-                          "再用「导入模型」选择本地文件。",
-                          style:
-                              Theme.of(context).textTheme.bodySmall?.copyWith(
-                                    color: Theme.of(context)
-                                        .colorScheme
-                                        .onErrorContainer,
-                                  ),
+                child: Card(
+                  margin: EdgeInsets.zero,
+                  color: Theme.of(context).colorScheme.errorContainer,
+                  child: Padding(
+                    padding: const EdgeInsets.all(AppSpacing.sm),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Icon(
+                          Icons.warning_amber_rounded,
+                          color: Theme.of(context).colorScheme.onErrorContainer,
                         ),
-                      ),
-                    ],
+                        const SizedBox(width: AppSpacing.xs),
+                        Expanded(
+                          child: Text(
+                            "模型保存在浏览器的 IndexedDB 中，单个模型通常有几十到上百 MB。"
+                            "清除站点数据会一并删除已下载的模型；首次加载与合成都比较慢，"
+                            "移动浏览器在内存不足时可能失败。受浏览器 CORS 限制，"
+                            "网页内下载可能失败；失败时按提示复制链接自行下载，"
+                            "再用「导入模型」选择本地文件。",
+                            style:
+                                Theme.of(context).textTheme.bodySmall?.copyWith(
+                                      color: Theme.of(context)
+                                          .colorScheme
+                                          .onErrorContainer,
+                                    ),
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
               ),

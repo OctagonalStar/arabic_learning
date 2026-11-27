@@ -4,7 +4,7 @@ import 'package:arabic_learning/services/memberships.dart' show WordMembership;
 import 'package:arabic_learning/widgets/flip_word_card.dart' show FlipWordCard;
 import 'package:arabic_learning/widgets/overlays.dart' show viewAnswer;
 import 'package:arabic_learning/widgets/questions.dart' show WordCardQuestion;
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
 

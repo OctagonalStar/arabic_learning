@@ -4,11 +4,14 @@
 import 'package:arabic_learning/models/recitation_text.dart';
 import 'package:arabic_learning/screens/test/recitation/recitation_recite_tab.dart';
 import 'package:arabic_learning/screens/test/recitation/recitation_study_tab.dart';
-import 'package:flutter/material.dart';
+import 'package:arabic_learning/screens/test/recitation/recitation_shared.dart';
+import 'package:arabic_learning/widgets/hero_title.dart';
+import 'package:material_ui/material_ui.dart';
 
 class RecitationDetailPage extends StatefulWidget {
   final RecitationTextUnit unit;
-  const RecitationDetailPage({super.key, required this.unit});
+  final int? listIndex;
+  const RecitationDetailPage({super.key, required this.unit, this.listIndex});
 
   @override
   State<RecitationDetailPage> createState() => _RecitationDetailPageState();
@@ -32,11 +35,16 @@ class _RecitationDetailPageState extends State<RecitationDetailPage> {
       length: 3,
       child: Scaffold(
         appBar: AppBar(
-          title: Text(
-            widget.unit.title,
+          title: HeroTitle(
+            tag: recitationUnitHeroTag(widget.unit, listIndex: widget.listIndex),
+            text: widget.unit.title,
             maxLines: 1,
-            overflow: TextOverflow.ellipsis,
+            softWrap: false,
             style: theme.textTheme.headlineSmall?.copyWith(
+              color: scheme.onSurface,
+              fontWeight: FontWeight.w600,
+            ),
+            flightStyle: theme.textTheme.headlineSmall?.copyWith(
               color: scheme.onSurface,
               fontWeight: FontWeight.w600,
             ),

@@ -1,17 +1,16 @@
 // 阅读题作答页：左（上）文章 + 右（下）题目分页，末页检查答案并提交。
 
-import 'package:arabic_learning/core/extensions.dart';
 import 'package:arabic_learning/core/selection.dart';
-import 'package:arabic_learning/core/statics.dart';
 import 'package:arabic_learning/models/reading.dart';
 import 'package:arabic_learning/screens/test/reading/reading_conclude_page.dart';
 import 'package:arabic_learning/screens/test/reading/reading_shared.dart';
 import 'package:arabic_learning/services/app_data.dart';
 import 'package:arabic_learning/theme/tokens.dart' show AppBreakpoints, AppMotion;
+import 'package:arabic_learning/widgets/hero_title.dart';
 import 'package:arabic_learning/widgets/kit.dart' show Button, TextContainer;
 import 'package:arabic_learning/widgets/shared.dart' show ButtonLabel;
 import 'package:arabic_learning/core/navigation.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_markdown_plus/flutter_markdown_plus.dart';
 import 'package:provider/provider.dart';
 
@@ -61,31 +60,12 @@ class _ReadingQuestionPage extends State<ReadingQuestionPage> {
       appBar: AppBar(
         // 与列表项标题共享 Hero：飞行中显式样式保持一致，避免 overlay 丢失
         // AppBar 的 DefaultTextStyle 导致中途跳变。
-        title: Hero(
+        title: HeroTitle(
           tag: readingUnitHeroTag(widget.unit, listIndex: widget.listIndex),
-          // 与列表项 Hero 共用同一 shuttle：push/pop 两个方向都单行缩放，
-          // 避免飞行中软换行 + 紧致飞行框裁切。
-          flightShuttleBuilder: (BuildContext flightContext, Animation<double> animation, HeroFlightDirection direction, BuildContext fromHeroContext, BuildContext toHeroContext) {
-            return FittedBox(
-              fit: BoxFit.scaleDown,
-              child: Text(
-                widget.unit.title,
-                maxLines: 1,
-                softWrap: false,
-                overflow: TextOverflow.ellipsis,
-                textDirection: widget.unit.title.textDirection,
-                style: Theme.of(flightContext).appBarTheme.titleTextStyle,
-              ),
-            );
-          },
-          child: Text(
-            widget.unit.title,
-            maxLines: 1,
-            softWrap: false,
-            overflow: TextOverflow.ellipsis,
-            textDirection: widget.unit.title.textDirection,
-            style: Theme.of(context).appBarTheme.titleTextStyle,
-          ),
+          text: widget.unit.title,
+          maxLines: 1,
+          softWrap: false,
+          style: Theme.of(context).appBarTheme.titleTextStyle,
         ),
       ),
       body: SafeArea(
@@ -120,7 +100,6 @@ class _ReadingQuestionPage extends State<ReadingQuestionPage> {
                             return TableRow(
                               decoration: BoxDecoration(
                                 color: context.watch<SingleSelectionNotifier>().value == i ? Theme.of(context).colorScheme.primaryContainer : null,
-                                borderRadius: StaticsVar.br
                               ),
                               children: [
                                 TextContainer(text: ["A", "B", "C", "D", "E", "F", "G"].elementAt(i)),

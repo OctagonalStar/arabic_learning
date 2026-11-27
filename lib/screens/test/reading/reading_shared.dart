@@ -2,7 +2,7 @@
 
 import 'package:arabic_learning/models/reading.dart';
 import 'package:arabic_learning/theme/tokens.dart' show AppBreakpoints;
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 /// 阅读文本缩放倍率：按可用宽度分档。
 ///

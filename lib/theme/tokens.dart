@@ -4,7 +4,7 @@
 // widgets / screens / theme 各层复用。`StaticsVar.br` 与 `StaticsVar.curve`
 // 直接引用此处的 token，保证既有调用点不破。
 
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 /// 间距 token（4 / 8 / 16 / 24 / 32）。
 @immutable
@@ -27,22 +27,28 @@ class AppSpacing {
   static const double lg = 32.0;
 }
 
-/// 圆角 token：统一为两档语义（card=25、control=12）。
+/// 圆角 token：对齐 M3 shape scale（control=12、card=16、sheet=28）。
 @immutable
 class AppRadius {
   const AppRadius._();
 
-  /// 大圆角（卡片 / 容器 / 底部弹窗），与旧 `StaticsVar.br` 一致。
-  static const double card = 25.0;
+  /// 卡片 / 容器圆角（M3 large）。
+  static const double card = 16.0;
 
-  /// 小圆角（输入框 / 按钮 / chip 等控件）。
+  /// 小圆角（输入框 / 按钮 / chip 等控件，M3 medium）。
   static const double control = 12.0;
+
+  /// 底部弹窗 / 对话框圆角（M3 extraLarge）。
+  static const double sheet = 28.0;
 
   /// 卡片圆角便捷对象。
   static final BorderRadius cardBorder = BorderRadius.circular(card);
 
   /// 控件圆角便捷对象。
   static final BorderRadius controlBorder = BorderRadius.circular(control);
+
+  /// 弹层圆角便捷对象。
+  static final BorderRadius sheetBorder = BorderRadius.circular(sheet);
 
   /// 卡片圆角对应的 `RoundedRectangleBorder`。
   static final RoundedRectangleBorder cardShape =
@@ -51,6 +57,10 @@ class AppRadius {
   /// 控件圆角对应的 `RoundedRectangleBorder`。
   static final RoundedRectangleBorder controlShape =
       RoundedRectangleBorder(borderRadius: controlBorder);
+
+  /// 弹层圆角对应的 `RoundedRectangleBorder`。
+  static final RoundedRectangleBorder sheetShape =
+      RoundedRectangleBorder(borderRadius: sheetBorder);
 }
 
 /// 动效 token：常用 `Duration` 与 `Curve`。

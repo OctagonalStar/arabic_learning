@@ -2,12 +2,12 @@
 
 import 'package:arabic_learning/core/ai_prompt.dart' show recitationPrompt;
 import 'package:arabic_learning/models/recitation_text.dart';
-import 'package:arabic_learning/widgets/type_choose_card.dart';
 import 'package:arabic_learning/theme/tokens.dart' show AppRadius, AppSpacing;
 import 'package:arabic_learning/widgets/kit.dart' show Button;
+import 'package:arabic_learning/widgets/type_choose_card.dart';
 import 'package:arabic_learning/widgets/overlays.dart' show showSnackBar;
 import 'package:arabic_learning/widgets/shared.dart' show appInputDecoration;
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter/services.dart' show Clipboard, ClipboardData;
 import 'package:provider/provider.dart';
 
@@ -35,21 +35,22 @@ class _RecitationAddPageState extends State<RecitationAddPage> {
   }
 
   String get _paneTitle => switch (_pane) {
-        _Pane.source => "选择课文来源",
-        _Pane.paste => "粘贴 JSON",
-        _Pane.prompt => "复制提示词",
-      };
+    _Pane.source => "选择课文来源",
+    _Pane.paste => "粘贴 JSON",
+    _Pane.prompt => "复制提示词",
+  };
 
   Future<void> _import() async {
     final Global global = context.read<Global>();
-    final RecitationTextUnit? unit =
-        RecitationTextUnit.buildFromMap(_jsonController.text, strict: false);
+    final RecitationTextUnit? unit = RecitationTextUnit.buildFromMap(
+      _jsonController.text,
+      strict: false,
+    );
     if (unit == null) {
       setState(() => _error = "无法解析，请确认是完整的 JSON");
       return;
     }
-    final List<RecitationTextUnit> units =
-        AppData().recitationTextData.units;
+    final List<RecitationTextUnit> units = AppData().recitationTextData.units;
     final String hash = unit.getHash();
     if (units.any((RecitationTextUnit u) => u.getHash() == hash)) {
       setState(() => _error = "这篇课文已存在");
@@ -62,6 +63,60 @@ class _RecitationAddPageState extends State<RecitationAddPage> {
     Navigator.pop(context, unit);
   }
 
+  Widget _sourcePane(ThemeData theme) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const SizedBox(height: AppSpacing.md),
+        Text(
+          "导入课文",
+          style: theme.textTheme.headlineMedium?.copyWith(
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+        const SizedBox(height: AppSpacing.xs),
+        Text(
+          "已有整理好的 JSON 就直接粘贴；没有的话先复制提示词交给任意 AI。",
+          style: theme.textTheme.bodyLarge?.copyWith(
+            color: theme.colorScheme.onSurfaceVariant,
+            height: 1.5,
+          ),
+        ),
+        const SizedBox(height: AppSpacing.md),
+        TypeChooseCard(
+          icon: Icons.content_paste_go,
+          emphasized: true,
+          mainTitle: Text(
+            "粘贴 JSON",
+            style: theme.textTheme.headlineMedium,
+          ),
+          subTitle: Text(
+            "把整理好的课文 JSON 直接粘贴导入，字段缺失时会尽量宽松解析。",
+            style: theme.textTheme.bodyMedium,
+          ),
+          onTap: () => setState(() {
+            _pane = _Pane.paste;
+            _error = null;
+          }),
+        ),
+        const SizedBox(height: AppSpacing.sm),
+        TypeChooseCard(
+          icon: Icons.auto_awesome,
+          mainTitle: Text(
+            "复制提示词",
+            style: theme.textTheme.headlineMedium,
+          ),
+          subTitle: Text(
+            "复制整理提示词发给任意聊天 AI，再把返回的 JSON 粘回来。",
+            style: theme.textTheme.bodyMedium,
+          ),
+          onTap: () => setState(() => _pane = _Pane.prompt),
+        ),
+        const SizedBox(height: AppSpacing.lg),
+      ],
+    );
+  }
+
   Widget _pastePane(ThemeData theme) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -71,26 +126,21 @@ class _RecitationAddPageState extends State<RecitationAddPage> {
           keyboardType: TextInputType.multiline,
           maxLines: 10,
           style: const TextStyle(fontFamily: "monospace"),
-          decoration: appInputDecoration(
-            context,
-            hintText: "粘贴 AI 返回的 JSON",
-          ),
+          decoration: appInputDecoration(context, hintText: "粘贴 AI 返回的 JSON"),
         ),
         if (_error != null)
           Padding(
             padding: const EdgeInsets.only(top: AppSpacing.xs),
             child: Text(
               _error!,
-              style: theme.textTheme.bodyLarge
-                  ?.copyWith(color: theme.colorScheme.error),
+              style: theme.textTheme.bodyLarge?.copyWith(
+                color: theme.colorScheme.error,
+              ),
             ),
           ),
         Padding(
           padding: const EdgeInsets.only(top: AppSpacing.sm),
-          child: Button(
-            onPressed: _import,
-            child: const Text("导入"),
-          ),
+          child: Button(onPressed: _import, child: const Text("导入")),
         ),
       ],
     );
@@ -111,18 +161,21 @@ class _RecitationAddPageState extends State<RecitationAddPage> {
           padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
           child: ConstrainedBox(
             constraints: const BoxConstraints(maxHeight: 280),
-            child: Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(AppSpacing.sm),
-              decoration: BoxDecoration(
-                color: theme.colorScheme.surfaceContainerHigh,
-                borderRadius: AppRadius.controlBorder,
-                border: Border.all(color: theme.colorScheme.outlineVariant),
+            child: Card(
+              margin: EdgeInsets.zero,
+              color: theme.colorScheme.surfaceContainerHigh,
+              clipBehavior: Clip.antiAlias,
+              shape: RoundedRectangleBorder(
+                borderRadius: AppRadius.cardBorder,
+                side: BorderSide(color: theme.colorScheme.outlineVariant),
               ),
-              child: SingleChildScrollView(
-                child: SelectableText(
-                  recitationPrompt,
-                  style: const TextStyle(fontFamily: "monospace"),
+              child: Padding(
+                padding: const EdgeInsets.all(AppSpacing.sm),
+                child: SingleChildScrollView(
+                  child: SelectableText(
+                    recitationPrompt,
+                    style: const TextStyle(fontFamily: "monospace"),
+                  ),
                 ),
               ),
             ),
@@ -134,7 +187,8 @@ class _RecitationAddPageState extends State<RecitationAddPage> {
               child: Button(
                 onPressed: () async {
                   await Clipboard.setData(
-                      const ClipboardData(text: recitationPrompt));
+                    const ClipboardData(text: recitationPrompt),
+                  );
                   if (!mounted) return;
                   showSnackBar(context, "已复制提示词");
                 },
@@ -161,9 +215,6 @@ class _RecitationAddPageState extends State<RecitationAddPage> {
   @override
   Widget build(BuildContext context) {
     final ThemeData theme = Theme.of(context);
-    final double cardHeight =
-        (MediaQuery.sizeOf(context).height * 0.2).clamp(140.0, 220.0);
-    final double cardWidth = MediaQuery.sizeOf(context).width * 0.8;
     return Scaffold(
       appBar: AppBar(
         title: Text(
@@ -183,34 +234,7 @@ class _RecitationAddPageState extends State<RecitationAddPage> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  if (_pane == _Pane.source) ...[
-                    SizedBox(height: AppSpacing.lg),
-                    TypeChooseCard(
-                      mainTitle: Text("粘贴 JSON",
-                          style: theme.textTheme.headlineMedium),
-                      subTitle: Text(
-                          "把整理好的课文 JSON 直接粘贴导入",
-                          style: theme.textTheme.bodyLarge),
-                      width: cardWidth,
-                      height: cardHeight,
-                      onTap: () => setState(() {
-                        _pane = _Pane.paste;
-                        _error = null;
-                      }),
-                    ),
-                    SizedBox(height: AppSpacing.md),
-                    TypeChooseCard(
-                      mainTitle: Text("复制提示词",
-                          style: theme.textTheme.headlineMedium),
-                      subTitle: Text(
-                          "复制整理提示词，发给任意聊天 AI 整理课文，再把返回的 JSON 粘回来",
-                          style: theme.textTheme.bodyLarge),
-                      width: cardWidth,
-                      height: cardHeight,
-                      onTap: () => setState(() => _pane = _Pane.prompt),
-                    ),
-                    SizedBox(height: AppSpacing.lg),
-                  ],
+                  if (_pane == _Pane.source) _sourcePane(theme),
                   if (_pane == _Pane.paste) _pastePane(theme),
                   if (_pane == _Pane.prompt) _promptPane(theme),
                   SizedBox(height: AppSpacing.lg),

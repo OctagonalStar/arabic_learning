@@ -5,7 +5,7 @@
 // 「widget 层不依赖页面层」的分层约定。
 
 import 'package:arabic_learning/services/global_state.dart' show Global;
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:provider/provider.dart';
 
 /// 词库为空时的引导弹窗：说明当前没有词库，并提供「去导入词库」的

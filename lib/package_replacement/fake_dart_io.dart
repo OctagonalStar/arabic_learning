@@ -1,15 +1,23 @@
-
 class File {
   File(String filePath);
   String get path {
     // nothing
     return "";
   }
-  bool existsSync() {return false;}
 
-  int lengthSync() {return 0;}
+  bool existsSync() {
+    return false;
+  }
 
-  void deleteSync() {}
+  int lengthSync() {
+    return 0;
+  }
+
+  DateTime lastModifiedSync() {
+    return DateTime.fromMillisecondsSinceEpoch(0);
+  }
+
+  void deleteSync({bool recursive = false}) {}
 
   Future<void> create({required bool recursive}) async {}
 
@@ -17,7 +25,9 @@ class File {
 
   Future readAsBytes() async {}
 
-  Future<String> readAsString() async {return "";}
+  Future<String> readAsString() async {
+    return "";
+  }
 
   void delete() {}
 }
@@ -37,7 +47,9 @@ class Directory {
 
   Directory(this.path);
 
-  bool existsSync() {return false;}
+  bool existsSync() {
+    return false;
+  }
 
   void deleteSync({bool recursive = false}) {}
 
@@ -46,7 +58,7 @@ class Directory {
   List<FileSystemEntity> listSync() => <FileSystemEntity>[];
 }
 
-class Platform{
+class Platform {
   static const String pathSeparator = "";
 
   static bool get isWindows => false;
@@ -66,9 +78,14 @@ class Platform{
   static Map<String, String> get environment => {};
 }
 
-class IdbFactory{
-  Future<Database> open(String s, {required int version, required Null Function(VersionChangeEvent event) onUpgradeNeeded}) async {return Database();}
-  
+class IdbFactory {
+  Future<Database> open(
+    String s, {
+    required int version,
+    required Null Function(VersionChangeEvent event) onUpgradeNeeded,
+  }) async {
+    return Database();
+  }
 }
 
 class Database {
@@ -76,7 +93,7 @@ class Database {
   void createObjectStore(String s, {required bool autoIncrement}) {}
 }
 
-IdbFactory? getIdbFactory(){
+IdbFactory? getIdbFactory() {
   return IdbFactory();
 }
 

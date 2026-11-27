@@ -64,6 +64,8 @@ int getStrokeDays(LearningConfig config) {
 /// 要集中进行随机的时候可以提供[rnd]实例避免重复创建实例
 List<WordItem> getRandomWords(int count, DictData dict, {WordItem? include, bool preferClass = true, bool allowRepet = false, bool shuffle = true, bool avoidSynonyms = false, Random? rnd}){
   rnd ??= Random();
+  // 不允许重复时，去重后的上限就是词库词条数；不夹住会在小词库里死循环。
+  if (!allowRepet && count > dict.words.length) count = dict.words.length;
   List<WordItem> wordList = [];
   List<WordItem> rndRange = [];
   List<WordItem> backupRndRange = [];

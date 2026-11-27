@@ -9,7 +9,7 @@
 
 import 'package:arabic_learning/core/extensions.dart' show StringExtensions;
 import 'package:arabic_learning/services/global_state.dart' show Global;
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:provider/provider.dart';
 
 /// 阿拉伯语文本样式：在 [base] 上套用当前配置的阿语备用字体。

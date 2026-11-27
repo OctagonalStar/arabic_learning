@@ -13,7 +13,7 @@ import 'package:arabic_learning/widgets/flip_word_card.dart' show FlipWordCard;
 import 'package:arabic_learning/widgets/kit.dart' show CategoryFilter, SelectChip;
 import 'package:arabic_learning/widgets/motion.dart' show StaggeredEntrance;
 import 'package:arabic_learning/widgets/overlays.dart' show showSnackBar;
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:provider/provider.dart';
 
 import 'overview_grid_metrics.dart';

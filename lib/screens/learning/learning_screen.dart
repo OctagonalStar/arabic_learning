@@ -1,185 +1,299 @@
 import 'package:arabic_learning/core/adaptive.dart' show AdaptiveTabBody;
 import 'package:arabic_learning/services/fsrs.dart';
-import 'package:arabic_learning/screens/setting/questions_setting_page.dart' show QuestionsSettingPage;
+import 'package:arabic_learning/screens/setting/questions_setting_page.dart'
+    show QuestionsSettingPage;
 import 'package:arabic_learning/models/dict.dart';
 import 'package:arabic_learning/models/reading.dart';
-import 'package:flutter/foundation.dart' show clampDouble;
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:provider/provider.dart';
 
-import 'package:arabic_learning/widgets/kit.dart' show Button, popSelectClasses;
-import 'package:arabic_learning/theme/tokens.dart' show AppRadius, AppSpacing;
-import 'package:arabic_learning/theme/typography.dart';
+import 'package:arabic_learning/widgets/kit.dart' show popSelectClasses;
+import 'package:arabic_learning/theme/tokens.dart' show AppSpacing;
 import 'package:arabic_learning/widgets/overlays.dart' show showSnackBar;
-import 'package:arabic_learning/widgets/shared.dart' show ButtonLabel;
 import 'package:arabic_learning/services/words.dart';
 import 'package:arabic_learning/services/global_state.dart';
 import 'package:arabic_learning/services/app_data.dart';
-import 'package:arabic_learning/services/learning_session.dart' show LearningSessionCheckpoint, LearningSessionStore;
+import 'package:arabic_learning/services/learning_session.dart'
+    show LearningSessionCheckpoint, LearningSessionStore;
 import 'package:arabic_learning/services/push_session.dart';
-import 'package:arabic_learning/screens/learning/favorites_page.dart' show FavoritesPage;
-import 'package:arabic_learning/screens/learning/fsrs_screens.dart' show FSRSLearningPage, ForeFSRSSettingPage;
+import 'package:arabic_learning/screens/learning/favorites_page.dart'
+    show FavoritesPage;
+import 'package:arabic_learning/screens/learning/fsrs_screens.dart'
+    show FSRSLearningPage, ForeFSRSSettingPage;
 import 'package:arabic_learning/screens/learning/learning_pages_build.dart';
-import 'package:arabic_learning/screens/learning/plan/plan_entry_card.dart' show PlanEntryCard;
-import 'package:arabic_learning/screens/setting/dict_manage_page.dart' show DictManagePage;
+import 'package:arabic_learning/screens/learning/plan/plan_entry_card.dart'
+    show PlanEntryCard;
+import 'package:arabic_learning/screens/setting/dict_manage_page.dart'
+    show DictManagePage;
 import 'package:arabic_learning/core/navigation.dart';
 
+/// 学习页：计划入口、学习/复习主操作与更多入口。
 class LearningPage extends StatelessWidget {
   const LearningPage({super.key});
 
+  static const double _wideBreakpoint = 900.0;
+  static const double _maxContentWidth = 960.0;
+
   @override
   Widget build(BuildContext context) {
+    final ColorScheme scheme = Theme.of(context).colorScheme;
 
-    // 按钮高度按 Tab 可用高度推导（保留原 0.15/0.1/0.25 的比例关系），
-    // 矮横屏下整体压缩，手机竖屏/桌面下与原观感接近。
     return AdaptiveTabBody(
       builder: (BuildContext context, BoxConstraints constraints) {
-        final double width = constraints.maxWidth;
-        final double height = constraints.maxHeight;
-        final double gap = clampDouble(height * 0.05, 12.0, 40.0);
-        // 下限 190：保证「学习 / 复习」这类纵向图标+标题按钮的最小可用高度
-        // （图标块 + displaySmall 文案），避免按钮内部 Column 溢出。
-        final double rowHeight = clampDouble(height * 0.25, 190.0, 280.0);
-        final double pushHeight = clampDouble(height * 0.15, 64.0, 170.0);
-        final double overviewHeight = clampDouble(height * 0.2, 76.0, 220.0);
-        return Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            // 「计划学习」入口：紧凑单卡，高度按 Tab 可用高度收紧（60..72），
-            // 尽量少占用下方按钮的纵向预算。
-            const SizedBox(height: AppSpacing.xs),
-            PlanEntryCard(
-              height: height * 0.1,
-            ),
-            SizedBox(height: gap),
+        final bool wide = constraints.maxWidth >= _wideBreakpoint;
+        final Widget actions = Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: <Widget>[
             Row(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-              children: [
-                Column(
-                  children: [
-                    Button(
-                      backgroundColor: Theme.of(context).colorScheme.primaryContainer,
-                      size: Size(width * 0.4, rowHeight * 0.6),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadiusGeometry.vertical(top: Radius.circular(AppRadius.card))),
-                      onPressed: () {
-                        shiftToStudy(context);
-                      },
-                      icon: Padding(
-                        padding: const EdgeInsets.all(8.0),
-                        child: Icon(Icons.task_alt),
-                      ),
-                      iconDirection: AxisDirection.up,
-                      child: ButtonLabel(
-                        child: Text('学习', style: withoutColor(Theme.of(context).textTheme.displaySmall!).copyWith(fontWeight: FontWeight.bold)),
-                      ),
-                    ),
-                    Button(
-                      backgroundColor: Theme.of(context).colorScheme.secondaryContainer,
-                      size: Size(width * 0.4, rowHeight * 0.4),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadiusGeometry.vertical(bottom: Radius.circular(AppRadius.card))),
-                      onPressed: (){
-                        pushPage(context, QuestionsSettingPage());
-                      }, 
-                      icon: Icon(Icons.quiz),
-                      child: Text("配置题型"),
-                    )
-                  ],
-                ),
-                Button(
-                  backgroundColor: Theme.of(context).colorScheme.primaryContainer,
-                  size: Size(width * 0.4, rowHeight),
-                  onPressed: (){
-                    pushPage(context, ForeFSRSSettingPage());
-                  },
-                  icon: Padding(
-                    padding: const EdgeInsets.all(8.0),
-                    child: Icon(Icons.history_edu),
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: <Widget>[
+                Expanded(
+                  child: _ActionCard(
+                    background: scheme.primaryContainer,
+                    foreground: scheme.onPrimaryContainer,
+                    icon: Icons.task_alt,
+                    title: '学习',
+                    subtitle: '选择词库与题型开始学习',
+                    onTap: () => shiftToStudy(context),
                   ),
-                  iconDirection: AxisDirection.up,
-                  child: ButtonLabel(
-                    child: Text("复习",style: withoutColor(Theme.of(context).textTheme.displaySmall!).copyWith(fontWeight: FontWeight.bold))
+                ),
+                const SizedBox(width: AppSpacing.sm),
+                Expanded(
+                  child: _ActionCard(
+                    background: scheme.secondaryContainer,
+                    foreground: scheme.onSecondaryContainer,
+                    icon: Icons.history_edu,
+                    title: '复习',
+                    subtitle: '按 FSRS 计划复习到期单词',
+                    onTap: () => pushPage(context, const ForeFSRSSettingPage()),
                   ),
                 ),
               ],
             ),
-            SizedBox(height: gap),
-            if(FSRS().config.pushAmount != 0) ...[
-              Button(
-                backgroundColor: Theme.of(context).colorScheme.primaryContainer,
-                size: Size(width * 0.8, pushHeight),
-                onPressed: (){
-                  if(AppData().wordData.words.isEmpty) {
-                    showSnackBar(context, "词库为空，无法推送！请先导入词库");
-                    return;
-                  }
-                  // 分类筛选在 FSRS 设置中配置；日期种子保证同一天重进得到同一批词
-                  final DateTime now = DateTime.now();
-                  final DailyPushPlan plan = buildDailyPushPlan(now: now, fsrs: FSRS(), wordData: AppData().wordData);
-                  if(plan.noCandidates) {
-                    showSnackBar(context, "当前分类筛选下没有可推送的单词，请调整筛选条件");
-                    return;
-                  }
-                  if(plan.words.isEmpty) {
-                    PushSessionStore.clear();
-                    showSnackBar(context, "今日的推送已完成");
-                    return;
-                  }
-                  // 读取当天断点并换算为恢复位置；词库规模变化视为断点失效
-                  final PushCheckpoint? cp = PushSessionStore.load();
-                  int initialPhase = 0, initialLearningIndex = 0, initialQuestionIndex = 0;
-                  if(cp != null && cp.day == pushDayKey(now) && cp.wordCount == AppData().wordData.words.length && (cp.phase == 0 || cp.phase == 1)) {
-                    int anchor = plan.words.indexWhere((WordItem w) => w.id == cp.wordId);
-                    if(anchor < 0) anchor = 0;
-                    initialPhase = cp.phase;
-                    if(cp.phase == 0) {
-                      initialLearningIndex = anchor;
-                    } else {
-                      initialQuestionIndex = anchor;
-                    }
-                  }
-                  pushPage(context, FSRSLearningPage(fsrs: FSRS(), words: plan.words, initialPhase: initialPhase, initialLearningIndex: initialLearningIndex, initialQuestionIndex: initialQuestionIndex));
-                },
-                icon: Icon(Icons.push_pin, size: 24),
-                // 次级全宽按钮统一 titleLarge(22)：与主 CTA（学习/复习，displaySmall 36）
-                // 拉开层级；ButtonLabel 默认 scaleDown 只缩不放，短文本不会被放大填满按钮。
-                child: ButtonLabel(child: Text("学习推送单词", style: withoutColor(Theme.of(context).textTheme.titleLarge!))),
+            Align(
+              alignment: Alignment.centerRight,
+              child: TextButton.icon(
+                onPressed: () =>
+                    pushPage(context, const QuestionsSettingPage()),
+                icon: const Icon(Icons.quiz_outlined),
+                label: const Text('配置题型'),
               ),
-            ],
-            SizedBox(height: gap),
-            // 「词汇总览 / 收藏单词」并列次级按钮，与上方主按钮行同样的
-            // spaceEvenly 排布与 0.4 宽度比例。
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-              children: [
-                Button(
-                  backgroundColor: Theme.of(context).colorScheme.primaryContainer,
-                  size: Size(width * 0.4, overviewHeight),
-                  onPressed: (){
-                    pushPage(context, WordCardOverViewPage());
-                  },
-                  icon: Icon(Icons.abc, size: 24),
-                  // 与「学习推送单词」同为次级按钮，统一 titleLarge(22)；
-                  // 半宽下用 ButtonLabel（scaleDown）兜底，避免窄屏文字溢出。
-                  child: ButtonLabel(child: Text("词汇总览", style: withoutColor(Theme.of(context).textTheme.titleLarge!))),
-                ),
-                Button(
-                  backgroundColor: Theme.of(context).colorScheme.primaryContainer,
-                  size: Size(width * 0.4, overviewHeight),
-                  onPressed: (){
-                    pushPage(context, FavoritesPage());
-                  },
-                  icon: Icon(Icons.star, size: 24),
-                  child: ButtonLabel(child: Text("收藏单词", style: withoutColor(Theme.of(context).textTheme.titleLarge!))),
-                ),
-              ],
             ),
-          ]
+          ],
+        );
+
+        final Widget more = _MoreCard(
+          showPush: FSRS().config.pushAmount != 0,
+          onPush: () => _openPush(context),
+          onOverview: () => pushPage(context, const WordCardOverViewPage()),
+          onFavorites: () => pushPage(context, const FavoritesPage()),
+        );
+
+        return Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: _maxContentWidth),
+            child: Padding(
+              padding: const EdgeInsets.all(AppSpacing.sm),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: <Widget>[
+                  const PlanEntryCard(height: 72.0),
+                  const SizedBox(height: AppSpacing.md),
+                  if (wide)
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: <Widget>[
+                        Expanded(flex: 5, child: actions),
+                        const SizedBox(width: AppSpacing.md),
+                        Expanded(flex: 4, child: more),
+                      ],
+                    )
+                  else ...<Widget>[
+                    actions,
+                    const SizedBox(height: AppSpacing.md),
+                    more,
+                  ],
+                ],
+              ),
+            ),
+          ),
         );
       },
     );
   }
+
+  /// 打开今日推送；词库为空、筛选无候选或今日已完成时给出提示。
+  void _openPush(BuildContext context) {
+    if (AppData().wordData.words.isEmpty) {
+      showSnackBar(context, '词库为空，无法推送！请先导入词库');
+      return;
+    }
+    // 分类筛选在 FSRS 设置中配置；日期种子保证同一天重进得到同一批词。
+    final DateTime now = DateTime.now();
+    final DailyPushPlan plan = buildDailyPushPlan(
+      now: now,
+      fsrs: FSRS(),
+      wordData: AppData().wordData,
+    );
+    if (plan.noCandidates) {
+      showSnackBar(context, '当前分类筛选下没有可推送的单词，请调整筛选条件');
+      return;
+    }
+    if (plan.words.isEmpty) {
+      PushSessionStore.clear();
+      showSnackBar(context, '今日的推送已完成');
+      return;
+    }
+    // 读取当天断点并换算为恢复位置；词库规模变化视为断点失效。
+    final PushCheckpoint? cp = PushSessionStore.load();
+    int initialPhase = 0, initialLearningIndex = 0, initialQuestionIndex = 0;
+    if (cp != null &&
+        cp.day == pushDayKey(now) &&
+        cp.wordCount == AppData().wordData.words.length &&
+        (cp.phase == 0 || cp.phase == 1)) {
+      int anchor = plan.words.indexWhere((WordItem w) => w.id == cp.wordId);
+      if (anchor < 0) anchor = 0;
+      initialPhase = cp.phase;
+      if (cp.phase == 0) {
+        initialLearningIndex = anchor;
+      } else {
+        initialQuestionIndex = anchor;
+      }
+    }
+    pushPage(
+      context,
+      FSRSLearningPage(
+        fsrs: FSRS(),
+        words: plan.words,
+        initialPhase: initialPhase,
+        initialLearningIndex: initialLearningIndex,
+        initialQuestionIndex: initialQuestionIndex,
+      ),
+    );
+  }
 }
 
+/// 学习/复习主操作卡：大图标 + 标题 + 一行说明，整卡可点。
+class _ActionCard extends StatelessWidget {
+  const _ActionCard({
+    required this.background,
+    required this.foreground,
+    required this.icon,
+    required this.title,
+    required this.subtitle,
+    required this.onTap,
+  });
+
+  final Color background;
+  final Color foreground;
+  final IconData icon;
+  final String title;
+  final String subtitle;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final ThemeData theme = Theme.of(context);
+    return Card.filled(
+      margin: EdgeInsets.zero,
+      color: background,
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: onTap,
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(minHeight: 156.0),
+          child: Padding(
+            padding: const EdgeInsets.all(AppSpacing.md),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: <Widget>[
+                Icon(icon, size: 40.0, color: foreground),
+                const SizedBox(height: AppSpacing.xs),
+                FittedBox(
+                  fit: BoxFit.scaleDown,
+                  child: Text(
+                    title,
+                    style: theme.textTheme.headlineSmall?.copyWith(
+                      fontWeight: FontWeight.bold,
+                      color: foreground,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: AppSpacing.xxs),
+                Text(
+                  subtitle,
+                  textAlign: TextAlign.center,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: foreground.withValues(alpha: 0.85),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// 「更多」入口：推送、词汇总览、收藏。
+class _MoreCard extends StatelessWidget {
+  const _MoreCard({
+    required this.showPush,
+    required this.onPush,
+    required this.onOverview,
+    required this.onFavorites,
+  });
+
+  final bool showPush;
+  final VoidCallback onPush;
+  final VoidCallback onOverview;
+  final VoidCallback onFavorites;
+
+  @override
+  Widget build(BuildContext context) {
+    final int pushAmount = FSRS().config.pushAmount;
+    final List<Widget> tiles = <Widget>[
+      if (showPush)
+        ListTile(
+          leading: const Icon(Icons.push_pin_outlined),
+          title: const Text('学习推送单词'),
+          subtitle: Text('每日推送 $pushAmount 个'),
+          trailing: const Icon(Icons.chevron_right),
+          onTap: onPush,
+        ),
+      ListTile(
+        leading: const Icon(Icons.abc),
+        title: const Text('词汇总览'),
+        subtitle: const Text('浏览全部单词'),
+        trailing: const Icon(Icons.chevron_right),
+        onTap: onOverview,
+      ),
+      ListTile(
+        leading: const Icon(Icons.star_outline),
+        title: const Text('收藏单词'),
+        subtitle: const Text('查看已收藏的单词'),
+        trailing: const Icon(Icons.chevron_right),
+        onTap: onFavorites,
+      ),
+    ];
+
+    return Card(
+      margin: EdgeInsets.zero,
+      clipBehavior: Clip.antiAlias,
+      child: Column(
+        children: <Widget>[
+          for (int i = 0; i < tiles.length; i++) ...<Widget>[
+            if (i > 0) const Divider(height: 1.0),
+            tiles[i],
+          ],
+        ],
+      ),
+    );
+  }
+}
 
 Future<void> shiftToStudy(BuildContext context) async {
   context.read<Global>().uiLogger.info("准备转向学习页面");
@@ -187,21 +301,23 @@ Future<void> shiftToStudy(BuildContext context) async {
   // 有暂存断点时先询问是继续还是重新开始；继续时直接用断点里的词表与配置，
   // 不再走选词流程。
   final LearningSessionCheckpoint? checkpoint = LearningSessionStore.load();
-  if(checkpoint != null) {
+  if (checkpoint != null) {
     final _ResumeChoice? choice = await _askResumeChoice(context, checkpoint);
-    if(!context.mounted || choice == null) return;
-    if(choice == _ResumeChoice.restart) {
+    if (!context.mounted || choice == null) return;
+    if (choice == _ResumeChoice.restart) {
       await LearningSessionStore.clear();
-      if(!context.mounted) return;
+      if (!context.mounted) return;
     } else {
       final List<WordItem>? words = checkpoint.resolveWords(AppData().wordData);
-      if(words == null) {
+      if (words == null) {
         // 词库被删除/重置后断点失效：清掉断点并按新学习继续。
         await LearningSessionStore.clear();
-        if(!context.mounted) return;
+        if (!context.mounted) return;
         showSnackBar(context, "上次的学习进度已失效，将重新开始");
       } else {
-        context.read<Global>().uiLogger.info("恢复暂存学习进度，剩余${checkpoint.remaining}题");
+        context.read<Global>().uiLogger.info(
+          "恢复暂存学习进度，剩余${checkpoint.remaining}题",
+        );
         final bool? finished = await pushPage<bool>(
           context,
           InLearningPage(
@@ -210,8 +326,8 @@ Future<void> shiftToStudy(BuildContext context) async {
             resume: checkpoint,
           ),
         );
-        if(!context.mounted) return;
-        if(finished??false) context.read<Global>().updateLearningStreak();
+        if (!context.mounted) return;
+        if (finished ?? false) context.read<Global>().updateLearningStreak();
         return;
       }
     }
@@ -225,15 +341,27 @@ Future<void> shiftToStudy(BuildContext context) async {
     withCategoryFilter: true,
     onImportDict: () => pushPageOn(navigator, const DictManagePage()),
   );
-  if(classSelection.selectedClass.isEmpty || !context.mounted) return;
-  final List<WordItem> selectedWords = getSelectedWords(AppData().wordData, classSelection.selectedClass, doShuffle: false, doDouble: false);
+  if (classSelection.selectedClass.isEmpty || !context.mounted) return;
+  final List<WordItem> selectedWords = getSelectedWords(
+    AppData().wordData,
+    classSelection.selectedClass,
+    doShuffle: false,
+    doDouble: false,
+  );
   // 标签筛选（或逻辑）：仅保留含有任一选中标签的单词
   final List<WordItem> words = classSelection.selectedCategories.isEmpty
       ? selectedWords
-      : selectedWords.where((WordItem word) => wordMatchesAnyCategory(word, classSelection.selectedCategories)).toList();
+      : selectedWords
+            .where(
+              (WordItem word) => wordMatchesAnyCategory(
+                word,
+                classSelection.selectedCategories,
+              ),
+            )
+            .toList();
   context.read<Global>().uiLogger.info("完成单词挑拣，共${words.length}个");
-  if(words.isEmpty) {
-    if(classSelection.selectedCategories.isNotEmpty && context.mounted) {
+  if (words.isEmpty) {
+    if (classSelection.selectedCategories.isNotEmpty && context.mounted) {
       showSnackBar(context, "当前标签筛选下没有可学习的单词");
     }
     return;
@@ -242,16 +370,18 @@ Future<void> shiftToStudy(BuildContext context) async {
     context,
     InLearningPage(words: words, countInReview: classSelection.countInReview),
   );
-  if(!context.mounted) return;
+  if (!context.mounted) return;
   context.read<Global>().uiLogger.info("返回完成情况: $finished");
-  if(finished??false) {
+  if (finished ?? false) {
     context.read<Global>().updateLearningStreak();
   }
 }
 
-
 /// 询问用户如何处理上次暂存的常规学习。
-Future<_ResumeChoice?> _askResumeChoice(BuildContext context, LearningSessionCheckpoint checkpoint) {
+Future<_ResumeChoice?> _askResumeChoice(
+  BuildContext context,
+  LearningSessionCheckpoint checkpoint,
+) {
   final String content = checkpoint.remaining <= 0
       ? "上次学习已作答完毕，可继续查看结果。"
       : "检测到未完成的常规学习，还剩 ${checkpoint.remaining} 题。";
@@ -261,9 +391,18 @@ Future<_ResumeChoice?> _askResumeChoice(BuildContext context, LearningSessionChe
       title: const Text("继续上次学习？"),
       content: Text(content),
       actions: [
-        TextButton(onPressed: ()=>Navigator.pop(dialogContext), child: const Text("取消")),
-        TextButton(onPressed: ()=>Navigator.pop(dialogContext, _ResumeChoice.restart), child: const Text("重新开始")),
-        FilledButton(onPressed: ()=>Navigator.pop(dialogContext, _ResumeChoice.resume), child: const Text("继续学习")),
+        TextButton(
+          onPressed: () => Navigator.pop(dialogContext),
+          child: const Text("取消"),
+        ),
+        TextButton(
+          onPressed: () => Navigator.pop(dialogContext, _ResumeChoice.restart),
+          child: const Text("重新开始"),
+        ),
+        FilledButton(
+          onPressed: () => Navigator.pop(dialogContext, _ResumeChoice.resume),
+          child: const Text("继续学习"),
+        ),
       ],
     ),
   );

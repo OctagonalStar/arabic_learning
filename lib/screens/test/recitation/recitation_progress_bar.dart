@@ -3,7 +3,7 @@
 // 「逐句」通过 [trailing] 在条内放「统一显示中文」开关。
 
 import 'package:arabic_learning/theme/tokens.dart' show AppSpacing;
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 class RecitationProgressBar extends StatefulWidget {
   /// 当前句（从 1 开始）。

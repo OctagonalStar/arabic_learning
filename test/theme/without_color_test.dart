@@ -1,7 +1,7 @@
 import 'package:arabic_learning/theme/app_theme.dart' show buildTheme;
 import 'package:arabic_learning/theme/typography.dart' show withoutColor;
 import 'package:arabic_learning/widgets/kit.dart' show Button;
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter_test/flutter_test.dart';
 

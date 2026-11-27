@@ -1,6 +1,6 @@
 // 题目底部「查看详解 / 下一题」操作条：从 learning_pages_build.dart 拆分而来。
 import 'package:arabic_learning/widgets/shared.dart' show RevealableActionBar;
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 class BottomTip extends StatelessWidget {
   final bool isShowNext;

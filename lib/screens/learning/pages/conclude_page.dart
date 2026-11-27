@@ -4,7 +4,7 @@ import 'dart:async';
 import 'package:arabic_learning/widgets/kit.dart' show Button;
 import 'package:arabic_learning/widgets/shared.dart' show ConclusionCard;
 import 'package:flutter/foundation.dart' show clampDouble;
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 class ConcludePage extends StatefulWidget {
   final List<int> data; // [wordCount, correctCount, secondsCount]

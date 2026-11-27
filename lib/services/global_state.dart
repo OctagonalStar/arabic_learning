@@ -22,7 +22,7 @@ import 'package:arabic_learning/theme/app_theme.dart' show buildTheme;
 import 'package:arabic_learning/theme/theme_resolver.dart'
     show ResolvedSchemes, ThemeResolver;
 import 'package:logging/logging.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart' show rootBundle, FontLoader;
 

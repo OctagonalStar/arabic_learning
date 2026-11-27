@@ -6,7 +6,7 @@
 import 'dart:math' show Random;
 
 import 'package:flutter/foundation.dart' show clampDouble;
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 import 'package:arabic_learning/models/dict.dart' show WordItem;
 import 'package:arabic_learning/services/app_data.dart' show AppData;
@@ -16,7 +16,7 @@ import 'package:arabic_learning/widgets/flip_word_card.dart' show FlipWordCard;
 import 'package:arabic_learning/widgets/kit.dart' show Button, TextContainer;
 import 'package:arabic_learning/widgets/overlays.dart' show viewAnswer;
 import 'package:arabic_learning/widgets/questions.dart' show ChoiceQuestions;
-import 'package:arabic_learning/widgets/shared.dart' show RevealableActionBar;
+import 'package:arabic_learning/widgets/shared.dart' show RevealableActionBar, StatusChip;
 
 /// 每个词的展示时长。
 const Duration _showDuration = Duration(seconds: 5);
@@ -221,10 +221,9 @@ class _FsrsCalibrationPageState extends State<FsrsCalibrationPage> {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Container(
-            width: 88,
-            height: 88,
-            decoration: BoxDecoration(color: scheme.primaryContainer, shape: BoxShape.circle),
+          CircleAvatar(
+            radius: 44,
+            backgroundColor: scheme.primaryContainer,
             child: Icon(Icons.psychology_alt_outlined, size: 44, color: scheme.onPrimaryContainer),
           ),
           const SizedBox(height: AppSpacing.md),
@@ -613,13 +612,11 @@ class FsrsCalibrationResultView extends StatelessWidget {
             ),
           ),
           const SizedBox(height: AppSpacing.sm),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm, vertical: AppSpacing.xxs),
-            decoration: BoxDecoration(
-              color: accent.withValues(alpha: 0.14),
-              borderRadius: AppRadius.controlBorder,
-            ),
-            child: Text(tierText(factor), style: theme.textTheme.titleMedium?.copyWith(color: accent)),
+          StatusChip(
+            text: tierText(factor),
+            background: accent.withValues(alpha: 0.14),
+            foreground: accent,
+            textStyle: theme.textTheme.titleMedium,
           ),
           const SizedBox(height: AppSpacing.md),
           _CalibCard(
@@ -733,11 +730,9 @@ class _StepRow extends StatelessWidget {
     final ColorScheme scheme = theme.colorScheme;
     return Row(
       children: [
-        Container(
-          width: 32,
-          height: 32,
-          alignment: Alignment.center,
-          decoration: BoxDecoration(color: scheme.primaryContainer, shape: BoxShape.circle),
+        CircleAvatar(
+          radius: 16,
+          backgroundColor: scheme.primaryContainer,
           child: Text("$index", style: theme.textTheme.labelLarge?.copyWith(color: scheme.onPrimaryContainer)),
         ),
         const SizedBox(width: AppSpacing.xs),
@@ -770,15 +765,17 @@ class _CalibCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final ColorScheme scheme = Theme.of(context).colorScheme;
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(AppSpacing.sm),
-      decoration: BoxDecoration(
-        color: scheme.surfaceContainerLow,
+    return Card(
+      margin: EdgeInsets.zero,
+      color: scheme.surfaceContainerLow,
+      shape: RoundedRectangleBorder(
         borderRadius: AppRadius.cardBorder,
-        border: Border.all(color: scheme.outlineVariant),
+        side: BorderSide(color: scheme.outlineVariant),
       ),
-      child: child,
+      child: Padding(
+        padding: const EdgeInsets.all(AppSpacing.sm),
+        child: child,
+      ),
     );
   }
 }

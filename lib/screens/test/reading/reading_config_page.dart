@@ -15,7 +15,7 @@ import 'package:arabic_learning/widgets/kit.dart' show Button, SettingItem, Sett
 import 'package:arabic_learning/widgets/overlays.dart' show alert;
 import 'package:arabic_learning/widgets/shared.dart' show appInputDecoration;
 import 'package:dio/dio.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter/services.dart' show Clipboard, ClipboardData;
 
 class QuestionConfigPage extends StatefulWidget {
@@ -115,13 +115,13 @@ class _QuestionConfigPage extends State<QuestionConfigPage> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                     children: [
-                      ElevatedButton(
+                      FilledButton(
                         onPressed: (){
                           Navigator.popUntil(context, (route) =>  route.isFirst);
                         }, 
                         child: Text("返回到主页")
                       ),
-                      ElevatedButton(
+                      FilledButton.tonal(
                         onPressed: (){
                           Navigator.pop(context);
                         }, 

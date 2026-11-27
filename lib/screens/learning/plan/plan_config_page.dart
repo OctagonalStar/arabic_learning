@@ -10,9 +10,10 @@
 
 import 'dart:math' as math;
 
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
-import 'package:arabic_learning/core/extensions.dart' show SemanticColorsContext;
+import 'package:arabic_learning/core/extensions.dart'
+    show SemanticColorsContext;
 import 'package:arabic_learning/models/dict.dart' show ClassItem, SourceItem;
 import 'package:arabic_learning/models/plan.dart'
     show PlanChain, PlanScopeRef, StudyPlan;
@@ -95,14 +96,9 @@ class _PlanConfigPageState extends State<PlanConfigPage> {
     super.initState();
     final DateTime now = DateTime.now();
     final StudyPlan? initial = widget.initial;
-    _deadline = initial?.deadline ??
-        DateTime(now.year, now.month, now.day + 7);
-    _scope = List<PlanScopeRef>.of(
-      initial?.scope ?? const <PlanScopeRef>[],
-    );
-    _categories = List<String>.of(
-      initial?.categories ?? const <String>[],
-    );
+    _deadline = initial?.deadline ?? DateTime(now.year, now.month, now.day + 7);
+    _scope = List<PlanScopeRef>.of(initial?.scope ?? const <PlanScopeRef>[]);
+    _categories = List<String>.of(initial?.categories ?? const <String>[]);
     // 旧计划的 groupSize 可能不在 5..30 内：统一夹到 Slider 区间，
     // 显示与保存都用夹紧后的值，避免滑块与文案对不上。
     _groupSize = math.min(
@@ -143,8 +139,11 @@ class _PlanConfigPageState extends State<PlanConfigPage> {
   void _recountScope() {
     final StudyPlan draft = _draftPlan();
     _scopeWords = resolveScopeWords(draft, AppData().wordData).length;
-    _unlearnedWords =
-        unlearnedScopeWords(draft, AppData().wordData, FSRS()).length;
+    _unlearnedWords = unlearnedScopeWords(
+      draft,
+      AppData().wordData,
+      FSRS(),
+    ).length;
   }
 
   Future<void> _openFsrsSettings() async {
@@ -333,13 +332,10 @@ class _PlanConfigPageState extends State<PlanConfigPage> {
         top: false,
         child: LayoutBuilder(
           builder: (BuildContext context, BoxConstraints constraints) {
-            final bool wide =
-                constraints.maxWidth > AppBreakpoints.mobile;
+            final bool wide = constraints.maxWidth > AppBreakpoints.mobile;
             final double horizontal = wide ? AppSpacing.md : AppSpacing.sm;
             return MediaQuery(
-              data: media.copyWith(
-                size: Size(cappedWidth, media.size.height),
-              ),
+              data: media.copyWith(size: Size(cappedWidth, media.size.height)),
               child: SingleChildScrollView(
                 padding: EdgeInsets.fromLTRB(
                   horizontal,
@@ -382,51 +378,54 @@ class _PlanConfigPageState extends State<PlanConfigPage> {
     final ThemeData theme = Theme.of(context);
     final ColorScheme scheme = theme.colorScheme;
     final Color warning = context.semanticColors.warning;
-    return Container(
-      padding: const EdgeInsets.all(AppSpacing.sm),
-      decoration: BoxDecoration(
-        color: Color.alphaBlend(
-          warning.withValues(alpha: 0.10),
-          scheme.surfaceContainerLow,
-        ),
-        borderRadius: AppRadius.cardBorder,
-        border: Border.all(color: warning.withValues(alpha: 0.40)),
+    return Card(
+      margin: EdgeInsets.zero,
+      color: Color.alphaBlend(
+        warning.withValues(alpha: 0.10),
+        scheme.surfaceContainerLow,
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: <Widget>[
-          Row(
-            children: <Widget>[
-              Icon(Icons.history_edu_outlined, size: 20.0, color: warning),
-              const SizedBox(width: AppSpacing.xs),
-              Expanded(
-                child: Text(
-                  "复习系统未启用",
-                  style: theme.textTheme.titleMedium?.copyWith(
-                    color: warning,
-                    fontWeight: FontWeight.bold,
+      shape: RoundedRectangleBorder(
+        borderRadius: AppRadius.cardBorder,
+        side: BorderSide(color: warning.withValues(alpha: 0.40)),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(AppSpacing.sm),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: <Widget>[
+            Row(
+              children: <Widget>[
+                Icon(Icons.history_edu_outlined, size: 20.0, color: warning),
+                const SizedBox(width: AppSpacing.xs),
+                Expanded(
+                  child: Text(
+                    "复习系统未启用",
+                    style: theme.textTheme.titleMedium?.copyWith(
+                      color: warning,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                 ),
+              ],
+            ),
+            const SizedBox(height: AppSpacing.xxs),
+            Text(
+              "计划进度以复习系统的已学记录为准，启用后才能保存计划。",
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: scheme.onSurfaceVariant,
+                height: 1.4,
               ),
-            ],
-          ),
-          const SizedBox(height: AppSpacing.xxs),
-          Text(
-            "计划进度以复习系统的已学记录为准，启用后才能保存计划。",
-            style: theme.textTheme.bodySmall?.copyWith(
-              color: scheme.onSurfaceVariant,
-              height: 1.4,
             ),
-          ),
-          Align(
-            alignment: Alignment.centerLeft,
-            child: TextButton.icon(
-              onPressed: _openFsrsSettings,
-              icon: const Icon(Icons.arrow_forward_rounded, size: 18.0),
-              label: const Text("前往复习设置"),
+            Align(
+              alignment: Alignment.centerLeft,
+              child: TextButton.icon(
+                onPressed: _openFsrsSettings,
+                icon: const Icon(Icons.arrow_forward_rounded, size: 18.0),
+                label: const Text("前往复习设置"),
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -450,28 +449,30 @@ class _PlanConfigPageState extends State<PlanConfigPage> {
                   leading: "截止日期",
                   icon: Icons.event_outlined,
                   note: "截止日期不含当日，最后学习日为截止日前一天",
-                  end: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: <Widget>[
-                      Text(
-                        planMonthDay(_deadline),
-                        style: theme.textTheme.titleMedium?.copyWith(
-                          color: scheme.primary,
-                          fontWeight: FontWeight.w600,
+                  end: FittedBox(
+                    fit: BoxFit.scaleDown,
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: <Widget>[
+                        Text(
+                          planMonthDay(_deadline),
+                          style: theme.textTheme.titleMedium?.copyWith(
+                            color: scheme.primary,
+                            fontWeight: FontWeight.w600,
+                          ),
                         ),
-                      ),
-                      Icon(
-                        Icons.chevron_right_rounded,
-                        size: 20.0,
-                        color: scheme.onSurfaceVariant,
-                      ),
-                    ],
+                        Icon(
+                          Icons.chevron_right_rounded,
+                          size: 20.0,
+                          color: scheme.onSurfaceVariant,
+                        ),
+                      ],
+                    ),
                   ),
                 ),
               ),
             ),
-            if (_deadlineError)
-              _errorText(context, "截止日期需晚于今天"),
+            if (_deadlineError) _errorText(context, "截止日期需晚于今天"),
           ],
         ),
       ],
@@ -532,9 +533,7 @@ class _PlanConfigPageState extends State<PlanConfigPage> {
         SettingRow(
           leading: "标签筛选",
           icon: Icons.label_outline,
-          note: _categories.isEmpty
-              ? "未筛选 · 选课时可勾选标签"
-              : "只学习命中任一标签的单词（多选，或逻辑）",
+          note: _categories.isEmpty ? "未筛选 · 选课时可勾选标签" : "只学习命中任一标签的单词（多选，或逻辑）",
           end: _categories.isEmpty
               ? Text(
                   "未筛选",
@@ -589,11 +588,7 @@ class _PlanConfigPageState extends State<PlanConfigPage> {
       message: ref.sourceFile.isEmpty ? label : "${ref.sourceFile} · $label",
       child: InputChip(
         key: ValueKey<String>("planScope-${ref.key}"),
-        label: Text(
-          label,
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-        ),
+        label: Text(label, maxLines: 1, overflow: TextOverflow.ellipsis),
         avatar: valid
             ? null
             : Icon(
@@ -605,8 +600,9 @@ class _PlanConfigPageState extends State<PlanConfigPage> {
         backgroundColor: valid
             ? scheme.secondaryContainer
             : scheme.error.withValues(alpha: 0.10),
-        side:
-            valid ? BorderSide.none : BorderSide(color: scheme.error.withValues(alpha: 0.35)),
+        side: valid
+            ? BorderSide.none
+            : BorderSide(color: scheme.error.withValues(alpha: 0.35)),
         deleteIcon: Icon(Icons.close_rounded, size: 16.0, color: foreground),
         onDeleted: () => _removeScopeAt(index),
         visualDensity: VisualDensity.compact,
@@ -649,7 +645,8 @@ class _PlanConfigPageState extends State<PlanConfigPage> {
             SettingRow(
               leading: "学习链条",
               icon: Icons.reorder,
-              note: "按顺序完成下列题型；长按拖动排序；"
+              note:
+                  "按顺序完成下列题型；长按拖动排序；"
                   "至少包含 1 个非单词卡片题型；计划学习不使用自我评级题目。",
               end: Text(
                 "${_sections.length} 个",
@@ -660,8 +657,7 @@ class _PlanConfigPageState extends State<PlanConfigPage> {
             ),
             const SizedBox(height: AppSpacing.xs),
             _buildChainEditor(context),
-            if (_chainError)
-              _errorText(context, "学习链条至少需要包含 1 个非单词卡片题型"),
+            if (_chainError) _errorText(context, "学习链条至少需要包含 1 个非单词卡片题型"),
             const SizedBox(height: AppSpacing.xs),
             Text(
               "添加题型",
@@ -735,21 +731,23 @@ class _PlanConfigPageState extends State<PlanConfigPage> {
 
   Widget _buildChainEditor(BuildContext context) {
     final MediaQueryData media = MediaQuery.of(context);
-    final double referenceHeight =
-        math.max(media.size.height, _kChainEditorReferenceHeight);
+    final double referenceHeight = math.max(
+      media.size.height,
+      _kChainEditorReferenceHeight,
+    );
     final double tileHeight = referenceHeight * 0.08;
     // 空链条占位文案会随系统字号放大，固定 52 在 2 倍字号下会溢出。
-    final double emptyViewport =
-        math.max(52.0, media.textScaler.scale(16.0) * 2.4);
+    final double emptyViewport = math.max(
+      52.0,
+      media.textScaler.scale(16.0) * 2.4,
+    );
     final double viewport = _sections.isEmpty
         ? emptyViewport
         : _sections.length * tileHeight + 2.0;
     return SizedBox(
       height: viewport,
       child: MediaQuery(
-        data: media.copyWith(
-          size: Size(media.size.width, referenceHeight),
-        ),
+        data: media.copyWith(size: Size(media.size.width, referenceHeight)),
         child: QuestionChainListView(
           sections: _sections,
           emptyHint: "还没有题型，点下方的题型按钮开始配置",
@@ -828,34 +826,34 @@ class _PlanConfigPageState extends State<PlanConfigPage> {
       );
     }
 
-    return Container(
-      padding: const EdgeInsets.all(20.0),
-      decoration: BoxDecoration(
-        color: scheme.primaryContainer,
-        borderRadius: AppRadius.cardBorder,
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: <Widget>[
-          Row(
-            children: <Widget>[
-              Icon(
-                Icons.insights_outlined,
-                size: 18.0,
-                color: on.withValues(alpha: 0.75),
-              ),
-              const SizedBox(width: 6.0),
-              Text(
-                "学习节奏预览",
-                style: theme.textTheme.labelLarge?.copyWith(
-                  color: on.withValues(alpha: 0.80),
+    return Card.filled(
+      margin: EdgeInsets.zero,
+      color: scheme.primaryContainer,
+      child: Padding(
+        padding: const EdgeInsets.all(AppSpacing.sm),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: <Widget>[
+            Row(
+              children: <Widget>[
+                Icon(
+                  Icons.insights_outlined,
+                  size: 18.0,
+                  color: on.withValues(alpha: 0.75),
                 ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 10.0),
-          body,
-        ],
+                const SizedBox(width: AppSpacing.xxs),
+                Text(
+                  "学习节奏预览",
+                  style: theme.textTheme.labelLarge?.copyWith(
+                    color: on.withValues(alpha: 0.80),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: AppSpacing.xs),
+            body,
+          ],
+        ),
       ),
     );
   }
@@ -901,9 +899,8 @@ class _PlanConfigPageState extends State<PlanConfigPage> {
                   child: Text(
                     _saving ? "保存中…" : "保存计划",
                     maxLines: 1,
-                    style: withoutColor(
-                      theme.textTheme.titleMedium!,
-                    ).copyWith(fontWeight: FontWeight.w600),
+                    style: withoutColor(theme.textTheme.titleMedium!)
+                        .copyWith(fontWeight: FontWeight.w600),
                   ),
                 ),
               ),

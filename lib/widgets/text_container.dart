@@ -4,7 +4,7 @@
 
 import 'package:arabic_learning/core/statics.dart';
 import 'package:arabic_learning/theme/tokens.dart' show AppMotion;
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 /// 带背景色的文本容器；[selectable] 为真时可选中复制。
 ///

@@ -4,7 +4,7 @@
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:arabic_learning/package_replacement/fake_dart_io.dart' if (dart.library.io) 'dart:io' show Platform;
 
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:just_audio/just_audio.dart';
 
 import 'package:arabic_learning/theme/tokens.dart' show AppMotion, AppRadius;

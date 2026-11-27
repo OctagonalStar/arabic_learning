@@ -9,74 +9,104 @@ import 'dart:math' as math;
 
 import 'package:arabic_learning/widgets/kit.dart' show Button;
 import 'package:arabic_learning/core/statics.dart';
-import 'package:arabic_learning/theme/tokens.dart' show AppMotion, AppSpacing;
-import 'package:flutter/material.dart';
+import 'package:arabic_learning/theme/tokens.dart' show AppMotion, AppRadius, AppSpacing;
+import 'package:material_ui/material_ui.dart';
 
-/// 首页统计卡片
-///
-/// [width] / [height] 为卡片的实际尺寸（调用方按屏幕比例计算后传入）；
-/// [spacing] 为标题与数值之间的间距（原实现为屏幕高度的 0.03 倍）；
-/// [label] 为标题文本；[value] 为展示数值；
-/// [statusIcon] 非空时标题行变为 label + 图标的居中 Row，与原实现一致。
-class StatCard extends StatelessWidget {
-  final double width;
-  final double height;
-  final double spacing;
-  final String label;
-  final String value;
-  final Widget? statusIcon;
+/// 状态标签：M3 [Chip] 的紧凑封装，统一圆角、内边距与文字样式。
+class StatusChip extends StatelessWidget {
+  final String text;
+  final Color background;
+  final Color foreground;
+  final TextStyle? textStyle;
 
-  const StatCard({
+  const StatusChip({
     super.key,
-    required this.width,
-    required this.height,
-    required this.spacing,
-    required this.label,
-    required this.value,
-    this.statusIcon,
+    required this.text,
+    required this.background,
+    required this.foreground,
+    this.textStyle,
   });
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      width: width,
-      height: height,
-      margin: EdgeInsets.all(4.0),
-      padding: EdgeInsets.all(16.0),
-      decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.secondaryContainer,
-        boxShadow: [
-          BoxShadow(
-            color: Theme.of(context).colorScheme.shadow.withAlpha(51),
-            offset: Offset(2, 4),
-            blurRadius: 8.0,
-          ),
-        ],
-        borderRadius: StaticsVar.br,
-      ),
-      child: Column(
-        children: [
-          if (statusIcon == null)
-            Text(label, style: Theme.of(context).textTheme.labelMedium)
-          else
+    return Chip(
+      label: Text(text),
+      labelStyle: (textStyle ?? Theme.of(context).textTheme.labelLarge)
+          ?.copyWith(color: foreground),
+      backgroundColor: background,
+      side: BorderSide.none,
+      padding: EdgeInsets.zero,
+      labelPadding: const EdgeInsets.symmetric(horizontal: AppSpacing.xxs),
+      visualDensity: VisualDensity.compact,
+      materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+      shape: RoundedRectangleBorder(borderRadius: AppRadius.controlBorder),
+    );
+  }
+}
+
+/// 统计卡片（M3 filled card）：标题 + 数值，尺寸由父级网格决定。
+///
+/// [statusIcon] 非空时紧跟在标题后；[valueColor] 用于强调异常数值（如逾期）。
+class StatCard extends StatelessWidget {
+  final String label;
+  final String value;
+  final Widget? statusIcon;
+  final Color? valueColor;
+
+  const StatCard({
+    super.key,
+    required this.label,
+    required this.value,
+    this.statusIcon,
+    this.valueColor,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final ThemeData theme = Theme.of(context);
+    return Card.filled(
+      margin: EdgeInsets.zero,
+      child: Padding(
+        padding: const EdgeInsets.all(AppSpacing.sm),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: <Widget>[
             Row(
-              crossAxisAlignment: CrossAxisAlignment.center,
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Text(label, style: Theme.of(context).textTheme.labelMedium),
-                statusIcon!,
+              children: <Widget>[
+                Flexible(
+                  child: Text(
+                    label,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: theme.colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                ),
+                if (statusIcon != null) ...<Widget>[
+                  const SizedBox(width: AppSpacing.xxs),
+                  statusIcon!,
+                ],
               ],
             ),
-          SizedBox(height: spacing),
-          // 矮横屏等极端高度下卡片内部空间不足时按比例缩放数值，
-          // 正常尺寸下 FittedBox 尺寸等于文本固有尺寸，显示效果不变。
-          Flexible(
-            child: FittedBox(
-              fit: BoxFit.scaleDown,
-              child: Text(value, style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold)),
+            const SizedBox(height: AppSpacing.xs),
+            // 大字号或窄卡片下缩放数值，避免溢出。
+            Align(
+              alignment: Alignment.centerLeft,
+              child: FittedBox(
+                fit: BoxFit.scaleDown,
+                child: Text(
+                  value,
+                  style: theme.textTheme.headlineSmall?.copyWith(
+                    fontWeight: FontWeight.bold,
+                    color: valueColor,
+                  ),
+                ),
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -104,14 +134,10 @@ class SettingCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        borderRadius: StaticsVar.br,
-        color: color,
-      ),
+    return Card(
+      color: color,
       margin: margin,
-      padding: padding,
-      child: child,
+      child: Padding(padding: padding, child: child),
     );
   }
 }
@@ -147,8 +173,8 @@ class ConclusionCard extends StatelessWidget {
     MediaQueryData mediaQuery = MediaQuery.of(context);
     return AnimatedSlide(
       offset: visible
-        ? (slideFromLeft ? Offset(-0.2, 0) : Offset(0.2, 0))
-        : (slideFromLeft ? Offset(-1.5, 0.2) : Offset(1.5, 0.2)),
+          ? (slideFromLeft ? Offset(-0.2, 0) : Offset(0.2, 0))
+          : (slideFromLeft ? Offset(-1.5, 0.2) : Offset(1.5, 0.2)),
       duration: AppMotion.slow,
       curve: AppMotion.standardCurve,
       child: Container(
@@ -165,8 +191,8 @@ class ConclusionCard extends StatelessWidget {
               spreadRadius: 5,
               blurRadius: 7,
               offset: Offset(0, 3),
-            )
-          ]
+            ),
+          ],
         ),
         child: TweenAnimationBuilder<double>(
           tween: Tween<double>(begin: 0.0, end: visible ? 1.0 : 0.0),
@@ -209,10 +235,7 @@ class PKScoreRow extends StatelessWidget {
     // 避免极端时间差 / 得分差在窄屏算出负宽度或两栏总和超过屏宽。
     final double bias = scoreBias.clamp(-2.0, 2.0);
     return TweenAnimationBuilder<double>(
-      tween: Tween(
-        begin: 0,
-        end: 1
-      ),
+      tween: Tween(begin: 0, end: 1),
       curve: AppMotion.standardCurve,
       duration: duration,
       builder: (context, value, child) {
@@ -222,27 +245,45 @@ class PKScoreRow extends StatelessWidget {
             Container(
               padding: EdgeInsets.all(16.0),
               height: mediaQuery.size.height * 0.1,
-              width: math.min(value*2, 1) * mediaQuery.size.width * (0.5 + 0.25*bias),
+              width:
+                  math.min(value * 2, 1) *
+                  mediaQuery.size.width *
+                  (0.5 + 0.25 * bias),
               decoration: BoxDecoration(
                 color: Theme.of(context).colorScheme.primaryContainer,
               ),
               child: FittedBox(
                 fit: BoxFit.scaleDown,
                 alignment: Alignment.centerRight,
-                child: Text(leftText(value), style: Theme.of(context).textTheme.headlineMedium?.copyWith(color: Theme.of(context).colorScheme.onPrimaryContainer), textAlign: TextAlign.end),
+                child: Text(
+                  leftText(value),
+                  style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                    color: Theme.of(context).colorScheme.onPrimaryContainer,
+                  ),
+                  textAlign: TextAlign.end,
+                ),
               ),
             ),
             Container(
               padding: EdgeInsets.all(16.0),
               height: mediaQuery.size.height * 0.1,
-              width: math.min(value*2, 1) * mediaQuery.size.width * (0.5 - 0.25*bias),
+              width:
+                  math.min(value * 2, 1) *
+                  mediaQuery.size.width *
+                  (0.5 - 0.25 * bias),
               decoration: BoxDecoration(
                 color: Theme.of(context).colorScheme.secondaryContainer,
               ),
               child: FittedBox(
                 fit: BoxFit.scaleDown,
                 alignment: Alignment.centerLeft,
-                child: Text(rightText(value), style: Theme.of(context).textTheme.headlineMedium?.copyWith(color: Theme.of(context).colorScheme.onSecondaryContainer), textAlign: TextAlign.start),
+                child: Text(
+                  rightText(value),
+                  style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                    color: Theme.of(context).colorScheme.onSecondaryContainer,
+                  ),
+                  textAlign: TextAlign.start,
+                ),
               ),
             ),
           ],
@@ -308,34 +349,33 @@ class RevealableActionBar extends StatelessWidget {
   Widget build(BuildContext context) {
     MediaQueryData mediaQuery = MediaQuery.of(context);
     return TweenAnimationBuilder<double>(
-      tween: Tween(
-        begin: 0.0,
-        end: revealed ? 1.0 : 0.0
-      ),
+      tween: Tween(begin: 0.0, end: revealed ? 1.0 : 0.0),
       duration: AppMotion.medium,
       curve: AppMotion.standardCurve,
       builder: (context, value, child) {
         return Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            if (showTipButton) Button(
-              size: Size(tipWidth(value), mediaQuery.size.height * 0.1),
-              backgroundColor: tipBackgroundColor,
-              onPressed: onTipClicked,
-              icon: tipIcon,
-              child: tipLabelExpanded
-                ? ButtonLabel(child: Text(tipLabel(value)))
-                : Text(tipLabel(value)),
-            ),
+            if (showTipButton)
+              Button(
+                size: Size(tipWidth(value), mediaQuery.size.height * 0.1),
+                backgroundColor: tipBackgroundColor,
+                onPressed: onTipClicked,
+                icon: tipIcon,
+                child: tipLabelExpanded
+                    ? ButtonLabel(child: Text(tipLabel(value)))
+                    : Text(tipLabel(value)),
+              ),
             SizedBox(width: gapWidth(value), height: gapHeight),
-            if (value > nextThreshold) Button(
-              size: Size(nextWidth(value), mediaQuery.size.height * 0.1),
-              backgroundColor: nextBackgroundColor,
-              onPressed: onNextClicked,
-              icon: nextIcon,
-              iconDirection: nextIconDirection,
-              child: ButtonLabel(fit: nextFit, child: Text(nextLabel)),
-            )
+            if (value > nextThreshold)
+              Button(
+                size: Size(nextWidth(value), mediaQuery.size.height * 0.1),
+                backgroundColor: nextBackgroundColor,
+                onPressed: onNextClicked,
+                icon: nextIcon,
+                iconDirection: nextIconDirection,
+                child: ButtonLabel(fit: nextFit, child: Text(nextLabel)),
+              ),
           ],
         );
       },
@@ -355,20 +395,20 @@ class ButtonLabel extends StatelessWidget {
   final Widget child;
   final BoxFit fit;
 
-  const ButtonLabel({super.key, required this.child, this.fit = BoxFit.scaleDown})
-      : assert(
-          fit != BoxFit.contain,
-          '按钮标签禁止使用 BoxFit.contain：FittedBox 会把文本放大填满按钮，'
-          '请使用默认的 BoxFit.scaleDown（只缩不放）。',
-        );
+  const ButtonLabel({
+    super.key,
+    required this.child,
+    this.fit = BoxFit.scaleDown,
+  }) : assert(
+         fit != BoxFit.contain,
+         '按钮标签禁止使用 BoxFit.contain：FittedBox 会把文本放大填满按钮，'
+         '请使用默认的 BoxFit.scaleDown（只缩不放）。',
+       );
 
   @override
   Widget build(BuildContext context) {
     return Expanded(
-      child: FittedBox(
-        fit: fit,
-        child: child,
-      ),
+      child: FittedBox(fit: fit, child: child),
     );
   }
 }
@@ -419,9 +459,8 @@ class EmptyHintCard extends StatelessWidget {
         padding: const EdgeInsets.all(AppSpacing.sm),
         child: Text(
           text,
-          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-            color: Theme.of(context).colorScheme.onSurfaceVariant,
-          ),
+          style: Theme.of(context).textTheme.bodyMedium
+              ?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant),
         ),
       ),
     );

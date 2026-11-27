@@ -5,7 +5,7 @@ import 'package:arabic_learning/screens/test/reading_test_page.dart'
         ReadingTestAddLeading,
         readingTextScaler,
         readingUnitHeroTag;
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 /// 阅读题页面尺寸测试：窄竖屏降级为上下布局、宽屏保持左右分栏，

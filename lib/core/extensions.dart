@@ -2,7 +2,7 @@
 // 包含阿语文本判断、中文释义相似度、数字补零、列表去重等无副作用工具。
 
 import 'package:arabic_learning/theme/tokens.dart' show AppSemanticColors;
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 /// 语义色（成功 / 警告 / 错误 / 禁用）便捷访问。
 ///

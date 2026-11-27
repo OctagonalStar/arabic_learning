@@ -12,7 +12,7 @@ import 'package:arabic_learning/services/global_state.dart' show Global;
 import 'package:arabic_learning/services/plan_scheduler.dart' show evaluateNow;
 import 'package:arabic_learning/services/plan_store.dart' show PlanStore;
 import 'package:arabic_learning/theme/app_theme.dart' show buildTheme;
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fsrs/fsrs.dart' as fsrs show Card, State;
 import 'package:provider/provider.dart';
@@ -397,7 +397,7 @@ void main() {
 
       expect(find.text('截止日期'), findsOneWidget);
       final Rect saveRect = tester.getRect(
-        find.widgetWithText(ElevatedButton, '保存计划'),
+        find.widgetWithText(FilledButton, '保存计划'),
       );
       expect(saveRect.height, lessThan(80));
       expect(tester.takeException(), isNull);
@@ -409,8 +409,8 @@ void main() {
       await _pumpConfig(tester);
 
       expect(find.text('复习系统未启用'), findsOneWidget);
-      final ElevatedButton save = tester.widget<ElevatedButton>(
-        find.widgetWithText(ElevatedButton, '保存计划'),
+      final FilledButton save = tester.widget<FilledButton>(
+        find.widgetWithText(FilledButton, '保存计划'),
       );
       expect(save.enabled, isFalse);
       expect(tester.takeException(), isNull);

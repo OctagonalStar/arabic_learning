@@ -3,7 +3,7 @@
 // `buildTheme` 是纯函数（不读取全局状态），由 `Global` 传入当前 `ColorScheme`
 // 与字体家族调用。亮 / 暗两套主题共用同一套组件主题规则，仅 `scheme` 不同。
 
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 import 'package:arabic_learning/theme/page_transitions.dart';
 import 'package:arabic_learning/theme/tokens.dart';
@@ -33,6 +33,7 @@ ThemeData buildTheme(
 
   final BorderRadius controlRadius = AppRadius.controlBorder;
   final BorderRadius cardRadius = AppRadius.cardBorder;
+  final BorderRadius sheetRadius = AppRadius.sheetBorder;
 
   return base.copyWith(
     textTheme: text,
@@ -90,7 +91,7 @@ ThemeData buildTheme(
       surfaceTintColor: Colors.transparent,
       indicatorColor: scheme.secondaryContainer,
       indicatorShape: RoundedRectangleBorder(borderRadius: controlRadius),
-      labelBehavior: NavigationDestinationLabelBehavior.onlyShowSelected,
+      labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
       labelTextStyle: WidgetStateProperty.resolveWith((states) {
         final Color color = states.contains(WidgetState.selected)
             ? scheme.onSurface
@@ -110,6 +111,7 @@ ThemeData buildTheme(
       useIndicator: true,
       indicatorColor: scheme.secondaryContainer,
       indicatorShape: RoundedRectangleBorder(borderRadius: controlRadius),
+      labelType: NavigationRailLabelType.all,
       selectedIconTheme: IconThemeData(color: scheme.onSecondaryContainer),
       unselectedIconTheme: IconThemeData(color: scheme.onSurfaceVariant),
       selectedLabelTextStyle:
@@ -158,7 +160,7 @@ ThemeData buildTheme(
       elevation: 6,
       backgroundColor: scheme.surfaceContainerHigh,
       surfaceTintColor: scheme.surfaceTint,
-      shape: RoundedRectangleBorder(borderRadius: cardRadius),
+      shape: RoundedRectangleBorder(borderRadius: sheetRadius),
       insetPadding: const EdgeInsets.symmetric(
         horizontal: AppSpacing.md,
         vertical: AppSpacing.md,
@@ -174,7 +176,7 @@ ThemeData buildTheme(
       showDragHandle: true,
       clipBehavior: Clip.antiAlias,
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(AppRadius.card)),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(AppRadius.sheet)),
       ),
     ),
     snackBarTheme: SnackBarThemeData(
@@ -213,6 +215,44 @@ ThemeData buildTheme(
         ),
         shape: RoundedRectangleBorder(borderRadius: controlRadius),
         textStyle: text.labelLarge,
+      ),
+    ),
+    filledButtonTheme: FilledButtonThemeData(
+      style: FilledButton.styleFrom(
+        padding: const EdgeInsets.symmetric(
+          horizontal: AppSpacing.sm,
+          vertical: AppSpacing.xs,
+        ),
+        shape: RoundedRectangleBorder(borderRadius: controlRadius),
+        textStyle: text.labelLarge,
+      ),
+    ),
+    outlinedButtonTheme: OutlinedButtonThemeData(
+      style: OutlinedButton.styleFrom(
+        padding: const EdgeInsets.symmetric(
+          horizontal: AppSpacing.sm,
+          vertical: AppSpacing.xs,
+        ),
+        side: BorderSide(color: scheme.outlineVariant),
+        shape: RoundedRectangleBorder(borderRadius: controlRadius),
+        textStyle: text.labelLarge,
+      ),
+    ),
+    segmentedButtonTheme: SegmentedButtonThemeData(
+      style: ButtonStyle(
+        shape: WidgetStatePropertyAll<RoundedRectangleBorder>(
+          RoundedRectangleBorder(borderRadius: controlRadius),
+        ),
+        textStyle: WidgetStatePropertyAll<TextStyle?>(text.labelLarge),
+      ),
+    ),
+    dropdownMenuTheme: DropdownMenuThemeData(
+      textStyle: text.bodyLarge,
+      menuStyle: MenuStyle(
+        backgroundColor: WidgetStatePropertyAll<Color>(scheme.surfaceContainer),
+        shape: WidgetStatePropertyAll<RoundedRectangleBorder>(
+          RoundedRectangleBorder(borderRadius: controlRadius),
+        ),
       ),
     ),
     iconButtonTheme: IconButtonThemeData(

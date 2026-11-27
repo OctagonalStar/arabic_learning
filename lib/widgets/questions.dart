@@ -16,7 +16,7 @@ import 'package:arabic_learning/widgets/flip_word_card.dart' show FlipWordCard;
 import 'package:arabic_learning/widgets/kit.dart' show Button, ChooseButtons, TextContainer;
 import 'package:arabic_learning/widgets/overlays.dart' show alert, showSnackBar, showWordCardOverlay;
 import 'package:arabic_learning/widgets/shared.dart' show ButtonLabel, appInputDecoration;
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:provider/provider.dart';
 
 /// 选择题页面

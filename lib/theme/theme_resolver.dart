@@ -6,7 +6,7 @@
 
 import 'package:dynamic_color/dynamic_color.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter/services.dart' show MissingPluginException;
 
 import 'package:arabic_learning/core/statics.dart' show StaticsVar;
@@ -80,7 +80,7 @@ abstract final class ThemeResolver {
   /// 该方法保证不抛出异常。
   ///
   /// 说明：`dynamic_color` 2.x 的 `toColorScheme` 返回 `material_ui` 包自带的
-  /// `ColorScheme`，与 Flutter SDK 的 `package:flutter/material.dart` 类型不兼容，
+  /// `ColorScheme`，与 Flutter SDK 的 `package:material_ui/material_ui.dart` 类型不兼容，
   /// 因此这里只取插件提供的原生调色板 / 强调色，再自行用 Flutter 的
   /// `ColorScheme.fromSeed` 生成方案。
   static Future<ResolvedSchemes> resolveSchemes(RegularConfig config) async {

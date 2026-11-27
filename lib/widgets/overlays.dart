@@ -14,7 +14,7 @@ import 'package:arabic_learning/services/synonyms.dart' show SynonymStore;
 import 'package:arabic_learning/theme/tokens.dart' show AppMotion, AppSpacing;
 import 'package:arabic_learning/widgets/flip_word_card.dart' show FlipWordCard;
 import 'package:arabic_learning/widgets/kit.dart' show Button;
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:provider/provider.dart';
 
 /// 应用内唯一的确认弹窗：标题 + 正文 + 动作按钮。

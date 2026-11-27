@@ -11,7 +11,7 @@ import 'package:arabic_learning/widgets/empty_dict_dialog.dart' show showEmptyDi
 import 'package:arabic_learning/widgets/kit.dart' show Button;
 import 'package:arabic_learning/widgets/shared.dart' show appInputDecoration;
 import 'package:arabic_learning/core/navigation.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:provider/provider.dart';
 
 import 'word_lookup_layout.dart';

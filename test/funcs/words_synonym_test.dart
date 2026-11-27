@@ -272,4 +272,18 @@ void main() {
       }
     });
   });
+
+  group('getRandomWords 的小词库兜底', () {
+    test('词条数少于 count 时返回全部词条而不是死循环', () {
+      const DictData tiny = DictData(
+        words: <WordItem>[
+          WordItem(arabic: 'كتاب', chinese: '书', explanation: '书籍', className: '第一课', id: 0),
+          WordItem(arabic: 'قلم', chinese: '笔', explanation: '书写工具', className: '第一课', id: 1),
+        ],
+        classes: <SourceItem>[],
+      );
+      final List<WordItem> result = getRandomWords(4, tiny, rnd: Random(0));
+      expect(result.length, 2);
+    });
+  });
 }

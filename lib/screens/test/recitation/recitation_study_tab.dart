@@ -7,7 +7,8 @@ import 'package:arabic_learning/models/recitation_text.dart';
 import 'package:arabic_learning/screens/test/recitation/recitation_progress_bar.dart'
     show RecitationProgressBar;
 import 'package:arabic_learning/screens/test/recitation/recitation_shared.dart'
-    show RecitationCard, RecitationChip, RecitationTranslation;
+    show RecitationCard, RecitationTranslation;
+import 'package:arabic_learning/widgets/shared.dart' show StatusChip;
 import 'package:arabic_learning/core/recitation_text.dart'
     show normalizeArabic, lookupStems;
 import 'package:arabic_learning/services/search.dart' show BKSearch;
@@ -15,7 +16,7 @@ import 'package:arabic_learning/services/tts.dart' show playTextToSpeech;
 import 'package:arabic_learning/theme/tokens.dart'
     show AppBreakpoints, AppMotion, AppRadius, AppSpacing;
 import 'package:arabic_learning/widgets/overlays.dart' show showWordCardOverlay;
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter/services.dart' show HapticFeedback;
 
 class RecitationStudyTab extends StatefulWidget {
@@ -141,17 +142,10 @@ class _RecitationStudyTabState extends State<RecitationStudyTab> {
                   shape: RoundedRectangleBorder(
                     borderRadius: AppRadius.controlBorder,
                   ),
-                  leading: Container(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: AppSpacing.xs, vertical: 2),
-                    decoration: BoxDecoration(
-                      color: theme.colorScheme.secondaryContainer,
-                      borderRadius: AppRadius.controlBorder,
-                    ),
-                    child: Text("本课生词",
-                        style: theme.textTheme.labelMedium?.copyWith(
-                          color: theme.colorScheme.onSecondaryContainer,
-                        )),
+                  leading: StatusChip(
+                    text: "本课生词",
+                    background: theme.colorScheme.secondaryContainer,
+                    foreground: theme.colorScheme.onSecondaryContainer,
                   ),
                   title: Text(word.arabic,
                       textDirection: TextDirection.rtl,
@@ -275,7 +269,7 @@ class _SentenceCard extends StatelessWidget {
           children: <Widget>[
             Row(
               children: <Widget>[
-                RecitationChip(
+                StatusChip(
                   text: "第 ${index + 1} 句",
                   background: scheme.surfaceContainerHighest,
                   foreground: scheme.onSurfaceVariant,

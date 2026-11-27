@@ -1,5 +1,5 @@
 import 'package:arabic_learning/widgets/kit.dart' show TextContainer;
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:arabic_learning/oss_licenses.dart' as oss;
 import 'package:arabic_learning/core/license_storage.dart';
 import 'package:arabic_learning/core/statics.dart' show AsrModelInfo, StaticsVar, TtsModelInfo;

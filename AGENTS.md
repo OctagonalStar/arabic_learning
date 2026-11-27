@@ -21,10 +21,12 @@ flutter build web --release
   否则触碰 `Global`/`AppData` 会因平台插件抛 `MissingPluginException`。动态取色在
   `test/theme/theme_resolver_test.dart` 用 `dynamic_color_testing` 打桩。
   CI 不跑 `test`/`analyze`（只跑 `pub get` + 各平台 `build`），所以本地这两步不能省。
-- **Flutter 版本**：CI 全部用 **3.47.5**；`pubspec.yaml` 要求 Dart `^3.13.0`。
+- **Flutter 版本**：CI 全部用 **3.50.1**；`pubspec.yaml` 要求 Dart `^3.13.0`。
+  Flutter 3.50 起 `package:flutter/material.dart` 已弃用，Material 统一从
+  `package:material_ui/material_ui.dart` 导入（`material_ui` 1.3.0 曾撤回，当前用 ^1.11.1）。
   `android/gradle.properties` 保留 `android.newDsl=false` / `android.builtInKotlin=false`
-  （AGP 9 新 DSL 与内置 Kotlin 的退出开关）。升级依赖前注意：`material_ui` 1.3.0 已撤回，
-  且 sherpa_onnx 2.x 删掉了 espeak-ng（阿语模型没有 lexicon，升上去只会输出空音频）。
+  （AGP 9 新 DSL 与内置 Kotlin 的退出开关）。升级依赖前注意：
+  sherpa_onnx 2.x 删掉了 espeak-ng（阿语模型没有 lexicon，升上去只会输出空音频）。
 - **生成文件**（无脚本包装）：`flutter_launcher_icons` 生成图标；`dart run dart_pubspec_licenses:generate`
   重新生成 `lib/oss_licenses.dart`（依赖变更后必做，禁止手改，已在 `analysis_options.yaml` 排除）。
 

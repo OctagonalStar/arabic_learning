@@ -7,7 +7,7 @@ import 'package:arabic_learning/services/global_state.dart';
 import 'package:arabic_learning/services/app_data.dart';
 import 'package:arabic_learning/core/adaptive.dart' show AdaptiveScope;
 import 'package:arabic_learning/theme/tokens.dart' show AppMotion, AppRadius;
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:provider/provider.dart';
 
 class QuestionsSettingPage extends StatefulWidget {
@@ -152,39 +152,34 @@ class _QuestionsSettingPage extends State<QuestionsSettingPage> {
           duration: AppMotion.long1,
           curve: AppMotion.standardCurve, 
           builder: (context, value, child) {
-            return Container(
-              decoration: BoxDecoration(
-                color: Colors.transparent,
-              ),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.end,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  QuestionTypeAddMenu(
-                    expandValue: value,
-                    onAdd: (type) {
-                      context.read<Global>().uiLogger.info("添加题型类型: $type");
-                      setState(() {
-                        selectedTypes!.add(type);
-                        _updateConfig();
-                      });
-                    },
-                  ),
-                  Button(
-                    size: Size(70 + 150 * value, 70),
-                    backgroundColor: Theme.of(context).colorScheme.primaryContainer,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadiusGeometry.vertical(bottom: Radius.circular(AppRadius.card), top: value < 0.4 ? Radius.circular(AppRadius.card) : Radius.zero)),
-                    onPressed: (){
-                      context.read<Global>().uiLogger.fine("切换题型悬浮按钮状态");
-                      setState(() {
-                        floatButtonFlod = !floatButtonFlod;
-                      });
-                    }, 
-                    icon: Icon(value > 0.5 ?  Icons.deselect : Icons.add),
-                    child: value > 0.5 ? ButtonLabel(child: Text("收起")) : null,
-                  )
-                ],
-              ),
+            return Column(
+              mainAxisAlignment: MainAxisAlignment.end,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                QuestionTypeAddMenu(
+                  expandValue: value,
+                  onAdd: (type) {
+                    context.read<Global>().uiLogger.info("添加题型类型: $type");
+                    setState(() {
+                      selectedTypes!.add(type);
+                      _updateConfig();
+                    });
+                  },
+                ),
+                Button(
+                  size: Size(70 + 150 * value, 70),
+                  backgroundColor: Theme.of(context).colorScheme.primaryContainer,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadiusGeometry.vertical(bottom: Radius.circular(AppRadius.card), top: value < 0.4 ? Radius.circular(AppRadius.card) : Radius.zero)),
+                  onPressed: (){
+                    context.read<Global>().uiLogger.fine("切换题型悬浮按钮状态");
+                    setState(() {
+                      floatButtonFlod = !floatButtonFlod;
+                    });
+                  }, 
+                  icon: Icon(value > 0.5 ?  Icons.deselect : Icons.add),
+                  child: value > 0.5 ? ButtonLabel(child: Text("收起")) : null,
+                )
+              ],
             );
           }
         )

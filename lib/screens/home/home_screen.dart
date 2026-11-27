@@ -1,196 +1,277 @@
 import 'dart:math';
 
-import 'package:flutter/foundation.dart' show clampDouble;
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 import 'package:arabic_learning/core/adaptive.dart' show AdaptiveTabBody;
 import 'package:arabic_learning/core/date_utils.dart';
 import 'package:arabic_learning/core/extensions.dart';
-import 'package:arabic_learning/theme/tokens.dart' show AppRadius;
-import 'package:arabic_learning/theme/typography.dart';
-import 'package:arabic_learning/widgets/kit.dart' show Button;
-import 'package:arabic_learning/widgets/overlays.dart' show alert;
-import 'package:arabic_learning/widgets/review_forecast_chart.dart' show ReviewForecastChart;
-import 'package:arabic_learning/widgets/shared.dart' show StatCard;
-import 'package:arabic_learning/services/words.dart';
-import 'package:arabic_learning/services/tts.dart';
-import 'package:arabic_learning/screens/setting/dict_manage_page.dart';
+import 'package:arabic_learning/core/navigation.dart';
 import 'package:arabic_learning/models/dict.dart';
+import 'package:arabic_learning/screens/setting/dict_manage_page.dart';
 import 'package:arabic_learning/services/app_data.dart';
 import 'package:arabic_learning/services/fsrs.dart';
-import 'package:arabic_learning/core/navigation.dart';
+import 'package:arabic_learning/services/tts.dart';
+import 'package:arabic_learning/services/words.dart' show getStrokeDays;
+import 'package:arabic_learning/theme/tokens.dart' show AppSpacing;
+import 'package:arabic_learning/theme/typography.dart';
+import 'package:arabic_learning/widgets/overlays.dart' show alert;
+import 'package:arabic_learning/widgets/review_forecast_chart.dart'
+    show ReviewForecastChart;
+import 'package:arabic_learning/widgets/shared.dart'
+    show EmptyHintCard, StatCard;
 
+/// 首页：每日一词 + 学习统计 + 未来复习量。
+///
+/// 宽屏两栏（左每日一词、右统计与图表），窄屏单列；内容居中且最宽 960，
+/// 页面本身可滚动，不再按屏高比例计算卡片尺寸。
 class HomePage extends StatelessWidget {
   const HomePage({super.key});
 
+  static const double _wideBreakpoint = 900.0;
+  static const double _maxContentWidth = 960.0;
+
   @override
   Widget build(BuildContext context) {
-    FSRS fsrs = FSRS();
+    final AppData appData = AppData();
+    final FSRS fsrs = FSRS();
+    final bool enabled = fsrs.config.enabled;
+    final bool todayDone = appData.config.learning.lastDate == daysSinceEpoch();
+    final int overdue = enabled ? fsrs.getOverdueCount() : 0;
+    final ColorScheme scheme = Theme.of(context).colorScheme;
 
-    // 尺寸全部由 Tab 实际可用高度/宽度推导并夹在合理区间：
-    // 矮横屏下自动压缩，手机竖屏与桌面下与原比例观感接近。
+    final Widget stats = _StatsGrid(
+      cards: <Widget>[
+        StatCard(
+          label: '连胜天数',
+          value: getStrokeDays(appData.config.learning).toString(),
+          statusIcon: Tooltip(
+            message: todayDone ? '今天已学习' : '今天尚未学习',
+            child: Icon(
+              todayDone ? Icons.check_circle : Icons.radio_button_unchecked,
+              size: 15.0,
+              color: todayDone
+                  ? context.semanticColors.success
+                  : context.semanticColors.disabled,
+            ),
+          ),
+        ),
+        StatCard(
+          label: '已学词汇',
+          value: enabled ? fsrs.config.cards.length.toString() : '未启用',
+        ),
+        StatCard(
+          label: '规律性学习',
+          value: enabled ? '$overdue个已逾期' : '未启用',
+          valueColor: overdue > 0 ? scheme.error : null,
+        ),
+        StatCard(label: '单词总数', value: appData.wordCount.toString()),
+      ],
+    );
+
+    final Widget forecast = enabled
+        ? const SizedBox(
+            height: 220.0,
+            child: ReviewForecastChart(height: 220.0),
+          )
+        : const EmptyHintCard('启用 FSRS 后可查看未来复习量');
+
     return AdaptiveTabBody(
       builder: (BuildContext context, BoxConstraints constraints) {
-        final double width = constraints.maxWidth;
-        final double height = constraints.maxHeight;
-        final double gapSmall = clampDouble(height * 0.01, 4.0, 12.0);
-        final double statHeight = clampDouble(height * 0.18, 64.0, 160.0);
-        final double statSpacing = clampDouble(height * 0.03, 6.0, 24.0);
-        // 复习计划图只在启用 FSRS 时出现；高度同样按可用高度推导并夹住，
-        // 卡片内部用 Expanded 把剩余空间全部给图，不会撑破外层 Column。
-        final bool showForecast = fsrs.config.enabled;
-        // 下限 96：桌面窗口最小高度 420 时，图表连同卡片外边距仍不撑破首页。
-        final double forecastHeight = clampDouble(height * 0.22, 96.0, 220.0);
-        return Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            DailyWord(
-              width: width * 0.9,
-              height: clampDouble(height * 0.3, 88.0, 280.0),
+        final bool wide = constraints.maxWidth >= _wideBreakpoint;
+        return Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: _maxContentWidth),
+            child: Padding(
+              padding: const EdgeInsets.all(AppSpacing.sm),
+              child: wide
+                  ? Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: <Widget>[
+                        Expanded(
+                          flex: 5,
+                          child: ConstrainedBox(
+                            constraints: BoxConstraints(minHeight: 420.0),
+                            child: DailyWord(),
+                          ),
+                        ),
+                        const SizedBox(width: AppSpacing.md),
+                        Expanded(
+                          flex: 7,
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            children: <Widget>[
+                              stats,
+                              const SizedBox(height: AppSpacing.md),
+                              forecast,
+                            ],
+                          ),
+                        ),
+                      ],
+                    )
+                  : Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: <Widget>[
+                        const DailyWord(),
+                        const SizedBox(height: AppSpacing.sm),
+                        stats,
+                        const SizedBox(height: AppSpacing.sm),
+                        forecast,
+                      ],
+                    ),
             ),
-            SizedBox(height: gapSmall),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-              children: [
-                StatCard(
-                  width: width * 0.30,
-                  height: statHeight,
-                  spacing: statSpacing,
-                  label: '连胜天数',
-                  value: getStrokeDays(AppData().config.learning).toString(),
-                  statusIcon: AppData().config.learning.lastDate == daysSinceEpoch()
-                    ? Icon(Icons.done, size: 15.0, color: context.semanticColors.success)
-                    // 今天还没开始用中性待完成图标；warning 色的感叹号会被误读成出错。
-                    : Icon(Icons.radio_button_unchecked, size: 15.0, color: context.semanticColors.disabled),
-                ),
-                StatCard(
-                  width: width * 0.50,
-                  height: statHeight,
-                  spacing: statSpacing,
-                  label: '已学词汇',
-                  value: fsrs.config.enabled ? fsrs.config.cards.length.toString() : "未启用",
-                ),
-              ],
-            ),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-              children: [
-                StatCard(
-                  width: width * 0.50,
-                  height: statHeight,
-                  spacing: statSpacing,
-                  label: '规律性学习',
-                  value: fsrs.config.enabled ? "${fsrs.getOverdueCount().toString()}个已逾期" : "未启用",
-                ),
-                StatCard(
-                  width: width * 0.30,
-                  height: statHeight,
-                  spacing: statSpacing,
-                  label: '单词总数',
-                  value: AppData().wordCount.toString(),
-                ),
-              ]
-            ),
-            if (showForecast) ...[
-              SizedBox(height: gapSmall),
-              ReviewForecastChart(
-                width: width * 0.9,
-                height: forecastHeight,
-              ),
-            ],
-          ],
+          ),
         );
       },
     );
   }
 }
 
-class DailyWord extends StatefulWidget {
-  const DailyWord({super.key, required this.width, required this.height});
+/// 2×2 统计网格；卡片等宽，间距统一用 [AppSpacing]。
+class _StatsGrid extends StatelessWidget {
+  const _StatsGrid({required this.cards});
 
-  /// 卡片宽度：由父级按 Tab 实际可用宽度推导。
-  final double width;
-
-  /// 卡片高度：由父级按 Tab 实际可用高度推导（含最小/最大限制）。
-  final double height;
-
-  @override
-  State<StatefulWidget> createState() => _DailyWord();
-}
-
-
-class _DailyWord extends State<DailyWord> {
-  bool playing = false;
+  final List<Widget> cards;
 
   @override
   Widget build(BuildContext context) {
-    // 内部间距按卡片高度等比换算，维持原有 0.02/0.005/0.03 : 0.3 的比例。
-    final double titleGap = widget.height * 0.067;
-    final double wordGap = widget.height * 0.017;
-    final double iconGap = widget.height * 0.1;
-    final now = DateTime.now();
-    final seed = now.year * 10000 + now.month * 100 + now.day;
-    Random rnd = Random(seed);
-    late WordItem data;
-    late String dailyWord;
-    AppData appData = AppData();
-    if(appData.wordCount != 0) {
-      data = appData.wordData.words[rnd.nextInt(appData.wordCount)];
-      dailyWord = data.arabic;
-    }
+    return Column(
+      children: <Widget>[
+        _row(cards[0], cards[1]),
+        const SizedBox(height: AppSpacing.sm),
+        _row(cards[2], cards[3]),
+      ],
+    );
+  }
 
-    return Button(
-      onPressed: () async {
-        if(playing) return;
-        if(appData.wordCount != 0) {
-          setState(() {
-            playing = true;
-          });
-          try {
-            await playTextToSpeech(dailyWord);
-          } catch (e) {
-            if(context.mounted) alert(context, e.toString());
-          }
-          setState(() {
-            playing = false;
-          });
-        } else {
-          pushPage(context, const DictManagePage());
-        }
-      },
-      backgroundColor: Theme.of(context).colorScheme.primaryContainer,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.vertical(bottom: Radius.circular(AppRadius.card))),
-      size: Size(widget.width, widget.height),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          Text(
-            '每日一词',
-            style: withoutColor(Theme.of(context).textTheme.titleMedium!),
-          ),
-          SizedBox(height: titleGap),
-          FittedBox(
-            fit: BoxFit.scaleDown,
-            child: Column(
-              children: AppData().wordCount == 0 ? [Text("当前未导入词库数据\n请点此以管理词库")]
-                : [
-                Text(
-                  data.arabic,
-                  style: arabicStyle(context, base: withoutColor(Theme.of(context).textTheme.displayMedium!)),
+  Widget _row(Widget left, Widget right) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: <Widget>[
+        Expanded(child: left),
+        const SizedBox(width: AppSpacing.sm),
+        Expanded(child: right),
+      ],
+    );
+  }
+}
+
+/// 每日一词卡片：整卡点击朗读，空词库时引导导入。
+class DailyWord extends StatefulWidget {
+  const DailyWord({super.key});
+
+  @override
+  State<DailyWord> createState() => _DailyWordState();
+}
+
+class _DailyWordState extends State<DailyWord> {
+  bool playing = false;
+
+  /// 按日期做种子，同一天内始终展示同一个词。
+  WordItem? _dailyWord(AppData appData) {
+    if (appData.wordCount == 0) return null;
+    final DateTime now = DateTime.now();
+    final int seed = now.year * 10000 + now.month * 100 + now.day;
+    return appData.wordData.words[Random(seed).nextInt(appData.wordCount)];
+  }
+
+  Future<void> _speak(String text) async {
+    if (playing) return;
+    setState(() => playing = true);
+    try {
+      await playTextToSpeech(text);
+    } catch (e) {
+      if (mounted) alert(context, e.toString());
+    } finally {
+      if (mounted) setState(() => playing = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final ThemeData theme = Theme.of(context);
+    final ColorScheme scheme = theme.colorScheme;
+    final AppData appData = AppData();
+    final WordItem? word = _dailyWord(appData);
+    final bool hasWords = word != null;
+
+    return Card.filled(
+      margin: EdgeInsets.zero,
+      color: scheme.primaryContainer,
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: hasWords
+            ? () => _speak(word.arabic)
+            : () => pushPage(context, const DictManagePage()),
+        child: Padding(
+          padding: const EdgeInsets.all(AppSpacing.md),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.start,
+            mainAxisSize: MainAxisSize.max,
+            children: <Widget>[
+              Row(
+                children: <Widget>[
+                  Expanded(
+                    child: Text(
+                      '每日一词',
+                      style: theme.textTheme.titleMedium?.copyWith(
+                        color: scheme.onPrimaryContainer,
+                      ),
+                    ),
+                  ),
+                  if (hasWords)
+                    IconButton.filledTonal(
+                      onPressed: playing ? null : () => _speak(word.arabic),
+                      tooltip: '朗读',
+                      icon: Icon(playing ? Icons.graphic_eq : Icons.volume_up),
+                    ),
+                ],
+              ),
+              const SizedBox(height: AppSpacing.lg * 2),
+              
+              if(hasWords) ...[
+                  FittedBox(
+                    fit: BoxFit.scaleDown,
+                    child: Text(
+                      word.arabic,
+                      textAlign: TextAlign.center,
+                      style: arabicStyle(
+                        context,
+                        base: theme.textTheme.headlineMedium!,
+                      ).copyWith(color: scheme.onPrimaryContainer),
+                    ),
+                  ),
+                  const SizedBox(height: AppSpacing.xs),
+                  Text(
+                    word.chinese,
+                    textAlign: TextAlign.center,
+                    style: theme.textTheme.titleMedium?.copyWith(
+                      color: scheme.onPrimaryContainer,
+                    ),
+                  ),
+              ] else ...[
+                Icon(
+                  Icons.library_books_outlined,
+                  size: 40.0,
+                  color: scheme.onPrimaryContainer,
                 ),
-                SizedBox(height: wordGap),
+                const SizedBox(height: AppSpacing.xs),
                 Text(
-                  data.chinese,
-                  style: withoutColor(Theme.of(context).textTheme.titleMedium!),
+                  '当前未导入词库数据',
                   textAlign: TextAlign.center,
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    color: scheme.onPrimaryContainer,
+                  ),
                 ),
-                SizedBox(height: iconGap),
-                Icon(Icons.volume_up, size: 18.0),
+                const SizedBox(height: AppSpacing.sm),
+                FilledButton.icon(
+                  onPressed: () => pushPage(context, const DictManagePage()),
+                  icon: const Icon(Icons.file_open_outlined),
+                  label: const Text('导入词库'),
+                ),
               ],
-            )
+            ]
           ),
-        ],
+        ),
       ),
     );
   }

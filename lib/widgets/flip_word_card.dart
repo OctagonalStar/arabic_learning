@@ -31,7 +31,7 @@ import 'package:arabic_learning/theme/tokens.dart' show AppMotion, AppRadius, Ap
 import 'package:arabic_learning/theme/typography.dart' show arabicStyle, withoutColor;
 import 'package:arabic_learning/widgets/kit.dart' show Button, CategoryChips;
 import 'package:arabic_learning/widgets/shared.dart' show ButtonLabel;
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 // fsrs 的 Card / State 与 Material / Flutter 同名类冲突，统一加前缀引用。
 import 'package:fsrs/fsrs.dart' as fsrs;
 
