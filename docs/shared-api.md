@@ -25,7 +25,7 @@ screens/  →  services/  models/  theme/  widgets/
 
 | 符号 | 文件 | 作用 / 何时用 |
 | --- | --- | --- |
-| `Button` | `app_button.dart` | 全局按钮。M3 填充色调配色（默认 `primaryContainer`），按压 0.98 缩放反馈，图标可四向排布。参数：`child`、`icon`+`iconDirection`、`onPressed`、`size`、`padding`、`shape`、`backgroundColor`/`foregroundColor`。**不要直接用 `ElevatedButton`**。 |
+| `Button` | `app_button.dart` | 历史按钮适配层，内部即 `FilledButton`（默认 `primaryContainer` 色调），保留 `icon`+`iconDirection` 四向排布与 `size`/`shape` 参数，供既有 120+ 调用点使用。**新代码直接用 M3 `FilledButton` / `FilledButton.tonal` / `OutlinedButton` / `TextButton`**；只有需要四向图标排布时才用 `Button`。 |
 | `TextContainer` | `text_container.dart` | 带背景色的纯展示文本块；`selectable` 可复制，`animated` 时背景生长 + 文本淡入上移。 |
 | `CategoryChips` | `category_chips.dart` | 只读展示一组分类标签（`Wrap`）。 |
 | `SelectChip` | `category_chips.dart` | 多选筛选 chip（`FilterChip` 统一外观）。 |
@@ -35,8 +35,9 @@ screens/  →  services/  models/  theme/  widgets/
 | `popSelectClasses` | `class_select.dart` | 弹出课程选择页，返回 `ClassSelection`；`withCache` / `withReviewChoose` 切换选择模式。 |
 | `classesSelectionList` | `class_select.dart` | 内嵌式课程勾选列表（不弹页）。 |
 | `ClassSelectPage` | `class_select.dart` | 课程选择整页（一般通过 `popSelectClasses` 使用）。 |
-| `SettingItem` | `setting_controls.dart` | 设置分区容器：`title` + `children`，首尾圆角、项间自动分隔。 |
-| `SettingRow` | `setting_controls.dart` | 单行设置项：`leading` + `note` + 尾部 `end` 控件。 |
+| `SettingItem` | `setting_controls.dart` | 设置分区：`title`（titleSmall + primary）+ 子项，内部为 `Card`，子项间自动 `Divider`。 |
+| `SettingRow` | `setting_controls.dart` | 单行设置项：`leading` + `note` + 尾部 `end` 控件；系统字号 ≥1.5 时自动改为上下两行。 |
+| `SettingSliderRow` | `setting_controls.dart` | 滑块设置行：`label` + `Slider` + 右侧 `valueText`；用于语速、间隔、秒数等参数。 |
 | `SettingRedirectButton` | `setting_controls.dart` | 整行跳转按钮：`title` + `target`，内部走 `pushPage`。 |
 
 > `kit.dart` 是**纯 barrel**，新增代码优先直接 import 实现文件。
@@ -53,15 +54,16 @@ screens/  →  services/  models/  theme/  widgets/
 | `TestItem` | `questions.dart` | 题面公共外壳（题干 + 提示文本）。 |
 | `FlipWordCard` | `flip_word_card.dart` | 翻卡单词卡片（正/反面、发音、收藏、释义遮挡、FSRS 记忆态）。列表、复习、详解浮层都用它。 |
 | `WordCardInfoRow` / `WordCardArabicButton` | `flip_word_card.dart` | 卡片内的双栏信息行 / 顶部阿语发音按钮。 |
-| `ReviewForecastChart` | `review_forecast_chart.dart` | 未来复习量折线图卡片（7/14/30/60 天切换）。 |
+| `ReviewForecastChart` | `review_forecast_chart.dart` | 未来复习量折线图（`Card.outlined`，7/14/30/60 天切换）；`width` 可空（撑满），`height` 默认 220。 |
 | `QuestionChainListView` | `question_chain_editor.dart` | 题型序号链展示（长按拖动排序、可删除）。 |
 | `QuestionTypeAddMenu` | `question_chain_editor.dart` | FAB 展开后的「添加题型」按钮组。 |
 | `TypeChooseCard` | `type_choose_card.dart` | 向导式大号类型选择卡（图标 + 标题 + 说明 + 箭头），阅读题与课文背诵共用；`emphasized` 标出主操作，`width`/`height` 同时给时锁定尺寸。 |
 | `UnitCard` | `unit_card.dart` | 测试板块文章列表统一卡片：难度徽标 + Hero 标题 + 摘要 + 标签 + 打开/删除；`difficultyColorValue` 统一 0-100 色阶。 |
 | `HeroTitle` | `hero_title.dart` | 列表标题 → 详情页 AppBar 的共享 Hero：`heroEnabled` / `flightShuttleEnabled` 特性开关，`scaleDown` 供列表侧缩放，飞行中强制单行。 |
 | `EmptyHintCard` | `shared.dart` | 空状态提示卡（`EmptyHintCard("暂无收藏单词")`）。 |
-| `StatCard` | `shared.dart` | 首页统计卡（`width`/`height`/`spacing`/`label`/`value`/`statusIcon`）。 |
-| `SettingCard` | `shared.dart` | 设置页参数卡（`color` + `child`，`padding` 默认 8）。 |
+| `StatCard` | `shared.dart` | 首页统计卡：`label` + `value` + 可选 `statusIcon`/`valueColor`（`Card.filled`，自适应父级宽度）。 |
+| `StatusChip` | `shared.dart` | 状态标签（基于 M3 `Chip`）：`text` + `background` + `foreground`，用于「本课生词」「已安装」「档位」等。 |
+| `SettingCard` | `shared.dart` | 设置页参数卡（`Card` + `Padding`）：`color` + `child`，`padding` 默认 8。 |
 | `ConclusionCard` | `shared.dart` | 学习结果卡，`visible` 驱动滑入与数值动画。 |
 | `PKScoreRow` | `shared.dart` | 对战计分行（双条对比 + 动画）。 |
 | `RevealableActionBar` | `shared.dart` | 底部双按钮栏（「查看详解 / 下一题」），`revealed` 驱动揭示动画。 |
@@ -96,7 +98,7 @@ screens/  →  services/  models/  theme/  widgets/
 | 符号 | 文件 | 说明 |
 | --- | --- | --- |
 | `AppSpacing` | `tokens.dart` | `xxs=4 / xs=8 / sm=16 / md=24 / lg=32`。 |
-| `AppRadius` | `tokens.dart` | `card=25 / control=12` + 现成 `cardBorder`/`controlBorder`/`cardShape`/`controlShape`。`StaticsVar.br` 即 `cardBorder`。 |
+| `AppRadius` | `tokens.dart` | `card=16 / control=12 / sheet=28` + 现成 `cardBorder`/`controlBorder`/`sheetBorder`/`cardShape`/`controlShape`/`sheetShape`。`StaticsVar.br` 即 `cardBorder`。 |
 | `AppMotion` | `tokens.dart` | 时长：`quick`200ms / `mediumShort`250 / `medium`300 / `mediumLong`400 / `long1`500 / `long2`600 / `extraLong1`700 / `extraLong2`800 / `slow`1s / `slower`2s / `slowest`3s / `ultraSlow`4s；曲线：`standardCurve` / `emphasizedCurve` / `decelerateCurve`（入场）/ `accelerateCurve`（退场）/ `linearCurve`（纯时间映射）。 |
 | `AppBreakpoints` | `tokens.dart` | `mobile=600 / tablet=1024 / desktop=1440`，`isMobile`/`isTablet`/`isDesktop`，以及 `contentWidth(context)`（详情页正文宽度：屏宽 90%，上限 760）。 |
 | `AppSemanticColors` | `tokens.dart` | `ThemeExtension`：`success`/`onSuccess`/`warning`/`onWarning`/`error`/`disabled`/`disabledContainer`。读法见下。 |
@@ -112,7 +114,7 @@ screens/  →  services/  models/  theme/  widgets/
 | 符号 | 文件 | 作用 |
 | --- | --- | --- |
 | `pushPage` / `pushPageOn` / `replacePage` | `navigation.dart` | **唯一的页面跳转方式**。`MaterialPageRoute` 只在这里构造。已持有 `NavigatorState` 时用 `pushPageOn`。 |
-| `AdaptiveScope.of(context)` / `AdaptiveData` | `adaptive.dart` | 屏宽/宽屏判断（替代全局布尔）。`AdaptiveTabBody` 为顶层 Tab 页算尺寸并在高度不足时兜底滚动。 |
+| `AdaptiveScope.of(context)` / `AdaptiveData` | `adaptive.dart` | 屏宽/宽屏判断（替代全局布尔）。`AdaptiveTabBody` 为顶层 Tab 页提供内容区：始终可滚动（ClampingScrollPhysics），高度不足时不溢出。 |
 | `shouldLockPortrait(shortestSide)` | `adaptive.dart` | 手机锁竖屏；平板/桌面/Web 不限方向。 |
 | `SingleSelectionNotifier` | `selection.dart` | 单选状态的 `ChangeNotifier`。 |
 | `daysSinceEpoch` / `dueDayText` | `date_utils.dart` | 以 `learningEpoch` 计天数 / 到期相对文案（已逾期 N 天·今天·N 天后）。 |
@@ -169,11 +171,12 @@ screens/  →  services/  models/  theme/  widgets/
 | 列表项入场 | `StaggeredEntrance(index: i, child: ...)` |
 | 加载→内容切换 | `CrossFadeSwitcher` + 不同 `Key` |
 | 空列表占位 | `EmptyHintCard` |
-| 按钮 | `Button`（`kit.dart`） |
+| 按钮 | 优先 `FilledButton` / `FilledButton.tonal` / `OutlinedButton` / `TextButton`；需四向图标排布时用 `Button` |
+| 卡片/面板 | `Card` / `Card.filled` / `Card.outlined`，不要在 `Container` 上自绘背景与阴影 |
 | 间距/圆角/时长 | `AppSpacing` / `AppRadius` / `AppMotion` |
 | 语义色 | `context.semanticColors` |
 | 阿语文本样式 | `arabicStyle` / `arabicTextStyle` |
-| 设置项 | `SettingItem` + `SettingRow` / `SettingRedirectButton` |
+| 设置项 | `SettingItem` + `SettingRow` / `SettingSliderRow` / `SettingRedirectButton` |
 | 词库为空 | `showEmptyDictDialog` |
 | 发现新版本 | `showUpdateSheet` |
 | 读/改设置 | `AppData().config.copyWith(...)` → `Global.updateSetting()` |
