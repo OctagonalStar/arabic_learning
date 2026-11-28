@@ -2,7 +2,6 @@ import 'dart:math';
 
 import 'package:flutter/foundation.dart' show clampDouble;
 import 'package:material_ui/material_ui.dart' hide Card;
-import 'package:fsrs/fsrs.dart' show Card;
 
 import 'package:arabic_learning/core/statics.dart';
 import 'package:arabic_learning/screens/learning/fsrs/fsrs_review_card_page.dart' show FSRSReviewCardPage;
@@ -22,36 +21,16 @@ class MainFSRSPage extends StatefulWidget {
 class _MainFSRSPageState extends State<MainFSRSPage> {
   final PageController controller = PageController();
   final Random sharedRnd = Random();
-
+  FSRS fsrs = FSRS();
   /// 进入页面时已逾期的单词；进度条的分母，为空则不显示进度条。
-  late Set<int> _overdue;
-
-  /// 本次会话中已提交复习的逾期单词；达到 [_overdue] 数量后隐藏进度条。
-  final Set<int> _done = {};
-
-  /// 由 AppBar 的 StatefulBuilder 提供：只重建进度条，避免 PageView 重建
-  /// 后当前页按「最近到期」换成另一个单词。
-  void Function(void Function())? _refreshProgress;
+  late int _overdue;
+  late void Function(void Function() fn) _refreshProgress;
 
   @override
   void initState() {
     super.initState();
     widget.fsrs.clearReinforcePending();
-    _overdue = _overdueIds();
-  }
-
-  Set<int> _overdueIds() {
-    final DateTime now = DateTime.now();
-    return {
-      for (final Card card in widget.fsrs.config.cards)
-        if (card.due.toLocal().isBefore(now)) card.cardId
-    };
-  }
-
-  void _onReviewed(int wordID) {
-    if (!_overdue.contains(wordID) || _done.contains(wordID)) return;
-    _done.add(wordID);
-    _refreshProgress?.call(() {});
+    _overdue = fsrs.getWillDueCount();
   }
 
   void _nextPage() {
@@ -60,12 +39,7 @@ class _MainFSRSPageState extends State<MainFSRSPage> {
   }
 
   void _refresh() {
-    setState(() {
-      _overdue = _overdueIds();
-      _done.clear();
-    });
     if (controller.hasClients) controller.jumpToPage(0);
-    _refreshProgress?.call(() {});
   }
 
   @override
@@ -107,12 +81,16 @@ class _MainFSRSPageState extends State<MainFSRSPage> {
         title: Column(
           children: [
             Text("复习"),
-            if (_overdue.isNotEmpty) StatefulBuilder(
+            if (_overdue != 0) StatefulBuilder(
               builder: (context, setLocalState) {
                 _refreshProgress = setLocalState;
-                if (_done.length >= _overdue.length) return const SizedBox.shrink();
+                int left = FSRS().getWillDueCount();
+                if (left == 0) {
+                  _overdue = 0;
+                  return const SizedBox.shrink();
+                }
                 return TweenAnimationBuilder<double>(
-                  tween: Tween<double>(begin: 0, end: _done.length / _overdue.length),
+                  tween: Tween<double>(begin: 0, end: (_overdue - left) / _overdue),
                   duration: AppMotion.medium,
                   curve: AppMotion.standardCurve,
                   builder: (context, value, child) {
@@ -168,7 +146,7 @@ class _MainFSRSPageState extends State<MainFSRSPage> {
               fsrs: widget.fsrs,
               rnd: sharedRnd,
               onNext: _nextPage,
-              onReviewed: _onReviewed,
+              onReviewed: (_) => _refreshProgress((){}),
             );
           },
         ),

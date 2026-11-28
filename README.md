@@ -88,10 +88,13 @@
 | Windows | ✅ |
 | Linux | ✅ (请自行构建) |
 | macOS | ✅ |
-| iOS | ✅ 无签名 IPA（需自行签名后安装） |
+| iOS | ✅ ~~无签名 IPA（需自行签名后安装）~~ 由于Xcode的限制不再提供IPA，你需要在Mac电脑上自行构建 |
 | Web | ✅ [在线体验](https://octagonalstar.github.io/arabic_learning/) |
 
 > 网页版为最新构建版，相对于软件版本可能有更多功能和更多 bug。
+>
+> iOS的构建方法请参阅 [flutter官方教程](https://docs.flutter.dev/deployment/ios)。
+> 项目作者本人没有iOS开发证书，也没有Mac，也暂无计划上架App Store。
 
 ## 技术栈
 
