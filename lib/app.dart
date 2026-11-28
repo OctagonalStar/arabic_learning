@@ -186,76 +186,77 @@ const List<_NavItem> _navItems = [
   _NavItem(icon: Icons.settings_applications_outlined, selectedIcon: Icons.settings_applications, label: '设置'),
 ];
 
-
-const List<Widget> _pages = <Widget>[
-  HomePage(),
-  LearningPage(),
-  TestPage(),
-  SettingPage(),
-];
-
 class _MyHomePageState extends State<MyHomePage> {
   final PageController _pageController = PageController(initialPage: 0);
-  int _index = 0;
+  int get _index => _pageController.hasClients ? _pageController.page!.round() : 0;
   bool _startupPromptsScheduled = false;
   bool _notificationPermissionAsked = false;
+  late void Function(void Function() fn) railState;
 
-  /// 移动端横向翻页：桌面端改用 IndexedStack，避免纵向翻页与页面内滚动抢手势。
-  Widget _buildMobilePageView() {
+  Widget _buildMobilePageView(List<Widget> pages) {
     return PageView(
       controller: _pageController,
-      onPageChanged: (int index) => setState(() => _index = index),
-      children: _pages,
+      onPageChanged: (_) => railState((){}),
+      children: pages,
     );
   }
 
-  Widget _buildDesktopLayout(BuildContext context) {
+  Widget _buildDesktopLayout(BuildContext context, List<Widget> pages) {
     context.read<Global>().uiLogger.fine("构建 DesktopLayout");
     return Row(
       children: [
-        NavigationRail(
-          // 固定 88：标签常显后不再随窗口宽度变化，避免导航区忽宽忽窄。
-          minWidth: 88,
-          selectedIndex: _index,
-          onDestinationSelected: _onNavigationTapped,
-          labelType: NavigationRailLabelType.all,
-          // 目的地靠近顶部，底部留白给未来的账户/版本入口。
-          groupAlignment: -0.9,
-          destinations: [
-            for (final _NavItem item in _navItems)
-              NavigationRailDestination(
-                icon: Icon(item.icon),
-                selectedIcon: Icon(item.selectedIcon),
-                label: Text(item.label),
-              ),
-          ],
+        StatefulBuilder(
+          builder: (context, setLocalState) {
+            railState = setLocalState;
+            return NavigationRail(
+              // 固定 88：标签常显后不再随窗口宽度变化，避免导航区忽宽忽窄。
+              minWidth: 88,
+              selectedIndex: _index,
+              onDestinationSelected: _onNavigationTapped,
+              labelType: NavigationRailLabelType.all,
+              // 目的地靠近顶部，底部留白给未来的账户/版本入口。
+              groupAlignment: -0.9,
+              destinations: [
+                for (final _NavItem item in _navItems)
+                  NavigationRailDestination(
+                    icon: Icon(item.icon),
+                    selectedIcon: Icon(item.selectedIcon),
+                    label: Text(item.label),
+                  ),
+              ],
+            );
+          }
         ),
         const VerticalDivider(thickness: 1, width: 1),
-        // IndexedStack 保留各 Tab 状态，且不会把纵向滑动解释成切换 Tab。
-        Expanded(child: IndexedStack(index: _index, children: _pages)),
+        Expanded(child: PageView(controller: _pageController, scrollDirection: Axis.vertical, onPageChanged: (_) => railState((){}), physics: NeverScrollableScrollPhysics(), children: pages)),
       ],
     );
   }
 
-  Widget _buildMobileLayout(BuildContext context) {
+  Widget _buildMobileLayout(BuildContext context, List<Widget> pages) {
     context.read<Global>().uiLogger.fine("构建 MobileLayout");
     return Column(
       children: [
-        Expanded(child: _buildMobilePageView()),
-        NavigationBar(
-          selectedIndex: _index,
-          onDestinationSelected: _onNavigationTapped,
-          // 高度夹在 48–80：矮横屏下主页磁贴要求导航栏不高于 52，大屏不随屏高拉高。
-          height: clampDouble(MediaQuery.sizeOf(context).height * 0.1, 48.0, 80.0),
-          animationDuration: AppMotion.medium,
-          destinations: [
-            for (final _NavItem item in _navItems)
-              NavigationDestination(
-                icon: Icon(item.icon),
-                selectedIcon: Icon(item.selectedIcon),
-                label: item.label,
-              ),
-          ],
+        Expanded(child: _buildMobilePageView(pages)),
+        StatefulBuilder(
+          builder: (context, setLocalState) {
+            railState = setLocalState;
+            return NavigationBar(
+              selectedIndex: _index,
+              onDestinationSelected: _onNavigationTapped,
+              // 高度夹在 48–80：矮横屏下主页磁贴要求导航栏不高于 52，大屏不随屏高拉高。
+              height: clampDouble(MediaQuery.sizeOf(context).height * 0.1, 48.0, 80.0),
+              animationDuration: AppMotion.medium,
+              destinations: [
+                for (final _NavItem item in _navItems)
+                  NavigationDestination(
+                    icon: Icon(item.icon),
+                    selectedIcon: Icon(item.selectedIcon),
+                    label: item.label,
+                  ),
+              ],
+            );
+          }
         ),
       ],
     );
@@ -263,10 +264,6 @@ class _MyHomePageState extends State<MyHomePage> {
 
   void _onNavigationTapped(int index) {
     if (_index == index) return;
-    if (MediaQuery.sizeOf(context).width > AppBreakpoints.mobile) {
-      setState(() => _index = index);
-      return;
-    }
     _pageController.animateToPage(
       index,
       duration: AppMotion.medium,
@@ -355,7 +352,12 @@ class _MyHomePageState extends State<MyHomePage> {
 
     // 启动提示：自动检查更新（Android）优先，其次顺延更新日志。
     _scheduleStartupPrompts(global);
-
+    const List<Widget> pages = <Widget>[
+      HomePage(),
+      LearningPage(),
+      TestPage(),
+      SettingPage(),
+    ];
     return Scaffold(
       appBar: AppBar(
         centerTitle: true,
@@ -375,9 +377,9 @@ class _MyHomePageState extends State<MyHomePage> {
         builder: (context, constraints) {
           // 根据屏幕宽度决定使用哪种布局（断点与 AdaptiveScope.isWide 一致）
           if (constraints.maxWidth > AppBreakpoints.mobile) {
-            return _buildDesktopLayout(context);
+            return _buildDesktopLayout(context, pages);
           } else {
-            return _buildMobileLayout(context);
+            return _buildMobileLayout(context, pages);
           }
         },
       )),

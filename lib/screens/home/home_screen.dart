@@ -235,7 +235,7 @@ class _DailyWordState extends State<DailyWord> {
                       textAlign: TextAlign.center,
                       style: arabicStyle(
                         context,
-                        base: theme.textTheme.headlineMedium!,
+                        base: theme.textTheme.displayMedium!,
                       ).copyWith(color: scheme.onPrimaryContainer),
                     ),
                   ),
