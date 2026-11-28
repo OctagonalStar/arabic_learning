@@ -19,6 +19,7 @@ import 'package:arabic_learning/theme/tokens.dart' show AppBreakpoints, AppMotio
 import 'package:arabic_learning/widgets/feedback.dart' show LoadingIndicator;
 import 'package:arabic_learning/widgets/kit.dart';
 import 'package:arabic_learning/widgets/motion.dart' show CrossFadeSwitcher;
+import 'package:arabic_learning/theme/markdown_theme.dart';
 import 'package:flutter/foundation.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:flutter/services.dart';
@@ -326,7 +327,7 @@ class _MyHomePageState extends State<MyHomePage> {
               TextContainer(text: "更新内容 软件版本: ${StaticsVar.appVersion.zfill(6)}"),
               SizedBox(
                 height: MediaQuery.of(context).size.height * 0.8,
-                child: Markdown(data: changeLog)
+                child: Markdown(data: changeLog, styleSheet: markdownStyleSheet(context))
               ),
               Button(
                 onPressed: () {

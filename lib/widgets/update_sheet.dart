@@ -26,6 +26,7 @@ import 'package:arabic_learning/widgets/kit.dart' show Button;
 import 'package:arabic_learning/widgets/motion.dart' show FadeSlideIn;
 import 'package:arabic_learning/widgets/overlays.dart' show showSnackBar;
 import 'package:arabic_learning/core/navigation.dart';
+import 'package:arabic_learning/theme/markdown_theme.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:flutter_markdown_plus/flutter_markdown_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -253,7 +254,7 @@ class _UpdateAvailableSheetState extends State<UpdateAvailableSheet> {
                         color: scheme.surfaceContainerHigh,
                         borderRadius: AppRadius.controlBorder,
                       ),
-                      child: MarkdownBody(data: notes),
+                      child: MarkdownBody(data: notes, styleSheet: markdownStyleSheet(context)),
                     ),
                   ),
                   if (_notesLikelyLong(notes))

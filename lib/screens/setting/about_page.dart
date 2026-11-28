@@ -7,6 +7,7 @@ import 'package:arabic_learning/widgets/kit.dart' show TextContainer;
 import 'package:arabic_learning/widgets/shared.dart' show SettingCard;
 import 'package:arabic_learning/screens/setting/open_source_licenses.dart';
 import 'package:arabic_learning/core/navigation.dart';
+import 'package:arabic_learning/theme/markdown_theme.dart';
 
 class AboutPage extends StatelessWidget {
   const AboutPage({super.key});
@@ -36,7 +37,7 @@ class AboutPage extends StatelessWidget {
               future: rootBundle.loadString('assets/help/TermsOfUse.md'),
               initialData: "加载中...",
               builder: (context, asyncSnapshot) {
-                return MarkdownBody(data: asyncSnapshot.data!);
+                return MarkdownBody(data: asyncSnapshot.data!, styleSheet: markdownStyleSheet(context));
               }
             )
           ),
@@ -48,7 +49,7 @@ class AboutPage extends StatelessWidget {
               future: rootBundle.loadString('assets/help/PrivacyPolicy.md'),
               initialData: "加载中...",
               builder: (context, asyncSnapshot) {
-                return MarkdownBody(data: asyncSnapshot.data!);
+                return MarkdownBody(data: asyncSnapshot.data!, styleSheet: markdownStyleSheet(context));
               }
             )
           ),

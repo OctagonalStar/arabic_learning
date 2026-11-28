@@ -105,6 +105,7 @@ screens/  →  services/  models/  theme/  widgets/
 | `arabicStyle` / `arabicTextStyle` / `withoutColor` | `typography.dart` | 套阿语备用字体（按是否需要）/ 剥离颜色保留排版属性。 |
 | `buildTheme` | `app_theme.dart` | 构建 M3 明暗 `ThemeData`；`AppBar` 统一 `centerTitle`，所以页面标题不用再套 `Center`。 |
 | `AppPageTransitionsBuilder` | `page_transitions.dart` | 全平台统一转场，已在 `buildTheme` 注册；页面跳转无需再指定转场。 |
+| `markdownStyleSheet(context)` | `markdown_theme.dart` | `MarkdownBody`/`Markdown` 的 `styleSheet`。插件内部用 SDK `Theme.of`，取不到 `material_ui` 主题会回退亮色黑字，**所有 Markdown 调用点都必须显式传入**。属临时修复，见 [`temp-fixes.md`](temp-fixes.md)。 |
 
 `BuildContext` 上有便捷扩展（`core/extensions.dart`）：`context.semanticColors`
 （等价 `Theme.of(context).extension<AppSemanticColors>()`）、字符串/数字/列表扩展。

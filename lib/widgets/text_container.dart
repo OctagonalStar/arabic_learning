@@ -49,7 +49,7 @@ class TextContainer extends StatelessWidget {
           // 原 State 不会重播，故按文本换 key。
           key: ValueKey<String>(text),
           tween: Tween(begin: 0.0, end: 1.0),
-          duration: AppMotion.mediumLong,
+          duration: AppMotion.extraLong1,
           curve: AppMotion.standardCurve,
           // 背景与文本共用这一个进度：背景只缩放装饰层（不参与布局，
           // 内容撑开尺寸），文本淡入并上移 8px。
@@ -66,9 +66,9 @@ class TextContainer extends StatelessWidget {
               Padding(
                 padding: EdgeInsets.all(8.0),
                 child: Opacity(
-                  opacity: value,
+                  opacity: 0.2+value*0.8,
                   child: Transform.translate(
-                    offset: Offset(0.0, (1.0 - value) * 8.0),
+                    offset: Offset(0.0, (1.0 - value) * 16.0),
                     child: child,
                   ),
                 ),
