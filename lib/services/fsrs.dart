@@ -445,8 +445,16 @@ class FSRS {
 
   int getWillDueCount() {
     int dueCards = 0;
+    DateTime now = DateTime.now().toLocal();
+    DateTime due = now.copyWith(
+          day: now.add(Duration(days: 1)).day, 
+          hour: 0, 
+          minute: 0, 
+          second: 0, 
+          millisecond: 0, 
+          microsecond: 0);
     for(Card card in config.cards) {
-      if(willDueIn(card) < 1) {
+      if(due.isAfter(card.due)) {
         dueCards++;
       }
     }
