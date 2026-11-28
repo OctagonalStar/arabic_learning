@@ -226,8 +226,7 @@ class _DailyWordState extends State<DailyWord> {
                     ),
                 ],
               ),
-              const SizedBox(height: AppSpacing.lg * 2),
-              
+              const SizedBox(height: AppSpacing.md),
               if(hasWords) ...[
                   FittedBox(
                     fit: BoxFit.scaleDown,
