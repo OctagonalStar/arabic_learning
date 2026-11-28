@@ -5,6 +5,7 @@ import 'package:arabic_learning/models/reading.dart';
 import 'package:arabic_learning/screens/test/reading/reading_shared.dart';
 import 'package:arabic_learning/theme/tokens.dart' show AppMotion, AppSemanticColors, AppSpacing;
 import 'package:arabic_learning/widgets/kit.dart' show Button;
+import 'package:arabic_learning/theme/markdown_theme.dart';
 import 'package:flutter/foundation.dart' show clampDouble;
 import 'package:material_ui/material_ui.dart';
 import 'package:flutter_markdown_plus/flutter_markdown_plus.dart';
@@ -62,7 +63,12 @@ class ReadingResultPage extends StatelessWidget {
                     child: SizedBox(
                       width: mediaQuery.size.width,
                       height: clampDouble(constraints.maxHeight * 0.3, 100.0, 260.0),
-                      child: Markdown(data: unit.passage, styleSheet: MarkdownStyleSheet(textScaler: readingTextScaler(constraints.maxWidth)))
+                      child: Markdown(
+                        data: unit.passage,
+                        styleSheet: markdownStyleSheet(context).copyWith(
+                          textScaler: readingTextScaler(constraints.maxWidth),
+                        ),
+                      )
                     ),
                   ),
                 ),

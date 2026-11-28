@@ -1,5 +1,6 @@
 import 'package:arabic_learning/widgets/feedback.dart' show LoadingIndicator;
 import 'package:arabic_learning/widgets/motion.dart' show CrossFadeSwitcher;
+import 'package:arabic_learning/theme/markdown_theme.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:flutter/services.dart' show rootBundle;
 import 'package:flutter_markdown_plus/flutter_markdown_plus.dart';
@@ -27,7 +28,7 @@ class HelpPage extends StatelessWidget{
                     ExpansionTile(
                       title: Text("点击发音按钮后没有声音"),
                       children: [
-                        MarkdownBody(data: helpEssay.data?.elementAt(0) ?? "")
+                        MarkdownBody(data: helpEssay.data?.elementAt(0) ?? "", styleSheet: markdownStyleSheet(context))
                       ],
                     )
                   ],

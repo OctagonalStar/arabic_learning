@@ -4,6 +4,7 @@
 
 > **改代码前先读 [`docs/shared-api.md`](docs/shared-api.md)**：共享组件、token、单例与纯函数手册。
 > 已有实现一律复用，不要新建第二份；新增组件后同步更新该文档。
+> 为绕过上游依赖缺陷而写的临时代码记在 [`docs/temp-fixes.md`](docs/temp-fixes.md)，上游修好后按表删除。
 
 ## 常用命令
 

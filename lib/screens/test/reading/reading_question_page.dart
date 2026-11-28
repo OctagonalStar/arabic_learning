@@ -10,6 +10,7 @@ import 'package:arabic_learning/widgets/hero_title.dart';
 import 'package:arabic_learning/widgets/kit.dart' show Button, TextContainer;
 import 'package:arabic_learning/widgets/shared.dart' show ButtonLabel;
 import 'package:arabic_learning/core/navigation.dart';
+import 'package:arabic_learning/theme/markdown_theme.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:flutter_markdown_plus/flutter_markdown_plus.dart';
 import 'package:provider/provider.dart';
@@ -78,7 +79,9 @@ class _ReadingQuestionPage extends State<ReadingQuestionPage> {
             final double optionButtonWidth = constraints.maxWidth * (sideBySide ? 0.2 : 0.4);
             final Markdown passage = Markdown(
               data: widget.unit.passage,
-              styleSheet: MarkdownStyleSheet(textScaler: readingTextScaler(constraints.maxWidth)),
+              styleSheet: markdownStyleSheet(context).copyWith(
+                textScaler: readingTextScaler(constraints.maxWidth),
+              ),
             );
             final Widget questions = PageView.builder(
               controller: pageController,
